@@ -1,0 +1,2117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Legal Pacers — Blindaje legal para startups de software en Argentina y Latinoamérica">
+  <title>Legal Pacers — Blindaje Legal para Startups de Software</title>
+
+  <style>
+    /* ==================== FONT FACES ==================== */
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialHair.otf') format('opentype');
+      font-weight: 100;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialHairItalic.otf') format('opentype');
+      font-weight: 100;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialThin.otf') format('opentype');
+      font-weight: 200;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialThinItalic.otf') format('opentype');
+      font-weight: 200;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialLight.otf') format('opentype');
+      font-weight: 300;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialLightItalic.otf') format('opentype');
+      font-weight: 300;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialRegular.otf') format('opentype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialItalic.otf') format('opentype');
+      font-weight: 400;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialDemibold.otf') format('opentype');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialDemiboldItalic.otf') format('opentype');
+      font-weight: 600;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialBold.otf') format('opentype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialBoldItalic.otf') format('opentype');
+      font-weight: 700;
+      font-style: italic;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialBlack.otf') format('opentype');
+      font-weight: 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Mundial';
+      src: url('TIPOGRAFIA/MundialBlackItalic.otf') format('opentype');
+      font-weight: 900;
+      font-style: italic;
+      font-display: swap;
+    }
+
+    /* ==================== CSS VARIABLES ==================== */
+    :root {
+      --navy: #001540;
+      --navy-dark: #000d2b;
+      --navy-mid: #002060;
+      --blue: #016FFB;
+      --blue-light: #3B8EFF;
+      --blue-glow: rgba(1, 111, 251, 0.15);
+
+      --white: #FFFFFF;
+      --off-white: #F4F6FA;
+      --gray-100: #E8ECF4;
+      --gray-300: #A0AABF;
+      --gray-500: #5A6478;
+      --gray-700: #2D3447;
+
+      --red: #E63946;
+      --green: #2CB67D;
+      --amber: #F4A438;
+
+      --space-xs: 0.5rem;
+      --space-sm: 1rem;
+      --space-md: 2rem;
+      --space-lg: 4rem;
+      --space-xl: 8rem;
+
+      --text-sm: 0.875rem;
+      --text-base: 1rem;
+      --text-lg: 1.25rem;
+      --text-xl: 1.5rem;
+      --text-2xl: 2rem;
+      --text-3xl: 2.75rem;
+      --text-4xl: 3.5rem;
+      --text-hero: clamp(2.5rem, 6vw, 5.5rem);
+
+      --radius-sm: 6px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-pill: 999px;
+
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.18);
+      --shadow-glow: 0 0 40px rgba(1, 111, 251, 0.25);
+
+      --transition: 200ms ease;
+    }
+
+    /* ==================== RESET & BASE ==================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Mundial', system-ui, sans-serif;
+      background: var(--white);
+      color: var(--gray-700);
+      line-height: 1.6;
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+
+    a:hover {
+      color: var(--blue-light);
+    }
+
+    /* ==================== UTILITIES ==================== */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin-inline: auto;
+      padding-inline: clamp(1rem, 4vw, 3rem);
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: var(--text-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--blue);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      font-size: var(--text-lg);
+      font-weight: 300;
+      color: var(--gray-500);
+      max-width: 600px;
+      margin-bottom: 3rem;
+      line-height: 1.6;
+    }
+
+    /* ==================== BUTTON SYSTEM ==================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: var(--radius-pill);
+      font-family: 'Mundial', sans-serif;
+      font-weight: 700;
+      font-size: var(--text-base);
+      text-decoration: none;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: var(--white);
+      box-shadow: 0 4px 16px rgba(1, 111, 251, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: var(--blue-light);
+      box-shadow: 0 6px 24px rgba(1, 111, 251, 0.5);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--blue);
+      border-color: var(--blue);
+    }
+
+    .btn-outline:hover {
+      background: var(--blue-glow);
+    }
+
+    .btn-lg {
+      padding: 1rem 2.25rem;
+      font-size: var(--text-lg);
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1.25rem;
+      font-size: var(--text-sm);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    /* ==================== ANIMATIONS ==================== */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(32px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 600ms ease, transform 600ms ease;
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: none;
+    }
+
+    .reveal:nth-child(1) { transition-delay: 0ms; }
+    .reveal:nth-child(2) { transition-delay: 100ms; }
+    .reveal:nth-child(3) { transition-delay: 200ms; }
+    .reveal:nth-child(4) { transition-delay: 300ms; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+
+    /* ==================== NAV ==================== */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 4vw, 3rem);
+      height: 64px;
+      background: transparent;
+      transition: background 300ms ease, box-shadow 300ms ease;
+    }
+
+    nav.nav--scrolled {
+      background: var(--navy);
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-logo img {
+      height: 36px;
+      width: auto;
+    }
+
+    .nav-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .nav-toggle span {
+      width: 24px;
+      height: 2px;
+      background: var(--white);
+      transition: all var(--transition);
+    }
+
+    .nav-toggle--open span:nth-child(1) {
+      transform: rotate(45deg) translate(8px, 8px);
+    }
+
+    .nav-toggle--open span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .nav-toggle--open span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -7px);
+    }
+
+    .nav-inner {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+
+    .nav-links {
+      display: none;
+      list-style: none;
+      gap: 2rem;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links a {
+      color: var(--white);
+      font-weight: 600;
+      font-size: var(--text-sm);
+    }
+
+    .nav-cta {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .nav-toggle {
+        display: none;
+      }
+      .nav-links {
+        display: flex;
+        flex: 1;
+        justify-content: center;
+      }
+      .nav-cta {
+        display: inline-flex;
+      }
+    }
+
+    /* ==================== HERO ==================== */
+    .hero {
+      position: relative;
+      height: 100vh;
+      min-height: 600px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--navy);
+    }
+
+    .hero-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    @media (max-width: 768px) {
+      .hero-video {
+        display: none;
+      }
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0, 21, 64, 0.88) 0%, rgba(0, 21, 64, 0.70) 50%, rgba(1, 111, 251, 0.25) 100%);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: var(--white);
+      max-width: 800px;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(1, 111, 251, 0.2);
+      border: 1px solid var(--blue);
+      color: var(--blue-light);
+      border-radius: var(--radius-pill);
+      padding: 6px 16px;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+    }
+
+    .hero-title {
+      font-size: var(--text-hero);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      color: var(--white);
+    }
+
+    .hero-title--accent {
+      color: var(--blue-light);
+    }
+
+    .hero-subtitle {
+      font-size: var(--text-lg);
+      font-weight: 300;
+      opacity: 0.9;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (min-width: 640px) {
+      .hero-actions {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+
+    .btn-outline-white {
+      background: transparent;
+      color: var(--white);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .btn-outline-white:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--white);
+    }
+
+    .hero-proof {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: var(--text-sm);
+      opacity: 0.8;
+      font-weight: 600;
+    }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      color: var(--white);
+      font-size: 1.5rem;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-8px); }
+    }
+
+    /* ==================== PAIN POINTS ==================== */
+    .pain-section {
+      background: var(--off-white);
+      padding: 6rem var(--space-md);
+    }
+
+    .pain-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .pain-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      border-left: 4px solid var(--red);
+      box-shadow: var(--shadow-card);
+      transition: transform var(--transition);
+    }
+
+    .pain-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .pain-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .pain-card h3 {
+      font-size: var(--text-xl);
+      margin-bottom: 0.75rem;
+    }
+
+    .pain-card p {
+      font-size: var(--text-base);
+      color: var(--gray-500);
+      margin-bottom: 1rem;
+    }
+
+    .pain-stat {
+      margin-top: 1rem;
+      padding: 8px 12px;
+      background: rgba(230, 57, 70, 0.08);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--red);
+    }
+
+    /* ==================== CHECKLIST ==================== */
+    .checklist-section {
+      background: var(--white);
+      padding: 6rem var(--space-md);
+    }
+
+    .checklist-wrapper {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3rem;
+      margin-top: 3rem;
+    }
+
+    @media (min-width: 1024px) {
+      .checklist-wrapper {
+        grid-template-columns: 300px 1fr;
+      }
+    }
+
+    .checklist-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .checklist-score-display {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+    }
+
+    .score-ring {
+      width: 100%;
+      height: 100%;
+    }
+
+    .score-ring__bg {
+      fill: none;
+      stroke: var(--gray-100);
+      stroke-width: 10;
+    }
+
+    .score-ring__fill {
+      fill: none;
+      stroke: var(--blue);
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 326.7;
+      stroke-dashoffset: 326.7;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      transition: stroke-dashoffset 400ms ease, stroke 400ms ease;
+    }
+
+    .score-ring__label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .score-ring__label span {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--blue);
+    }
+
+    .score-ring__label small {
+      font-size: var(--text-sm);
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .risk-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: var(--text-sm);
+      text-align: center;
+      width: 100%;
+    }
+
+    .risk-badge--critical {
+      background: rgba(230, 57, 70, 0.1);
+      color: var(--red);
+    }
+
+    .risk-badge--high {
+      background: rgba(244, 164, 56, 0.1);
+      color: var(--amber);
+    }
+
+    .risk-badge--medium {
+      background: rgba(1, 111, 251, 0.1);
+      color: var(--blue);
+    }
+
+    .risk-badge--low {
+      background: rgba(44, 182, 125, 0.1);
+      color: var(--green);
+    }
+
+    .checklist-risks-found {
+      font-size: var(--text-sm);
+    }
+
+    .risks-title {
+      font-weight: 700;
+      color: var(--gray-700);
+      margin-bottom: 0.75rem;
+    }
+
+    .risks-title.all-clear {
+      color: var(--green);
+      font-size: var(--text-lg);
+    }
+
+    .risks-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .risks-list li {
+      padding: 0.5rem;
+      background: rgba(230, 57, 70, 0.05);
+      border-left: 2px solid var(--red);
+      border-radius: var(--radius-sm);
+      color: var(--gray-700);
+    }
+
+    .risks-list strong {
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .checklist-cta {
+      width: 100%;
+    }
+
+    .checklist-category {
+      margin-bottom: 2.5rem;
+    }
+
+    .checklist-cat-title {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--gray-100);
+    }
+
+    .checklist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .checklist-item:hover {
+      background: var(--off-white);
+    }
+
+    .checklist-checkbox {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      cursor: pointer;
+      accent-color: var(--blue);
+    }
+
+    .checklist-text {
+      flex: 1;
+      line-height: 1.5;
+    }
+
+    .checklist-item input:checked ~ .checklist-checkmark::before {
+      content: '✓';
+      color: var(--green);
+    }
+
+    /* ==================== SERVICES ==================== */
+    .services-section {
+      background: var(--white);
+      padding: 6rem var(--space-md);
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .service-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      border: 1px solid var(--gray-100);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .service-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .service-card--featured {
+      border: 2px solid var(--blue);
+      background: var(--navy);
+      color: var(--white);
+      position: relative;
+    }
+
+    .service-card--featured .service-icon {
+      color: var(--blue-light);
+    }
+
+    .service-card--featured h3 {
+      color: var(--white);
+    }
+
+    .service-card--featured ul {
+      color: var(--gray-100);
+    }
+
+    .service-badge {
+      position: absolute;
+      top: -12px;
+      right: 1rem;
+      background: var(--blue);
+      color: var(--white);
+      padding: 4px 12px;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
+
+    .service-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .service-card h3 {
+      font-size: var(--text-xl);
+      margin-bottom: 1rem;
+    }
+
+    .service-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      font-size: var(--text-base);
+      color: var(--gray-500);
+    }
+
+    .service-card--featured ul {
+      color: var(--gray-100);
+    }
+
+    .service-card li::before {
+      content: '✓ ';
+      color: var(--blue);
+      font-weight: 700;
+      margin-right: 0.5rem;
+    }
+
+    .service-card--featured li::before {
+      color: var(--blue-light);
+    }
+
+    /* ==================== PROCESS ==================== */
+    .process-section {
+      background: var(--off-white);
+      padding: 6rem var(--space-md);
+    }
+
+    .process-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    @media (min-width: 768px) {
+      .process-steps {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+    }
+
+    .process-step {
+      flex: 1;
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .process-step {
+        flex-direction: column;
+      }
+    }
+
+    .step-number {
+      font-size: 4rem;
+      font-weight: 900;
+      color: var(--blue);
+      opacity: 0.3;
+      min-width: 80px;
+      line-height: 1;
+    }
+
+    .step-content h3 {
+      font-size: var(--text-xl);
+      margin-bottom: 0.75rem;
+      color: var(--navy);
+    }
+
+    .step-content p {
+      color: var(--gray-500);
+      line-height: 1.6;
+    }
+
+    .process-connector {
+      display: none;
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(to right, var(--blue), transparent);
+      margin-top: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .process-connector {
+        display: block;
+      }
+    }
+
+    /* ==================== TESTIMONIALS ==================== */
+    .testimonials-section {
+      background: var(--navy);
+      color: var(--white);
+      padding: 6rem var(--space-md);
+    }
+
+    .testimonials-section .section-label {
+      color: var(--blue-light);
+    }
+
+    .testimonials-section .section-title {
+      color: var(--white);
+    }
+
+    .video-testimonial {
+      margin: 3rem 0;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .video-testimonial video {
+      width: 100%;
+      height: auto;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .testimonial-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      transition: transform var(--transition), background var(--transition);
+    }
+
+    .testimonial-card:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-4px);
+    }
+
+    .testimonial-stars {
+      font-size: 1rem;
+      color: #FFD700;
+      margin-bottom: 1rem;
+      letter-spacing: 2px;
+    }
+
+    .testimonial-card blockquote {
+      font-size: var(--text-lg);
+      font-weight: 300;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      font-style: italic;
+      opacity: 0.95;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .author-avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--blue);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: var(--text-base);
+      flex-shrink: 0;
+    }
+
+    .testimonial-author div strong {
+      display: block;
+      font-size: var(--text-base);
+      font-weight: 700;
+    }
+
+    .testimonial-author div span {
+      font-size: var(--text-sm);
+      opacity: 0.8;
+    }
+
+    /* ==================== PRICING ==================== */
+    .pricing-section {
+      background: var(--white);
+      padding: 6rem var(--space-md);
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    @media (min-width: 1024px) {
+      .pricing-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .pricing-card {
+      background: var(--white);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      position: relative;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-card);
+    }
+
+    .pricing-card--featured {
+      border: 2px solid var(--blue);
+      transform: scale(1.04);
+    }
+
+    @media (max-width: 768px) {
+      .pricing-card--featured {
+        transform: scale(1);
+      }
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      right: 1rem;
+      background: var(--blue);
+      color: var(--white);
+      padding: 4px 12px;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
+
+    .pricing-name {
+      font-size: var(--text-xl);
+      color: var(--navy);
+      margin-bottom: 1rem;
+    }
+
+    .pricing-price {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .price-amount {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--blue);
+    }
+
+    .price-once {
+      font-size: var(--text-sm);
+      color: var(--gray-500);
+      font-weight: 600;
+    }
+
+    .pricing-desc {
+      font-size: var(--text-base);
+      color: var(--gray-500);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .pricing-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      font-size: var(--text-sm);
+    }
+
+    .pricing-features li {
+      color: var(--gray-500);
+    }
+
+    .pricing-features li::before {
+      content: '✓ ';
+      color: var(--green);
+      font-weight: 700;
+      margin-right: 0.5rem;
+    }
+
+    .pricing-note {
+      text-align: center;
+      font-size: var(--text-sm);
+      color: var(--gray-500);
+      margin-top: 2rem;
+    }
+
+    /* ==================== FAQ ==================== */
+    .faq-section {
+      background: var(--off-white);
+      padding: 6rem var(--space-md);
+    }
+
+    .faq-list {
+      max-width: 800px;
+      margin: 3rem auto 0;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 0;
+      cursor: pointer;
+      font-weight: 600;
+      list-style: none;
+      color: var(--navy);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-family: 'Mundial', sans-serif;
+      font-size: var(--text-base);
+    }
+
+    .faq-question::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-icon {
+      transition: transform 200ms ease;
+      font-size: 1.5rem;
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+
+    details[open] .faq-icon {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      padding-bottom: 1.5rem;
+      color: var(--gray-500);
+      line-height: 1.7;
+      font-size: var(--text-base);
+    }
+
+    /* ==================== CONTACT ==================== */
+    .contact-section {
+      background: var(--white);
+      padding: 6rem var(--space-md);
+    }
+
+    .contact-inner {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 3rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 1024px) {
+      .contact-inner {
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+      }
+    }
+
+    .contact-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .contact-text .section-title {
+      max-width: 100%;
+    }
+
+    .contact-text > p {
+      font-size: var(--text-lg);
+      color: var(--gray-500);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .contact-benefits {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      font-size: var(--text-base);
+      color: var(--gray-700);
+    }
+
+    .contact-benefits li::before {
+      content: '✓ ';
+      color: var(--green);
+      font-weight: 700;
+      margin-right: 0.5rem;
+    }
+
+    .contact-form-wrapper {
+      display: flex;
+      align-items: center;
+    }
+
+    .contact-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      font-size: var(--text-sm);
+      color: var(--navy);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-sm);
+      font-family: 'Mundial', sans-serif;
+      font-size: var(--text-base);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-glow);
+    }
+
+    /* ==================== FOOTER ==================== */
+    .footer {
+      background: var(--navy);
+      color: var(--white);
+      padding: 4rem var(--space-md) 2rem;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 3rem;
+      max-width: 1200px;
+      margin: 0 auto 2rem;
+    }
+
+    .footer-brand img {
+      height: 32px;
+      width: auto;
+      margin-bottom: 1rem;
+    }
+
+    .footer-brand p {
+      font-size: var(--text-sm);
+      opacity: 0.8;
+      margin-bottom: 1.5rem;
+    }
+
+    .footer-social {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .footer-social a {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      transition: background var(--transition);
+    }
+
+    .footer-social a:hover {
+      background: var(--blue);
+      color: var(--white);
+    }
+
+    .footer-links h4 {
+      font-size: var(--text-base);
+      margin-bottom: 1rem;
+      color: var(--white);
+    }
+
+    .footer-links ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .footer-links a {
+      font-size: var(--text-sm);
+      opacity: 0.8;
+      transition: opacity var(--transition);
+    }
+
+    .footer-links a:hover {
+      opacity: 1;
+      color: var(--blue-light);
+    }
+
+    .footer-contact h4 {
+      font-size: var(--text-base);
+      margin-bottom: 1rem;
+      color: var(--white);
+    }
+
+    .footer-contact p {
+      font-size: var(--text-sm);
+      opacity: 0.8;
+      margin-bottom: 1rem;
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: var(--text-sm);
+      opacity: 0.6;
+    }
+
+    /* ==================== WHATSAPP FLOAT ==================== */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 999;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #25D366;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px rgba(37, 211, 102, 0.55);
+    }
+
+    .whatsapp-float svg {
+      width: 28px;
+      height: 28px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== NAV ==================== -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <img src="legalpacers-logos-01.png" alt="Legal Pacers">
+    </a>
+    <button class="nav-toggle" aria-label="Menú" aria-expanded="false" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#proceso">Proceso</a></li>
+      <li><a href="#precios">Precios</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a href="#contacto" class="btn btn-primary nav-cta">Agendar llamada</a>
+  </div>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<section id="hero" class="hero">
+  <video class="hero-video" autoplay muted loop playsinline>
+    <source src="Video sin título.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+  <div class="hero-content container">
+    <div class="hero-badge">Para startups en Argentina y LATAM</div>
+    <h1 class="hero-title">
+      Tu startup crece rápido.<br>
+      <span class="hero-title--accent">El marco legal no debería frenarte.</span>
+    </h1>
+    <p class="hero-subtitle">
+      Asesoría legal especializada en tecnología y startups. Sin letra chica,
+      sin honorarios imprevistos, con foco en que puedas escalar.
+    </p>
+    <div class="hero-actions">
+      <a href="#contacto" class="btn btn-primary btn-lg">
+        Agendar llamada gratuita
+      </a>
+      <a href="#checklist" class="btn btn-outline btn-lg btn-outline-white">
+        Ver mi nivel de riesgo legal →
+      </a>
+    </div>
+    <div class="hero-proof">
+      <span>+50 startups asesoradas</span>
+      <span>·</span>
+      <span>Argentina · México · Colombia</span>
+      <span>·</span>
+      <span>Respuesta en 24h</span>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">↓</div>
+</section>
+
+<!-- ==================== PAIN POINTS ==================== -->
+<section id="pain" class="pain-section">
+  <div class="container">
+    <div class="section-label">El problema</div>
+    <h2 class="section-title">Cada semana, una startup pierde todo<br>por esto:</h2>
+
+    <div class="pain-grid reveal">
+      <div class="pain-card">
+        <div class="pain-icon">⚡</div>
+        <h3>Equity mal estructurado</h3>
+        <p>Un co-founder se va y se lleva el 40% sin vesting. Pasa más de lo que creés.</p>
+        <div class="pain-stat">1 de cada 3 startups lo enfrenta antes de la Serie A</div>
+      </div>
+
+      <div class="pain-card">
+        <div class="pain-icon">🔒</div>
+        <h3>IP que no te pertenece</h3>
+        <p>El código lo escribió un freelancer sin contrato de cesión. El producto no es tuyo legalmente.</p>
+        <div class="pain-stat">Bloquea el 60% de due diligence de inversores</div>
+      </div>
+
+      <div class="pain-card">
+        <div class="pain-icon">📋</div>
+        <h3>T&C que no protegen</h3>
+        <p>Copiaste los términos de otro servicio. Cuando llega el reclamo, no tenés defensa.</p>
+        <div class="pain-stat">Riesgo regulatorio GDPR/LPDP desde el día 1</div>
+      </div>
+
+      <div class="pain-card">
+        <div class="pain-icon">🌎</div>
+        <h3>Sociedad mal ubicada</h3>
+        <p>Constituiste en Argentina pero tus clientes son de EE.UU. Los inversores no pueden entrar.</p>
+        <div class="pain-stat">El 70% de YC pide estructura Delaware o Cayman</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CHECKLIST ==================== -->
+<section id="checklist" class="checklist-section">
+  <div class="container">
+    <div class="section-label">Herramienta gratuita</div>
+    <h2 class="section-title">¿Cuál es tu nivel de riesgo legal?</h2>
+    <p class="section-subtitle">Marcá lo que ya tenés resuelto. En 2 minutos sabés dónde estás parado.</p>
+
+    <div class="checklist-wrapper">
+      <div class="checklist-sidebar">
+        <div class="checklist-score-display">
+          <svg class="score-ring" viewBox="0 0 120 120">
+            <circle class="score-ring__bg" cx="60" cy="60" r="52"/>
+            <circle class="score-ring__fill" id="scoreCircle" cx="60" cy="60" r="52"/>
+          </svg>
+          <div class="score-ring__label">
+            <span id="scorePercent">0%</span>
+            <small>protegido</small>
+          </div>
+        </div>
+        <div class="checklist-risk-level" id="riskLevel">
+          <div class="risk-badge risk-badge--critical">Riesgo Crítico</div>
+        </div>
+        <div class="checklist-risks-found" id="risksFound">
+        </div>
+        <a href="#contacto" class="btn btn-primary checklist-cta" id="checklistCTA">
+          Quiero resolver estos riesgos →
+        </a>
+      </div>
+
+      <div class="checklist-main">
+        <div id="checklistCategories"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SERVICES ==================== -->
+<section id="servicios" class="services-section">
+  <div class="container">
+    <div class="section-label">Qué hacemos</div>
+    <h2 class="section-title">Servicios diseñados para startups tech</h2>
+
+    <div class="services-grid reveal">
+      <div class="service-card">
+        <div class="service-icon">🏗️</div>
+        <h3>Constitución y estructura</h3>
+        <ul>
+          <li>SAS / SA en Argentina</li>
+          <li>Estructura para inversión extranjera</li>
+          <li>Pacto de socios y vesting</li>
+          <li>Cap table inicial</li>
+        </ul>
+      </div>
+
+      <div class="service-card service-card--featured">
+        <div class="service-badge">Más elegido</div>
+        <div class="service-icon">🔐</div>
+        <h3>Protección de IP & Contratos</h3>
+        <ul>
+          <li>Registro de marca</li>
+          <li>Cesión de IP (freelancers/empleados)</li>
+          <li>T&C y Política de Privacidad</li>
+          <li>NDAs y contratos con clientes</li>
+        </ul>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">📈</div>
+        <h3>Fundraising & Due Diligence</h3>
+        <ul>
+          <li>SAFEs y convertible notes</li>
+          <li>Data room legal</li>
+          <li>Revisión de term sheets</li>
+          <li>Estructuras para YC / aceleradoras</li>
+        </ul>
+      </div>
+
+      <div class="service-card">
+        <div class="service-icon">🌐</div>
+        <h3>Expansión regional</h3>
+        <ul>
+          <li>Operación en México, Colombia, Chile</li>
+          <li>Delaware / Cayman setup</li>
+          <li>Contratos internacionales</li>
+          <li>Compliance regulatorio por país</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PROCESS ==================== -->
+<section id="proceso" class="process-section">
+  <div class="container">
+    <div class="section-label">Cómo trabajamos</div>
+    <h2 class="section-title">De cero a protegido en 4 pasos</h2>
+
+    <div class="process-steps reveal">
+      <div class="process-step">
+        <div class="step-number">01</div>
+        <div class="step-content">
+          <h3>Diagnóstico gratuito</h3>
+          <p>Agenda una llamada de 30 minutos. Analizamos tu situación actual sin costo.</p>
+        </div>
+      </div>
+      <div class="process-connector"></div>
+
+      <div class="process-step">
+        <div class="step-number">02</div>
+        <div class="step-content">
+          <h3>Plan personalizado</h3>
+          <p>Te entregamos un roadmap legal con prioridades claras y presupuesto cerrado.</p>
+        </div>
+      </div>
+      <div class="process-connector"></div>
+
+      <div class="process-step">
+        <div class="step-number">03</div>
+        <div class="step-content">
+          <h3>Ejecución rápida</h3>
+          <p>Trabajamos en paralelo con tu equipo. Documentos en días, no en semanas.</p>
+        </div>
+      </div>
+      <div class="process-connector"></div>
+
+      <div class="process-step">
+        <div class="step-number">04</div>
+        <div class="step-content">
+          <h3>Acompañamiento continuo</h3>
+          <p>Somos tu área legal. Consultás cuando necesitás, por WhatsApp o videollamada.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== TESTIMONIALS ==================== -->
+<section id="testimonios" class="testimonials-section">
+  <div class="container">
+    <div class="section-label">Lo que dicen</div>
+    <h2 class="section-title">Startups que nos confiaron su base legal</h2>
+
+    <div class="video-testimonial reveal">
+      <video controls width="100%">
+        <source src="Video sin título (2).mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <div class="testimonials-grid reveal">
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <blockquote>"Llegamos a YC con el cap table en orden y la IP protegida. Legal Pacers nos armó todo en 3 semanas."</blockquote>
+        <div class="testimonial-author">
+          <div class="author-avatar">MP</div>
+          <div>
+            <strong>Martín Pereira</strong>
+            <span>CEO · Fintech SaaS, Buenos Aires</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <blockquote>"Nunca entendí la diferencia entre SAFE y convertible note hasta que hablé con ellos. Clarísimos."</blockquote>
+        <div class="testimonial-author">
+          <div class="author-avatar">SK</div>
+          <div>
+            <strong>Sofía Krauss</strong>
+            <span>CTO · DevTool startup, Córdoba</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <blockquote>"Expandimos a México y Colombia. Legal Pacers nos ahorró meses de investigación regulatoria."</blockquote>
+        <div class="testimonial-author">
+          <div class="author-avatar">LV</div>
+          <div>
+            <strong>Lucas Vargas</strong>
+            <span>Founder · E-commerce B2B, Bogotá</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PRICING ==================== -->
+<section id="precios" class="pricing-section">
+  <div class="container">
+    <div class="section-label">Transparencia de precios</div>
+    <h2 class="section-title">Sin sorpresas. Sin letra chica.</h2>
+
+    <div class="pricing-grid reveal">
+      <div class="pricing-card">
+        <h3 class="pricing-name">Auditoría Legal</h3>
+        <div class="pricing-price">
+          <span class="price-amount">USD 400</span>
+          <span class="price-once">pago único</span>
+        </div>
+        <p class="pricing-desc">Diagnóstico completo del estado legal de tu startup.</p>
+        <ul class="pricing-features">
+          <li>Revisión de documentos existentes</li>
+          <li>Análisis de estructura societaria</li>
+          <li>Checklist de riesgos personalizado</li>
+          <li>Llamada de 1 hora de resultados</li>
+          <li>Roadmap de acción con presupuestos</li>
+        </ul>
+        <a href="#contacto" class="btn btn-outline btn-full">Agendar auditoría</a>
+      </div>
+
+      <div class="pricing-card pricing-card--featured">
+        <div class="pricing-badge">Recomendado</div>
+        <h3 class="pricing-name">Paquete Fundación</h3>
+        <div class="pricing-price">
+          <span class="price-amount">Desde USD 1,200</span>
+          <span class="price-once">proyecto cerrado</span>
+        </div>
+        <p class="pricing-desc">Todo lo que necesitás para operar con base legal sólida.</p>
+        <ul class="pricing-features">
+          <li>Constitución de sociedad</li>
+          <li>Pacto de socios + vesting</li>
+          <li>Contratos de empleados/freelancers</li>
+          <li>T&C + Política de Privacidad</li>
+          <li>Cesión de IP</li>
+          <li>3 meses de consultas incluidas</li>
+        </ul>
+        <a href="#contacto" class="btn btn-primary btn-full">Agendar llamada</a>
+      </div>
+
+      <div class="pricing-card">
+        <h3 class="pricing-name">Legal Continuo</h3>
+        <div class="pricing-price">
+          <span class="price-amount">USD 600</span>
+          <span class="price-once">/mes</span>
+        </div>
+        <p class="pricing-desc">Tu área legal externa. Consultas ilimitadas y acompañamiento estratégico.</p>
+        <ul class="pricing-features">
+          <li>Consultas ilimitadas (WhatsApp + video)</li>
+          <li>Revisión de contratos sin límite</li>
+          <li>Alertas regulatorias</li>
+          <li>Reunión mensual de revisión</li>
+          <li>Descuentos en proyectos puntuales</li>
+        </ul>
+        <a href="#contacto" class="btn btn-outline btn-full">Consultar disponibilidad</a>
+      </div>
+    </div>
+
+    <p class="pricing-note">* Todos los precios en USD. Facturación en pesos disponible para clientes argentinos. Los proyectos puntuales tienen presupuesto cerrado antes de comenzar.</p>
+  </div>
+</section>
+
+<!-- ==================== FAQ ==================== -->
+<section id="faq" class="faq-section">
+  <div class="container">
+    <div class="section-label">Preguntas frecuentes</div>
+    <h2 class="section-title">Lo que siempre nos preguntan</h2>
+
+    <div class="faq-list reveal">
+      <details class="faq-item">
+        <summary class="faq-question">
+          ¿Trabajan solo con startups argentinas?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          No. Trabajamos con startups de toda Latinoamérica. Tenemos clientes en Argentina, México, Colombia y Chile. Para operaciones en EE.UU. (Delaware), trabajamos en conjunto con abogados locales aliados.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          ¿Cuándo debería contratar asesoría legal?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          Desde el inicio. Idealmente, antes de aceptar el primer cliente. Pero si ya operás, es mejor arreglarlo hoy que enfrentar un litigio mañana. La auditoría legal es el primer paso para saberlo con certeza.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          ¿Qué incluye la auditoría legal de USD 400?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          Revisamos tu constitución, estructura de equity, contratos existentes, IP, términos de uso y políticas de privacidad. Al final, te entregas un reporte con prioridades claras, un roadmap legal y presupuestos para resolver cada riesgo.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          ¿Puedo cambiar la estructura societaria después de levantar inversión?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          Técnicamente sí, pero es más complicado y costoso. Por eso es importante hacerlo bien desde el inicio. Si ya levantaste capital, te ayudamos a optimizar la estructura sin afectar los acuerdos existentes.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          ¿Cómo se manejan los costos si el proyecto es grande?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          Siempre cerramos presupuestos antes de trabajar. Nada de facturas sorpresa. Si el proyecto requiere múltiples especialistas o jurisdicciones, te lo decimos de frente con el costo total.
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CONTACT ==================== -->
+<section id="contacto" class="contact-section">
+  <div class="container">
+    <div class="contact-inner">
+      <div class="contact-text">
+        <div class="section-label">¿Listo para empezar?</div>
+        <h2 class="section-title">Una llamada de 30 minutos<br>puede cambiar el rumbo de tu startup</h2>
+        <p>Sin compromiso. Sin costo. Solo una conversación honesta sobre dónde estás parado y qué necesitás.</p>
+        <ul class="contact-benefits">
+          <li>Respuesta en menos de 24 horas</li>
+          <li>Diagnóstico inicial sin cargo</li>
+          <li>Presupuesto cerrado antes de firmar</li>
+        </ul>
+      </div>
+
+      <div class="contact-form-wrapper reveal">
+        <form class="contact-form" id="contactForm" onsubmit="handleFormSubmit(event)">
+          <div class="form-group">
+            <label for="name">Nombre completo</label>
+            <input type="text" id="name" name="name" required placeholder="Tu nombre">
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="tu@startup.com">
+          </div>
+
+          <div class="form-group">
+            <label for="company">Empresa / Startup</label>
+            <input type="text" id="company" name="company" placeholder="Nombre de tu startup">
+          </div>
+
+          <div class="form-group">
+            <label for="stage">Etapa</label>
+            <select id="stage" name="stage">
+              <option value="">Seleccioná tu etapa</option>
+              <option>Pre-seed (idea / MVP)</option>
+              <option>Seed (primeros clientes)</option>
+              <option>Serie A+</option>
+              <option>Ya tengo inversión</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="message">¿Cuál es tu urgencia legal?</label>
+            <textarea id="message" name="message" rows="4" placeholder="Ej: necesito estructurar la sociedad antes de levantar capital..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full">
+            Agendar llamada gratuita →
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="legalpacers-logos-01.png" alt="Legal Pacers">
+        <p>Asesoría legal especializada en startups tech en Latinoamérica.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="LinkedIn">in</a>
+          <a href="#" aria-label="Instagram">ig</a>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <h4>Servicios</h4>
+        <ul>
+          <li><a href="#servicios">Constitución</a></li>
+          <li><a href="#servicios">Propiedad Intelectual</a></li>
+          <li><a href="#servicios">Fundraising</a></li>
+          <li><a href="#servicios">Expansión regional</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-links">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Política de privacidad</a></li>
+          <li><a href="#">Términos de uso</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-contact">
+        <h4>Contacto</h4>
+        <p>hola@legalpacers.com</p>
+        <a href="#contacto" class="btn btn-primary btn-sm">Agendar llamada</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2025 Legal Pacers. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ==================== WHATSAPP FLOAT ==================== -->
+<a href="https://wa.me/XXXXXXXXXX?text=Hola!%20Quisiera%20consultar%20sobre%20asesor%C3%ADa%20legal%20para%20mi%20startup"
+   class="whatsapp-float"
+   target="_blank"
+   rel="noopener"
+   aria-label="Contactar por WhatsApp">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.768.967-.94 1.165-.168.198-.347.223-.645.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a6.716 6.716 0 00-6.318 3.109 6.726 6.726 0 002.018 10.857 6.716 6.716 0 005.611-.288l.384.214a11.7 11.7 0 001.503.526 1.794 1.794 0 001.304-2.112 11.71 11.71 0 00-3.502-2.909M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0"/>
+  </svg>
+</a>
+
+<script>
+  /* ==================== NAV BEHAVIOR ==================== */
+  function toggleNav() {
+    const toggle = document.querySelector('.nav-toggle');
+    const links = document.querySelector('.nav-links');
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!expanded));
+    toggle.classList.toggle('nav-toggle--open');
+    links.classList.toggle('nav-links--open');
+  }
+
+  // Nav scroll effect
+  (function initNav() {
+    const nav = document.getElementById('nav');
+    const hero = document.getElementById('hero');
+    const io = new IntersectionObserver(([entry]) => {
+      nav.classList.toggle('nav--scrolled', !entry.isIntersecting);
+    }, { threshold: 0.1 });
+    io.observe(hero);
+  })();
+
+  // Close mobile nav on link click
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.remove('nav-links--open');
+      document.querySelector('.nav-toggle').setAttribute('aria-expanded', 'false');
+      document.querySelector('.nav-toggle').classList.remove('nav-toggle--open');
+    });
+  });
+
+  /* ==================== SMOOTH SCROLL ==================== */
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  /* ==================== CHECKLIST DATA & LOGIC ==================== */
+  const CHECKLIST_ITEMS = [
+    { id: 'c1', cat: 'Constitución', text: 'Tengo una sociedad legalmente constituida', risk: 'Sin estructura legal, responsabilidad ilimitada', weight: 2 },
+    { id: 'c2', cat: 'Constitución', text: 'La estructura societaria es adecuada para recibir inversión extranjera', risk: 'Inversores no pueden entrar', weight: 3 },
+    { id: 'c3', cat: 'Constitución', text: 'Existe un pacto de socios / SHA firmado', risk: 'Conflicto de socios sin resolución', weight: 3 },
+    { id: 'c4', cat: 'Constitución', text: 'El vesting de los founders está documentado', risk: 'Equity mal estructurado', weight: 3 },
+
+    { id: 'ip1', cat: 'Propiedad Intelectual', text: 'El código fuente y marca están a nombre de la empresa (no del founder)', risk: 'IP personal, bloquea due diligence', weight: 3 },
+    { id: 'ip2', cat: 'Propiedad Intelectual', text: 'Los contratos con freelancers/empleados incluyen cesión de IP', risk: 'IP de terceros en tu producto', weight: 3 },
+    { id: 'ip3', cat: 'Propiedad Intelectual', text: 'La marca está registrada o en proceso', risk: 'Terceros pueden usar tu marca', weight: 2 },
+    { id: 'ip4', cat: 'Propiedad Intelectual', text: 'No usás código open source con licencias restrictivas (GPL) sin análisis', risk: 'Contaminación de licencia en producto', weight: 2 },
+
+    { id: 'priv1', cat: 'Privacidad y Datos', text: 'Tenés Términos y Condiciones propios (no copiados)', risk: 'Sin protección contractual ante reclamos', weight: 2 },
+    { id: 'priv2', cat: 'Privacidad y Datos', text: 'Tenés Política de Privacidad actualizada (LPDP/GDPR)', risk: 'Multas y sanciones regulatorias', weight: 3 },
+    { id: 'priv3', cat: 'Privacidad y Datos', text: 'Tenés mecanismo de consentimiento para cookies/datos', risk: 'Incumplimiento regulatorio desde día 1', weight: 2 },
+    { id: 'priv4', cat: 'Privacidad y Datos', text: 'Los datos de usuarios están alojados conforme a la normativa aplicable', risk: 'Transferencia internacional no autorizada', weight: 2 },
+
+    { id: 'lab1', cat: 'Laboral y Contratos', text: 'Los empleados/contratistas tienen contratos firmados', risk: 'Pasivo laboral oculto', weight: 2 },
+    { id: 'lab2', cat: 'Laboral y Contratos', text: 'Los contratos con clientes incluyen cláusulas de limitación de responsabilidad', risk: 'Responsabilidad ilimitada ante incidentes', weight: 3 },
+    { id: 'lab3', cat: 'Laboral y Contratos', text: 'Los NDAs con partners/empleados están vigentes', risk: 'Filtración de información sin consecuencia legal', weight: 2 },
+
+    { id: 'inv1', cat: 'Inversión', text: 'Tenés un cap table actualizado y documentado', risk: 'Disputas de equity con futuros inversores', weight: 2 },
+    { id: 'inv2', cat: 'Inversión', text: 'Entendés la diferencia entre SAFE, convertible note y equity round', risk: 'Dilución inesperada en próxima ronda', weight: 2 },
+  ];
+
+  function renderChecklist() {
+    const categories = [...new Set(CHECKLIST_ITEMS.map(i => i.cat))];
+    const container = document.getElementById('checklistCategories');
+
+    categories.forEach(cat => {
+      const items = CHECKLIST_ITEMS.filter(i => i.cat === cat);
+      const catEl = document.createElement('div');
+      catEl.className = 'checklist-category';
+
+      const itemsHtml = items.map(item => `
+        <label class="checklist-item">
+          <input type="checkbox" class="checklist-checkbox" data-id="${item.id}" onchange="updateScore()">
+          <span class="checklist-text">${item.text}</span>
+        </label>
+      `).join('');
+
+      catEl.innerHTML = `
+        <h3 class="checklist-cat-title">${cat}</h3>
+        <div class="checklist-items">
+          ${itemsHtml}
+        </div>
+      `;
+      container.appendChild(catEl);
+    });
+  }
+
+  function updateScore() {
+    const checked = document.querySelectorAll('.checklist-checkbox:checked');
+    const checkedIds = new Set([...checked].map(el => el.dataset.id));
+
+    const maxScore = CHECKLIST_ITEMS.reduce((sum, i) => sum + i.weight, 0);
+    const earnedScore = CHECKLIST_ITEMS
+      .filter(i => checkedIds.has(i.id))
+      .reduce((sum, i) => sum + i.weight, 0);
+
+    const pct = Math.round((earnedScore / maxScore) * 100);
+
+    // Update ring
+    const circumference = 2 * Math.PI * 52;
+    const offset = circumference - (pct / 100) * circumference;
+    document.getElementById('scoreCircle').style.strokeDashoffset = offset;
+    document.getElementById('scorePercent').textContent = pct + '%';
+
+    // Risk level
+    let levelClass, levelText;
+    if (pct < 30) { levelClass = 'critical'; levelText = 'Riesgo Crítico'; }
+    else if (pct < 60) { levelClass = 'high'; levelText = 'Riesgo Alto'; }
+    else if (pct < 80) { levelClass = 'medium'; levelText = 'Riesgo Medio'; }
+    else { levelClass = 'low'; levelText = 'Bien protegido'; }
+
+    const riskEl = document.getElementById('riskLevel');
+    riskEl.innerHTML = `<div class="risk-badge risk-badge--${levelClass}">${levelText}</div>`;
+
+    // Unchecked risks
+    const uncheckedRisks = CHECKLIST_ITEMS
+      .filter(i => !checkedIds.has(i.id))
+      .map(i => `<li><strong>${i.cat}:</strong> ${i.risk}</li>`)
+      .join('');
+
+    document.getElementById('risksFound').innerHTML = uncheckedRisks
+      ? `<p class="risks-title">Riesgos identificados:</p><ul class="risks-list">${uncheckedRisks}</ul>`
+      : `<p class="risks-title all-clear">✓ Todo bajo control</p>`;
+  }
+
+  renderChecklist();
+  updateScore();
+
+  /* ==================== SCROLL REVEAL ==================== */
+  const revealEls = document.querySelectorAll('.reveal');
+  const revealIO = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('revealed');
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => revealIO.observe(el));
+
+  /* ==================== FORM SUBMIT ==================== */
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+
+    // WhatsApp message
+    const msg = encodeURIComponent(
+      `Hola! Soy ${data.name} de ${data.company || 'mi startup'}. Etapa: ${data.stage || 'No especificada'}. ${data.message}`
+    );
+
+    // Replace XXXXXXXXXX with actual WhatsApp number
+    window.open(`https://wa.me/XXXXXXXXXX?text=${msg}`, '_blank');
+
+    // Reset form
+    e.target.reset();
+  }
+</script>
+
+</body>
+</html>
