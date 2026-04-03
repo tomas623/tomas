@@ -37,12 +37,6 @@
         <label class="form-label" style="text-align: left;">Clase Nice (opcional)</label>
         <select id="checkerClase">
           <option value="">Todas las clases</option>
-          <option value="1">1 - Químicos</option>
-          <option value="25">25 - Ropa y calzado</option>
-          <option value="35">35 - Publicidad y gestión</option>
-          <option value="36">36 - Seguros y finanzas</option>
-          <option value="42">42 - Servicios tecnológicos</option>
-          <option value="43">43 - Restauración</option>
         </select>
       </div>
 
@@ -372,11 +366,14 @@ async function verificarMarca() {
       const results = document.getElementById('checkerResults');
       const status = document.getElementById('checkerStatus');
 
-      if (data.disponible) {
-        status.innerHTML = '<div style="padding: 1rem; background: #DBEAFE; color: #0369A1; border-radius: 8px; text-align: center;"><strong>✓ Tu marca podría estar disponible</strong><br>No encontramos marcas idénticas registradas en el INPI.</div>';
-      } else {
-        status.innerHTML = '<div style="padding: 1rem; background: #FED7AA; color: #92400E; border-radius: 8px;"><strong>⚠ Encontramos ' + data.count + ' coincidencia(s)</strong><br>Revisa los resultados abajo para verificar si son conflictivas.</div>';
+      const dbReady = data.db_records > 0;
+      if (!data.disponible) {
+        status.innerHTML = '<div style="padding:1rem;background:#FED7AA;color:#92400E;border-radius:8px;"><strong>⚠ Encontramos ' + data.count + ' coincidencia(s)</strong><br>Revisá los resultados abajo para verificar si son conflictivas.</div>';
         document.getElementById('checkerTable').innerHTML = buildResultsTable(data.resultados);
+      } else if (!dbReady) {
+        status.innerHTML = '<div style="padding:1rem;background:#FEF3C7;color:#92400E;border-radius:8px;"><strong>⚠ Base de datos en proceso de carga</strong><br>La búsqueda en tiempo real puede ser incompleta. Estamos cargando el historial de marcas del INPI — disponible en unas horas.</div>';
+      } else {
+        status.innerHTML = '<div style="padding:1rem;background:#DBEAFE;color:#0369A1;border-radius:8px;text-align:center;"><strong>✓ Tu marca podría estar disponible</strong><br>No encontramos marcas idénticas registradas en el INPI.</div>';
       }
 
       results.style.display = 'block';
@@ -741,6 +738,14 @@ async function sendPDF() {
 
 // Init
 window.addEventListener('DOMContentLoaded', () => {
+  // Populate class selector with all 45 Nice classes
+  const sel = document.getElementById('checkerClase');
+  Object.entries(NICE_CLASSES).forEach(([num, name]) => {
+    const opt = document.createElement('option');
+    opt.value = num;
+    opt.textContent = `${num} - ${name}`;
+    sel.appendChild(opt);
+  });
   showModule('checker');
 });
 </script>
