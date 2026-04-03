@@ -22,6 +22,7 @@ from anthropic import Anthropic
 from posiciones_data import POSICIONES
 from inpi_scraper import search_inpi, batch_search
 from pdf_generator import LegalPacersPDF
+from database import init_db, search_marcas, count_marcas
 
 # Load environment
 load_dotenv()
@@ -34,6 +35,12 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-key-change-in-production")
+
+# Init DB on startup
+try:
+    init_db()
+except Exception as e:
+    logger.warning(f"DB init warning: {e}")
 
 # Global state
 search_cache = {}  # {search_id: {data}}
@@ -148,27 +155,37 @@ def index():
 
 @app.route("/api/verificar", methods=["POST"])
 def verificar_marca():
-    """Quick brand verification (Module A)."""
-    
+    """Quick brand verification (Module A). Uses local DB if available, falls back to live INPI."""
+
     try:
         data = request.json
         marca = data.get("marca", "").strip()
         clase = data.get("clase")
-        
+
         if not marca:
             return error_response("Brand name required")
-        
-        # Search INPI
+
         classes = [int(clase)] if clase else list(range(1, 46))
-        results = search_inpi(marca, classes)
-        
+
+        # Try local DB first (fast)
+        db_count = count_marcas()
+        if db_count > 0:
+            results = search_marcas(marca, classes, limit=50)
+            source = "db"
+        else:
+            # Fallback to live INPI scraping
+            results = search_inpi(marca, classes)
+            source = "inpi_live"
+
         return success_response({
             "marca": marca,
             "disponible": len(results) == 0,
             "resultados": results,
             "count": len(results),
+            "source": source,
+            "db_records": db_count,
         })
-    
+
     except Exception as e:
         logger.error(f"Verification error: {e}")
         return error_response(str(e), 500)
@@ -301,28 +318,38 @@ Responde SOLO con el JSON, sin explicaciones. Ejemplo: [35, 42, 45]
 
 @app.route("/api/relevamiento/search-inpi", methods=["POST"])
 def search_inpi_api():
-    """INPI search (Module B Step 2)."""
-    
+    """INPI search (Module B Step 2). Uses local DB when available."""
+
     try:
         data = request.json
         variants = data.get("variants", [])
         classes = data.get("selected_classes", [])
         search_id = data.get("search_id")
-        
+
         if not variants or not classes:
             return error_response("Variants and classes required")
-        
-        # Search INPI for each variant
-        all_results = batch_search(variants, classes, delay=1.0)
-        
+
+        db_count = count_marcas()
+
+        if db_count > 0:
+            # Fast local DB search for all variants
+            all_results = {}
+            for v in variants:
+                all_results[v] = search_marcas(v, classes, limit=100)
+        else:
+            # Fallback to live INPI portal scraping
+            all_results = batch_search(variants, classes, delay=1.0)
+
         # Update cache
         if search_id and search_id in search_cache:
             search_cache[search_id]["inpi_results"] = all_results
-        
+
         return success_response({
             "results": all_results,
+            "source": "db" if db_count > 0 else "inpi_live",
+            "db_records": db_count,
         })
-    
+
     except Exception as e:
         logger.error(f"INPI search error: {e}")
         return error_response(str(e), 500)
@@ -452,6 +479,22 @@ https://legalpacers.com
     except Exception as e:
         logger.error(f"PDF send error: {e}")
         return error_response(str(e), 500)
+
+@app.route("/api/db/status", methods=["GET"])
+def db_status():
+    """Return database stats."""
+    try:
+        from database import get_last_imported_boletin
+        total = count_marcas()
+        last_boletin = get_last_imported_boletin()
+        return success_response({
+            "total_marcas": total,
+            "last_boletin": last_boletin,
+            "db_ready": total > 0,
+        })
+    except Exception as e:
+        return success_response({"total_marcas": 0, "db_ready": False, "error": str(e)})
+
 
 @app.errorhandler(404)
 def not_found(error):
