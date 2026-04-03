@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legal Pacers — Verifica tu Marca</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="/static/logo.png" alt="Legal Pacers">
+    Legal Pacers
+  </div>
+  <nav>
+    <a href="#" onclick="showModule('checker'); return false;" class="nav-verificador active">Verificar marca</a>
+    <a href="#" onclick="showModule('wizard'); return false;" class="nav-wizard">Relevamiento</a>
+  </nav>
+</header>
+
+<main class="wizard-container">
+  <!-- MODULE A: VERIFICADOR RÁPIDO -->
+  <div id="moduleChecker" style="display: block;">
+    <div class="card" style="max-width: 600px; margin: 2rem auto; text-align: center;">
+      <h1 style="margin-bottom: 0.5rem; font-size: 2rem;">¿Tu marca está disponible?</h1>
+      <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.1rem;">
+        Busca en el registro oficial del INPI y descubre coincidencias
+      </p>
+
+      <div class="form-group">
+        <label class="form-label" style="text-align: left;">Nombre de la marca</label>
+        <input type="text" id="checkerMarca" placeholder="Tu marca..." autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="text-align: left;">Clase Nice (opcional)</label>
+        <select id="checkerClase">
+          <option value="">Todas las clases</option>
+          <option value="1">1 - Químicos</option>
+          <option value="25">25 - Ropa y calzado</option>
+          <option value="35">35 - Publicidad y gestión</option>
+          <option value="36">36 - Seguros y finanzas</option>
+          <option value="42">42 - Servicios tecnológicos</option>
+          <option value="43">43 - Restauración</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="checkerSearchBtn" onclick="verificarMarca()">
+        Buscar en INPI
+      </button>
+
+      <div id="checkerResults" style="display: none; margin-top: 2rem;">
+        <div id="checkerStatus"></div>
+        <div id="checkerTable" style="margin-top: 1rem;"></div>
+
+        <div class="card" style="margin-top: 2rem; background: var(--blue-light); border: 1px solid var(--blue);">
+          <h3 style="margin-bottom: 1rem;">Dejar datos para contacto</h3>
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input type="text" id="leadNombre" placeholder="Tu nombre">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="leadEmail" placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" id="leadTelefono" placeholder="+54 9 ...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descripción del negocio</label>
+            <textarea id="leadDescripcion" placeholder="¿A qué se dedica tu negocio?"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="guardarLead()">
+            Quiero registrar mi marca — Que me contacten
+          </button>
+        </div>
+
+        <div id="leadSuccess" style="display: none; text-align: center; margin-top: 2rem;">
+          <div style="font-size: 3rem; color: var(--green); margin-bottom: 1rem;">✓</div>
+          <h2 style="color: var(--green); margin-bottom: 0.5rem;">¡Te contactaremos pronto!</h2>
+          <p style="color: var(--text-muted);">Hemos recibido tu información. Un miembro del equipo se pondrá en contacto contigo pronto.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 3rem;">
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">¿Necesitás un relevamiento completo?</p>
+      <button class="btn btn-outline" onclick="showModule('wizard'); return false;">
+        Ir al Relevamiento Completo →
+      </button>
+    </div>
+  </div>
+
+  <!-- MODULE B: RELEVAMIENTO WIZARD -->
+  <div id="moduleWizard" style="display: none;">
+    <div style="margin-bottom: 2rem;">
+      <div class="progress-container">
+        <div class="progress-step active" id="step1">
+          <div class="progress-circle">1</div>
+          <div class="progress-label">Tu Marca</div>
+        </div>
+        <div class="progress-connector" id="conn1"></div>
+        <div class="progress-step" id="step2">
+          <div class="progress-circle">2</div>
+          <div class="progress-label">INPI</div>
+        </div>
+        <div class="progress-connector" id="conn2"></div>
+        <div class="progress-step" id="step3">
+          <div class="progress-circle">3</div>
+          <div class="progress-label">Presupuesto</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 1 -->
+    <div class="wizard-page active" id="page1">
+      <div class="card">
+        <h2 class="card-title">Información de tu marca</h2>
+        <p class="card-intro">Cuéntanos sobre tu marca para que podamos sugerir las clases más relevantes</p>
+
+        <div id="page1Error" class="error-box"></div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="emailRelInput" placeholder="tu@email.com" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre de la marca *</label>
+          <input type="text" id="marcaInput" placeholder="Tu marca" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción del negocio (opcional)</label>
+          <textarea id="descInput" placeholder="¿Qué producto o servicio ofrece tu marca?"></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="sugerirBtn" onclick="sugerirClases()">
+          Sugerir Clases
+        </button>
+
+        <div id="classesSection" style="display: none; margin-top: 2rem;">
+          <hr class="divider" style="margin-top: 0;">
+          <h3 style="margin-bottom: 1rem;">Clases seleccionadas: <span id="selectedCountRel">0</span></h3>
+          <div id="selectedStrip" style="display: none; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+
+          <div class="form-group">
+            <label class="form-label">Buscar clases</label>
+            <input type="search" id="clasesSearchRel" placeholder="Busca por nombre o número..."
+                   oninput="filterClasesRel(this.value)">
+          </div>
+
+          <div class="clases-list" id="clasesListRel"></div>
+          <div class="classes-empty" id="clasesEmptyRel" style="display: none; padding: 2rem; text-align: center;">
+            Sin resultados para tu búsqueda.
+          </div>
+        </div>
+
+        <div class="nav-row" id="page1Next" style="display: none;">
+          <div></div>
+          <button class="btn btn-primary" onclick="goToPage(2)">Siguiente →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2 -->
+    <div class="wizard-page" id="page2">
+      <div class="card">
+        <h2 class="card-title">Búsqueda en el INPI</h2>
+        <p class="card-intro">Buscamos variantes de tu marca en el registro oficial</p>
+
+        <div id="page2Error" class="error-box"></div>
+
+        <div class="form-group">
+          <label class="form-label">Variantes a buscar</label>
+          <div class="variants-list" id="variantsList"></div>
+          <div class="add-variant-row" style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+            <input type="text" id="variantInput" placeholder="Agregar variante…" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();addVariant()}">
+            <button class="btn btn-outline" onclick="addVariant()">+ Agregar</button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="buscarBtn" onclick="buscarInpi()">
+          Buscar en INPI
+        </button>
+
+        <div id="inpiLoading" style="display: none; text-align: center; padding: 2rem; margin-top: 2rem;">
+          <div class="spinner" style="width: 32px; height: 32px; margin: 0 auto 1rem; border-width: 3px;"></div>
+          <div style="font-weight: 600; color: var(--navy);">Consultando el portal del INPI…</div>
+          <div id="inpiLoadingSub" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;"></div>
+        </div>
+
+        <div id="resultsSection" style="display: none; margin-top: 2rem;">
+          <hr class="divider" style="margin-top: 0;">
+          <div class="results-tabs">
+            <button class="results-tab active" id="tabExactas" onclick="showResultsTab('exactas')">
+              Tu marca <span class="results-tab-count" id="countExactas">0</span>
+            </button>
+            <button class="results-tab" id="tabSimilares" onclick="showResultsTab('similares')">
+              Variantes <span class="results-tab-count" id="countSimilares">0</span>
+            </button>
+          </div>
+          <div class="results-panel active" id="panelExactas"></div>
+          <div class="results-panel" id="panelSimilares"></div>
+        </div>
+
+        <div class="nav-row">
+          <button class="btn btn-outline" onclick="goToPage(1)">← Volver</button>
+          <button class="btn btn-primary" id="page2Next" style="display: none;" onclick="goToPage(3)">Continuar →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3 -->
+    <div class="wizard-page" id="page3">
+      <div class="card">
+        <h2 class="card-title">Posiciones y presupuesto</h2>
+        <p class="card-intro">Seleccioná las partidas específicas para cada clase</p>
+
+        <div class="cost-summary">
+          <div>
+            <div class="cost-label">Presupuesto estimado</div>
+            <div class="cost-detail" id="costDetail">—</div>
+          </div>
+          <div class="cost-amount" id="costAmount">$0</div>
+        </div>
+
+        <div id="classBlocksArea"></div>
+
+        <hr class="divider">
+
+        <div id="page3Error" class="error-box"></div>
+
+        <div class="nav-row">
+          <button class="btn btn-outline" onclick="goToPage(2)">← Volver</button>
+          <button class="btn btn-primary" id="sendPdfBtn" onclick="sendPDF()">Enviar PDF por Email</button>
+        </div>
+        <div style="text-align: right; margin-top: 0.5rem;">
+          <p id="posicionesError" style="display: none; color: var(--red); font-size: 0.85rem; margin-bottom: 0.5rem;">
+            Por favor seleccioná al menos una posición.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Success -->
+    <div id="pdfSuccessScreen" style="display: none;">
+      <div class="card" style="text-align: center; padding: 3rem 2rem; max-width: 500px; margin: 3rem auto;">
+        <div style="font-size: 3.5rem; color: var(--green); margin-bottom: 1rem;">✓</div>
+        <h2 class="card-title" style="margin-bottom: 0.5rem;">¡Informe enviado!</h2>
+        <p style="color: var(--text-muted); margin-bottom: 0.5rem;">
+          Se ha enviado el reporte a <strong id="pdfSuccessEmail"></strong>.
+        </p>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+          Si no lo encontrás, revisá tu casilla de correo no deseado (spam).
+        </p>
+
+        <div style="background: var(--blue-light); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1.1rem; color: var(--navy); margin-bottom: 0.75rem;">¿Necesitás más ayuda?</h3>
+          <a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%20me%20gustaría%20saber%20más%20sobre%20mi%20registro" 
+             target="_blank" rel="noopener" class="btn btn-primary btn-full" style="margin-top: 0.5rem;">
+            Contactanos por WhatsApp
+          </a>
+        </div>
+
+        <button class="btn btn-outline btn-full" onclick="location.reload();">
+          Realizar otro Relevamiento
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <strong>Legal Pacers</strong> — Monitoreo y Registro de Marcas<br>
+  <a href="https://api.whatsapp.com/send/?phone=5491128774200" target="_blank" rel="noopener">
+    WhatsApp +54 9 11 2877-4200
+  </a> | 
+  <a href="https://www.instagram.com/legalpacers" target="_blank" rel="noopener">Instagram</a> |
+  <a href="https://www.linkedin.com/company/legalpacers" target="_blank" rel="noopener">LinkedIn</a><br>
+  <small style="color: rgba(255,255,255,0.6); margin-top: 0.5rem; display: block;">
+    Los resultados de búsqueda se basan en datos públicos del INPI. Consulte las bases de datos oficiales para información actualizada.
+  </small>
+</footer>
+
+<a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%20quiero%20registrar%20mi%20marca" 
+   target="_blank" rel="noopener" class="wa-floating" title="Contactar por WhatsApp">
+   💬
+</a>
+
+<!-- SCRIPT -->
+<script>
+// ── Data ──
+const state = {
+  email: null,
+  searchId: null,
+  marca: '',
+  descripcion: '',
+  selectedClasses: [],
+  aiSuggestedClasses: [],
+  variants: [],
+  inpiResults: {},
+  posicionesCache: {},
+  aiPosicionesCache: {},
+};
+
+// ── Utilities ──
+async function api(method, path, body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(path, opts);
+  return resp.json();
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showModule(mod) {
+  document.getElementById('moduleChecker').style.display = mod === 'checker' ? 'block' : 'none';
+  document.getElementById('moduleWizard').style.display = mod === 'wizard' ? 'block' : 'none';
+  document.querySelectorAll('nav a').forEach((a, i) => {
+    a.classList.toggle('active', (i === 0 && mod === 'checker') || (i === 1 && mod === 'wizard'));
+  });
+  if (mod === 'wizard') goToPage(1);
+}
+
+// ── MODULE A: CHECKER ──
+async function verificarMarca() {
+  const marca = document.getElementById('checkerMarca').value.trim();
+  const clase = document.getElementById('checkerClase').value;
+
+  if (!marca) { alert('Ingresá el nombre de la marca'); return; }
+
+  const btn = document.getElementById('checkerSearchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Buscando…';
+
+  try {
+    const data = await api('POST', '/api/verificar', { marca, clase: clase ? parseInt(clase) : null });
+
+    if (data.error) {
+      document.getElementById('checkerResults').style.display = 'none';
+      alert('Error: ' + data.error);
+    } else {
+      const results = document.getElementById('checkerResults');
+      const status = document.getElementById('checkerStatus');
+
+      if (data.disponible) {
+        status.innerHTML = '<div style="padding: 1rem; background: #DBEAFE; color: #0369A1; border-radius: 8px; text-align: center;"><strong>✓ Tu marca podría estar disponible</strong><br>No encontramos marcas idénticas registradas en el INPI.</div>';
+      } else {
+        status.innerHTML = '<div style="padding: 1rem; background: #FED7AA; color: #92400E; border-radius: 8px;"><strong>⚠ Encontramos ' + data.count + ' coincidencia(s)</strong><br>Revisa los resultados abajo para verificar si son conflictivas.</div>';
+        document.getElementById('checkerTable').innerHTML = buildResultsTable(data.resultados);
+      }
+
+      results.style.display = 'block';
+      window.scrollTo({top: results.offsetTop - 200, behavior: 'smooth'});
+    }
+  } catch (e) {
+    alert('Error en la búsqueda: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Buscar en INPI';
+}
+
+async function guardarLead() {
+  const nombre = document.getElementById('leadNombre').value.trim();
+  const email = document.getElementById('leadEmail').value.trim();
+  const telefono = document.getElementById('leadTelefono').value.trim();
+  const marca = document.getElementById('checkerMarca').value.trim();
+  const descripcion = document.getElementById('leadDescripcion').value.trim();
+
+  if (!nombre || !email || !telefono) { alert('Completa todos los campos'); return; }
+
+  try {
+    const data = await api('POST', '/api/lead', { nombre, email, telefono, marca, descripcion });
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      document.getElementById('leadSuccess').style.display = 'block';
+      document.querySelectorAll('#leadNombre, #leadEmail, #leadTelefono, #leadDescripcion').forEach(el => el.value = '');
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── MODULE B: WIZARD ──
+function buildResultsTable(rows) {
+  if (!rows.length) return '<div class="empty-state">No se encontraron marcas.</div>';
+  let html = '<table class="results-table"><tr><th>Marca</th><th>Clase</th><th>Estado</th><th>Titular</th></tr>';
+  rows.slice(0,20).forEach(r => {
+    const stateClass = 'estado-' + (r.estado_code || 'tramite');
+    html += `<tr><td><strong>${escHtml(r.denominacion)}</strong></td><td>${r.clase}</td><td><span class="estado-badge ${stateClass}">${escHtml(r.estado)}</span></td><td style="font-size:0.8rem;">${escHtml(r.titulares)}</td></tr>`;
+  });
+  return html + '</table>';
+}
+
+function goToPage(n) {
+  document.querySelectorAll('.wizard-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page' + n).classList.add('active');
+  for (let i = 1; i <= 3; i++) {
+    const step = document.getElementById('step' + i);
+    step.classList.remove('active', 'done');
+    if (i < n) step.classList.add('done');
+    else if (i === n) step.classList.add('active');
+    const conn = document.getElementById('conn' + i);
+    if (conn) conn.classList.toggle('done', i < n);
+  }
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  if (n === 2) onEnterPage2();
+  if (n === 3) onEnterPage3();
+}
+
+async function sugerirClases() {
+  const email = document.getElementById('emailRelInput').value.trim();
+  const marca = document.getElementById('marcaInput').value.trim();
+  const desc = document.getElementById('descInput').value.trim();
+
+  if (!email || !marca) { alert('Completa email y marca'); return; }
+
+  const btn = document.getElementById('sugerirBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Consultando…';
+
+  try {
+    const data = await api('POST', '/api/relevamiento/suggest-classes', { marca, descripcion: desc, email });
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      state.email = email;
+      state.marca = marca;
+      state.descripcion = desc;
+      state.searchId = data.search_id;
+      state.selectedClasses = [...data.classes];
+      state.aiSuggestedClasses = [...data.classes];
+      renderClasesPanel();
+      document.getElementById('classesSection').style.display = '';
+      document.getElementById('page1Next').style.display = 'flex';
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Sugerir Clases';
+}
+
+function renderClasesPanel() {
+  const html = Array.from({length: 45}, (_, i) => i + 1).map(n => {
+    const suggested = state.aiSuggestedClasses.includes(n);
+    const checked = state.selectedClasses.includes(n);
+    return `<label class="clase-item${suggested ? ' suggested' : ''}" data-num="${n}">
+      <input type="checkbox" value="${n}" ${checked ? 'checked' : ''} onchange="onClaseToggle()">
+      <span class="clase-item-body">
+        <span class="clase-num">Clase ${n}</span>
+        <span class="clase-name">${suggested ? '✨ ' : ''}Clase ${n}</span>
+      </span>
+    </label>`;
+  }).join('');
+  document.getElementById('clasesListRel').innerHTML = html;
+  updateClasesCount();
+}
+
+function filterClasesRel(q) {
+  const term = q.toLowerCase();
+  document.querySelectorAll('#clasesListRel .clase-item').forEach(el => {
+    el.classList.toggle('hidden', q && !el.dataset.num.includes(term));
+  });
+}
+
+function onClaseToggle() {
+  state.selectedClasses = [...document.querySelectorAll('#clasesListRel input:checked')].map(cb => parseInt(cb.value));
+  updateClasesCount();
+}
+
+function updateClasesCount() {
+  document.getElementById('selectedCountRel').textContent = state.selectedClasses.length;
+  const strip = document.getElementById('selectedStrip');
+  const html = state.selectedClasses.sort((a,b) => a-b).map(n => 
+    `<span class="sel-chip">${state.aiSuggestedClasses.includes(n) ? '✨ ' : ''}<strong>${n}</strong></span>`
+  ).join('');
+  strip.innerHTML = html;
+  strip.classList.toggle('visible', state.selectedClasses.length > 0);
+}
+
+function generateVariants(marca) {
+  const norm = marca.toUpperCase().trim();
+  const seen = new Set([norm]);
+  const variants = [norm];
+  const swaps = [['B','V'],['C','S'],['C','K'],['S','Z'],['I','Y'],['LL','Y']];
+  
+  swaps.forEach(([from,to]) => {
+    let i = 0;
+    while ((i = norm.indexOf(from, i)) !== -1) {
+      const v = norm.substring(0, i) + to + norm.substring(i + from.length);
+      if (!seen.has(v)) { seen.add(v); variants.push(v); }
+      i++;
+    }
+  });
+  
+  return variants.slice(0, 15);
+}
+
+function onEnterPage2() {
+  state.variants = generateVariants(state.marca);
+  document.getElementById('variantsList').innerHTML = state.variants.map((v, i) => `
+    <label class="variant-item${i === 0 ? ' variant-primary' : ''}">
+      <input type="checkbox" value="${v}" ${i === 0 ? 'checked disabled' : 'checked'}>
+      <span>${escHtml(v)}</span>
+      ${i === 0 ? '<span style="font-size:0.75rem;color:var(--text-muted);margin-left:0.5rem;">(tu marca)</span>' : ''}
+    </label>
+  `).join('');
+}
+
+function addVariant() {
+  const input = document.getElementById('variantInput');
+  const val = input.value.toUpperCase().trim();
+  if (!val) return;
+  const existing = new Set([...document.querySelectorAll('#variantsList input')].map(i => i.value));
+  if (existing.has(val)) { input.value = ''; return; }
+  const label = document.createElement('label');
+  label.className = 'variant-item';
+  label.innerHTML = `<input type="checkbox" value="${escHtml(val)}" checked><span>${escHtml(val)}</span>`;
+  document.getElementById('variantsList').appendChild(label);
+  input.value = '';
+}
+
+async function buscarInpi() {
+  const variants = [...document.querySelectorAll('#variantsList input')].filter(i => i.checked).map(i => i.value);
+  if (!variants.length) { alert('Seleccioná al menos una variante'); return; }
+
+  document.getElementById('buscarBtn').style.display = 'none';
+  document.getElementById('inpiLoading').style.display = '';
+
+  try {
+    const data = await api('POST', '/api/relevamiento/search-inpi', {
+      variants,
+      selected_classes: state.selectedClasses,
+      search_id: state.searchId
+    });
+
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      state.inpiResults = data.results;
+      const primary = state.marca.toUpperCase();
+      const exactas = data.results[primary] || [];
+      const similares = [];
+      const seen = new Set(exactas.map(r => r.acta));
+      variants.forEach(v => {
+        (data.results[v] || []).forEach(r => {
+          if (!seen.has(r.acta)) { similares.push(r); seen.add(r.acta); }
+        });
+      });
+
+      document.getElementById('countExactas').textContent = exactas.length;
+      document.getElementById('countSimilares').textContent = similares.length;
+      document.getElementById('panelExactas').innerHTML = buildResultsTable(exactas);
+      document.getElementById('panelSimilares').innerHTML = buildResultsTable(similares);
+      document.getElementById('resultsSection').style.display = '';
+      document.getElementById('page2Next').style.display = '';
+    }
+  } catch (e) {
+    alert('Error en búsqueda: ' + e.message);
+  }
+
+  document.getElementById('buscarBtn').style.display = '';
+  document.getElementById('inpiLoading').style.display = 'none';
+}
+
+function showResultsTab(tab) {
+  document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab' + (tab === 'exactas' ? 'Exactas' : 'Similares')).classList.add('active');
+  document.getElementById('panel' + (tab === 'exactas' ? 'Exactas' : 'Similares')).classList.add('active');
+}
+
+async function onEnterPage3() {
+  const area = document.getElementById('classBlocksArea');
+  area.innerHTML = '';
+  
+  for (const classNum of state.selectedClasses) {
+    const block = document.createElement('div');
+    block.className = 'class-block open';
+    block.dataset.class = classNum;
+    block.innerHTML = `
+      <div class="class-block-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="class-block-title">
+          <span class="class-num-badge">Clase ${classNum}</span>
+          Clase ${classNum}
+        </div>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      <div class="class-block-body">
+        <div class="posicion-chips-area" id="posChips-${classNum}"></div>
+        <div class="posicion-search-wrap">
+          <input type="search" class="posicion-search" placeholder="Buscar…" 
+                 oninput="filterPosiciones(${classNum}, this.value)">
+        </div>
+        <div class="posiciones-list" id="poslist-${classNum}">
+          <div style="text-align:center;padding:1rem;color:var(--text-muted);">Cargando…</div>
+        </div>
+      </div>`;
+    area.appendChild(block);
+  }
+
+  for (const classNum of state.selectedClasses) {
+    const data = await api('GET', `/api/relevamiento/posiciones/${classNum}`);
+    if (data.posiciones) {
+      state.posicionesCache[classNum] = data.posiciones;
+      renderPosiciones(classNum);
+      
+      if (state.descripcion) {
+        const aiData = await api('POST', '/api/relevamiento/suggest-posiciones', {
+          class_num: classNum,
+          posiciones: data.posiciones,
+          marca: state.marca,
+          descripcion: state.descripcion
+        });
+        state.aiPosicionesCache[classNum] = aiData.codes || [];
+        renderPosiciones(classNum);
+      }
+    }
+  }
+}
+
+function renderPosiciones(classNum) {
+  const posiciones = state.posicionesCache[classNum] || [];
+  const aiCodes = new Set(state.aiPosicionesCache[classNum] || []);
+  const listEl = document.getElementById('poslist-' + classNum);
+  
+  listEl.innerHTML = posiciones.map(p => `
+    <label class="posicion-item${aiCodes.has(p.codigo) ? ' ai-suggested' : ''}" data-text="${p.partida.toLowerCase()}">
+      <input type="checkbox" ${aiCodes.has(p.codigo) ? 'checked' : ''} onchange="updateCost()">
+      <span class="posicion-code">${escHtml(p.codigo)}</span>
+      <span class="posicion-text">${aiCodes.has(p.codigo) ? '✨ ' : ''}${escHtml(p.partida)}</span>
+    </label>`).join('');
+
+  updateCost();
+}
+
+function filterPosiciones(classNum, q) {
+  const term = q.toLowerCase();
+  document.querySelectorAll(`#poslist-${classNum} .posicion-item`).forEach(item => {
+    item.classList.toggle('hidden', q && !item.dataset.text.includes(term));
+  });
+}
+
+function updateCost() {
+  let total = 0;
+  let clases = 0;
+  document.querySelectorAll('.class-block').forEach(block => {
+    const classNum = parseInt(block.dataset.class);
+    const checked = block.querySelectorAll('input[type="checkbox"]:checked').length;
+    if (checked > 0) {
+      const extra = Math.max(0, checked - 20);
+      total += 17680 + extra * 200;
+      clases++;
+    }
+  });
+
+  document.getElementById('costAmount').textContent = '$' + total.toLocaleString('es-AR');
+  document.getElementById('costDetail').textContent = clases > 0 ? 
+    `${clases} clase${clases !== 1 ? 's' : ''} · 20 posiciones incluidas por clase` : '—';
+}
+
+async function sendPDF() {
+  const posiciones = {};
+  document.querySelectorAll('.class-block').forEach(block => {
+    const classNum = parseInt(block.dataset.class);
+    const checked = block.querySelectorAll('.posicion-item input:checked');
+    if (checked.length > 0) {
+      posiciones[classNum] = Array.from(checked).map(cb => {
+        const item = cb.closest('.posicion-item');
+        return {
+          codigo: item.querySelector('.posicion-code').textContent.trim(),
+          partida: item.querySelector('.posicion-text').textContent.replace(/^✨\s*/, '')
+        };
+      });
+    }
+  });
+
+  if (!Object.keys(posiciones).length) { alert('Seleccioná al menos una posición'); return; }
+
+  const btn = document.getElementById('sendPdfBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-white" style="width:14px;height:14px;border-width:2px;"></span> Generando…';
+
+  try {
+    const data = await api('POST', '/api/relevamiento/send-pdf', {
+      email: state.email,
+      marca: state.marca,
+      descripcion: state.descripcion,
+      clases: state.selectedClasses,
+      variantes: Object.keys(state.inpiResults),
+      posiciones,
+      resultados: state.inpiResults
+    });
+
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      document.getElementById('page3').style.display = 'none';
+      document.getElementById('pdfSuccessEmail').textContent = state.email;
+      document.getElementById('pdfSuccessScreen').style.display = 'block';
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Enviar PDF por Email';
+}
+
+// Init
+window.addEventListener('DOMContentLoaded', () => {
+  showModule('checker');
+});
+</script>
+
+</body>
+</html>

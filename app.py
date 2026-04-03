@@ -1,0 +1,468 @@
+"""
+Legal Pacers - Brand Monitoring & Trademark Verification Flask App
+"""
+
+import os
+import json
+import uuid
+import logging
+import smtplib
+from datetime import datetime
+from functools import wraps
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.mime.text import MIMEText
+from email import encoders
+
+from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
+from dotenv import load_dotenv
+from anthropic import Anthropic
+
+from posiciones_data import POSICIONES
+from inpi_scraper import search_inpi, batch_search
+from pdf_generator import LegalPacersPDF
+
+# Load environment
+load_dotenv()
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Flask app
+app = Flask(__name__)
+CORS(app)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-key-change-in-production")
+
+# Global state
+search_cache = {}  # {search_id: {data}}
+client = Anthropic()
+
+# ─────────────────────────────────────────────────────────────────────
+# UTILITIES
+# ─────────────────────────────────────────────────────────────────────
+
+def error_response(msg: str, status: int = 400):
+    """Return error JSON response."""
+    return jsonify({"error": msg}), status
+
+def success_response(data: dict):
+    """Return success JSON response."""
+    return jsonify(data), 200
+
+def require_env(*keys):
+    """Decorator to check required env vars."""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            missing = [k for k in keys if not os.getenv(k)]
+            if missing:
+                return error_response(f"Missing env vars: {', '.join(missing)}", 500)
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+def send_email(to: str, subject: str, body: str, attachment_bytes: bytes = None, 
+               filename: str = None) -> bool:
+    """Send email with optional attachment."""
+    
+    try:
+        smtp_host = os.getenv("SMTP_HOST")
+        smtp_port = int(os.getenv("SMTP_PORT", 587))
+        smtp_user = os.getenv("SMTP_USER")
+        smtp_pass = os.getenv("SMTP_PASS")
+        from_email = os.getenv("FROM_EMAIL")
+        
+        msg = MIMEMultipart()
+        msg["From"] = from_email
+        msg["To"] = to
+        msg["Subject"] = subject
+        
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+        
+        if attachment_bytes and filename:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment_bytes)
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f"attachment; filename= {filename}")
+            msg.attach(part)
+        
+        # Send
+        if smtp_port == 587:
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+        
+        logger.info(f"Email sent to {to}")
+        return True
+    except Exception as e:
+        logger.error(f"Email send failed: {e}")
+        return False
+
+def save_lead(nombre: str, email: str, telefono: str, marca: str, descripcion: str):
+    """Save lead to leads.json."""
+    
+    try:
+        leads_file = "leads.json"
+        leads = []
+        
+        if os.path.exists(leads_file):
+            with open(leads_file, "r") as f:
+                leads = json.load(f)
+        
+        lead = {
+            "id": str(uuid.uuid4()),
+            "timestamp": datetime.now().isoformat(),
+            "nombre": nombre,
+            "email": email,
+            "telefono": telefono,
+            "marca": marca,
+            "descripcion": descripcion,
+        }
+        
+        leads.append(lead)
+        
+        with open(leads_file, "w") as f:
+            json.dump(leads, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"Lead saved: {marca} ({email})")
+        return True
+    except Exception as e:
+        logger.error(f"Lead save failed: {e}")
+        return False
+
+# ─────────────────────────────────────────────────────────────────────
+# ROUTES
+# ─────────────────────────────────────────────────────────────────────
+
+@app.route("/")
+def index():
+    """Serve main SPA."""
+    return render_template("index.html")
+
+@app.route("/api/verificar", methods=["POST"])
+def verificar_marca():
+    """Quick brand verification (Module A)."""
+    
+    try:
+        data = request.json
+        marca = data.get("marca", "").strip()
+        clase = data.get("clase")
+        
+        if not marca:
+            return error_response("Brand name required")
+        
+        # Search INPI
+        classes = [int(clase)] if clase else list(range(1, 46))
+        results = search_inpi(marca, classes)
+        
+        return success_response({
+            "marca": marca,
+            "disponible": len(results) == 0,
+            "resultados": results,
+            "count": len(results),
+        })
+    
+    except Exception as e:
+        logger.error(f"Verification error: {e}")
+        return error_response(str(e), 500)
+
+@app.route("/api/lead", methods=["POST"])
+def crear_lead():
+    """Save lead and send notifications (Module A)."""
+    
+    try:
+        data = request.json
+        nombre = data.get("nombre", "").strip()
+        email = data.get("email", "").strip()
+        telefono = data.get("telefono", "").strip()
+        marca = data.get("marca", "").strip()
+        descripcion = data.get("descripcion", "").strip()
+        
+        if not all([nombre, email, telefono, marca]):
+            return error_response("Missing required fields")
+        
+        # Save lead
+        if not save_lead(nombre, email, telefono, marca, descripcion):
+            return error_response("Could not save lead", 500)
+        
+        # Send internal notification
+        internal_email = os.getenv("INTERNAL_NOTIFY_EMAIL")
+        if internal_email:
+            subject = f"Nuevo lead — {marca}"
+            body = f"""Nuevo interesado en registrar marca:
+
+Nombre: {nombre}
+Email: {email}
+Teléfono: {telefono}
+Marca: {marca}
+Descripción: {descripcion}
+
+Portal: https://legalpacers.com
+"""
+            send_email(internal_email, subject, body)
+        
+        # Send user confirmation
+        user_subject = f"Recibimos tu consulta sobre {marca}"
+        user_body = f"""¡Hola {nombre}!
+
+Recibimos tu solicitud de información sobre el registro de la marca "{marca}".
+
+Un miembro de nuestro equipo de Legal Pacers se pondrá en contacto contigo pronto en {email} o {telefono}.
+
+Mientras tanto, si tienes preguntas, puedes contactarnos por WhatsApp:
+https://api.whatsapp.com/send/?phone=5491128774200
+
+Gracias por confiar en Legal Pacers.
+
+Saludos cordiales,
+El equipo de Legal Pacers
+https://legalpacers.com
+"""
+        send_email(email, user_subject, user_body)
+        
+        return success_response({"ok": True, "message": "Lead received"})
+    
+    except Exception as e:
+        logger.error(f"Lead creation error: {e}")
+        return error_response(str(e), 500)
+
+@app.route("/api/relevamiento/suggest-classes", methods=["POST"])
+@require_env("ANTHROPIC_API_KEY")
+def suggest_classes():
+    """AI-powered class suggestion (Module B Step 1)."""
+    
+    try:
+        data = request.json
+        marca = data.get("marca", "").strip()
+        descripcion = data.get("descripcion", "").strip()
+        email = data.get("email", "").strip()
+        
+        if not marca:
+            return error_response("Brand name required")
+        
+        # Generate unique search_id
+        search_id = str(uuid.uuid4())
+        
+        # Store in cache
+        search_cache[search_id] = {
+            "marca": marca,
+            "descripcion": descripcion,
+            "email": email,
+            "timestamp": datetime.now().isoformat(),
+        }
+        
+        # Call Claude for suggestions
+        prompt = f"""Eres un experto en propiedad intelectual argentina y clasificación de marcas INPI.
+
+Basado en:
+- Marca: "{marca}"
+- Descripción: "{descripcion}"
+
+Devuelve SOLO un JSON array de enteros con las clases Nice (1-45) más relevantes para proteger esta marca en Argentina.
+Máximo 5 clases. Sé preciso y rápido.
+
+Responde SOLO con el JSON, sin explicaciones. Ejemplo: [35, 42, 45]
+"""
+        
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=100,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        response_text = response.content[0].text.strip()
+        
+        # Parse JSON
+        try:
+            classes = json.loads(response_text)
+            if not isinstance(classes, list):
+                classes = [35]  # Default to advertising if parsing fails
+        except json.JSONDecodeError:
+            classes = [35]
+        
+        # Ensure valid classes
+        classes = [c for c in classes if isinstance(c, int) and 1 <= c <= 45][:5]
+        
+        return success_response({
+            "search_id": search_id,
+            "classes": classes,
+        })
+    
+    except Exception as e:
+        logger.error(f"Class suggestion error: {e}")
+        return error_response(str(e), 500)
+
+@app.route("/api/relevamiento/search-inpi", methods=["POST"])
+def search_inpi_api():
+    """INPI search (Module B Step 2)."""
+    
+    try:
+        data = request.json
+        variants = data.get("variants", [])
+        classes = data.get("selected_classes", [])
+        search_id = data.get("search_id")
+        
+        if not variants or not classes:
+            return error_response("Variants and classes required")
+        
+        # Search INPI for each variant
+        all_results = batch_search(variants, classes, delay=1.0)
+        
+        # Update cache
+        if search_id and search_id in search_cache:
+            search_cache[search_id]["inpi_results"] = all_results
+        
+        return success_response({
+            "results": all_results,
+        })
+    
+    except Exception as e:
+        logger.error(f"INPI search error: {e}")
+        return error_response(str(e), 500)
+
+@app.route("/api/relevamiento/posiciones/<int:class_num>", methods=["GET"])
+def get_posiciones(class_num):
+    """Get positions for a Nice class (Module B Step 3)."""
+    
+    try:
+        if class_num not in POSICIONES:
+            return error_response(f"Class {class_num} not found", 404)
+        
+        return success_response({
+            "posiciones": POSICIONES[class_num],
+        })
+    
+    except Exception as e:
+        return error_response(str(e), 500)
+
+@app.route("/api/relevamiento/suggest-posiciones", methods=["POST"])
+@require_env("ANTHROPIC_API_KEY")
+def suggest_posiciones():
+    """AI-powered position suggestion (Module B Step 3)."""
+    
+    try:
+        data = request.json
+        class_num = data.get("class_num")
+        posiciones = data.get("posiciones", [])
+        marca = data.get("marca", "")
+        descripcion = data.get("descripcion", "")
+        
+        if not class_num or not posiciones:
+            return error_response("Class and positions required")
+        
+        # Build posiciones list for prompt
+        pos_list = "\n".join([f"- {p['codigo']}: {p['partida']}" for p in posiciones[:20]])
+        
+        prompt = f"""Eres experto en clasificación INPI Argentina.
+
+Marca: "{marca}"
+Descripción: "{descripcion}"
+Clase: {class_num}
+
+Posiciones disponibles:
+{pos_list}
+
+Devuelve SOLO un JSON array de strings con los códigos más relevantes (máximo 10).
+Responde SOLO con el JSON, sin explicaciones. Ejemplo: ["350001", "350005"]
+"""
+        
+        response = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=150,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        response_text = response.content[0].text.strip()
+        
+        # Parse JSON
+        try:
+            codes = json.loads(response_text)
+            if not isinstance(codes, list):
+                codes = []
+        except json.JSONDecodeError:
+            codes = []
+        
+        # Filter valid codes
+        valid_codes = [c["codigo"] for c in posiciones]
+        codes = [c for c in codes if c in valid_codes][:10]
+        
+        return success_response({"codes": codes})
+    
+    except Exception as e:
+        logger.error(f"Position suggestion error: {e}")
+        return error_response(str(e), 500)
+
+@app.route("/api/relevamiento/send-pdf", methods=["POST"])
+@require_env("FROM_EMAIL", "SMTP_HOST")
+def send_pdf():
+    """Generate and email PDF report (Module B Step 3)."""
+    
+    try:
+        data = request.json
+        email = data.get("email", "").strip()
+        marca = data.get("marca", "").strip()
+        descripcion = data.get("descripcion", "").strip()
+        variantes = data.get("variantes", [])
+        posiciones = data.get("posiciones", {})
+        resultados = data.get("resultados", {})
+        
+        if not email or not marca:
+            return error_response("Email and brand name required")
+        
+        # Generate PDF
+        pdf_gen = LegalPacersPDF()
+        posiciones_dict = {int(k): v for k, v in posiciones.items()}
+        pdf_bytes = pdf_gen.generate(marca, descripcion, variantes, resultados, posiciones_dict)
+        
+        # Send email
+        subject = f"Informe de Relevamiento: {marca}"
+        body = f"""Hola,
+
+Adjuntamos tu informe de relevamiento de marca para "{marca}".
+
+El documento incluye:
+- Resultados de búsqueda en el portal del INPI
+- Posiciones seleccionadas
+- Información de costo para el registro
+
+Si tienes preguntas o necesitas más información, contáctanos por WhatsApp:
+https://api.whatsapp.com/send/?phone=5491128774200
+
+Saludos cordiales,
+Legal Pacers
+https://legalpacers.com
+"""
+        
+        success = send_email(email, subject, body, 
+                           attachment_bytes=pdf_bytes.getvalue(),
+                           filename="Informe_Relevamiento.pdf")
+        
+        if not success:
+            return error_response("Could not send email", 500)
+        
+        return success_response({"ok": True, "message": "PDF sent"})
+    
+    except Exception as e:
+        logger.error(f"PDF send error: {e}")
+        return error_response(str(e), 500)
+
+@app.errorhandler(404)
+def not_found(error):
+    """404 handler."""
+    return error_response("Not found", 404)
+
+@app.errorhandler(500)
+def server_error(error):
+    """500 handler."""
+    return error_response("Server error", 500)
+
+if __name__ == "__main__":
+    debug = os.getenv("DEBUG", "False").lower() == "true"
+    app.run(debug=debug, host="0.0.0.0", port=5000)
