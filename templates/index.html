@@ -293,6 +293,26 @@
 
 <!-- SCRIPT -->
 <script>
+// ── Nice Classes ──
+const NICE_CLASSES = {
+  1:"Productos químicos",2:"Pinturas y barnices",3:"Cosméticos y limpieza",
+  4:"Aceites y combustibles",5:"Farmacéuticos",6:"Metales comunes",
+  7:"Máquinas y motores",8:"Herramientas de mano",9:"Electrónica y software",
+  10:"Aparatos médicos",11:"Alumbrado y calefacción",12:"Vehículos",
+  13:"Armas de fuego",14:"Joyería y relojes",15:"Instrumentos musicales",
+  16:"Papel e imprenta",17:"Caucho y plásticos",18:"Cuero y bolsos",
+  19:"Materiales de construcción",20:"Muebles",21:"Utensilios domésticos",
+  22:"Cuerdas y fibras",23:"Hilos textiles",24:"Telas y textiles",
+  25:"Ropa y calzado",26:"Encajes y bordados",27:"Alfombras",
+  28:"Juegos y juguetes",29:"Carne y alimentos",30:"Café, té y panadería",
+  31:"Agrícola y animales vivos",32:"Cervezas y bebidas",33:"Bebidas alcohólicas",
+  34:"Tabaco",35:"Publicidad y gestión",36:"Seguros y finanzas",
+  37:"Construcción y reparación",38:"Telecomunicaciones",39:"Transporte",
+  40:"Tratamiento de materiales",41:"Educación y entretenimiento",
+  42:"Servicios tecnológicos",43:"Restauración y alojamiento",
+  44:"Servicios médicos y veterinarios",45:"Servicios jurídicos y seguridad"
+};
+
 // ── Data ──
 const state = {
   email: null,
@@ -455,11 +475,12 @@ function renderClasesPanel() {
   const html = Array.from({length: 45}, (_, i) => i + 1).map(n => {
     const suggested = state.aiSuggestedClasses.includes(n);
     const checked = state.selectedClasses.includes(n);
-    return `<label class="clase-item${suggested ? ' suggested' : ''}" data-num="${n}">
+    const name = NICE_CLASSES[n] || '';
+    return `<label class="clase-item${suggested ? ' suggested' : ''}" data-num="${n}" data-search="${n} ${name.toLowerCase()}">
       <input type="checkbox" value="${n}" ${checked ? 'checked' : ''} onchange="onClaseToggle()">
       <span class="clase-item-body">
         <span class="clase-num">Clase ${n}</span>
-        <span class="clase-name">${suggested ? '✨ ' : ''}Clase ${n}</span>
+        <span class="clase-name">${suggested ? '✨ ' : ''}${escHtml(name)}</span>
       </span>
     </label>`;
   }).join('');
@@ -470,7 +491,7 @@ function renderClasesPanel() {
 function filterClasesRel(q) {
   const term = q.toLowerCase();
   document.querySelectorAll('#clasesListRel .clase-item').forEach(el => {
-    el.classList.toggle('hidden', q && !el.dataset.num.includes(term));
+    el.classList.toggle('hidden', q && !el.dataset.search.includes(term));
   });
 }
 
@@ -592,7 +613,7 @@ async function onEnterPage3() {
       <div class="class-block-header" onclick="this.parentElement.classList.toggle('open')">
         <div class="class-block-title">
           <span class="class-num-badge">Clase ${classNum}</span>
-          Clase ${classNum}
+          ${NICE_CLASSES[classNum] || 'Clase ' + classNum}
         </div>
         <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="6 9 12 15 18 9"/>

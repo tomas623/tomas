@@ -32,6 +32,7 @@ FONTS = {
     "Demibold": "MundialDemibold.otf",
 }
 
+_fonts_loaded = True
 for style_name, font_file in FONTS.items():
     font_path = os.path.join(FONTS_DIR, font_file)
     if os.path.exists(font_path):
@@ -39,12 +40,14 @@ for style_name, font_file in FONTS.items():
             pdfmetrics.registerFont(TTFont(f"Mundial{style_name}", font_path))
         except Exception as e:
             logger.warning(f"Could not register font {font_file}: {e}")
+            _fonts_loaded = False
     else:
         logger.warning(f"Font file not found: {font_path}")
+        _fonts_loaded = False
 
-# Fallback to Helvetica if fonts not available
-BASE_FONT = "MundialRegular"
-HEADING_FONT = "MundialBold"
+# Fall back to Helvetica when OTF fonts are not loadable by ReportLab
+BASE_FONT = "MundialRegular" if _fonts_loaded else "Helvetica"
+HEADING_FONT = "MundialBold" if _fonts_loaded else "Helvetica-Bold"
 
 
 class LegalPacersPDF:
