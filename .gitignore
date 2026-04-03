@@ -10,6 +10,10 @@ __pycache__/
 # Leads data
 leads.json
 
+# Local SQLite DB (use PostgreSQL in production)
+*.db
+*.sqlite
+
 # Virtual environments
 venv/
 .venv/
