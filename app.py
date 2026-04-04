@@ -491,9 +491,55 @@ def db_status():
             "total_marcas": total,
             "last_boletin": last_boletin,
             "db_ready": total > 0,
+            "import_running": _import_running,
         })
     except Exception as e:
         return success_response({"total_marcas": 0, "db_ready": False, "error": str(e)})
+
+
+# ── Admin: bulk import trigger ──
+import threading
+_import_running = False
+
+@app.route("/api/admin/import", methods=["POST"])
+def admin_import():
+    """Trigger bulk import in background. Protected by ADMIN_KEY env var."""
+    global _import_running
+
+    admin_key = os.getenv("ADMIN_KEY", "")
+    provided_key = request.json.get("key", "") if request.json else ""
+    if not admin_key or provided_key != admin_key:
+        return error_response("Unauthorized", 401)
+
+    if _import_running:
+        return success_response({"ok": False, "message": "Import already running"})
+
+    years = request.json.get("years", 10)
+
+    def run_import():
+        global _import_running
+        _import_running = True
+        try:
+            from database import init_db
+            from bulk_importer import bulk_import, detect_latest_bulletin, BULLETINS_PER_YEAR
+            init_db()
+            to_num = detect_latest_bulletin()
+            from_num = max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
+            logger.info(f"Admin bulk import started: {from_num}–{to_num}")
+            bulk_import(from_num, to_num)
+            logger.info("Admin bulk import complete")
+        except Exception as e:
+            logger.error(f"Admin bulk import error: {e}")
+        finally:
+            _import_running = False
+
+    thread = threading.Thread(target=run_import, daemon=True)
+    thread.start()
+
+    return success_response({
+        "ok": True,
+        "message": f"Import started for last {years} years. Check /api/db/status for progress."
+    })
 
 
 @app.errorhandler(404)
