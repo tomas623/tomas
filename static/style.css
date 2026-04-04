@@ -90,6 +90,7 @@ header .logo img {
   height: 36px;
   width: auto;
   display: block;
+  filter: brightness(0) invert(1); /* logo blanco sobre fondo navy */
 }
 
 nav {
@@ -151,7 +152,7 @@ nav a.active { color: white; background: var(--blue); }
   line-height: 1.15;
 }
 
-.hero h1 span { color: var(--blue); }
+.hero h1 span { color: #7BBFFF; } /* azul claro legible sobre fondo oscuro */
 
 .hero p {
   color: rgba(255,255,255,0.7);
@@ -702,7 +703,7 @@ footer {
   align-items: start;
 }
 
-.footer-brand img { height: 32px; width: auto; margin-bottom: 0.75rem; display: block; }
+.footer-brand img { height: 32px; width: auto; margin-bottom: 0.75rem; display: block; filter: brightness(0) invert(1); }
 .footer-brand p { font-size: 0.88rem; line-height: 1.6; max-width: 320px; }
 
 .footer-links { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-end; }
