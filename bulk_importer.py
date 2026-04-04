@@ -17,6 +17,7 @@ Usage:
 
 import os
 import sys
+import gc
 import time
 import logging
 import argparse
@@ -29,6 +30,7 @@ from sqlalchemy import insert as sql_insert
 
 from database import (
     init_db, get_session, get_last_imported_boletin,
+    get_import_state, set_import_state,
     Marca, BoletinLog, engine
 )
 from bulletin_parser import parse_bulletin_bytes, MarcaRecord
@@ -244,29 +246,44 @@ def bulk_import(from_num: int, to_num: int, dry_run: bool = False):
     """Import a range of bulletins."""
     total = to_num - from_num + 1
     logger.info(f"Starting bulk import: bulletins {from_num}–{to_num} ({total} bulletins)")
+    set_import_state(running=True, current_boletin=from_num)
 
     imported = errors = skipped = 0
 
-    for num in range(from_num, to_num + 1):
-        result = import_bulletin(num, dry_run=dry_run)
+    try:
+        for num in range(from_num, to_num + 1):
+            result = import_bulletin(num, dry_run=dry_run)
 
-        if result["status"] == "ok":
-            imported += result["records"]
-        elif result["status"] == "skip":
-            skipped += 1
-        elif result["status"] == "error":
-            errors += 1
+            if result["status"] == "ok":
+                imported += result["records"]
+            elif result["status"] == "skip":
+                skipped += 1
+            elif result["status"] == "error":
+                errors += 1
 
-        # Progress
-        done = num - from_num + 1
-        pct = done / total * 100
-        if done % 10 == 0 or done == total:
-            logger.info(f"Progress: {done}/{total} ({pct:.0f}%) — "
-                        f"records: {imported}, skipped: {skipped}, errors: {errors}")
+            # Update DB state every 5 bulletins
+            if num % 5 == 0:
+                set_import_state(running=True, current_boletin=num)
 
-        # Rate limiting
-        time.sleep(HTTP_DELAY)
+            # Progress log
+            done = num - from_num + 1
+            pct = done / total * 100
+            if done % 10 == 0 or done == total:
+                logger.info(f"Progress: {done}/{total} ({pct:.0f}%) — "
+                            f"records: {imported}, skipped: {skipped}, errors: {errors}")
 
+            # Free memory after each bulletin
+            gc.collect()
+
+            # Rate limiting
+            time.sleep(HTTP_DELAY)
+
+    except Exception as e:
+        logger.error(f"Bulk import interrupted at bulletin {num}: {e}")
+        set_import_state(running=False, current_boletin=num, last_error=str(e))
+        return {"imported": imported, "errors": errors, "skipped": skipped}
+
+    set_import_state(running=False, current_boletin=to_num)
     logger.info(f"Bulk import complete: {imported} records, {errors} errors, {skipped} skipped")
     return {"imported": imported, "errors": errors, "skipped": skipped}
 

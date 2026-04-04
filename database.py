@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, Integer, String, Date, DateTime,
-    Text, Index, UniqueConstraint, func
+    Text, Index, UniqueConstraint, Boolean, func
 )
 from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.pool import NullPool
@@ -89,6 +89,52 @@ class BoletinLog(Base):
     status      = Column(String(20), default="ok")  # ok / error / skip
     imported_at = Column(DateTime, default=datetime.utcnow)
     error_msg   = Column(Text)
+
+
+class ImportState(Base):
+    """Persistent import state stored in DB (survives container restarts)."""
+    __tablename__ = "import_state"
+
+    id         = Column(Integer, primary_key=True, default=1)
+    running    = Column(Boolean, default=False)
+    started_at = Column(DateTime)
+    updated_at = Column(DateTime)
+    current_boletin = Column(Integer, default=0)
+    last_error = Column(Text)
+
+
+def get_import_state() -> dict:
+    try:
+        with get_session() as s:
+            row = s.get(ImportState, 1)
+            if not row:
+                return {"running": False, "current_boletin": 0, "last_error": None}
+            return {
+                "running": row.running,
+                "current_boletin": row.current_boletin or 0,
+                "last_error": row.last_error,
+                "started_at": row.started_at.isoformat() if row.started_at else None,
+            }
+    except Exception:
+        return {"running": False, "current_boletin": 0, "last_error": None}
+
+
+def set_import_state(running: bool, current_boletin: int = 0, last_error: str = None):
+    try:
+        with get_session() as s:
+            row = s.get(ImportState, 1)
+            if not row:
+                row = ImportState(id=1)
+                s.add(row)
+            row.running = running
+            row.current_boletin = current_boletin
+            row.last_error = last_error
+            row.updated_at = datetime.utcnow()
+            if running:
+                row.started_at = datetime.utcnow()
+            s.commit()
+    except Exception as e:
+        logger.warning(f"Could not update import state: {e}")
 
 
 def init_db():

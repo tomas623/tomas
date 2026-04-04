@@ -484,14 +484,17 @@ https://legalpacers.com
 def db_status():
     """Return database stats."""
     try:
-        from database import get_last_imported_boletin
+        from database import get_last_imported_boletin, get_import_state
         total = count_marcas()
         last_boletin = get_last_imported_boletin()
+        state = get_import_state()
         return success_response({
             "total_marcas": total,
             "last_boletin": last_boletin,
             "db_ready": total > 0,
-            "import_running": _import_running,
+            "import_running": state.get("running", False),
+            "import_boletin": state.get("current_boletin", 0),
+            "import_error": state.get("last_error"),
         })
     except Exception as e:
         return success_response({"total_marcas": 0, "db_ready": False, "error": str(e)})
@@ -520,9 +523,10 @@ def admin_import():
         global _import_running
         _import_running = True
         try:
-            from database import init_db
+            from database import init_db, set_import_state
             from bulk_importer import bulk_import, detect_latest_bulletin, BULLETINS_PER_YEAR
             init_db()
+            set_import_state(running=True)
             to_num = detect_latest_bulletin()
             from_num = max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
             logger.info(f"Admin bulk import started: {from_num}–{to_num}")
@@ -530,6 +534,11 @@ def admin_import():
             logger.info("Admin bulk import complete")
         except Exception as e:
             logger.error(f"Admin bulk import error: {e}")
+            try:
+                from database import set_import_state
+                set_import_state(running=False, last_error=str(e))
+            except Exception:
+                pass
         finally:
             _import_running = False
 
@@ -590,11 +599,14 @@ async function loadStatus(){
     const d=await r.json();
     const s=d.data||d;
     const running=s.import_running;
+    const errHtml=s.import_error?`<div class="stat"><span>Último error</span><span style="color:#DC2626;font-size:12px;max-width:300px;word-break:break-all">${s.import_error}</span></div>`:'';
     document.getElementById('stats').innerHTML=`
       <div class="stat"><span>Total marcas en DB</span><span class="val">${(s.total_marcas||0).toLocaleString('es-AR')}</span></div>
-      <div class="stat"><span>Último boletín</span><span class="val">${s.last_boletin||'—'}</span></div>
-      <div class="stat"><span>Estado</span><span class="badge ${s.db_ready?'ok':'warn'}">${s.db_ready?'Lista':'Vacía'}</span></div>
-      <div class="stat"><span>Importación</span><span class="badge ${running?'run':'ok'}">${running?'⟳ En curso':'Inactiva'}</span></div>`;
+      <div class="stat"><span>Último boletín importado</span><span class="val">${s.last_boletin||'—'}</span></div>
+      <div class="stat"><span>Boletín en proceso</span><span class="val">${s.import_boletin||'—'}</span></div>
+      <div class="stat"><span>Estado DB</span><span class="badge ${s.db_ready?'ok':'warn'}">${s.db_ready?'Lista':'Vacía'}</span></div>
+      <div class="stat"><span>Importación</span><span class="badge ${running?'run':'ok'}">${running?'⟳ En curso':'Inactiva'}</span></div>
+      ${errHtml}`;
     const btn=document.getElementById('btn');
     if(running){btn.disabled=true;btn.textContent='Importando… (puede tardar horas)';}
     else{btn.disabled=false;btn.textContent='Cargar boletines INPI';}
