@@ -542,6 +542,92 @@ def admin_import():
     })
 
 
+@app.route("/admin")
+def admin_page():
+    """Visual admin panel for DB management."""
+    return """<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Legal Pacers INPI DB</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#F7F9FC;margin:0;padding:40px;color:#0D1B4B}
+  h1{color:#0D1B4B;margin-bottom:4px}
+  .sub{color:#6B7A99;margin-bottom:32px;font-size:14px}
+  .card{background:#fff;border-radius:12px;padding:24px;max-width:520px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+  .stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #E2E8F0;font-size:15px}
+  .stat:last-of-type{border-bottom:none}
+  .val{font-weight:600;color:#1B6EF3}
+  .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600}
+  .badge.ok{background:#DCFCE7;color:#16A34A}
+  .badge.warn{background:#FEF9C3;color:#B45309}
+  .badge.run{background:#EEF3FF;color:#1B6EF3}
+  label{display:block;margin:20px 0 6px;font-size:14px;font-weight:600}
+  input[type=password],input[type=number]{width:100%;box-sizing:border-box;padding:10px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px}
+  button{margin-top:16px;width:100%;padding:12px;background:#1B6EF3;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+  button:disabled{background:#93AEDB;cursor:not-allowed}
+  #msg{margin-top:12px;font-size:14px;min-height:20px}
+  .err{color:#DC2626} .ok-msg{color:#16A34A}
+</style>
+</head>
+<body>
+<h1>⚙ Admin Panel</h1>
+<p class="sub">Legal Pacers — Base de datos INPI</p>
+<div class="card">
+  <div id="stats">Cargando estado…</div>
+  <label>Clave de administrador</label>
+  <input type="password" id="key" placeholder="ADMIN_KEY">
+  <label>Años de historial a importar</label>
+  <input type="number" id="years" value="10" min="1" max="20">
+  <button id="btn" onclick="startImport()">Cargar boletines INPI</button>
+  <div id="msg"></div>
+</div>
+<script>
+async function loadStatus(){
+  try{
+    const r=await fetch('/api/db/status');
+    const d=await r.json();
+    const s=d.data||d;
+    const running=s.import_running;
+    document.getElementById('stats').innerHTML=`
+      <div class="stat"><span>Total marcas en DB</span><span class="val">${(s.total_marcas||0).toLocaleString('es-AR')}</span></div>
+      <div class="stat"><span>Último boletín</span><span class="val">${s.last_boletin||'—'}</span></div>
+      <div class="stat"><span>Estado</span><span class="badge ${s.db_ready?'ok':'warn'}">${s.db_ready?'Lista':'Vacía'}</span></div>
+      <div class="stat"><span>Importación</span><span class="badge ${running?'run':'ok'}">${running?'⟳ En curso':'Inactiva'}</span></div>`;
+    const btn=document.getElementById('btn');
+    if(running){btn.disabled=true;btn.textContent='Importando… (puede tardar horas)';}
+    else{btn.disabled=false;btn.textContent='Cargar boletines INPI';}
+  }catch(e){document.getElementById('stats').innerHTML='<p style="color:#DC2626">Error al cargar estado</p>';}
+}
+async function startImport(){
+  const key=document.getElementById('key').value.trim();
+  const years=parseInt(document.getElementById('years').value)||10;
+  const msg=document.getElementById('msg');
+  if(!key){msg.className='err';msg.textContent='Ingresá la clave de administrador.';return;}
+  document.getElementById('btn').disabled=true;
+  msg.className='';msg.textContent='Iniciando importación…';
+  try{
+    const r=await fetch('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,years})});
+    const d=await r.json();
+    if(r.ok&&(d.ok||d.data?.ok)){
+      msg.className='ok-msg';
+      msg.textContent='✓ Importación iniciada. La página se actualiza cada 15 segundos.';
+      poll();
+    }else{
+      msg.className='err';
+      msg.textContent='Error: '+(d.error||d.message||'Clave incorrecta');
+      document.getElementById('btn').disabled=false;
+    }
+  }catch(e){msg.className='err';msg.textContent='Error de red.';document.getElementById('btn').disabled=false;}
+}
+function poll(){loadStatus();setTimeout(poll,15000);}
+loadStatus();
+</script>
+</body>
+</html>"""
+
+
 @app.errorhandler(404)
 def not_found(error):
     """404 handler."""
