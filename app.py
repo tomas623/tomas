@@ -557,15 +557,22 @@ def admin_import():
     })
 
 
-@app.route("/api/admin/reset", methods=["POST"])
+@app.route("/api/admin/reset", methods=["GET", "POST"])
 def admin_reset():
-    """Force-reset the import state (clears stale 'running' flag)."""
+    """Force-reset the import state. GET: ?key=ADMIN_KEY  POST: {key}"""
     global _import_running
+    admin_key = os.getenv("ADMIN_KEY", "")
+    if request.method == "POST":
+        provided = (request.json or {}).get("key", "")
+    else:
+        provided = request.args.get("key", "")
+    if not admin_key or provided != admin_key:
+        return error_response("Unauthorized", 401)
     try:
         from database import set_import_state
         set_import_state(running=False, current_boletin=0)
         _import_running = False
-        return success_response({"ok": True, "message": "Import state reset"})
+        return success_response({"ok": True, "message": "Import state reset. Ahora podés iniciar una nueva importación."})
     except Exception as e:
         return error_response(str(e), 500)
 
