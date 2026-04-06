@@ -484,10 +484,16 @@ https://legalpacers.com
 def db_status():
     """Return database stats."""
     try:
-        from database import get_last_imported_boletin, get_import_state
+        from database import get_last_imported_boletin, get_import_state, set_import_state
         total = count_marcas()
         last_boletin = get_last_imported_boletin()
         state = get_import_state()
+
+        # Auto-fix stale state: DB says running but in-memory thread is not
+        if state.get("running") and not _import_running:
+            set_import_state(running=False, current_boletin=state.get("current_boletin", 0))
+            state["running"] = False
+
         return success_response({
             "total_marcas": total,
             "last_boletin": last_boletin,
