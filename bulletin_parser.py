@@ -129,104 +129,132 @@ def parse_bulletin_bytes(pdf_bytes: bytes, boletin_num: int) -> List[MarcaRecord
         return []
 
     records: List[MarcaRecord] = []
+    current_section = ('Solicitud publicada', 'tramite')
+    accumulated_text = ''  # rolling buffer across pages
 
     try:
         with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-            pages_text = []
-            for page in pdf.pages:
-                t = page.extract_text()
-                if t:
-                    pages_text.append(t)
-            full_text = '\n'.join(pages_text)
+            total_pages = len(pdf.pages)
+            # Skip last 10 pages (administrative: fees, resolutions)
+            pages_to_process = min(total_pages, max(1, total_pages - 10))
+
+            for page_num in range(pages_to_process):
+                page_text = pdf.pages[page_num].extract_text() or ''
+                if not page_text.strip():
+                    continue
+
+                # Update current section from this page's headers
+                for keyword, estado_tuple in SECTION_MAP.items():
+                    if keyword in page_text.lower():
+                        current_section = estado_tuple
+
+                # Accumulate small rolling buffer (2 pages worth)
+                # so entries spanning page boundaries are captured
+                accumulated_text += '\n' + page_text
+
+                # Parse complete entries from accumulated text
+                matches = list(RE_ENTRY.finditer(accumulated_text))
+                if len(matches) < 2:
+                    # Keep accumulating — not enough entries yet
+                    continue
+
+                # Process all entries except the last (might be incomplete)
+                for i, m in enumerate(matches[:-1]):
+                    chunk_end = matches[i + 1].start()
+                    chunk = accumulated_text[m.start():chunk_end]
+                    rec = _parse_entry(m, chunk, boletin_num, current_section)
+                    if rec:
+                        records.append(rec)
+
+                # Keep only text from the last incomplete entry onwards
+                accumulated_text = accumulated_text[matches[-1].start():]
+
+            # Process any remaining entries in the buffer
+            remaining_matches = list(RE_ENTRY.finditer(accumulated_text))
+            for i, m in enumerate(remaining_matches):
+                chunk_end = remaining_matches[i + 1].start() if i + 1 < len(remaining_matches) else len(accumulated_text)
+                chunk = accumulated_text[m.start():chunk_end]
+                rec = _parse_entry(m, chunk, boletin_num, current_section)
+                if rec:
+                    records.append(rec)
+
     except Exception as e:
         logger.error(f"Bulletin {boletin_num}: PDF read error — {e}")
-        return records
-
-    if not full_text.strip():
-        logger.warning(f"Bulletin {boletin_num}: no text extracted")
-        return records
-
-    matches = list(RE_ENTRY.finditer(full_text))
-    if not matches:
-        logger.warning(f"Bulletin {boletin_num}: no (21) Acta entries found")
-        return records
-
-    for i, m in enumerate(matches):
-        chunk_end = matches[i + 1].start() if i + 1 < len(matches) else len(full_text)
-        chunk = full_text[m.start():chunk_end]
-
-        # Acta
-        acta = m.group(1).strip().replace(' ', '').replace(',', '.')
-
-        # Nice class
-        try:
-            clase = int(m.group(2))
-            if not (1 <= clase <= 45):
-                continue
-        except (ValueError, TypeError):
-            continue
-
-        # Type and denomination
-        tipo_code = None
-        denominacion = ''
-        mt = RE_TYPE_NAME.search(chunk)
-        if mt:
-            tipo_code = mt.group(1).upper()
-            denominacion = mt.group(2).strip()
-
-        tipo = TIPO_MAP.get(tipo_code, tipo_code) if tipo_code else None
-
-        if not denominacion:
-            if tipo_code == 'F':
-                denominacion = f'[Figurativa] {acta}'
-            elif tipo_code in ('M', 'T'):
-                denominacion = f'[{tipo or tipo_code}] {acta}'
-            else:
-                denominacion = acta
-
-        # Filing date
-        fecha_solicitud = None
-        mf = RE_FILING_DATE.search(chunk)
-        if mf:
-            fecha_solicitud = _parse_date(mf.group(1))
-
-        # Owner
-        titular = None
-        mo = RE_OWNER.search(chunk)
-        if mo:
-            titular = mo.group(1).strip()[:300]
-
-        # Publication date
-        fecha_boletin = None
-        mp = RE_PUB_DATE.search(chunk)
-        if mp:
-            fecha_boletin = _parse_date(mp.group(1))
-
-        # Agent
-        agente = None
-        ma = RE_AGENT.search(chunk)
-        if ma:
-            agente = f'Ag {ma.group(1)}'
-
-        # Estado from section
-        estado, estado_code = _detect_section(full_text[:m.start()])
-
-        records.append(MarcaRecord(
-            acta=acta,
-            denominacion=denominacion[:300],
-            tipo=tipo,
-            clase=clase,
-            titular=titular,
-            agente=agente,
-            estado=estado,
-            estado_code=estado_code,
-            fecha_solicitud=fecha_solicitud,
-            fecha_boletin=fecha_boletin,
-            boletin_num=boletin_num,
-        ))
 
     logger.info(f"Bulletin {boletin_num}: extracted {len(records)} records")
     return records
+
+
+def _parse_entry(m, chunk: str, boletin_num: int, section: tuple) -> Optional['MarcaRecord']:
+    """Parse a single trademark entry from a text chunk."""
+    # Acta
+    acta = m.group(1).strip().replace(' ', '').replace(',', '.')
+
+    # Nice class
+    try:
+        clase = int(m.group(2))
+        if not (1 <= clase <= 45):
+            return None
+    except (ValueError, TypeError):
+        return None
+
+    # Type and denomination
+    tipo_code = None
+    denominacion = ''
+    mt = RE_TYPE_NAME.search(chunk)
+    if mt:
+        tipo_code = mt.group(1).upper()
+        denominacion = mt.group(2).strip()
+
+    tipo = TIPO_MAP.get(tipo_code, tipo_code) if tipo_code else None
+
+    if not denominacion:
+        if tipo_code == 'F':
+            denominacion = f'[Figurativa] {acta}'
+        elif tipo_code in ('M', 'T'):
+            denominacion = f'[{tipo or tipo_code}] {acta}'
+        else:
+            denominacion = acta
+
+    # Filing date
+    fecha_solicitud = None
+    mf = RE_FILING_DATE.search(chunk)
+    if mf:
+        fecha_solicitud = _parse_date(mf.group(1))
+
+    # Owner
+    titular = None
+    mo = RE_OWNER.search(chunk)
+    if mo:
+        titular = mo.group(1).strip()[:300]
+
+    # Publication date
+    fecha_boletin = None
+    mp = RE_PUB_DATE.search(chunk)
+    if mp:
+        fecha_boletin = _parse_date(mp.group(1))
+
+    # Agent
+    agente = None
+    ma = RE_AGENT.search(chunk)
+    if ma:
+        agente = f'Ag {ma.group(1)}'
+
+    estado, estado_code = section
+
+    return MarcaRecord(
+        acta=acta,
+        denominacion=denominacion[:300],
+        tipo=tipo,
+        clase=clase,
+        titular=titular,
+        agente=agente,
+        estado=estado,
+        estado_code=estado_code,
+        fecha_solicitud=fecha_solicitud,
+        fecha_boletin=fecha_boletin,
+        boletin_num=boletin_num,
+    )
 
 
 def parse_bulletin_pdf(pdf_path: str, boletin_num: int) -> List[MarcaRecord]:
