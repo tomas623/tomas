@@ -776,6 +776,119 @@ footer {
 }
 .variant-chip button:hover { color: white; }
 
+/* ── FAQ ── */
+.faq-section {
+  background: var(--navy);
+  padding: 5rem 2rem;
+}
+
+.faq-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.faq-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.faq-eyebrow {
+  display: inline-block;
+  background: rgba(27,110,243,0.2);
+  color: #93B8FF;
+  border: 1px solid rgba(27,110,243,0.35);
+  border-radius: 99px;
+  padding: 0.3rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.faq-header h2 {
+  color: white;
+  font-size: 2rem;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.faq-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.faq-item:hover { border-color: rgba(27,110,243,0.4); }
+.faq-item.open  { border-color: var(--blue); background: rgba(27,110,243,0.08); }
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: none;
+  border: none;
+  color: white;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.faq-question:hover { color: #93B8FF; }
+.faq-item.open .faq-question { color: #93B8FF; }
+
+.faq-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  transition: transform 0.3s;
+  color: var(--blue);
+}
+.faq-item.open .faq-icon { transform: rotate(180deg); }
+
+.faq-answer {
+  display: none;
+  padding: 0 1.5rem 1.25rem;
+  color: rgba(255,255,255,0.75);
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.faq-item.open .faq-answer { display: block; }
+
+.faq-answer ul {
+  margin: 0.75rem 0 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.faq-answer strong { color: white; }
+
+.faq-cta {
+  text-align: center;
+  margin-top: 3rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.faq-cta p {
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }

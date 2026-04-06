@@ -95,6 +95,97 @@
       </div>
     </div>
 
+    <!-- FAQ -->
+    <div class="faq-section">
+      <div class="faq-inner">
+        <div class="faq-header">
+          <div class="faq-eyebrow">Todo lo que necesitás saber</div>
+          <h2>Preguntas frecuentes</h2>
+        </div>
+
+        <div class="faq-list">
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Cuánto cuesta registrar una marca?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p><strong>$130.000 por tipo y clase de marca.</strong> Es un servicio llave en mano que incluye todo:</p>
+              <ul>
+                <li><strong>Análisis de viabilidad profesional:</strong> No solo buscamos el nombre — evaluamos si hay riesgo real de oposición bajo el sistema vigente del INPI.</li>
+                <li><strong>Gestión y tasas oficiales:</strong> Nos hacemos cargo de los costos del organismo y presentamos el expediente.</li>
+                <li><strong>Seguimiento hasta el título:</strong> Monitoreamos el trámite hasta que tengas la marca concedida.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Cuánto tarda el trámite?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Si no hay oposiciones de terceros, aproximadamente <strong>3 meses</strong>. Mucho más rápido que antes, gracias a los cambios normativos del INPI desde diciembre de 2025.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Cómo funciona el nuevo sistema del INPI?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Desde diciembre de 2025, <strong>el INPI ya no realiza búsquedas de similitud por cuenta del solicitante.</strong> Si presentás sin análisis previo y alguien se opone, perdés el dinero del trámite.</p>
+              <p style="margin-top:0.75rem">Por eso, antes de cualquier presentación, hacemos un análisis de viabilidad a fondo para minimizar ese riesgo.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Por qué tengo que pagar por separado el nombre y el logo?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Porque legalmente son registros distintos que protegen activos diferentes. El <strong>nombre</strong> (marca denominativa) protege el texto; el <strong>logo</strong> (marca figurativa o mixta) protege el diseño visual.</p>
+              <p style="margin-top:0.75rem">Para un blindaje completo, recomendamos registrar ambos. Cada uno es un escudo independiente.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Hay costos adicionales después?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>No. Los $130.000 cubren el proceso estándar completo. Solo si un tercero presenta una oposición formal, te presupuestamos la defensa por separado.</p>
+              <p style="margin-top:0.75rem">Justamente, el objetivo del análisis previo es evitar llegar a esa instancia.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Qué pasa si encuentran una marca similar a la mía?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Te lo comunicamos <strong>antes de cualquier presentación</strong>. Analizamos el grado de similitud, las clases involucradas y las opciones disponibles: desde ajustar el nombre hasta evaluar la viabilidad de coexistencia.</p>
+              <p style="margin-top:0.75rem">Nunca avanzamos si el riesgo es alto sin que lo sepas.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="faq-cta">
+          <p>¿Tenés alguna otra pregunta?</p>
+          <a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%2C%20tengo%20una%20consulta%20sobre%20el%20registro%20de%20mi%20marca"
+             target="_blank" rel="noopener" class="btn btn-primary">
+            Consultanos por WhatsApp
+          </a>
+        </div>
+      </div>
+    </div><!-- /faq -->
+
   </div>
 
   <!-- MODULE B: RELEVAMIENTO WIZARD -->
@@ -359,6 +450,11 @@ async function api(method, path, body = null) {
 
 function escHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  item.classList.toggle('open');
 }
 
 function showModule(mod) {
