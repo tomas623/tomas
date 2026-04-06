@@ -557,6 +557,19 @@ def admin_import():
     })
 
 
+@app.route("/api/admin/reset", methods=["POST"])
+def admin_reset():
+    """Force-reset the import state (clears stale 'running' flag)."""
+    global _import_running
+    try:
+        from database import set_import_state
+        set_import_state(running=False, current_boletin=0)
+        _import_running = False
+        return success_response({"ok": True, "message": "Import state reset"})
+    except Exception as e:
+        return error_response(str(e), 500)
+
+
 @app.route("/api/admin/test-parse")
 def admin_test_parse():
     """Download and parse one bulletin, return diagnostic info (no DB write)."""
@@ -731,10 +744,22 @@ async function startImport(){
     }
   }catch(e){msg.className='err';msg.textContent='Error de red.';document.getElementById('btn').disabled=false;}
 }
+async function resetImport(){
+  const key=document.getElementById('key').value.trim();
+  if(!key){alert('Ingresá la clave primero');return;}
+  if(!confirm('¿Resetear el estado de importación?')) return;
+  const r=await fetch('/api/admin/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
+  const d=await r.json();
+  alert(d.data?.message||d.message||'Reset OK');
+  loadStatus();
+}
 function poll(){loadStatus();setTimeout(poll,15000);}
 loadStatus();
 </script>
-<p style="margin-top:16px;font-size:13px;text-align:center">
+<p style="margin-top:12px;font-size:13px;text-align:center">
+  <a href="#" onclick="resetImport();return false;" style="color:#DC2626">⚠ Forzar reset del estado →</a>
+</p>
+<p style="margin-top:4px;font-size:13px;text-align:center">
   <a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver log de errores (JSON) →</a>
 </p>
 </body>
