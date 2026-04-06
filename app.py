@@ -551,6 +551,31 @@ def admin_import():
     })
 
 
+@app.route("/api/admin/test-download")
+def admin_test_download():
+    """Test if INPI is reachable from Railway. Tries bulletin 5000."""
+    import httpx
+    num = request.args.get("num", 5000, type=int)
+    url = f"https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_3_.pdf"
+    try:
+        with httpx.Client(timeout=20, follow_redirects=True) as client:
+            r = client.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
+                "Accept": "application/pdf,*/*",
+            })
+            is_pdf = r.content[:4] == b'%PDF' if r.content else False
+            return success_response({
+                "url": url,
+                "status_code": r.status_code,
+                "content_type": r.headers.get("content-type", ""),
+                "content_length": len(r.content),
+                "is_pdf": is_pdf,
+                "preview": r.text[:300] if not is_pdf else "(PDF OK)",
+            })
+    except Exception as e:
+        return success_response({"url": url, "error": str(e)})
+
+
 @app.route("/api/admin/logs")
 def admin_logs():
     """Return last 20 bulletin log entries to diagnose import issues."""

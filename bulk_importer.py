@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 BULLETIN_BASE_URL = "https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_3_.pdf"
 LATEST_BULLETIN = 6009       # Update this or auto-detect
 BULLETINS_PER_YEAR = 52
-HTTP_DELAY = 1.5             # seconds between requests (be polite)
-MAX_RETRIES = 3
+HTTP_DELAY = 1.0             # seconds between requests
+MAX_RETRIES = 2              # fewer retries to avoid long hangs
 
 
 def get_headers() -> dict:
@@ -85,7 +85,7 @@ def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
 
     for attempt in range(1, retries + 1):
         try:
-            with httpx.Client(timeout=60, follow_redirects=True) as client:
+            with httpx.Client(timeout=25, follow_redirects=True) as client:
                 r = client.get(url, headers=get_headers())
 
                 if r.status_code == 404:
