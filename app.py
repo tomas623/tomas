@@ -551,6 +551,24 @@ def admin_import():
     })
 
 
+@app.route("/api/admin/logs")
+def admin_logs():
+    """Return last 20 bulletin log entries to diagnose import issues."""
+    try:
+        from database import get_session, BoletinLog
+        with get_session() as s:
+            rows = s.query(BoletinLog).order_by(BoletinLog.numero.desc()).limit(20).all()
+            return success_response([{
+                "num": r.numero,
+                "status": r.status,
+                "records": r.registros,
+                "error": r.error_msg,
+                "at": r.imported_at.isoformat() if r.imported_at else None,
+            } for r in rows])
+    except Exception as e:
+        return error_response(str(e), 500)
+
+
 @app.route("/admin")
 def admin_page():
     """Visual admin panel for DB management."""
@@ -636,6 +654,10 @@ async function startImport(){
 function poll(){loadStatus();setTimeout(poll,15000);}
 loadStatus();
 </script>
+<p style="margin-top:16px;font-size:13px;text-align:center">
+  <a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver log de errores (JSON) →</a>
+</p>
+</body>
 </body>
 </html>"""
 
