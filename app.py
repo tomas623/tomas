@@ -551,6 +551,50 @@ def admin_import():
     })
 
 
+@app.route("/api/admin/test-parse")
+def admin_test_parse():
+    """Download and parse one bulletin, return diagnostic info (no DB write)."""
+    import httpx
+    num = request.args.get("num", 5000, type=int)
+    url = f"https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_3_.pdf"
+    try:
+        with httpx.Client(timeout=30, follow_redirects=True) as client:
+            r = client.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
+                "Accept": "application/pdf,*/*",
+            })
+        if r.status_code != 200 or b'%PDF' not in r.content[:10]:
+            return success_response({"error": f"Not a PDF — HTTP {r.status_code}"})
+
+        from bulletin_parser import parse_bulletin_bytes
+        records = parse_bulletin_bytes(r.content, num)
+
+        # Sample a few records
+        sample = []
+        for rec in records[:5]:
+            sample.append({
+                "acta": rec.acta,
+                "denominacion": rec.denominacion,
+                "clase": rec.clase,
+                "estado": rec.estado,
+            })
+
+        # Also show raw text snippet to help debug
+        import pdfplumber, io
+        with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+            first_page_text = pdf.pages[0].extract_text()[:1000] if pdf.pages else ""
+
+        return success_response({
+            "boletin": num,
+            "total_records": len(records),
+            "sample": sample,
+            "first_page_preview": first_page_text,
+        })
+    except Exception as e:
+        import traceback
+        return success_response({"error": str(e), "trace": traceback.format_exc()[-800:]})
+
+
 @app.route("/api/admin/test-download")
 def admin_test_download():
     """Test if INPI is reachable from Railway. Tries bulletin 5000."""
