@@ -1,343 +1,235 @@
 """
 INPI Argentina Boletín de Marcas PDF parser.
 
-Extracts trademark records from weekly bulletin PDFs.
-Bulletins are at: https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_3_.pdf
+Real bulletin format uses WIPO/INPI field codes:
+  (21) Acta X.XXX.XXX - (51) Clase XX
+  (40) [D/M/F/T] (54) TRADEMARK NAME
+  (22) DD/MM/YYYY HH:MM:SS - (73) OWNER NAME - COUNTRY *
+  (57) GOODS/SERVICES DESCRIPTION
+  (74) Ag XXXX - (44) DD/MM/YYYY
 
-INPI bulletin structure:
-  Each entry typically contains:
-    - Acta number (e.g. "3.123.456" or "3123456")
-    - Denomination
-    - Type (Denominación de Fantasía / Figurativa / Mixta / etc.)
-    - Nice class(es)
-    - Applicant/titular name
-    - Address
-    - Agent (optional)
-    - Status section heading (solicitudes / registradas / etc.)
+Field codes:
+  (21) = Application number (Acta)
+  (22) = Filing date
+  (40) = Mark type: D=Denominativa, M=Mixta, F=Figurativa, T=Tridimensional
+  (44) = Publication date in bulletin
+  (51) = Nice class
+  (54) = Trademark denomination
+  (57) = Goods/services
+  (73) = Owner/titular
+  (74) = Agent code
 """
 
 import re
+import io
 import logging
 from datetime import date, datetime
-from typing import Optional
-from dataclasses import dataclass, field
+from typing import Optional, List
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
-# ── Status section keywords → estado_code mapping ──
-SECTION_MAP = {
-    "solicitudes publicadas": ("Solicitud publicada", "tramite"),
-    "solicitud de registro":  ("Solicitud de registro", "tramite"),
-    "marcas registradas":     ("Registrada", "vigente"),
-    "se registra":            ("Registrada", "vigente"),
-    "registro otorgado":      ("Registrada", "vigente"),
-    "renovaciones":           ("Renovación", "vigente"),
-    "renovacion":             ("Renovación", "vigente"),
-    "oposiciones":            ("Oposición", "oposicion"),
-    "oposicion":              ("Oposición", "oposicion"),
-    "caducidades":            ("Caducada", "caducada"),
-    "caducada":               ("Caducada", "caducada"),
-    "abandono":               ("Abandonada", "abandonada"),
-    "denegatoria":            ("Denegada", "denegada"),
+TIPO_MAP = {
+    'D': 'Denominativa',
+    'M': 'Mixta',
+    'F': 'Figurativa',
+    'T': 'Tridimensional',
+    'E': 'Especial',
 }
 
-# ── Regex patterns ──
-RE_ACTA = re.compile(
-    r'\b(?:Acta[:\s#Nº°.]*|N[°º]?\s*)\s*(\d[\d.,/\s]{4,12}\d)',
+SECTION_MAP = {
+    'marcas nuevas':        ('Solicitud publicada', 'tramite'),
+    'solicitudes':          ('Solicitud publicada', 'tramite'),
+    'marcas registradas':   ('Registrada', 'vigente'),
+    'registradas':          ('Registrada', 'vigente'),
+    'registro otorgado':    ('Registrada', 'vigente'),
+    'se registra':          ('Registrada', 'vigente'),
+    'renovaciones':         ('Renovada', 'vigente'),
+    'renovacion':           ('Renovada', 'vigente'),
+    'oposiciones':          ('Oposición', 'oposicion'),
+    'oposicion':            ('Oposición', 'oposicion'),
+    'caducidades':          ('Caducada', 'caducada'),
+    'caducada':             ('Caducada', 'caducada'),
+    'abandono':             ('Abandonada', 'abandonada'),
+    'denegatoria':          ('Denegada', 'denegada'),
+    'transferencias':       ('Transferida', 'vigente'),
+}
+
+# Entry start: "(21) Acta 3.805.206 - (51) Clase 41"
+RE_ENTRY = re.compile(
+    r'\(21\)\s*Acta\s+([\d.,\s]{5,20}?)\s*-\s*\(51\)\s*Clase\s*(\d{1,2})',
     re.IGNORECASE
 )
-RE_ACTA_BARE = re.compile(r'(?:^|\n)\s*(\d{1,2}[.,]\d{3}[.,]\d{3})\b')
-RE_CLASE = re.compile(r'\bClase[s]?\s*[:\-]?\s*(\d{1,2})\b', re.IGNORECASE)
-RE_CLASE_NUM = re.compile(r'\b(?:cl(?:ase)?\.?\s*)?(\d{1,2})\b')
-RE_DATE = re.compile(
-    r'\b(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{2,4})\b'
-)
-RE_TIPO = re.compile(
-    r'\b(denominaci[oó]n\s+de\s+fantas[ií]a|denominaci[oó]n|figurativa|mixta|tridimensional|sonora)\b',
+
+# Type + denomination: "(40) D (54) GIOIA MUNDI"
+RE_TYPE_NAME = re.compile(
+    r'\(40\)\s*([A-Z])\s+\(54\)\s*([^\n\(]*)',
     re.IGNORECASE
 )
+
+# Filing date: "(22) 10/09/2019 ..."
+RE_FILING_DATE = re.compile(r'\(22\)\s*(\d{2}/\d{2}/\d{4})')
+
+# Owner: "(73) OWNER NAME - AR *"
+RE_OWNER = re.compile(
+    r'\(73\)\s*(.+?)(?:\s+-\s*[A-Z]{2,3}\s*\*|\s*\*)',
+    re.MULTILINE
+)
+
+# Publication date: "(44) 03/06/2020"
+RE_PUB_DATE = re.compile(r'\(44\)\s*(\d{2}/\d{2}/\d{4})')
+
+# Agent: "(74) Ag 2246"
+RE_AGENT = re.compile(r'\(74\)\s*Ag\s*(\d+)', re.IGNORECASE)
 
 
 @dataclass
 class MarcaRecord:
-    acta: str = ""
-    denominacion: str = ""
-    tipo: str = ""
+    acta: str
+    denominacion: str
+    tipo: Optional[str] = None
     clase: Optional[int] = None
-    titular: str = ""
-    domicilio: str = ""
-    agente: str = ""
-    estado: str = ""
-    estado_code: str = "tramite"
+    titular: Optional[str] = None
+    domicilio: Optional[str] = None
+    agente: Optional[str] = None
+    estado: Optional[str] = None
+    estado_code: Optional[str] = None
     fecha_solicitud: Optional[date] = None
     fecha_vencimiento: Optional[date] = None
-    boletin_num: int = 0
+    boletin_num: Optional[int] = None
     fecha_boletin: Optional[date] = None
 
-    def is_valid(self) -> bool:
-        return bool(self.acta and self.denominacion and self.clase)
+
+def _parse_date(s: str) -> Optional[date]:
+    try:
+        return datetime.strptime(s.strip(), '%d/%m/%Y').date()
+    except Exception:
+        return None
 
 
-def parse_bulletin_pdf(pdf_path: str, boletin_num: int) -> list[MarcaRecord]:
-    """
-    Parse an INPI bulletin PDF and return list of trademark records.
+def _detect_section(text: str) -> tuple:
+    """Return (estado, estado_code) from the last section header before this point."""
+    text_lower = text.lower()
+    last_pos = -1
+    result = ('Solicitud publicada', 'tramite')
+    for keyword, estado_tuple in SECTION_MAP.items():
+        pos = text_lower.rfind(keyword)
+        if pos > last_pos:
+            last_pos = pos
+            result = estado_tuple
+    return result
 
-    Args:
-        pdf_path: Path to the PDF file
-        boletin_num: Bulletin number (used to set boletin_num on records)
 
-    Returns:
-        List of MarcaRecord instances
-    """
+def parse_bulletin_bytes(pdf_bytes: bytes, boletin_num: int) -> List[MarcaRecord]:
+    """Parse a bulletin PDF (bytes) and return list of MarcaRecord."""
     try:
         import pdfplumber
     except ImportError:
-        raise ImportError("pdfplumber required: pip install pdfplumber")
+        logger.error("pdfplumber not installed")
+        return []
 
-    records = []
-    boletin_date = None
+    records: List[MarcaRecord] = []
 
     try:
-        with pdfplumber.open(pdf_path) as pdf:
-            logger.info(f"Bulletin {boletin_num}: {len(pdf.pages)} pages")
-
-            # Collect all text
-            full_text = ""
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            pages_text = []
             for page in pdf.pages:
-                text = page.extract_text(x_tolerance=2, y_tolerance=3) or ""
-                full_text += text + "\n"
-
-            # Try to extract bulletin date from first page
-            first_page_text = pdf.pages[0].extract_text() or ""
-            boletin_date = _extract_date(first_page_text)
-
-            # Parse records from full text
-            records = _parse_text(full_text, boletin_num, boletin_date)
-
+                t = page.extract_text()
+                if t:
+                    pages_text.append(t)
+            full_text = '\n'.join(pages_text)
     except Exception as e:
-        logger.error(f"PDF parse error for bulletin {boletin_num}: {e}")
+        logger.error(f"Bulletin {boletin_num}: PDF read error — {e}")
+        return records
+
+    if not full_text.strip():
+        logger.warning(f"Bulletin {boletin_num}: no text extracted")
+        return records
+
+    matches = list(RE_ENTRY.finditer(full_text))
+    if not matches:
+        logger.warning(f"Bulletin {boletin_num}: no (21) Acta entries found")
+        return records
+
+    for i, m in enumerate(matches):
+        chunk_end = matches[i + 1].start() if i + 1 < len(matches) else len(full_text)
+        chunk = full_text[m.start():chunk_end]
+
+        # Acta
+        acta = m.group(1).strip().replace(' ', '').replace(',', '.')
+
+        # Nice class
+        try:
+            clase = int(m.group(2))
+            if not (1 <= clase <= 45):
+                continue
+        except (ValueError, TypeError):
+            continue
+
+        # Type and denomination
+        tipo_code = None
+        denominacion = ''
+        mt = RE_TYPE_NAME.search(chunk)
+        if mt:
+            tipo_code = mt.group(1).upper()
+            denominacion = mt.group(2).strip()
+
+        tipo = TIPO_MAP.get(tipo_code, tipo_code) if tipo_code else None
+
+        if not denominacion:
+            if tipo_code == 'F':
+                denominacion = f'[Figurativa] {acta}'
+            elif tipo_code in ('M', 'T'):
+                denominacion = f'[{tipo or tipo_code}] {acta}'
+            else:
+                denominacion = acta
+
+        # Filing date
+        fecha_solicitud = None
+        mf = RE_FILING_DATE.search(chunk)
+        if mf:
+            fecha_solicitud = _parse_date(mf.group(1))
+
+        # Owner
+        titular = None
+        mo = RE_OWNER.search(chunk)
+        if mo:
+            titular = mo.group(1).strip()[:300]
+
+        # Publication date
+        fecha_boletin = None
+        mp = RE_PUB_DATE.search(chunk)
+        if mp:
+            fecha_boletin = _parse_date(mp.group(1))
+
+        # Agent
+        agente = None
+        ma = RE_AGENT.search(chunk)
+        if ma:
+            agente = f'Ag {ma.group(1)}'
+
+        # Estado from section
+        estado, estado_code = _detect_section(full_text[:m.start()])
+
+        records.append(MarcaRecord(
+            acta=acta,
+            denominacion=denominacion[:300],
+            tipo=tipo,
+            clase=clase,
+            titular=titular,
+            agente=agente,
+            estado=estado,
+            estado_code=estado_code,
+            fecha_solicitud=fecha_solicitud,
+            fecha_boletin=fecha_boletin,
+            boletin_num=boletin_num,
+        ))
 
     logger.info(f"Bulletin {boletin_num}: extracted {len(records)} records")
     return records
 
 
-def parse_bulletin_bytes(pdf_bytes: bytes, boletin_num: int) -> list[MarcaRecord]:
-    """Parse bulletin from bytes (no disk write needed)."""
-    import tempfile, os
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-        f.write(pdf_bytes)
-        tmp_path = f.name
-    try:
-        return parse_bulletin_pdf(tmp_path, boletin_num)
-    finally:
-        os.unlink(tmp_path)
-
-
-def _parse_text(text: str, boletin_num: int, boletin_date: Optional[date]) -> list[MarcaRecord]:
-    """Parse trademark records from extracted bulletin text."""
-
-    records = []
-    current_estado = "Solicitud publicada"
-    current_estado_code = "tramite"
-
-    # Split into blocks by acta number
-    # Each trademark entry starts with an acta number
-    blocks = _split_into_blocks(text)
-
-    for block in blocks:
-        # Check if block is a section header (changes current estado)
-        header_estado, header_code = _detect_section(block)
-        if header_estado:
-            current_estado = header_estado
-            current_estado_code = header_code
-            continue
-
-        record = _parse_block(block, current_estado, current_estado_code,
-                               boletin_num, boletin_date)
-        if record and record.is_valid():
-            records.append(record)
-
-    # Deduplicate by acta+clase
-    seen = set()
-    unique = []
-    for r in records:
-        key = (r.acta, r.clase)
-        if key not in seen:
-            seen.add(key)
-            unique.append(r)
-
-    return unique
-
-
-def _split_into_blocks(text: str) -> list[str]:
-    """
-    Split bulletin text into per-trademark blocks.
-    Blocks are separated by acta numbers appearing at start of line.
-    """
-    lines = text.split('\n')
-    blocks = []
-    current_block = []
-
-    for line in lines:
-        stripped = line.strip()
-        if not stripped:
-            continue
-
-        # Check if line starts a new record (acta number pattern)
-        if _is_acta_line(stripped) and current_block:
-            blocks.append('\n'.join(current_block))
-            current_block = [line]
-        else:
-            current_block.append(line)
-
-    if current_block:
-        blocks.append('\n'.join(current_block))
-
-    return [b for b in blocks if b.strip()]
-
-
-def _is_acta_line(line: str) -> bool:
-    """Check if a line appears to start a new acta record."""
-    # Pattern: starts with number like "3.123.456" or "Acta: 3123456"
-    if RE_ACTA_BARE.match(line):
-        return True
-    if RE_ACTA.match(line):
-        return True
-    return False
-
-
-def _detect_section(block: str) -> tuple[Optional[str], Optional[str]]:
-    """Detect if block is a section header and return (estado, estado_code)."""
-    text_lower = block.lower().strip()
-    for keyword, (estado, code) in SECTION_MAP.items():
-        if keyword in text_lower and len(block) < 120:
-            return estado, code
-    return None, None
-
-
-def _parse_block(block: str, estado: str, estado_code: str,
-                  boletin_num: int, boletin_date: Optional[date]) -> Optional[MarcaRecord]:
-    """Parse a single trademark block into a MarcaRecord."""
-
-    lines = [l.strip() for l in block.split('\n') if l.strip()]
-    if not lines:
-        return None
-
-    record = MarcaRecord(
-        estado=estado,
-        estado_code=estado_code,
-        boletin_num=boletin_num,
-        fecha_boletin=boletin_date,
-    )
-
-    full_text = ' '.join(lines)
-
-    # Extract acta number
-    acta_match = RE_ACTA.search(full_text) or RE_ACTA_BARE.search(full_text)
-    if acta_match:
-        record.acta = _normalize_acta(acta_match.group(1))
-
-    # Extract clase
-    clase_match = RE_CLASE.search(full_text)
-    if clase_match:
-        try:
-            record.clase = int(clase_match.group(1))
-            if not 1 <= record.clase <= 45:
-                record.clase = None
-        except ValueError:
-            pass
-
-    # Extract tipo
-    tipo_match = RE_TIPO.search(full_text)
-    if tipo_match:
-        record.tipo = tipo_match.group(1).title()
-
-    # Extract denomination — usually the prominent text after acta
-    record.denominacion = _extract_denomination(lines, record.acta)
-
-    # Extract titular — usually after "Titular:" or "Solicitante:"
-    record.titular = _extract_field(full_text, r'(?:Titular|Solicitante|Titulares?)[:\s]+([^\n]+)')
-
-    # Extract domicilio
-    record.domicilio = _extract_field(full_text, r'Domicilio[:\s]+([^\n]+)')
-
-    # Extract agente
-    record.agente = _extract_field(full_text, r'Agente[:\s]+([^\n]+)')
-
-    # Extract dates
-    dates = RE_DATE.findall(full_text)
-    if dates:
-        record.fecha_solicitud = _parse_date_tuple(dates[0])
-    if len(dates) > 1:
-        record.fecha_vencimiento = _parse_date_tuple(dates[-1])
-
-    return record
-
-
-def _normalize_acta(raw: str) -> str:
-    """Normalize acta number to consistent format."""
-    digits = re.sub(r'[^\d]', '', raw)
-    if len(digits) >= 7:
-        # Format as X.XXX.XXX
-        return f"{digits[-7]}.{digits[-6:-3]}.{digits[-3:]}"
-    return digits
-
-
-def _extract_denomination(lines: list[str], acta: str) -> str:
-    """
-    Extract trademark denomination from lines.
-    Usually the most prominent/longest uppercase word after the acta line.
-    """
-    candidates = []
-    acta_digits = re.sub(r'[^\d]', '', acta)
-
-    for line in lines:
-        clean = line.strip()
-        # Skip lines that look like acta, class, address, etc.
-        if not clean or len(clean) < 2:
-            continue
-        if acta_digits and acta_digits[-7:] in re.sub(r'[^\d]', '', clean):
-            continue
-        if re.match(r'^(clase|acta|titular|solicitante|domicilio|agente|tipo)', clean, re.IGNORECASE):
-            continue
-        if RE_DATE.search(clean):
-            continue
-        # Prefer uppercase/mixed case words that look like brand names
-        if re.search(r'[A-ZÁÉÍÓÚÑ]{2,}', clean):
-            candidates.append(clean)
-
-    if not candidates:
-        return ""
-
-    # Return shortest candidate that looks like a brand name
-    candidates.sort(key=lambda x: len(x))
-    return candidates[0][:200] if candidates else ""
-
-
-def _extract_field(text: str, pattern: str) -> str:
-    """Extract a field using regex pattern."""
-    m = re.search(pattern, text, re.IGNORECASE)
-    if m:
-        return m.group(1).strip()[:300]
-    return ""
-
-
-def _extract_date(text: str) -> Optional[date]:
-    """Extract the first recognizable date from text."""
-    m = RE_DATE.search(text)
-    if m:
-        return _parse_date_tuple(m.groups())
-    return None
-
-
-def _parse_date_tuple(t: tuple) -> Optional[date]:
-    """Parse (day, month, year) tuple into date."""
-    try:
-        d, m, y = int(t[0]), int(t[1]), int(t[2])
-        if y < 100:
-            y += 2000 if y < 50 else 1900
-        if 1 <= m <= 12 and 1 <= d <= 31 and 1990 <= y <= 2035:
-            return date(y, m, d)
-    except Exception:
-        pass
-    return None
+def parse_bulletin_pdf(pdf_path: str, boletin_num: int) -> List[MarcaRecord]:
+    """Parse a bulletin PDF from file path."""
+    with open(pdf_path, 'rb') as f:
+        return parse_bulletin_bytes(f.read(), boletin_num)
