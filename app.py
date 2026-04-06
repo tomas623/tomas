@@ -579,16 +579,21 @@ def admin_test_parse():
                 "estado": rec.estado,
             })
 
-        # Also show raw text snippet to help debug
+        # Show raw text from pages 3-6 to see trademark entry format
         import pdfplumber, io
         with pdfplumber.open(io.BytesIO(r.content)) as pdf:
-            first_page_text = pdf.pages[0].extract_text()[:1000] if pdf.pages else ""
+            first_page_text = pdf.pages[0].extract_text()[:800] if pdf.pages else ""
+            data_pages_text = ""
+            for i in range(2, min(6, len(pdf.pages))):
+                t = pdf.pages[i].extract_text() or ""
+                data_pages_text += f"\n\n--- PAGE {i+1} ---\n" + t[:1200]
 
         return success_response({
             "boletin": num,
             "total_records": len(records),
             "sample": sample,
-            "first_page_preview": first_page_text,
+            "cover_page": first_page_text,
+            "data_pages": data_pages_text,
         })
     except Exception as e:
         import traceback
