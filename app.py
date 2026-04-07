@@ -524,6 +524,9 @@ def admin_import():
         return success_response({"ok": False, "message": "Import already running"})
 
     years = request.json.get("years", 10)
+    limit = request.json.get("limit")          # optional: max bulletins to process
+    from_override = request.json.get("from_num")  # optional: start from this bulletin
+    to_override = request.json.get("to_num")      # optional: end at this bulletin
 
     def run_import():
         global _import_running
@@ -533,8 +536,16 @@ def admin_import():
             from bulk_importer import bulk_import, detect_latest_bulletin, BULLETINS_PER_YEAR
             init_db()
             set_import_state(running=True)
-            to_num = detect_latest_bulletin()
-            from_num = max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
+            if to_override:
+                to_num = int(to_override)
+            else:
+                to_num = detect_latest_bulletin()
+            if from_override:
+                from_num = int(from_override)
+            else:
+                from_num = max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
+            if limit:
+                to_num = min(to_num, from_num + int(limit) - 1)
             logger.info(f"Admin bulk import started: {from_num}–{to_num}")
             bulk_import(from_num, to_num)
             logger.info("Admin bulk import complete")
@@ -682,7 +693,7 @@ def admin_page():
   body{font-family:system-ui,sans-serif;background:#F7F9FC;margin:0;padding:40px;color:#0D1B4B}
   h1{color:#0D1B4B;margin-bottom:4px}
   .sub{color:#6B7A99;margin-bottom:32px;font-size:14px}
-  .card{background:#fff;border-radius:12px;padding:24px;max-width:520px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+  .card{background:#fff;border-radius:12px;padding:24px;max-width:560px;box-shadow:0 1px 4px rgba(0,0,0,.1);margin-bottom:16px}
   .stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #E2E8F0;font-size:15px}
   .stat:last-of-type{border-bottom:none}
   .val{font-weight:600;color:#1B6EF3}
@@ -690,12 +701,15 @@ def admin_page():
   .badge.ok{background:#DCFCE7;color:#16A34A}
   .badge.warn{background:#FEF9C3;color:#B45309}
   .badge.run{background:#EEF3FF;color:#1B6EF3}
-  label{display:block;margin:20px 0 6px;font-size:14px;font-weight:600}
-  input[type=password],input[type=number]{width:100%;box-sizing:border-box;padding:10px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px}
-  button{margin-top:16px;width:100%;padding:12px;background:#1B6EF3;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+  label{display:block;margin:16px 0 6px;font-size:14px;font-weight:600}
+  input[type=password],input[type=number],input[type=text]{width:100%;box-sizing:border-box;padding:10px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px}
+  .row{display:flex;gap:8px}.row input{flex:1}
+  button{margin-top:12px;width:100%;padding:12px;background:#1B6EF3;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+  button.sec{background:#fff;color:#DC2626;border:1px solid #DC2626;margin-top:8px}
   button:disabled{background:#93AEDB;cursor:not-allowed}
   #msg{margin-top:12px;font-size:14px;min-height:20px}
   .err{color:#DC2626} .ok-msg{color:#16A34A}
+  .errbanner{background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:12px;margin-top:12px;font-size:13px;color:#DC2626;word-break:break-all;display:none}
 </style>
 </head>
 <body>
@@ -703,13 +717,26 @@ def admin_page():
 <p class="sub">Legal Pacers — Base de datos INPI</p>
 <div class="card">
   <div id="stats">Cargando estado…</div>
+  <div id="errbanner" class="errbanner"></div>
+</div>
+<div class="card">
   <label>Clave de administrador</label>
   <input type="password" id="key" placeholder="ADMIN_KEY">
-  <label>Años de historial a importar</label>
-  <input type="number" id="years" value="10" min="1" max="20">
-  <button id="btn" onclick="startImport()">Cargar boletines INPI</button>
+  <label>Importación completa (años de historial)</label>
+  <div class="row">
+    <input type="number" id="years" value="10" min="1" max="20" placeholder="Años">
+    <button id="btn" onclick="startImport()" style="margin-top:0">Importar</button>
+  </div>
+  <label>— o importar rango específico (para probar) —</label>
+  <div class="row">
+    <input type="number" id="from_num" placeholder="Desde (ej: 5989)">
+    <input type="number" id="to_num" placeholder="Hasta (ej: 5990)">
+    <button onclick="startRange()" style="margin-top:0;background:#4B5563">Probar</button>
+  </div>
+  <button class="sec" onclick="resetImport()">⚠ Forzar reset del estado</button>
   <div id="msg"></div>
 </div>
+<p style="font-size:13px;text-align:center"><a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver log de errores (JSON) →</a></p>
 <script>
 async function loadStatus(){
   try{
@@ -717,44 +744,51 @@ async function loadStatus(){
     const d=await r.json();
     const s=d.data||d;
     const running=s.import_running;
-    const errHtml=s.import_error?`<div class="stat"><span>Último error</span><span style="color:#DC2626;font-size:12px;max-width:300px;word-break:break-all">${s.import_error}</span></div>`:'';
     document.getElementById('stats').innerHTML=`
       <div class="stat"><span>Total marcas en DB</span><span class="val">${(s.total_marcas||0).toLocaleString('es-AR')}</span></div>
       <div class="stat"><span>Último boletín importado</span><span class="val">${s.last_boletin||'—'}</span></div>
       <div class="stat"><span>Boletín en proceso</span><span class="val">${s.import_boletin||'—'}</span></div>
       <div class="stat"><span>Estado DB</span><span class="badge ${s.db_ready?'ok':'warn'}">${s.db_ready?'Lista':'Vacía'}</span></div>
-      <div class="stat"><span>Importación</span><span class="badge ${running?'run':'ok'}">${running?'⟳ En curso':'Inactiva'}</span></div>
-      ${errHtml}`;
+      <div class="stat"><span>Importación</span><span class="badge ${running?'run':'ok'}">${running?'⟳ En curso':'Inactiva'}</span></div>`;
+    const eb=document.getElementById('errbanner');
+    if(s.import_error){eb.style.display='block';eb.textContent='Último error: '+s.import_error;}
+    else{eb.style.display='none';}
     const btn=document.getElementById('btn');
-    if(running){btn.disabled=true;btn.textContent='Importando… (puede tardar horas)';}
-    else{btn.disabled=false;btn.textContent='Cargar boletines INPI';}
+    if(running){btn.disabled=true;btn.textContent='Importando…';}
+    else{btn.disabled=false;btn.textContent='Importar';}
   }catch(e){document.getElementById('stats').innerHTML='<p style="color:#DC2626">Error al cargar estado</p>';}
 }
-async function startImport(){
-  const key=document.getElementById('key').value.trim();
-  const years=parseInt(document.getElementById('years').value)||10;
+async function doImport(body){
   const msg=document.getElementById('msg');
-  if(!key){msg.className='err';msg.textContent='Ingresá la clave de administrador.';return;}
-  document.getElementById('btn').disabled=true;
-  msg.className='';msg.textContent='Iniciando importación…';
+  msg.className='';msg.textContent='Iniciando…';
   try{
-    const r=await fetch('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,years})});
+    const r=await fetch('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();
     if(r.ok&&(d.ok||d.data?.ok)){
-      msg.className='ok-msg';
-      msg.textContent='✓ Importación iniciada. La página se actualiza cada 15 segundos.';
+      msg.className='ok-msg';msg.textContent='✓ Iniciada. Se actualiza cada 15s.';
       poll();
     }else{
-      msg.className='err';
-      msg.textContent='Error: '+(d.error||d.message||'Clave incorrecta');
-      document.getElementById('btn').disabled=false;
+      msg.className='err';msg.textContent='Error: '+(d.error||d.message||'Clave incorrecta');
     }
-  }catch(e){msg.className='err';msg.textContent='Error de red.';document.getElementById('btn').disabled=false;}
+  }catch(e){msg.className='err';msg.textContent='Error de red.';}
+}
+function startImport(){
+  const key=document.getElementById('key').value.trim();
+  const years=parseInt(document.getElementById('years').value)||10;
+  if(!key){document.getElementById('msg').className='err';document.getElementById('msg').textContent='Ingresá la clave.';return;}
+  doImport({key,years});
+}
+function startRange(){
+  const key=document.getElementById('key').value.trim();
+  const from_num=parseInt(document.getElementById('from_num').value);
+  const to_num=parseInt(document.getElementById('to_num').value);
+  if(!key){document.getElementById('msg').className='err';document.getElementById('msg').textContent='Ingresá la clave.';return;}
+  if(!from_num||!to_num){document.getElementById('msg').className='err';document.getElementById('msg').textContent='Ingresá el rango.';return;}
+  doImport({key,from_num,to_num});
 }
 async function resetImport(){
   const key=document.getElementById('key').value.trim();
   if(!key){alert('Ingresá la clave primero');return;}
-  if(!confirm('¿Resetear el estado de importación?')) return;
   const r=await fetch('/api/admin/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
   const d=await r.json();
   alert(d.data?.message||d.message||'Reset OK');
@@ -763,12 +797,6 @@ async function resetImport(){
 function poll(){loadStatus();setTimeout(poll,15000);}
 loadStatus();
 </script>
-<p style="margin-top:12px;font-size:13px;text-align:center">
-  <a href="#" onclick="resetImport();return false;" style="color:#DC2626">⚠ Forzar reset del estado →</a>
-</p>
-<p style="margin-top:4px;font-size:13px;text-align:center">
-  <a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver log de errores (JSON) →</a>
-</p>
 </body>
 </body>
 </html>"""
