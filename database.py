@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, Integer, String, Date, DateTime,
-    Text, Index, UniqueConstraint, Boolean, func
+    Text, Index, UniqueConstraint, Boolean, func, text
 )
 from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.pool import NullPool
@@ -138,7 +138,17 @@ def set_import_state(running: bool, current_boletin: int = 0, last_error: str = 
 
 
 def init_db():
-    """Create all tables if they don't exist."""
+    """Create all tables. If tables exist but are empty (stale schema), drop and recreate."""
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT COUNT(*) FROM marcas"))
+            count = result.scalar()
+            if count == 0:
+                # Safe to drop and recreate with the correct schema
+                Base.metadata.drop_all(engine)
+                logger.info("Dropped empty tables to refresh schema")
+    except Exception:
+        pass  # Tables don't exist yet — create_all will handle it
     Base.metadata.create_all(engine)
     logger.info("Database tables ready")
 
