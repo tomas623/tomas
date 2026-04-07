@@ -138,18 +138,34 @@ def set_import_state(running: bool, current_boletin: int = 0, last_error: str = 
 
 
 def init_db():
-    """Create all tables. If tables exist but are empty (stale schema), drop and recreate."""
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(text("SELECT COUNT(*) FROM marcas"))
-            count = result.scalar()
-            if count == 0:
-                # Safe to drop and recreate with the correct schema
-                Base.metadata.drop_all(engine)
-                logger.info("Dropped empty tables to refresh schema")
-    except Exception:
-        pass  # Tables don't exist yet — create_all will handle it
+    """Create tables and apply safe additive migrations."""
     Base.metadata.create_all(engine)
+
+    # Safe column migrations — only adds missing columns, never drops anything
+    if engine.dialect.name == "postgresql":
+        migrations = [
+            "ALTER TABLE boletin_log ADD COLUMN IF NOT EXISTS error_msg TEXT",
+            "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS estado_code VARCHAR(20) DEFAULT 'tramite'",
+            "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS agente VARCHAR(200)",
+            "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS domicilio VARCHAR(400)",
+            "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS boletin_num INTEGER",
+            "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS fecha_boletin DATE",
+            """DO $$ BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_acta_clase'
+              ) THEN
+                ALTER TABLE marcas ADD CONSTRAINT uq_acta_clase UNIQUE (acta, clase);
+              END IF;
+            END $$""",
+        ]
+        with engine.connect() as conn:
+            for sql in migrations:
+                try:
+                    conn.execute(text(sql))
+                    conn.commit()
+                except Exception as e:
+                    logger.warning(f"Migration skipped: {e}")
+
     logger.info("Database tables ready")
 
 
