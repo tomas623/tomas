@@ -167,13 +167,15 @@ def verificar_marca():
 
         classes = [int(clase)] if clase else list(range(1, 46))
 
-        # Try local DB first (fast)
+        # Use local DB only if it has enough records to be reliable (>= 50,000)
+        # A partial/incomplete DB will show false "available" results for famous marks
+        DB_MIN_RECORDS = 50_000
         db_count = count_marcas()
-        if db_count > 0:
+        if db_count >= DB_MIN_RECORDS:
             results = search_marcas(marca, classes, limit=50)
             source = "db"
         else:
-            # Fallback to live INPI scraping
+            # DB is empty or incomplete — use live INPI scraping for accurate results
             results = search_inpi(marca, classes)
             source = "inpi_live"
 
@@ -329,15 +331,16 @@ def search_inpi_api():
         if not variants or not classes:
             return error_response("Variants and classes required")
 
+        DB_MIN_RECORDS = 50_000
         db_count = count_marcas()
 
-        if db_count > 0:
+        if db_count >= DB_MIN_RECORDS:
             # Fast local DB search for all variants
             all_results = {}
             for v in variants:
                 all_results[v] = search_marcas(v, classes, limit=100)
         else:
-            # Fallback to live INPI portal scraping
+            # DB incomplete — use live INPI portal scraping
             all_results = batch_search(variants, classes, delay=1.0)
 
         # Update cache
