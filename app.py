@@ -7,6 +7,7 @@ import json
 import uuid
 import logging
 import smtplib
+import threading
 from datetime import datetime
 from functools import wraps
 from email.mime.multipart import MIMEMultipart
@@ -41,6 +42,67 @@ try:
     init_db()
 except Exception as e:
     logger.warning(f"DB init warning: {e}")
+
+# Background import thread state
+_import_running = False
+
+
+def _trigger_bulk_import(years=10, from_override=None, to_override=None, limit=None) -> bool:
+    """Start the bulk import background thread. Returns False if already running."""
+    global _import_running
+    if _import_running:
+        return False
+
+    def _run():
+        global _import_running
+        _import_running = True
+        try:
+            from database import init_db, set_import_state, get_last_imported_boletin
+            from bulk_importer import bulk_import, detect_latest_bulletin, BULLETINS_PER_YEAR
+            init_db()
+            set_import_state(running=True)
+            to_num = int(to_override) if to_override else detect_latest_bulletin()
+            from_num = int(from_override) if from_override else max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
+            if limit:
+                to_num = min(to_num, from_num + int(limit) - 1)
+            # Clamp to valid INPI bulletin range
+            from_num = max(1, min(from_num, 10000))
+            to_num   = max(1, min(to_num,   10000))
+            if from_num > to_num:
+                raise ValueError(f"Invalid range: {from_num}–{to_num}")
+            # Resume from last successfully imported bulletin
+            if not from_override:
+                last_ok = get_last_imported_boletin()
+                if last_ok and from_num <= last_ok < to_num:
+                    logger.info(f"Resuming from bulletin {last_ok + 1} (last OK: {last_ok})")
+                    from_num = last_ok + 1
+            logger.info(f"Bulk import: {from_num}–{to_num}")
+            bulk_import(from_num, to_num)
+            logger.info("Bulk import complete")
+        except Exception as e:
+            logger.error(f"Bulk import error: {e}")
+            try:
+                from database import set_import_state
+                set_import_state(running=False, last_error=str(e))
+            except Exception:
+                pass
+        finally:
+            _import_running = False
+
+    threading.Thread(target=_run, daemon=True).start()
+    return True
+
+
+# Auto-resume: if container restarted mid-import, continue automatically
+try:
+    from database import get_import_state
+    _prev_state = get_import_state()
+    if _prev_state.get("running"):
+        logger.info("Auto-resume: import was in progress at last container restart — resuming")
+        _trigger_bulk_import()
+except Exception as _e:
+    logger.warning(f"Auto-resume check failed: {_e}")
+
 
 # Global state
 search_cache = {}  # {search_id: {data}}
@@ -510,14 +572,9 @@ def db_status():
 
 
 # ── Admin: bulk import trigger ──
-import threading
-_import_running = False
-
 @app.route("/api/admin/import", methods=["POST"])
 def admin_import():
     """Trigger bulk import in background. Protected by ADMIN_KEY env var."""
-    global _import_running
-
     admin_key = os.getenv("ADMIN_KEY", "")
     provided_key = request.json.get("key", "") if request.json else ""
     if not admin_key or provided_key != admin_key:
@@ -527,55 +584,14 @@ def admin_import():
         return success_response({"ok": False, "message": "Import already running"})
 
     years = request.json.get("years", 10)
-    limit = request.json.get("limit")          # optional: max bulletins to process
-    from_override = request.json.get("from_num")  # optional: start from this bulletin
-    to_override = request.json.get("to_num")      # optional: end at this bulletin
+    limit = request.json.get("limit")
+    from_override = request.json.get("from_num")
+    to_override = request.json.get("to_num")
 
-    def run_import():
-        global _import_running
-        _import_running = True
-        try:
-            from database import init_db, set_import_state
-            from bulk_importer import bulk_import, detect_latest_bulletin, BULLETINS_PER_YEAR
-            init_db()
-            set_import_state(running=True)
-            if to_override:
-                to_num = int(to_override)
-            else:
-                to_num = detect_latest_bulletin()
-            if from_override:
-                from_num = int(from_override)
-            else:
-                from_num = max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
-            if limit:
-                to_num = min(to_num, from_num + int(limit) - 1)
-            # Safety: clamp to valid INPI bulletin range (1–10000)
-            from_num = max(1, min(from_num, 10000))
-            to_num   = max(1, min(to_num,   10000))
-            if from_num > to_num:
-                raise ValueError(f"Invalid range: {from_num}–{to_num}")
-            # Resume from where we left off (skip already-imported bulletins)
-            if not from_override:
-                from database import get_last_imported_boletin
-                last_ok = get_last_imported_boletin()
-                if last_ok and from_num <= last_ok < to_num:
-                    logger.info(f"Resuming from bulletin {last_ok + 1} (last OK was {last_ok})")
-                    from_num = last_ok + 1
-            logger.info(f"Admin bulk import: {from_num}–{to_num}")
-            bulk_import(from_num, to_num)
-            logger.info("Admin bulk import complete")
-        except Exception as e:
-            logger.error(f"Admin bulk import error: {e}")
-            try:
-                from database import set_import_state
-                set_import_state(running=False, last_error=str(e))
-            except Exception:
-                pass
-        finally:
-            _import_running = False
-
-    thread = threading.Thread(target=run_import, daemon=True)
-    thread.start()
+    started = _trigger_bulk_import(years=years, from_override=from_override,
+                                    to_override=to_override, limit=limit)
+    if not started:
+        return success_response({"ok": False, "message": "Import already running"})
 
     return success_response({
         "ok": True,
