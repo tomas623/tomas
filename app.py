@@ -549,6 +549,11 @@ def admin_import():
                 from_num = max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
             if limit:
                 to_num = min(to_num, from_num + int(limit) - 1)
+            # Safety: clamp to valid INPI bulletin range (1–10000)
+            from_num = max(1, min(from_num, 10000))
+            to_num   = max(1, min(to_num,   10000))
+            if from_num > to_num:
+                raise ValueError(f"Invalid range: {from_num}–{to_num}")
             logger.info(f"Admin bulk import started: {from_num}–{to_num}")
             bulk_import(from_num, to_num)
             logger.info("Admin bulk import complete")
