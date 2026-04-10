@@ -343,6 +343,7 @@
     .nav-logo img {
       height: 36px;
       width: auto;
+      filter: brightness(0) invert(1);
     }
 
     .nav-toggle {
@@ -417,13 +418,13 @@
     /* ==================== HERO ==================== */
     .hero {
       position: relative;
-      height: 100vh;
-      min-height: 600px;
+      min-height: 80vh;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       background: var(--navy);
+      padding: 7rem 2rem 5rem;
     }
 
     .hero-video {
@@ -615,6 +616,15 @@
       display: flex;
       flex-direction: column;
       gap: 2rem;
+    }
+
+    @media (min-width: 1024px) {
+      .checklist-sidebar {
+        position: sticky;
+        top: 84px;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+      }
     }
 
     .checklist-score-display {
@@ -962,20 +972,6 @@
 
     .testimonials-section .section-title {
       color: var(--white);
-    }
-
-    .video-testimonial {
-      margin: 3rem 0;
-      max-width: 720px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .video-testimonial video {
-      width: 100%;
-      height: auto;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-glow);
     }
 
     .testimonials-grid {
@@ -1329,6 +1325,7 @@
       height: 32px;
       width: auto;
       margin-bottom: 1rem;
+      filter: brightness(0) invert(1);
     }
 
     .footer-brand p {
@@ -1466,7 +1463,7 @@
       <span class="hero-title--accent">El marco legal no debería frenarte.</span>
     </h1>
     <p class="hero-subtitle">
-      Asesoría legal especializada en tecnología y startups. Sin letra chica,
+      Consultoría legal especializada en startups y tecnología. Sin letra chica,
       sin honorarios imprevistos, con foco en que puedas escalar.
     </p>
     <div class="hero-actions">
@@ -1480,7 +1477,7 @@
     <div class="hero-proof">
       <span>+50 startups asesoradas</span>
       <span>·</span>
-      <span>Argentina · México · Colombia</span>
+      <span>Argentina · LATAM · EEUU</span>
       <span>·</span>
       <span>Respuesta en 24h</span>
     </div>
@@ -1548,6 +1545,9 @@
         <div class="checklist-risk-level" id="riskLevel">
           <div class="risk-badge risk-badge--critical">Riesgo Crítico</div>
         </div>
+        <p style="font-size:0.78rem; color:var(--gray-500); line-height:1.5; font-style:italic;">
+          Este score es orientativo. Tener un puntaje alto no garantiza protección completa — lo que importa es la calidad y solidez de cada documento.
+        </p>
         <div class="checklist-risks-found" id="risksFound">
         </div>
         <a href="#contacto" class="btn btn-primary checklist-cta" id="checklistCTA">
@@ -1599,18 +1599,19 @@
           <li>SAFEs y convertible notes</li>
           <li>Data room legal</li>
           <li>Revisión de term sheets</li>
-          <li>Estructuras para YC / aceleradoras</li>
+          <li>Estructuras para aceleradoras y VC</li>
+          <li>LLC en EEUU</li>
         </ul>
       </div>
 
       <div class="service-card">
-        <div class="service-icon">🌐</div>
-        <h3>Expansión regional</h3>
+        <div class="service-icon">📝</div>
+        <h3>Contratos</h3>
         <ul>
-          <li>Operación en México, Colombia, Chile</li>
-          <li>Delaware / Cayman setup</li>
-          <li>Contratos internacionales</li>
-          <li>Compliance regulatorio por país</li>
+          <li>Contratos con clientes y proveedores</li>
+          <li>Acuerdos de confidencialidad (NDA)</li>
+          <li>Contratos de servicios tech</li>
+          <li>SLAs y términos de licencia</li>
         </ul>
       </div>
     </div>
@@ -1646,7 +1647,7 @@
         <div class="step-number">03</div>
         <div class="step-content">
           <h3>Ejecución rápida</h3>
-          <p>Trabajamos en paralelo con tu equipo. Documentos en días, no en semanas.</p>
+          <p>Trabajamos en paralelo con tu equipo. Todo listo en semanas, no meses.</p>
         </div>
       </div>
       <div class="process-connector"></div>
@@ -1654,8 +1655,8 @@
       <div class="process-step">
         <div class="step-number">04</div>
         <div class="step-content">
-          <h3>Acompañamiento continuo</h3>
-          <p>Somos tu área legal. Consultás cuando necesitás, por WhatsApp o videollamada.</p>
+          <h3>Somos tu legal partner</h3>
+          <p>Consultás cuando necesitás, por WhatsApp o Meet. Somos parte de tu equipo.</p>
         </div>
       </div>
     </div>
@@ -1667,12 +1668,6 @@
   <div class="container">
     <div class="section-label">Lo que dicen</div>
     <h2 class="section-title">Startups que nos confiaron su base legal</h2>
-
-    <div class="video-testimonial reveal">
-      <video controls width="100%">
-        <source src="Video sin título (2).mp4" type="video/mp4">
-      </video>
-    </div>
 
     <div class="testimonials-grid reveal">
       <div class="testimonial-card">
