@@ -346,6 +346,17 @@
       filter: brightness(0) invert(1);
     }
 
+    .logo-text {
+      font-family: 'Mundial', sans-serif;
+      font-size: 1.15rem;
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+
+    .logo-text strong {
+      font-weight: 900;
+    }
+
     .nav-toggle {
       display: none;
       flex-direction: column;
@@ -1435,7 +1446,8 @@
 <nav id="nav">
   <div class="nav-inner">
     <a href="#" class="nav-logo">
-      <img src="legalpacers-logos-01.png" alt="Legal Pacers">
+      <img src="legalpacers-logos-01.png" alt="Legal Pacers" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <span class="logo-text" style="display:none">Legal<strong>Pacers</strong></span>
     </a>
     <button class="nav-toggle" aria-label="Menú" aria-expanded="false" onclick="toggleNav()">
       <span></span><span></span><span></span>
@@ -1457,7 +1469,6 @@
   </video>
   <div class="hero-overlay"></div>
   <div class="hero-content container">
-    <div class="hero-badge">Para startups en Argentina y LATAM</div>
     <h1 class="hero-title">
       Tu startup crece rápido.<br>
       <span class="hero-title--accent">El marco legal no debería frenarte.</span>
@@ -1574,6 +1585,7 @@
         <h3>Constitución y estructura</h3>
         <ul>
           <li>SAS / SA en Argentina</li>
+          <li>LLC en EEUU</li>
           <li>Estructura para inversión extranjera</li>
           <li>Pacto de socios y vesting</li>
           <li>Cap table inicial</li>
@@ -1600,7 +1612,6 @@
           <li>Data room legal</li>
           <li>Revisión de term sheets</li>
           <li>Estructuras para aceleradoras y VC</li>
-          <li>LLC en EEUU</li>
         </ul>
       </div>
 
@@ -1896,7 +1907,8 @@
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <img src="legalpacers-logos-01.png" alt="Legal Pacers">
+        <img src="legalpacers-logos-01.png" alt="Legal Pacers" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <span class="logo-text" style="display:none">Legal<strong>Pacers</strong></span>
         <p>Asesoría legal especializada en startups tech en Latinoamérica.</p>
         <div class="footer-social">
           <a href="#" aria-label="LinkedIn">in</a>
