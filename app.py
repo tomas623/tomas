@@ -731,16 +731,12 @@ def admin_page():
   <label>Clave de administrador</label>
   <input type="password" id="key" placeholder="ADMIN_KEY">
   <label>Importación completa (años de historial)</label>
-  <div class="row">
-    <input type="number" id="years" value="10" min="1" max="20" placeholder="Años">
-    <button id="btn" onclick="startImport()" style="margin-top:0">Importar</button>
-  </div>
-  <label>— o importar rango específico (para probar) —</label>
-  <div class="row">
-    <input type="number" id="from_num" placeholder="Desde (ej: 5989)">
-    <input type="number" id="to_num" placeholder="Hasta (ej: 5990)">
-    <button onclick="startRange()" style="margin-top:0;background:#4B5563">Probar</button>
-  </div>
+  <input type="number" id="years" value="10" min="1" max="20" placeholder="Años" style="margin-bottom:8px">
+  <button id="btn" onclick="startImport()">Importar últimos N años</button>
+  <label style="margin-top:20px">— o importar rango específico (para probar) —</label>
+  <input type="number" id="from_num" placeholder="Desde (ej: 5489)" style="margin-bottom:8px">
+  <input type="number" id="to_num" placeholder="Hasta (ej: 5510)" style="margin-bottom:8px">
+  <button onclick="startRange()" style="background:#4B5563">Probar rango</button>
   <button class="sec" onclick="resetImport()">⚠ Forzar reset del estado</button>
   <div id="msg"></div>
 </div>
