@@ -554,7 +554,14 @@ def admin_import():
             to_num   = max(1, min(to_num,   10000))
             if from_num > to_num:
                 raise ValueError(f"Invalid range: {from_num}–{to_num}")
-            logger.info(f"Admin bulk import started: {from_num}–{to_num}")
+            # Resume from where we left off (skip already-imported bulletins)
+            if not from_override:
+                from database import get_last_imported_boletin
+                last_ok = get_last_imported_boletin()
+                if last_ok and from_num <= last_ok < to_num:
+                    logger.info(f"Resuming from bulletin {last_ok + 1} (last OK was {last_ok})")
+                    from_num = last_ok + 1
+            logger.info(f"Admin bulk import: {from_num}–{to_num}")
             bulk_import(from_num, to_num)
             logger.info("Admin bulk import complete")
         except Exception as e:
