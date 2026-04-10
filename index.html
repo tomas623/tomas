@@ -1438,6 +1438,173 @@
       width: 28px;
       height: 28px;
     }
+
+    /* ==================== MOBILE ==================== */
+    @media (max-width: 767px) {
+
+      /* Nav */
+      .nav-toggle {
+        display: flex;
+      }
+
+      .nav-links {
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: var(--navy);
+        flex-direction: column;
+        gap: 0;
+        padding: 0.5rem 0 1rem;
+        display: none;
+        z-index: 999;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      }
+
+      .nav-links--open {
+        display: flex !important;
+      }
+
+      .nav-links li a {
+        display: block;
+        padding: 0.9rem 2rem;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        font-size: 1rem;
+      }
+
+      .nav-cta {
+        display: none;
+      }
+
+      /* Hero */
+      .hero {
+        min-height: 60vh;
+        padding: 6rem 1.5rem 3.5rem;
+      }
+
+      .hero-proof {
+        flex-direction: column;
+        gap: 0.4rem;
+        align-items: center;
+      }
+
+      .hero-proof span:nth-child(even) {
+        display: none;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .hero-actions .btn {
+        width: 100%;
+        max-width: 320px;
+      }
+
+      /* Secciones — padding reducido */
+      .pain-section,
+      .checklist-section,
+      .services-section,
+      .process-section,
+      .testimonials-section,
+      .pricing-section,
+      .faq-section,
+      .contact-section {
+        padding: 4rem 1.25rem;
+      }
+
+      .section-subtitle {
+        margin-bottom: 2rem;
+        font-size: 1rem;
+      }
+
+      /* Pain cards — 1 columna */
+      .pain-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Checklist — sidebar debajo de los ítems */
+      .checklist-wrapper {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 2rem;
+      }
+
+      .checklist-score-display {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto;
+      }
+
+      .score-ring__label span {
+        font-size: 1.8rem;
+      }
+
+      /* Servicios — 1 columna */
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .service-card--featured {
+        transform: none;
+      }
+
+      /* Proceso — columna con número lateral */
+      .process-steps {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .process-step {
+        flex-direction: row;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+
+      .step-number {
+        font-size: 2.5rem;
+        min-width: 48px;
+      }
+
+      /* Testimonios — 1 columna */
+      .testimonials-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Precios — 1 columna */
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-card--featured {
+        transform: none;
+      }
+
+      /* Contacto — stacked */
+      .contact-inner {
+        grid-template-columns: 1fr;
+      }
+
+      /* Footer */
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      /* WhatsApp float más chico */
+      .whatsapp-float {
+        width: 48px;
+        height: 48px;
+        bottom: 1.25rem;
+        right: 1.25rem;
+      }
+
+      .whatsapp-float svg {
+        width: 24px;
+        height: 24px;
+      }
+    }
   </style>
 </head>
 <body>
