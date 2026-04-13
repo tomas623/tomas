@@ -118,11 +118,16 @@ def import_bulletin(num: int, dry_run: bool = False) -> dict:
     """
     result = {"num": num, "status": "ok", "records": 0, "error": None}
 
-    # Check if already imported
+    # Check if already imported with actual records
+    # (skip only if registros > 0 — bulletins with registros=0 may have had a failed upsert)
     with get_session() as s:
-        existing = s.query(BoletinLog).filter_by(numero=num, status="ok").first()
+        existing = s.query(BoletinLog).filter(
+            BoletinLog.numero == num,
+            BoletinLog.status == "ok",
+            BoletinLog.registros > 0,
+        ).first()
         if existing:
-            logger.info(f"Bulletin {num}: already imported ({existing.registros} records)")
+            logger.debug(f"Bulletin {num}: already imported ({existing.registros} records), skipping")
             result["status"] = "skip"
             result["records"] = existing.registros
             return result
@@ -195,27 +200,36 @@ def _upsert_records(records: list[MarcaRecord]) -> int:
 
     try:
         with engine.begin() as conn:
-            # Use upsert to avoid duplicates
             dialect = engine.dialect.name
             if dialect == "postgresql":
-                stmt = pg_insert(Marca).values(rows)
-                stmt = stmt.on_conflict_do_update(
-                    constraint="uq_acta_clase",
-                    set_={
-                        "estado": stmt.excluded.estado,
-                        "estado_code": stmt.excluded.estado_code,
-                        "titular": stmt.excluded.titular,
-                        "fecha_vencimiento": stmt.excluded.fecha_vencimiento,
-                    }
-                )
-                conn.execute(stmt)
+                try:
+                    # Preferred: upsert using column-level conflict detection (no named constraint needed)
+                    stmt = pg_insert(Marca).values(rows)
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=["acta", "clase"],
+                        set_={
+                            "estado": stmt.excluded.estado,
+                            "estado_code": stmt.excluded.estado_code,
+                            "titular": stmt.excluded.titular,
+                            "fecha_vencimiento": stmt.excluded.fecha_vencimiento,
+                        }
+                    )
+                    conn.execute(stmt)
+                except Exception as ue:
+                    # Fallback: no unique index yet — insert row-by-row, skip duplicates
+                    logger.warning(f"Batch upsert failed ({ue}), falling back to row-by-row insert")
+                    for row in rows:
+                        try:
+                            conn.execute(sql_insert(Marca).values(row))
+                        except Exception:
+                            pass
             else:
-                # SQLite — insert or ignore, then update
+                # SQLite — insert or ignore
                 for row in rows:
                     try:
                         conn.execute(sql_insert(Marca).values(row))
                     except Exception:
-                        pass  # skip duplicates
+                        pass
         return len(rows)
     except Exception as e:
         logger.error(f"DB upsert error: {e}")

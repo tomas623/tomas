@@ -151,6 +151,11 @@ def init_db():
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS boletin_num INTEGER",
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS fecha_boletin DATE",
             """DO $$ BEGIN
+              -- Remove duplicate (acta, clase) pairs keeping the highest id
+              DELETE FROM marcas a
+              USING marcas b
+              WHERE a.id < b.id AND a.acta = b.acta AND a.clase = b.clase;
+              -- Now add the unique constraint if missing
               IF NOT EXISTS (
                 SELECT 1 FROM pg_constraint WHERE conname = 'uq_acta_clase'
               ) THEN
