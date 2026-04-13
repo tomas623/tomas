@@ -604,212 +604,111 @@
       color: var(--red);
     }
 
-    /* ==================== CHECKLIST ==================== */
-    .checklist-section {
-      background: var(--white);
+    /* ==================== CHECKLIST CTA SECTION ==================== */
+    .checklist-cta-section {
+      background: var(--off-white);
       padding: 6rem var(--space-md);
     }
 
-    .checklist-wrapper {
+    .checklist-cta-inner {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 3rem;
-      margin-top: 3rem;
+      grid-template-columns: 1fr 380px;
+      gap: 4rem;
+      align-items: center;
     }
 
-    @media (min-width: 1024px) {
-      .checklist-wrapper {
-        grid-template-columns: 300px 1fr;
+    @media (max-width: 900px) {
+      .checklist-cta-inner {
+        grid-template-columns: 1fr;
       }
     }
 
-    .checklist-sidebar {
+    .checklist-cta-text > p {
+      font-size: var(--text-lg);
+      color: var(--gray-500);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .checklist-cta-bullets {
+      list-style: none;
+      margin-bottom: 2rem;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 0.6rem;
     }
 
-    @media (min-width: 1024px) {
-      .checklist-sidebar {
-        position: sticky;
-        top: 84px;
-        max-height: calc(100vh - 100px);
-        overflow-y: auto;
-      }
+    .checklist-cta-bullets li {
+      font-size: var(--text-base);
+      color: var(--gray-700);
     }
 
-    .checklist-score-display {
-      position: relative;
-      width: 200px;
-      height: 200px;
-      margin: 0 auto;
+    .checklist-cta-bullets li::before {
+      content: '✓ ';
+      color: var(--green);
+      font-weight: 700;
     }
 
-    .score-ring {
-      width: 100%;
-      height: 100%;
-    }
-
-    .score-ring__bg {
-      fill: none;
-      stroke: var(--gray-100);
-      stroke-width: 10;
-    }
-
-    .score-ring__fill {
-      fill: none;
-      stroke: var(--blue);
-      stroke-width: 10;
-      stroke-linecap: round;
-      stroke-dasharray: 326.7;
-      stroke-dashoffset: 326.7;
-      transform: rotate(-90deg);
-      transform-origin: 50% 50%;
-      transition: stroke-dashoffset 400ms ease, stroke 400ms ease;
-    }
-
-    .score-ring__label {
-      position: absolute;
-      inset: 0;
+    .preview-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
       align-items: center;
+      gap: 1.5rem;
+    }
+
+    .preview-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
       justify-content: center;
+    }
+
+    .preview-categories span {
+      background: var(--off-white);
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    .preview-ring {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-ring-label {
+      position: absolute;
       text-align: center;
     }
 
-    .score-ring__label span {
-      font-size: 2.5rem;
+    .preview-ring-label span {
+      display: block;
+      font-size: 1.5rem;
       font-weight: 900;
       color: var(--blue);
+      line-height: 1;
     }
 
-    .score-ring__label small {
-      font-size: var(--text-sm);
+    .preview-ring-label small {
+      font-size: 0.7rem;
       color: var(--gray-500);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
 
-    .risk-badge {
-      display: inline-block;
-      padding: 8px 16px;
-      border-radius: var(--radius-sm);
-      font-weight: 700;
-      font-size: var(--text-sm);
-      text-align: center;
-      width: 100%;
-    }
-
-    .risk-badge--critical {
-      background: rgba(230, 57, 70, 0.1);
-      color: var(--red);
-    }
-
-    .risk-badge--high {
-      background: rgba(244, 164, 56, 0.1);
-      color: var(--amber);
-    }
-
-    .risk-badge--medium {
-      background: rgba(1, 111, 251, 0.1);
+    .preview-badge {
+      background: rgba(1,111,251,0.1);
       color: var(--blue);
-    }
-
-    .risk-badge--low {
-      background: rgba(44, 182, 125, 0.1);
-      color: var(--green);
-    }
-
-    .checklist-risks-found {
-      font-size: var(--text-sm);
-    }
-
-    .risks-title {
-      font-weight: 700;
-      color: var(--gray-700);
-      margin-bottom: 0.75rem;
-    }
-
-    .risks-title.all-clear {
-      color: var(--green);
-      font-size: var(--text-lg);
-    }
-
-    .risks-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .risks-list li {
-      padding: 0.5rem;
-      background: rgba(230, 57, 70, 0.05);
-      border-left: 2px solid var(--red);
+      padding: 8px 20px;
       border-radius: var(--radius-sm);
-      color: var(--gray-700);
-    }
-
-    .risks-list strong {
-      color: var(--red);
       font-weight: 700;
-    }
-
-    .checklist-cta {
-      width: 100%;
-    }
-
-    .checklist-category {
-      margin-bottom: 2.5rem;
-    }
-
-    .checklist-cat-title {
-      font-size: var(--text-lg);
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 1rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 2px solid var(--gray-100);
-    }
-
-    .checklist-items {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .checklist-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      padding: 1rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: background var(--transition), border-color var(--transition);
-    }
-
-    .checklist-item:hover {
-      background: var(--off-white);
-    }
-
-    .checklist-checkbox {
-      width: 20px;
-      height: 20px;
-      margin-top: 2px;
-      cursor: pointer;
-      accent-color: var(--blue);
-    }
-
-    .checklist-text {
-      flex: 1;
-      line-height: 1.5;
-    }
-
-    .checklist-item input:checked ~ .checklist-checkmark::before {
-      content: '✓';
-      color: var(--green);
+      font-size: 0.9rem;
     }
 
     /* ==================== SERVICES ==================== */
@@ -1502,13 +1401,17 @@
         max-width: 320px;
       }
 
-      /* Secciones — padding reducido */
-      .pain-section,
-      .checklist-section,
-      .services-section,
+      /* Secciones pesadas — ocultar en mobile */
       .process-section,
       .testimonials-section,
-      .pricing-section,
+      .pricing-section {
+        display: none;
+      }
+
+      /* Secciones visibles — padding reducido */
+      .pain-section,
+      .checklist-cta-section,
+      .services-section,
       .faq-section,
       .contact-section {
         padding: 4rem 1.25rem;
@@ -1701,40 +1604,47 @@
   </div>
 </section>
 
-<!-- ==================== CHECKLIST ==================== -->
-<section id="checklist" class="checklist-section">
+<!-- ==================== CHECKLIST CTA ==================== -->
+<section id="checklist" class="checklist-cta-section">
   <div class="container">
-    <div class="section-label">Herramienta gratuita</div>
-    <h2 class="section-title">¿Cuál es tu nivel de riesgo legal?</h2>
-    <p class="section-subtitle">Marcá lo que ya tenés resuelto. En 2 minutos sabés dónde estás parado.</p>
-
-    <div class="checklist-wrapper">
-      <div class="checklist-sidebar">
-        <div class="checklist-score-display">
-          <svg class="score-ring" viewBox="0 0 120 120">
-            <circle class="score-ring__bg" cx="60" cy="60" r="52"/>
-            <circle class="score-ring__fill" id="scoreCircle" cx="60" cy="60" r="52"/>
-          </svg>
-          <div class="score-ring__label">
-            <span id="scorePercent">0%</span>
-            <small>protegido</small>
-          </div>
-        </div>
-        <div class="checklist-risk-level" id="riskLevel">
-          <div class="risk-badge risk-badge--critical">Riesgo Crítico</div>
-        </div>
-        <p style="font-size:0.78rem; color:var(--gray-500); line-height:1.5; font-style:italic;">
-          Este score es orientativo. Tener un puntaje alto no garantiza protección completa — lo que importa es la calidad y solidez de cada documento.
-        </p>
-        <div class="checklist-risks-found" id="risksFound">
-        </div>
-        <a href="#contacto" class="btn btn-primary checklist-cta" id="checklistCTA">
-          Quiero resolver estos riesgos →
+    <div class="checklist-cta-inner">
+      <div class="checklist-cta-text">
+        <div class="section-label">Herramienta gratuita</div>
+        <h2 class="section-title">¿Cuál es tu nivel de riesgo legal?</h2>
+        <p>En 2 minutos y 17 preguntas sabés exactamente qué riesgos tiene tu startup —
+        y qué necesitás resolver primero.</p>
+        <ul class="checklist-cta-bullets">
+          <li>17 ítems en 5 categorías clave</li>
+          <li>Score visual con riesgos identificados</li>
+          <li>100% gratuito, sin registro</li>
+        </ul>
+        <a href="checklist.html" target="_blank" class="btn btn-primary btn-lg">
+          Evaluar mi riesgo legal →
         </a>
       </div>
-
-      <div class="checklist-main">
-        <div id="checklistCategories"></div>
+      <div class="checklist-cta-preview">
+        <div class="preview-card">
+          <div class="preview-categories">
+            <span>🏗️ Constitución</span>
+            <span>🔐 Propiedad Intelectual</span>
+            <span>📋 Privacidad y Datos</span>
+            <span>👥 Laboral</span>
+            <span>📈 Inversión</span>
+          </div>
+          <div class="preview-ring">
+            <svg viewBox="0 0 120 120" width="100" height="100">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#E8ECF4" stroke-width="10"/>
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#016FFB" stroke-width="10"
+                stroke-linecap="round" stroke-dasharray="113 214"
+                transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="preview-ring-label">
+              <span>53%</span>
+              <small>ejemplo</small>
+            </div>
+          </div>
+          <div class="preview-badge">Riesgo Medio</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2165,98 +2075,6 @@
       }
     });
   });
-
-  /* ==================== CHECKLIST DATA & LOGIC ==================== */
-  const CHECKLIST_ITEMS = [
-    { id: 'c1', cat: 'Constitución', text: 'Tengo una sociedad legalmente constituida', risk: 'Sin estructura legal, responsabilidad ilimitada', weight: 2 },
-    { id: 'c2', cat: 'Constitución', text: 'La estructura societaria es adecuada para recibir inversión extranjera', risk: 'Inversores no pueden entrar', weight: 3 },
-    { id: 'c3', cat: 'Constitución', text: 'Existe un pacto de socios / SHA firmado', risk: 'Conflicto de socios sin resolución', weight: 3 },
-    { id: 'c4', cat: 'Constitución', text: 'El vesting de los founders está documentado', risk: 'Equity mal estructurado', weight: 3 },
-
-    { id: 'ip1', cat: 'Propiedad Intelectual', text: 'El código fuente y marca están a nombre de la empresa (no del founder)', risk: 'IP personal, bloquea due diligence', weight: 3 },
-    { id: 'ip2', cat: 'Propiedad Intelectual', text: 'Los contratos con freelancers/empleados incluyen cesión de IP', risk: 'IP de terceros en tu producto', weight: 3 },
-    { id: 'ip3', cat: 'Propiedad Intelectual', text: 'La marca está registrada o en proceso', risk: 'Terceros pueden usar tu marca', weight: 2 },
-    { id: 'ip4', cat: 'Propiedad Intelectual', text: 'No usás código open source con licencias restrictivas (GPL) sin análisis', risk: 'Contaminación de licencia en producto', weight: 2 },
-
-    { id: 'priv1', cat: 'Privacidad y Datos', text: 'Tenés Términos y Condiciones propios (no copiados)', risk: 'Sin protección contractual ante reclamos', weight: 2 },
-    { id: 'priv2', cat: 'Privacidad y Datos', text: 'Tenés Política de Privacidad actualizada (LPDP/GDPR)', risk: 'Multas y sanciones regulatorias', weight: 3 },
-    { id: 'priv3', cat: 'Privacidad y Datos', text: 'Tenés mecanismo de consentimiento para cookies/datos', risk: 'Incumplimiento regulatorio desde día 1', weight: 2 },
-    { id: 'priv4', cat: 'Privacidad y Datos', text: 'Los datos de usuarios están alojados conforme a la normativa aplicable', risk: 'Transferencia internacional no autorizada', weight: 2 },
-
-    { id: 'lab1', cat: 'Laboral y Contratos', text: 'Los empleados/contratistas tienen contratos firmados', risk: 'Pasivo laboral oculto', weight: 2 },
-    { id: 'lab2', cat: 'Laboral y Contratos', text: 'Los contratos con clientes incluyen cláusulas de limitación de responsabilidad', risk: 'Responsabilidad ilimitada ante incidentes', weight: 3 },
-    { id: 'lab3', cat: 'Laboral y Contratos', text: 'Los NDAs con partners/empleados están vigentes', risk: 'Filtración de información sin consecuencia legal', weight: 2 },
-
-    { id: 'inv1', cat: 'Inversión', text: 'Tenés un cap table actualizado y documentado', risk: 'Disputas de equity con futuros inversores', weight: 2 },
-    { id: 'inv2', cat: 'Inversión', text: 'Entendés la diferencia entre SAFE, convertible note y equity round', risk: 'Dilución inesperada en próxima ronda', weight: 2 },
-  ];
-
-  function renderChecklist() {
-    const categories = [...new Set(CHECKLIST_ITEMS.map(i => i.cat))];
-    const container = document.getElementById('checklistCategories');
-
-    categories.forEach(cat => {
-      const items = CHECKLIST_ITEMS.filter(i => i.cat === cat);
-      const catEl = document.createElement('div');
-      catEl.className = 'checklist-category';
-
-      const itemsHtml = items.map(item => `
-        <label class="checklist-item">
-          <input type="checkbox" class="checklist-checkbox" data-id="${item.id}" onchange="updateScore()">
-          <span class="checklist-text">${item.text}</span>
-        </label>
-      `).join('');
-
-      catEl.innerHTML = `
-        <h3 class="checklist-cat-title">${cat}</h3>
-        <div class="checklist-items">
-          ${itemsHtml}
-        </div>
-      `;
-      container.appendChild(catEl);
-    });
-  }
-
-  function updateScore() {
-    const checked = document.querySelectorAll('.checklist-checkbox:checked');
-    const checkedIds = new Set([...checked].map(el => el.dataset.id));
-
-    const maxScore = CHECKLIST_ITEMS.reduce((sum, i) => sum + i.weight, 0);
-    const earnedScore = CHECKLIST_ITEMS
-      .filter(i => checkedIds.has(i.id))
-      .reduce((sum, i) => sum + i.weight, 0);
-
-    const pct = Math.round((earnedScore / maxScore) * 100);
-
-    // Update ring
-    const circumference = 2 * Math.PI * 52;
-    const offset = circumference - (pct / 100) * circumference;
-    document.getElementById('scoreCircle').style.strokeDashoffset = offset;
-    document.getElementById('scorePercent').textContent = pct + '%';
-
-    // Risk level
-    let levelClass, levelText;
-    if (pct < 30) { levelClass = 'critical'; levelText = 'Riesgo Crítico'; }
-    else if (pct < 60) { levelClass = 'high'; levelText = 'Riesgo Alto'; }
-    else if (pct < 80) { levelClass = 'medium'; levelText = 'Riesgo Medio'; }
-    else { levelClass = 'low'; levelText = 'Bien protegido'; }
-
-    const riskEl = document.getElementById('riskLevel');
-    riskEl.innerHTML = `<div class="risk-badge risk-badge--${levelClass}">${levelText}</div>`;
-
-    // Unchecked risks
-    const uncheckedRisks = CHECKLIST_ITEMS
-      .filter(i => !checkedIds.has(i.id))
-      .map(i => `<li><strong>${i.cat}:</strong> ${i.risk}</li>`)
-      .join('');
-
-    document.getElementById('risksFound').innerHTML = uncheckedRisks
-      ? `<p class="risks-title">Riesgos identificados:</p><ul class="risks-list">${uncheckedRisks}</ul>`
-      : `<p class="risks-title all-clear">✓ Todo bajo control</p>`;
-  }
-
-  renderChecklist();
-  updateScore();
 
   /* ==================== SCROLL REVEAL ==================== */
   const revealEls = document.querySelectorAll('.reveal');
