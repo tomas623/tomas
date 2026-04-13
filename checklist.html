@@ -475,20 +475,143 @@
       bottom: 1.5rem;
       right: 1.5rem;
       z-index: 999;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: #25D366;
-      color: #fff;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.25rem;
+      border-radius: 999px;
+      background: #25D366;
+      color: #fff;
+      font-family: 'Mundial', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
       box-shadow: 0 4px 20px rgba(37,211,102,0.4);
       transition: transform var(--transition);
     }
 
-    .whatsapp-float:hover { transform: scale(1.1); }
-    .whatsapp-float svg { width: 26px; height: 26px; }
+    .whatsapp-float:hover { transform: translateY(-2px); color: #fff; }
+    .whatsapp-float svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+    @media (max-width: 480px) {
+      .whatsapp-float .wa-label { display: none; }
+      .whatsapp-float { padding: 0.75rem; border-radius: 50%; }
+      .whatsapp-float svg { width: 26px; height: 26px; }
+    }
+
+    /* DISCLAIMER BANNER */
+    .disclaimer-banner {
+      background: rgba(244,164,56,0.1);
+      border-left: 4px solid var(--amber);
+      padding: 0.85rem clamp(1rem, 4vw, 3rem);
+      font-size: 0.85rem;
+      color: var(--gray-700);
+      line-height: 1.5;
+    }
+    .disclaimer-banner strong { color: #b36c00; }
+
+    /* DISCLAIMER CARD (sidebar) */
+    .disclaimer-card {
+      background: rgba(244,164,56,0.07);
+      border: 1px solid rgba(244,164,56,0.25);
+      border-left: 3px solid var(--amber);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      font-size: 0.82rem;
+      color: var(--gray-700);
+      line-height: 1.55;
+    }
+    .disclaimer-card strong {
+      display: block;
+      color: #b36c00;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+
+    /* RESULTS SECTION */
+    .results-section {
+      background: var(--navy);
+      color: #fff;
+      padding: 4rem clamp(1rem, 4vw, 3rem) 5rem;
+    }
+    .results-inner {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .results-section h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+    }
+    .results-score-summary {
+      font-size: 1rem;
+      opacity: 0.7;
+      margin-bottom: 2rem;
+    }
+    .results-risk-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    .results-risk-list li {
+      padding: 0.85rem 1rem;
+      background: rgba(230,57,70,0.12);
+      border-left: 3px solid var(--red);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .results-risk-list li strong {
+      display: block;
+      color: rgba(255,255,255,0.45);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .results-all-clear {
+      padding: 1.5rem;
+      background: rgba(44,182,125,0.15);
+      border: 1px solid rgba(44,182,125,0.35);
+      border-radius: var(--radius-md);
+      color: var(--green);
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .results-quality-note {
+      padding: 1rem 1.25rem;
+      background: rgba(244,164,56,0.1);
+      border-left: 3px solid var(--amber);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+    }
+    .results-quality-note strong { color: var(--amber); }
+    .results-cta-box {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255,255,255,0.05);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .results-cta-box h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .results-cta-box p {
+      font-size: 0.9rem;
+      opacity: 0.75;
+      margin-bottom: 1.5rem;
+    }
 
     /* MOBILE */
     @media (max-width: 600px) {
@@ -523,6 +646,11 @@
   <span class="progress-text" id="progressPct">0%</span>
 </div>
 
+<div class="disclaimer-banner">
+  <strong>Importante:</strong> Este score es orientativo. Un puntaje alto no garantiza protección completa —
+  lo que importa es la calidad y solidez de cada documento.
+</div>
+
 <div class="checklist-page">
 
   <!-- SIDEBAR -->
@@ -543,17 +671,14 @@
       <div id="riskLevel" style="width:100%">
         <div class="risk-badge risk-badge--critical">Riesgo Crítico</div>
       </div>
-
-      <p class="score-note">
-        Este score es orientativo. Tener un puntaje alto no garantiza protección completa —
-        lo que importa es la calidad y solidez de cada documento.
-      </p>
     </div>
 
-    <div class="risks-card" id="risksCard">
-      <h4>Riesgos identificados</h4>
-      <div id="risksFound"></div>
+    <div class="disclaimer-card">
+      <strong>Sobre este score</strong>
+      Un puntaje alto no garantiza protección completa — lo que importa es la calidad y solidez de cada documento.
     </div>
+
+    <a href="#resultados" class="btn btn-primary btn-full" onclick="verResultado(event)">Ver riesgos identificados →</a>
 
     <div class="cta-card">
       <h4>¿Querés resolver estos riesgos?</h4>
@@ -568,11 +693,30 @@
 
 </div>
 
+<section id="resultados" class="results-section">
+  <div class="results-inner">
+    <h2>Tus riesgos identificados</h2>
+    <p class="results-score-summary" id="resultsSummary">Marcá los ítems del checklist para actualizar este análisis en tiempo real.</p>
+    <div id="resultsList"></div>
+    <div class="results-quality-note">
+      <strong>Recordá:</strong> Este score es orientativo. Un puntaje alto no garantiza protección completa —
+      lo que importa es la calidad y solidez de cada documento. Documentos mal redactados o sin un asesor
+      que los respalde pueden no protegerte cuando más lo necesitás.
+    </div>
+    <div class="results-cta-box">
+      <h3>¿Querés cerrar estos riesgos?</h3>
+      <p>Agendá una llamada gratuita de 30 minutos. Te decimos cómo resolver cada punto con presupuesto cerrado.</p>
+      <a href="index.html#contacto" class="btn btn-primary">Agendar llamada gratuita →</a>
+    </div>
+  </div>
+</section>
+
 <a href="https://wa.me/XXXXXXXXXX?text=Hola!%20Quisiera%20consultar%20sobre%20asesor%C3%ADa%20legal%20para%20mi%20startup"
-   class="whatsapp-float" target="_blank" rel="noopener" aria-label="WhatsApp">
+   class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.768.967-.94 1.165-.168.198-.347.223-.645.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a6.716 6.716 0 00-6.318 3.109 6.726 6.726 0 002.018 10.857 6.716 6.716 0 005.611-.288l.384.214a11.7 11.7 0 001.503.526 1.794 1.794 0 001.304-2.112 11.71 11.71 0 00-3.502-2.909M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0"/>
   </svg>
+  <span class="wa-label">Escribinos por WhatsApp</span>
 </a>
 
 <script>
@@ -686,16 +830,28 @@
       if (el) el.textContent = `${catDone}/${catItems.length}`;
     });
 
-    // Risks list
+    // Results section
     const unchecked = ITEMS.filter(i => !checked.has(i.id));
-    const risksEl = document.getElementById('risksFound');
+    const listEl    = document.getElementById('resultsList');
+    const summaryEl = document.getElementById('resultsSummary');
+
+    summaryEl.textContent = done === 0
+      ? 'Marcá los ítems del checklist para actualizar este análisis en tiempo real.'
+      : `Score actual: ${pct}% — ${done} de ${total} ítems completados, ${unchecked.length} riesgo${unchecked.length !== 1 ? 's' : ''} identificado${unchecked.length !== 1 ? 's' : ''}.`;
+
     if (unchecked.length === 0) {
-      risksEl.innerHTML = '<p class="all-clear">✓ ¡Todo bajo control!</p>';
+      listEl.innerHTML = '<div class="results-all-clear">✓ ¡Tu startup está bien cubierta! Sin riesgos identificados.</div>';
     } else {
-      risksEl.innerHTML = `<ul class="risks-list">${
+      listEl.innerHTML = `<ul class="results-risk-list">${
         unchecked.map(i => `<li><strong>${i.cat}</strong>${i.risk}</li>`).join('')
       }</ul>`;
     }
+  }
+
+  function verResultado(e) {
+    if (e) e.preventDefault();
+    const target = document.getElementById('resultados');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   render();

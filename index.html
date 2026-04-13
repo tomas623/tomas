@@ -256,7 +256,8 @@
 
     .btn-primary:hover {
       background: var(--blue-light);
-      box-shadow: 0 6px 24px rgba(1, 111, 251, 0.5);
+      color: var(--white);
+      box-shadow: 0 4px 16px rgba(1, 111, 251, 0.25);
     }
 
     .btn-outline {
@@ -1316,26 +1317,31 @@
       bottom: 2rem;
       right: 2rem;
       z-index: 999;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: #25D366;
-      color: var(--white);
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 999px;
+      background: #25D366;
+      color: var(--white);
+      font-family: 'Mundial', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
       box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
       transition: transform var(--transition), box-shadow var(--transition);
     }
 
     .whatsapp-float:hover {
-      transform: scale(1.1);
+      transform: translateY(-2px);
       box-shadow: 0 6px 28px rgba(37, 211, 102, 0.55);
+      color: var(--white);
     }
 
     .whatsapp-float svg {
-      width: 28px;
-      height: 28px;
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
     }
 
     /* ==================== MOBILE ==================== */
@@ -1497,15 +1503,15 @@
 
       /* WhatsApp float más chico */
       .whatsapp-float {
-        width: 48px;
-        height: 48px;
         bottom: 1.25rem;
         right: 1.25rem;
+        padding: 0.65rem 1.1rem;
+        font-size: 0.82rem;
       }
 
       .whatsapp-float svg {
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
       }
     }
   </style>
@@ -1611,8 +1617,7 @@
       <div class="checklist-cta-text">
         <div class="section-label">Herramienta gratuita</div>
         <h2 class="section-title">¿Cuál es tu nivel de riesgo legal?</h2>
-        <p>En 2 minutos y 17 preguntas sabés exactamente qué riesgos tiene tu startup —
-        y qué necesitás resolver primero.</p>
+        <p>En 2 minutos vas a tener un panorama de dónde estás parado respecto de los riesgos legales de tu startup.</p>
         <ul class="checklist-cta-bullets">
           <li>17 ítems en 5 categorías clave</li>
           <li>Score visual con riesgos identificados</li>
@@ -2033,6 +2038,7 @@
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.768.967-.94 1.165-.168.198-.347.223-.645.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a6.716 6.716 0 00-6.318 3.109 6.726 6.726 0 002.018 10.857 6.716 6.716 0 005.611-.288l.384.214a11.7 11.7 0 001.503.526 1.794 1.794 0 001.304-2.112 11.71 11.71 0 00-3.502-2.909M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0"/>
   </svg>
+  <span>Escribinos</span>
 </a>
 
 <script>
