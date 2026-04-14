@@ -690,6 +690,39 @@ def admin_test_download():
         return success_response({"url": url, "error": str(e)})
 
 
+@app.route("/api/admin/probe-suffixes")
+def admin_probe_suffixes():
+    """Try all known URL suffix variants for a bulletin number to find the right type."""
+    import httpx
+    from bulletin_parser import parse_bulletin_bytes
+    num = request.args.get("num", 5494, type=int)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
+        "Accept": "application/pdf,*/*",
+    }
+    results = {}
+    # INPI uses Tipo_Item 1-6 for different bulletin types
+    for suffix in ["1", "2", "3", "4", "5", "6"]:
+        url = f"https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_{suffix}_.pdf"
+        try:
+            with httpx.Client(timeout=10, follow_redirects=True) as hc:
+                r = hc.get(url, headers=headers)
+            if r.status_code == 200 and b'%PDF' in r.content[:10]:
+                # Quick parse to see how many records
+                recs = parse_bulletin_bytes(r.content, num)
+                results[f"_{suffix}_"] = {
+                    "status": 200,
+                    "size_kb": round(len(r.content) / 1024),
+                    "records": len(recs),
+                    "sample": recs[0].denominacion[:50] if recs else None,
+                }
+            else:
+                results[f"_{suffix}_"] = {"status": r.status_code}
+        except Exception as e:
+            results[f"_{suffix}_"] = {"error": str(e)[:80]}
+    return success_response({"bulletin": num, "suffixes": results})
+
+
 @app.route("/api/admin/logs")
 def admin_logs():
     """Return last 20 bulletin log entries to diagnose import issues."""
