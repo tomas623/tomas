@@ -805,24 +805,6 @@ def admin_diag():
     except Exception as e:
         out["import_state_error"] = str(e)
 
-    # 7. Quick parse test on bulletin 5500 (no DB write)
-    try:
-        import httpx
-        from bulletin_parser import parse_bulletin_bytes
-        url = "https://portaltramites.inpi.gob.ar/Uploads/Boletines/5500_3_.pdf"
-        with httpx.Client(timeout=20, follow_redirects=True) as hc:
-            r = hc.get(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/pdf,*/*"})
-        if r.status_code == 200 and b'%PDF' in r.content[:10]:
-            recs = parse_bulletin_bytes(r.content, 5500)
-            out["test_parse_5500"] = {
-                "records": len(recs),
-                "sample": [{"acta": x.acta, "denominacion": x.denominacion[:40], "clase": x.clase} for x in recs[:3]],
-            }
-        else:
-            out["test_parse_5500"] = {"error": f"HTTP {r.status_code}"}
-    except Exception as e:
-        out["test_parse_5500"] = {"error": str(e)}
-
     return success_response(out)
 
 
