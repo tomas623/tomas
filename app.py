@@ -93,15 +93,12 @@ def _trigger_bulk_import(years=10, from_override=None, to_override=None, limit=N
     return True
 
 
-# Auto-resume: if container restarted mid-import, continue automatically
+# Auto-start import on every deploy — resume logic skips already-imported bulletins quickly
 try:
-    from database import get_import_state
-    _prev_state = get_import_state()
-    if _prev_state.get("running"):
-        logger.info("Auto-resume: import was in progress at last container restart — resuming")
-        _trigger_bulk_import()
+    logger.info("Startup: auto-starting import (will skip already-imported bulletins)")
+    _trigger_bulk_import()
 except Exception as _e:
-    logger.warning(f"Auto-resume check failed: {_e}")
+    logger.warning(f"Auto-start failed: {_e}")
 
 
 # Global state

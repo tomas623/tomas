@@ -198,42 +198,46 @@ def _upsert_records(records: list[MarcaRecord]) -> int:
     if not rows:
         return 0
 
-    try:
-        with engine.begin() as conn:
-            dialect = engine.dialect.name
-            if dialect == "postgresql":
+    dialect = engine.dialect.name
+    if dialect == "postgresql":
+        try:
+            with engine.begin() as conn:
+                stmt = pg_insert(Marca).values(rows)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["acta", "clase"],
+                    set_={
+                        "estado": stmt.excluded.estado,
+                        "estado_code": stmt.excluded.estado_code,
+                        "titular": stmt.excluded.titular,
+                        "fecha_vencimiento": stmt.excluded.fecha_vencimiento,
+                    }
+                )
+                conn.execute(stmt)
+            return len(rows)
+        except Exception as ue:
+            # PostgreSQL aborts the entire transaction on error — the original conn is dead.
+            # Use a fresh engine.begin() per row so one failure doesn't block the rest.
+            logger.warning(f"Batch upsert failed ({ue}), falling back to row-by-row insert")
+            count = 0
+            for row in rows:
                 try:
-                    # Preferred: upsert using column-level conflict detection (no named constraint needed)
-                    stmt = pg_insert(Marca).values(rows)
-                    stmt = stmt.on_conflict_do_update(
-                        index_elements=["acta", "clase"],
-                        set_={
-                            "estado": stmt.excluded.estado,
-                            "estado_code": stmt.excluded.estado_code,
-                            "titular": stmt.excluded.titular,
-                            "fecha_vencimiento": stmt.excluded.fecha_vencimiento,
-                        }
-                    )
-                    conn.execute(stmt)
-                except Exception as ue:
-                    # Fallback: no unique index yet — insert row-by-row, skip duplicates
-                    logger.warning(f"Batch upsert failed ({ue}), falling back to row-by-row insert")
-                    for row in rows:
-                        try:
-                            conn.execute(sql_insert(Marca).values(row))
-                        except Exception:
-                            pass
-            else:
-                # SQLite — insert or ignore
-                for row in rows:
-                    try:
-                        conn.execute(sql_insert(Marca).values(row))
-                    except Exception:
-                        pass
-        return len(rows)
-    except Exception as e:
-        logger.error(f"DB upsert error: {e}")
-        return 0
+                    with engine.begin() as c:
+                        c.execute(sql_insert(Marca).values(row))
+                    count += 1
+                except Exception:
+                    pass
+            return count
+    else:
+        # SQLite
+        count = 0
+        for row in rows:
+            try:
+                with engine.begin() as c:
+                    c.execute(sql_insert(Marca).values(row))
+                count += 1
+            except Exception:
+                pass
+        return count
 
 
 def _log_bulletin(num: int, records: int, status: str, error: str = None):
