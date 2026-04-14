@@ -708,6 +708,91 @@ def admin_logs():
         return error_response(str(e), 500)
 
 
+@app.route("/api/admin/diag")
+def admin_diag():
+    """Deep diagnostic: test DB write, check constraint, show recent logs."""
+    key = request.args.get("key", "")
+    if key != os.getenv("ADMIN_KEY", ""):
+        return error_response("Unauthorized", 401)
+
+    from database import engine, get_session, BoletinLog, Marca
+    from sqlalchemy import text, insert as sql_insert
+    out = {}
+
+    # 1. Check if uq_acta_clase constraint exists
+    try:
+        with engine.connect() as conn:
+            n = conn.execute(text(
+                "SELECT COUNT(*) FROM pg_constraint WHERE conname = 'uq_acta_clase'"
+            )).scalar()
+            out["constraint_uq_acta_clase"] = "EXISTS" if n else "MISSING"
+    except Exception as e:
+        out["constraint_check_error"] = str(e)
+
+    # 2. List all unique indexes on marcas
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text(
+                "SELECT indexname, indexdef FROM pg_indexes WHERE tablename='marcas'"
+            )).fetchall()
+            out["marcas_indexes"] = [{"name": r[0], "def": r[1]} for r in rows]
+    except Exception as e:
+        out["indexes_error"] = str(e)
+
+    # 3. Test a plain INSERT
+    try:
+        test_acta = "DIAGTEST001"
+        with engine.begin() as conn:
+            conn.execute(sql_insert(Marca).values(
+                acta=test_acta, denominacion="DIAG TEST", tipo="Test",
+                clase=1, titular="Test", estado="test", estado_code="tramite",
+            ))
+        # Clean up
+        with engine.begin() as conn:
+            conn.execute(text(f"DELETE FROM marcas WHERE acta='{test_acta}'"))
+        out["plain_insert_test"] = "OK"
+    except Exception as e:
+        out["plain_insert_error"] = str(e)
+
+    # 4. Test a batch pg_insert ON CONFLICT DO NOTHING
+    try:
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        test_acta2 = "DIAGTEST002"
+        with engine.begin() as conn:
+            stmt = pg_insert(Marca).values(
+                acta=test_acta2, denominacion="DIAG TEST2", tipo="Test",
+                clase=1, titular="Test", estado="test", estado_code="tramite",
+            ).on_conflict_do_nothing()
+            conn.execute(stmt)
+        with engine.begin() as conn:
+            conn.execute(text(f"DELETE FROM marcas WHERE acta='{test_acta2}'"))
+        out["pg_upsert_test"] = "OK"
+    except Exception as e:
+        out["pg_upsert_error"] = str(e)
+
+    # 5. Last 10 boletin_log entries
+    try:
+        with get_session() as s:
+            rows = s.query(BoletinLog).order_by(BoletinLog.numero.desc()).limit(10).all()
+            out["last_bolетines"] = [{
+                "num": r.numero, "status": r.status,
+                "records": r.registros, "error": r.error_msg,
+                "at": r.imported_at.isoformat() if r.imported_at else None,
+            } for r in rows]
+    except Exception as e:
+        out["boletin_log_error"] = str(e)
+
+    # 6. Current import state
+    try:
+        from database import get_import_state
+        out["import_state"] = get_import_state()
+        out["import_thread_running"] = _import_running
+    except Exception as e:
+        out["import_state_error"] = str(e)
+
+    return success_response(out)
+
+
 @app.route("/admin")
 def admin_page():
     """Visual admin panel for DB management."""
@@ -760,7 +845,15 @@ def admin_page():
   <button class="sec" onclick="resetImport()">⚠ Forzar reset del estado</button>
   <div id="msg"></div>
 </div>
-<p style="font-size:13px;text-align:center"><a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver log de errores (JSON) →</a></p>
+<div class="card" id="diagcard" style="display:none">
+  <strong>Diagnóstico DB</strong>
+  <pre id="diagout" style="font-size:12px;white-space:pre-wrap;margin-top:8px;background:#F7F9FC;padding:8px;border-radius:6px;max-height:300px;overflow:auto"></pre>
+</div>
+<p style="font-size:13px;text-align:center">
+  <a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver boletin log (JSON) →</a>
+  &nbsp;|&nbsp;
+  <a href="#" onclick="runDiag()" style="color:#DC2626">🔍 Diagnosticar DB</a>
+</p>
 <script>
 async function loadStatus(){
   try{
@@ -809,6 +902,17 @@ function startRange(){
   if(!key){document.getElementById('msg').className='err';document.getElementById('msg').textContent='Ingresá la clave.';return;}
   if(!from_num||!to_num){document.getElementById('msg').className='err';document.getElementById('msg').textContent='Ingresá el rango.';return;}
   doImport({key,from_num,to_num});
+}
+async function runDiag(){
+  const key=document.getElementById('key').value.trim();
+  if(!key){alert('Ingresá la clave primero');return;}
+  document.getElementById('diagcard').style.display='block';
+  document.getElementById('diagout').textContent='Ejecutando diagnóstico…';
+  try{
+    const r=await fetch('/api/admin/diag?key='+encodeURIComponent(key));
+    const d=await r.json();
+    document.getElementById('diagout').textContent=JSON.stringify(d.data||d,null,2);
+  }catch(e){document.getElementById('diagout').textContent='Error: '+e;}
 }
 async function resetImport(){
   const key=document.getElementById('key').value.trim();
