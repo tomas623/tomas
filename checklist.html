@@ -532,6 +532,7 @@
 
     /* RESULTS SECTION */
     .results-section {
+      display: none;
       background: var(--navy);
       color: #fff;
       padding: 4rem clamp(1rem, 4vw, 3rem) 5rem;
@@ -613,6 +614,16 @@
       margin-bottom: 1.5rem;
     }
 
+    .results-section.visible {
+      display: block;
+      animation: fadeInUp 400ms ease;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+
     /* MOBILE */
     @media (max-width: 600px) {
       .page-header { padding: 2rem 1.25rem 2.5rem; }
@@ -680,12 +691,6 @@
 
     <a href="#resultados" class="btn btn-primary btn-full" onclick="verResultado(event)">Ver riesgos identificados →</a>
 
-    <div class="cta-card">
-      <h4>¿Querés resolver estos riesgos?</h4>
-      <p>Agendá una llamada gratuita de 30 minutos y te decimos cómo cerrar cada punto.</p>
-      <a href="index.html#contacto" class="btn btn-primary btn-full">Agendar llamada gratuita</a>
-    </div>
-
   </aside>
 
   <!-- CHECKLIST ITEMS -->
@@ -714,7 +719,7 @@
 <a href="https://wa.me/5491128774200?text=Hola!%20Quisiera%20consultar%20sobre%20asesor%C3%ADa%20legal%20para%20mi%20startup"
    class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.198.297-.768.967-.94 1.165-.168.198-.347.223-.645.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a6.716 6.716 0 00-6.318 3.109 6.726 6.726 0 002.018 10.857 6.716 6.716 0 005.611-.288l.384.214a11.7 11.7 0 001.503.526 1.794 1.794 0 001.304-2.112 11.71 11.71 0 00-3.502-2.909M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0"/>
+    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.045.072.045.419-.1.824zm-3.423-14.416c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm.029 18.88c-1.161 0-2.305-.292-3.318-.844l-3.677.964.984-3.595c-.607-1.052-.927-2.246-.926-3.468.001-3.825 3.113-6.937 6.937-6.937 1.856.001 3.598.723 4.907 2.034 1.31 1.311 2.031 3.054 2.03 4.908-.001 3.825-3.113 6.938-6.937 6.938z"/>
   </svg>
   <span class="wa-label">Escribinos por WhatsApp</span>
 </a>
@@ -850,8 +855,11 @@
 
   function verResultado(e) {
     if (e) e.preventDefault();
-    const target = document.getElementById('resultados');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const section = document.getElementById('resultados');
+    if (section) {
+      section.classList.add('visible');
+      setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    }
   }
 
   render();
