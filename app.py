@@ -690,6 +690,30 @@ def admin_test_download():
         return success_response({"url": url, "error": str(e)})
 
 
+@app.route("/api/admin/show-pages")
+def admin_show_pages():
+    """Show raw extracted text from specific pages of a bulletin PDF."""
+    import httpx, pdfplumber, io
+    num = request.args.get("num", 5494, type=int)
+    start = request.args.get("start", 5, type=int)
+    end = request.args.get("end", 15, type=int)
+    url = f"https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_3_.pdf"
+    try:
+        with httpx.Client(timeout=30, follow_redirects=True) as hc:
+            r = hc.get(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/pdf,*/*"})
+        if r.status_code != 200 or b'%PDF' not in r.content[:10]:
+            return success_response({"error": f"HTTP {r.status_code}"})
+        pages_text = {}
+        with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+            total = len(pdf.pages)
+            for i in range(min(start, total), min(end + 1, total)):
+                t = pdf.pages[i].extract_text() or ""
+                pages_text[f"page_{i+1}"] = t[:1500]  # first 1500 chars per page
+        return success_response({"bulletin": num, "total_pages": total, "pages": pages_text})
+    except Exception as e:
+        return success_response({"error": str(e)})
+
+
 @app.route("/api/admin/probe-suffixes")
 def admin_probe_suffixes():
     """Try all known URL suffix variants for a bulletin number to find the right type."""
