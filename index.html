@@ -959,14 +959,14 @@
 
     .pricing-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.75rem;
       margin-top: 3rem;
     }
 
-    @media (min-width: 1024px) {
+    @media (min-width: 1200px) {
       .pricing-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
       }
     }
 
@@ -974,25 +974,49 @@
       background: var(--white);
       border: 1px solid var(--gray-100);
       border-radius: var(--radius-md);
-      padding: 2rem;
+      padding: 1.75rem;
       position: relative;
       transition: transform var(--transition), box-shadow var(--transition);
+      display: flex;
+      flex-direction: column;
     }
 
     .pricing-card:hover {
-      transform: translateY(-8px);
+      transform: translateY(-6px);
       box-shadow: var(--shadow-card);
     }
 
     .pricing-card--featured {
       border: 2px solid var(--blue);
-      transform: scale(1.04);
+      transform: scale(1.02);
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    .pricing-card--featured .pricing-name {
+      color: var(--white);
+    }
+
+    .pricing-card--featured .pricing-desc {
+      color: var(--gray-300);
+    }
+
+    .pricing-card--featured .pricing-features li {
+      color: var(--gray-100);
+    }
+
+    .pricing-card--featured .price-amount {
+      color: var(--blue-light);
     }
 
     @media (max-width: 768px) {
       .pricing-card--featured {
         transform: scale(1);
       }
+    }
+
+    .pricing-card .btn {
+      margin-top: auto;
     }
 
     .pricing-badge {
@@ -1021,7 +1045,7 @@
     }
 
     .price-amount {
-      font-size: 2.5rem;
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
       font-weight: 900;
       color: var(--blue);
     }
@@ -1805,65 +1829,88 @@
 <!-- ==================== PRICING ==================== -->
 <section id="precios" class="pricing-section">
   <div class="container">
-    <div class="section-label">Transparencia de precios</div>
-    <h2 class="section-title">Sin sorpresas. Sin letra chica.</h2>
+    <div class="section-label">Soluciones</div>
+    <h2 class="section-title">Startups</h2>
+    <p class="section-subtitle">De idea a investment-ready: estructura legal para startups que quieren escalar.</p>
 
     <div class="pricing-grid reveal">
+
       <div class="pricing-card">
-        <h3 class="pricing-name">Auditoría Legal</h3>
+        <div class="service-icon">🔍</div>
+        <h3 class="pricing-name">Diagnóstico Legal 48hs</h3>
         <div class="pricing-price">
           <span class="price-amount">USD 400</span>
           <span class="price-once">pago único</span>
         </div>
-        <p class="pricing-desc">Diagnóstico completo del estado legal de tu startup.</p>
+        <p class="pricing-desc">Revisamos tu situación legal y te decimos exactamente qué necesitás para operar y escalar.</p>
         <ul class="pricing-features">
-          <li>Revisión de documentos existentes</li>
-          <li>Análisis de estructura societaria</li>
-          <li>Checklist de riesgos personalizado</li>
-          <li>Llamada de 1 hora de resultados</li>
-          <li>Roadmap de acción con presupuestos</li>
+          <li>Revisión de estructura societaria</li>
+          <li>Contratos y riesgos operativos</li>
+          <li>Marca, IP y readiness para escalar</li>
+          <li>Reporte de riesgos y posibles soluciones</li>
+          <li>Sesión de resultados de 45 minutos</li>
         </ul>
-        <a href="#contacto" class="btn btn-outline btn-full">Agendar auditoría</a>
-      </div>
-
-      <div class="pricing-card pricing-card--featured">
-        <div class="pricing-badge">Recomendado</div>
-        <h3 class="pricing-name">Paquete Fundación</h3>
-        <div class="pricing-price">
-          <span class="price-amount">Desde USD 1,200</span>
-          <span class="price-once">proyecto cerrado</span>
-        </div>
-        <p class="pricing-desc">Todo lo que necesitás para operar con base legal sólida.</p>
-        <ul class="pricing-features">
-          <li>Constitución de sociedad</li>
-          <li>Pacto de socios + vesting</li>
-          <li>Contratos de empleados/freelancers</li>
-          <li>T&C + Política de Privacidad</li>
-          <li>Cesión de IP</li>
-          <li>3 meses de consultas incluidas</li>
-        </ul>
-        <a href="#contacto" class="btn btn-primary btn-full">Agendar llamada</a>
+        <a href="#contacto" class="btn btn-outline btn-full">Contratar hoy</a>
       </div>
 
       <div class="pricing-card">
-        <h3 class="pricing-name">Legal Continuo</h3>
+        <h3 class="pricing-name">Pack Inicial<br><small style="font-weight:400;font-size:0.85rem;color:var(--gray-500)">Arrancando</small></h3>
         <div class="pricing-price">
-          <span class="price-amount">USD 600</span>
-          <span class="price-once">/mes</span>
+          <span class="price-amount">Desde USD 1.500</span>
         </div>
-        <p class="pricing-desc">Tu área legal externa. Consultas ilimitadas y acompañamiento estratégico.</p>
+        <p class="pricing-desc">Para proyectos en etapa temprana que necesitan orden legal desde el día uno.</p>
         <ul class="pricing-features">
-          <li>Consultas ilimitadas (WhatsApp + video)</li>
-          <li>Revisión de contratos sin límite</li>
-          <li>Alertas regulatorias</li>
-          <li>Reunión mensual de revisión</li>
-          <li>Descuentos en proyectos puntuales</li>
+          <li>Constitución societaria en Argentina</li>
+          <li>Acuerdo de socios</li>
+          <li>Registro de marca (1 clase)</li>
+          <li>Términos y Condiciones + Políticas</li>
+          <li>Contratos base (hasta 3)</li>
+          <li>Auditoría de Riesgos Legales</li>
+          <li>2 hs de consultoría</li>
+          <li>Plazo estimado: 4 semanas</li>
         </ul>
-        <a href="#contacto" class="btn btn-outline btn-full">Consultar disponibilidad</a>
+        <a href="#contacto" class="btn btn-outline btn-full">Contratar hoy</a>
       </div>
+
+      <div class="pricing-card pricing-card--featured">
+        <div class="pricing-badge">Más elegido</div>
+        <h3 class="pricing-name">Pack Grow<br><small style="font-weight:400;font-size:0.85rem;color:rgba(255,255,255,0.6)">Creciendo</small></h3>
+        <div class="pricing-price">
+          <span class="price-amount">Desde USD 2.000</span>
+        </div>
+        <p class="pricing-desc">Para startups con tracción que necesitan estructura para crecer sin riesgos.</p>
+        <ul class="pricing-features">
+          <li>Todo lo del Pack Inicial</li>
+          <li>Registro de marca (hasta 2 clases)</li>
+          <li>Contratos avanzados (hasta 5)</li>
+          <li>Vesting Agreement</li>
+          <li>Planificación legal-financiera</li>
+          <li>3 hs de consultoría</li>
+          <li>Plazo estimado: 6 semanas</li>
+        </ul>
+        <a href="#contacto" class="btn btn-primary btn-full">Contratar hoy</a>
+      </div>
+
+      <div class="pricing-card">
+        <h3 class="pricing-name">Pack Scale-Up<br><small style="font-weight:400;font-size:0.85rem;color:var(--gray-500)">Internacionalizando</small></h3>
+        <div class="pricing-price">
+          <span class="price-amount">Desde USD 3.000</span>
+        </div>
+        <p class="pricing-desc">Para empresas que escalan, levantan capital o operan en más de un país.</p>
+        <ul class="pricing-features">
+          <li>Todo lo del Pack Grow</li>
+          <li>Constitución de LLC en EEUU</li>
+          <li>Registro de marca (hasta 3 clases)</li>
+          <li>Due diligence legal ready</li>
+          <li>Documentación para rondas de inversión</li>
+          <li>4 hs de consultoría</li>
+        </ul>
+        <a href="#contacto" class="btn btn-outline btn-full">Contratar hoy</a>
+      </div>
+
     </div>
 
-    <p class="pricing-note">* Todos los precios en USD. Facturación en pesos disponible para clientes argentinos. Los proyectos puntuales tienen presupuesto cerrado antes de comenzar.</p>
+    <p class="pricing-note">* Todos los precios en USD. Facturación en pesos disponible para clientes argentinos. Presupuesto cerrado antes de comenzar.</p>
   </div>
 </section>
 
