@@ -180,10 +180,11 @@ def get_session() -> Session:
 
 
 def get_last_imported_boletin() -> int:
-    """Return the number of the last successfully imported bulletin (valid INPI range only)."""
+    """Return the number of the last bulletin that actually imported records (valid INPI range only)."""
     with get_session() as s:
         row = s.query(func.max(BoletinLog.numero)).filter(
             BoletinLog.status == "ok",
+            BoletinLog.registros > 0,     # Only advance past bulletins with real records
             BoletinLog.numero <= 10000,   # Ignore invalid numbers from bad runs
         ).scalar()
         return row or 0
