@@ -79,33 +79,54 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
+MAX_DOWNLOAD_BYTES = 60 * 1024 * 1024   # 60 MB hard cap per bulletin
+MAX_DOWNLOAD_SECS  = 90                  # total wall-clock download limit
+
+
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
-    """Download bulletin PDF bytes. Returns None on failure."""
+    """Download bulletin PDF bytes. Returns None on failure.
+
+    Uses streaming + total-time guard so a slow/hung INPI server cannot
+    block the import thread indefinitely.
+    """
     url = BULLETIN_BASE_URL.format(num=num)
+    timeout = httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
 
     for attempt in range(1, retries + 1):
         try:
-            with httpx.Client(timeout=25, follow_redirects=True) as client:
-                r = client.get(url, headers=get_headers())
+            with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+                with client.stream("GET", url, headers=get_headers()) as r:
+                    if r.status_code == 404:
+                        logger.debug(f"Bulletin {num}: not found (404)")
+                        return None
+                    if r.status_code != 200:
+                        logger.warning(f"Bulletin {num}: HTTP {r.status_code}")
+                        break  # non-retryable
 
-                if r.status_code == 404:
-                    logger.debug(f"Bulletin {num}: not found (404)")
-                    return None
-                if r.status_code == 200:
-                    if b'%PDF' in r.content[:10]:
-                        return r.content
-                    else:
+                    chunks = []
+                    total  = 0
+                    t0     = time.monotonic()
+                    for chunk in r.iter_bytes(chunk_size=65536):
+                        chunks.append(chunk)
+                        total += len(chunk)
+                        if total > MAX_DOWNLOAD_BYTES:
+                            raise ValueError(f"PDF exceeds {MAX_DOWNLOAD_BYTES // 1024 // 1024} MB")
+                        if time.monotonic() - t0 > MAX_DOWNLOAD_SECS:
+                            raise TimeoutError(f"Download exceeded {MAX_DOWNLOAD_SECS}s")
+
+                    content = b"".join(chunks)
+                    if b'%PDF' not in content[:10]:
                         logger.warning(f"Bulletin {num}: response not a PDF")
                         return None
-                logger.warning(f"Bulletin {num}: HTTP {r.status_code}")
+                    return content
 
-        except httpx.TimeoutException:
-            logger.warning(f"Bulletin {num}: timeout (attempt {attempt}/{retries})")
+        except (httpx.TimeoutException, TimeoutError) as e:
+            logger.warning(f"Bulletin {num}: timeout — {e} (attempt {attempt}/{retries})")
         except Exception as e:
-            logger.warning(f"Bulletin {num}: error {e} (attempt {attempt}/{retries})")
+            logger.warning(f"Bulletin {num}: error — {e} (attempt {attempt}/{retries})")
 
         if attempt < retries:
-            time.sleep(2 ** attempt)  # exponential backoff
+            time.sleep(2 ** attempt)
 
     return None
 

@@ -119,7 +119,7 @@ def get_import_state() -> dict:
         return {"running": False, "current_boletin": 0, "last_error": None}
 
 
-def set_import_state(running: bool, current_boletin: int = 0, last_error: str = None):
+def set_import_state(running: bool, current_boletin: int = None, last_error: str = None):
     try:
         with get_session() as s:
             row = s.get(ImportState, 1)
@@ -127,7 +127,8 @@ def set_import_state(running: bool, current_boletin: int = 0, last_error: str = 
                 row = ImportState(id=1)
                 s.add(row)
             row.running = running
-            row.current_boletin = current_boletin
+            if current_boletin is not None:
+                row.current_boletin = current_boletin
             row.last_error = last_error
             row.updated_at = datetime.utcnow()
             if running:
