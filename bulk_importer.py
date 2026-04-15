@@ -21,6 +21,7 @@ import gc
 import time
 import logging
 import argparse
+import concurrent.futures
 from datetime import date, datetime
 from typing import Optional
 
@@ -79,49 +80,48 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-MAX_DOWNLOAD_BYTES = 60 * 1024 * 1024   # 60 MB hard cap per bulletin
-MAX_DOWNLOAD_SECS  = 90                  # total wall-clock download limit
+HARD_TIMEOUT_SECS = 60    # wall-clock limit per download attempt
+
+
+def _download_once(url: str) -> Optional[bytes]:
+    """Single blocking download. Runs inside a thread for hard-timeout enforcement."""
+    timeout = httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
+    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+        r = client.get(url, headers=get_headers())
+    if r.status_code == 404:
+        return b""          # sentinel: not found
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code}")
+    return r.content
 
 
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
-    """Download bulletin PDF bytes. Returns None on failure.
+    """Download bulletin PDF bytes with a guaranteed wall-clock timeout per attempt.
 
-    Uses streaming + total-time guard so a slow/hung INPI server cannot
-    block the import thread indefinitely.
+    Runs the actual HTTP request in a thread and uses Future.result(timeout=N)
+    so that a hanging INPI server can NEVER block the import thread indefinitely,
+    regardless of how httpx handles the underlying socket.
     """
     url = BULLETIN_BASE_URL.format(num=num)
-    timeout = httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
 
     for attempt in range(1, retries + 1):
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future   = executor.submit(_download_once, url)
+        executor.shutdown(wait=False)   # don't block; thread cleans up on its own
+
         try:
-            with httpx.Client(timeout=timeout, follow_redirects=True) as client:
-                with client.stream("GET", url, headers=get_headers()) as r:
-                    if r.status_code == 404:
-                        logger.debug(f"Bulletin {num}: not found (404)")
-                        return None
-                    if r.status_code != 200:
-                        logger.warning(f"Bulletin {num}: HTTP {r.status_code}")
-                        break  # non-retryable
+            content = future.result(timeout=HARD_TIMEOUT_SECS)
+            if content == b"":
+                logger.debug(f"Bulletin {num}: not found (404)")
+                return None             # 404 — stop retrying
+            if b'%PDF' not in content[:10]:
+                logger.warning(f"Bulletin {num}: response not a PDF")
+                return None
+            return content
 
-                    chunks = []
-                    total  = 0
-                    t0     = time.monotonic()
-                    for chunk in r.iter_bytes(chunk_size=65536):
-                        chunks.append(chunk)
-                        total += len(chunk)
-                        if total > MAX_DOWNLOAD_BYTES:
-                            raise ValueError(f"PDF exceeds {MAX_DOWNLOAD_BYTES // 1024 // 1024} MB")
-                        if time.monotonic() - t0 > MAX_DOWNLOAD_SECS:
-                            raise TimeoutError(f"Download exceeded {MAX_DOWNLOAD_SECS}s")
-
-                    content = b"".join(chunks)
-                    if b'%PDF' not in content[:10]:
-                        logger.warning(f"Bulletin {num}: response not a PDF")
-                        return None
-                    return content
-
-        except (httpx.TimeoutException, TimeoutError) as e:
-            logger.warning(f"Bulletin {num}: timeout — {e} (attempt {attempt}/{retries})")
+        except concurrent.futures.TimeoutError:
+            logger.warning(f"Bulletin {num}: hard {HARD_TIMEOUT_SECS}s timeout "
+                           f"(attempt {attempt}/{retries})")
         except Exception as e:
             logger.warning(f"Bulletin {num}: error — {e} (attempt {attempt}/{retries})")
 
