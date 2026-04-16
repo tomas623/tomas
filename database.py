@@ -191,6 +191,19 @@ def get_last_imported_boletin() -> int:
         return row or 0
 
 
+def get_last_attempted_boletin() -> int:
+    """Return the highest bulletin number that was attempted (any status, including errors).
+
+    Used by resume logic to skip past permanently-failing bulletins rather than
+    retrying them on every restart.
+    """
+    with get_session() as s:
+        row = s.query(func.max(BoletinLog.numero)).filter(
+            BoletinLog.numero <= 10000,
+        ).scalar()
+        return row or 0
+
+
 def search_marcas(term: str, clases: list[int], limit: int = 100) -> list[dict]:
     """
     Search trademarks in local database.
