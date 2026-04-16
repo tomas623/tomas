@@ -22,6 +22,8 @@ import time
 import logging
 import argparse
 import socket
+import subprocess
+import tempfile
 import urllib.request
 import urllib.error
 from datetime import date, datetime
@@ -82,61 +84,125 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-SOCKET_TIMEOUT    = 10   # OS-level socket timeout per recv/connect operation
-MAX_DOWNLOAD_SECS = 30   # hard wall-clock budget per attempt (catches trickle stalls)
+CURL_TIMEOUT = 25        # seconds: curl's absolute --max-time wall-clock limit
+_curl_ok: Optional[bool] = None  # cached availability check
+
+
+def _curl_available() -> bool:
+    global _curl_ok
+    if _curl_ok is None:
+        try:
+            subprocess.run(["curl", "--version"], capture_output=True, timeout=5, check=True)
+            _curl_ok = True
+        except Exception:
+            _curl_ok = False
+    return _curl_ok
 
 
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
-    """Download bulletin PDF using urllib with dual timeout protection.
+    """Download bulletin PDF.
 
-    - SOCKET_TIMEOUT: OS recv() times out after N seconds of no data (per chunk)
-    - MAX_DOWNLOAD_SECS: wall-clock budget so a trickle-stall can't slip through
+    Uses curl subprocess (primary) — curl's --max-time is an absolute wall-clock
+    limit that interrupts trickle-stall scenarios where recv() never times out.
+    Falls back to urllib if curl is not available.
     """
+    if _curl_available():
+        return _download_curl(num, retries)
+    return _download_urllib(num, retries)
+
+
+def _download_curl(num: int, retries: int) -> Optional[bytes]:
     url = BULLETIN_BASE_URL.format(num=num)
-    headers = get_headers()
-
     for attempt in range(1, retries + 1):
+        tmp_path = None
         try:
-            req = urllib.request.Request(url, headers=headers)
-            t0 = time.monotonic()
-            with urllib.request.urlopen(req, timeout=SOCKET_TIMEOUT) as resp:
-                if resp.status == 404:
-                    logger.debug(f"Bulletin {num}: 404")
-                    return None
-                if resp.status != 200:
-                    logger.warning(f"Bulletin {num}: HTTP {resp.status}")
-                    break
-                chunks: list[bytes] = []
-                while True:
-                    elapsed = time.monotonic() - t0
-                    if elapsed > MAX_DOWNLOAD_SECS:
-                        raise TimeoutError(
-                            f"Download exceeded {MAX_DOWNLOAD_SECS}s total "
-                            f"({elapsed:.1f}s elapsed)"
-                        )
-                    chunk = resp.read(65536)
-                    if not chunk:
-                        break
-                    chunks.append(chunk)
-            content = b"".join(chunks)
-            if b'%PDF' not in content[:10]:
-                logger.warning(f"Bulletin {num}: not a PDF")
-                return None
-            return content
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+                tmp_path = tmp.name
 
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
+            result = subprocess.run(
+                [
+                    "curl", "-sL",
+                    "--max-time", str(CURL_TIMEOUT),
+                    "--retry", "0",
+                    "-H", "User-Agent: Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
+                    "-H", "Accept: application/pdf,*/*",
+                    "-H", "Referer: https://portaltramites.inpi.gob.ar/Boletines?Tipo_Item=3",
+                    "-o", tmp_path,
+                    "-w", "%{http_code}",
+                    url,
+                ],
+                capture_output=True,
+                timeout=CURL_TIMEOUT + 10,
+            )
+
+            http_code = result.stdout.decode("ascii", errors="ignore").strip()
+
+            if result.returncode == 28:  # CURLE_OPERATION_TIMEDOUT
+                logger.warning(f"Bulletin {num}: curl timeout {CURL_TIMEOUT}s (attempt {attempt}/{retries})")
+                if attempt < retries:
+                    time.sleep(2)
+                continue
+
+            if http_code == "404":
                 logger.debug(f"Bulletin {num}: 404")
                 return None
-            logger.warning(f"Bulletin {num}: HTTP error {e.code} (attempt {attempt}/{retries})")
-        except (socket.timeout, TimeoutError) as e:
-            logger.warning(f"Bulletin {num}: timeout — {e} (attempt {attempt}/{retries})")
+
+            if http_code != "200":
+                logger.warning(f"Bulletin {num}: HTTP {http_code} (attempt {attempt}/{retries})")
+                if attempt < retries:
+                    time.sleep(2)
+                continue
+
+            with open(tmp_path, "rb") as f:
+                content = f.read()
+
+            if b'%PDF' not in content[:10]:
+                logger.warning(f"Bulletin {num}: not a PDF (size={len(content)})")
+                return None
+
+            return content
+
+        except subprocess.TimeoutExpired:
+            logger.warning(f"Bulletin {num}: subprocess killed after {CURL_TIMEOUT+10}s (attempt {attempt}/{retries})")
         except Exception as e:
             logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
+        finally:
+            if tmp_path:
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
 
         if attempt < retries:
             time.sleep(2)
 
+    return None
+
+
+def _download_urllib(num: int, retries: int) -> Optional[bytes]:
+    """urllib fallback when curl is unavailable."""
+    url = BULLETIN_BASE_URL.format(num=num)
+    headers = get_headers()
+    for attempt in range(1, retries + 1):
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                if resp.status == 404:
+                    return None
+                if resp.status != 200:
+                    break
+                content = resp.read()
+            if b'%PDF' not in content[:10]:
+                return None
+            return content
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            logger.warning(f"Bulletin {num}: HTTP {e.code} (attempt {attempt}/{retries})")
+        except Exception as e:
+            logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
+        if attempt < retries:
+            time.sleep(2)
     return None
 
 
