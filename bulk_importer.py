@@ -80,7 +80,7 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-HARD_TIMEOUT_SECS = 60    # wall-clock limit per download attempt
+HARD_TIMEOUT_SECS = 30    # wall-clock limit per download attempt
 
 
 def _download_once(url: str) -> Optional[bytes]:
@@ -291,6 +291,10 @@ def bulk_import(from_num: int, to_num: int, dry_run: bool = False):
 
     try:
         for num in range(from_num, to_num + 1):
+            # Update before processing so the admin panel shows the current bulletin
+            # even while a slow download is in progress
+            set_import_state(running=True, current_boletin=num)
+
             result = import_bulletin(num, dry_run=dry_run)
 
             if result["status"] == "ok":
@@ -299,10 +303,6 @@ def bulk_import(from_num: int, to_num: int, dry_run: bool = False):
                 skipped += 1
             elif result["status"] == "error":
                 errors += 1
-
-            # Update DB state every 5 bulletins
-            if num % 5 == 0:
-                set_import_state(running=True, current_boletin=num)
 
             # Progress log
             done = num - from_num + 1
