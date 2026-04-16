@@ -82,15 +82,15 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-SOCKET_TIMEOUT = 20    # OS-level socket timeout per recv operation
+SOCKET_TIMEOUT    = 10   # OS-level socket timeout per recv/connect operation
+MAX_DOWNLOAD_SECS = 30   # hard wall-clock budget per attempt (catches trickle stalls)
 
 
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
-    """Download bulletin PDF using urllib with OS-level socket timeout.
+    """Download bulletin PDF using urllib with dual timeout protection.
 
-    urllib calls socket.settimeout() at the OS level so recv() raises
-    socket.timeout after SOCKET_TIMEOUT seconds of no data — more reliable
-    than httpx or concurrent.futures in Python 3.13/Railway environment.
+    - SOCKET_TIMEOUT: OS recv() times out after N seconds of no data (per chunk)
+    - MAX_DOWNLOAD_SECS: wall-clock budget so a trickle-stall can't slip through
     """
     url = BULLETIN_BASE_URL.format(num=num)
     headers = get_headers()
@@ -98,6 +98,7 @@ def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
     for attempt in range(1, retries + 1):
         try:
             req = urllib.request.Request(url, headers=headers)
+            t0 = time.monotonic()
             with urllib.request.urlopen(req, timeout=SOCKET_TIMEOUT) as resp:
                 if resp.status == 404:
                     logger.debug(f"Bulletin {num}: 404")
@@ -105,7 +106,19 @@ def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
                 if resp.status != 200:
                     logger.warning(f"Bulletin {num}: HTTP {resp.status}")
                     break
-                content = resp.read()
+                chunks: list[bytes] = []
+                while True:
+                    elapsed = time.monotonic() - t0
+                    if elapsed > MAX_DOWNLOAD_SECS:
+                        raise TimeoutError(
+                            f"Download exceeded {MAX_DOWNLOAD_SECS}s total "
+                            f"({elapsed:.1f}s elapsed)"
+                        )
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    chunks.append(chunk)
+            content = b"".join(chunks)
             if b'%PDF' not in content[:10]:
                 logger.warning(f"Bulletin {num}: not a PDF")
                 return None
@@ -116,9 +129,8 @@ def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
                 logger.debug(f"Bulletin {num}: 404")
                 return None
             logger.warning(f"Bulletin {num}: HTTP error {e.code} (attempt {attempt}/{retries})")
-        except (socket.timeout, TimeoutError):
-            logger.warning(f"Bulletin {num}: socket timeout {SOCKET_TIMEOUT}s "
-                           f"(attempt {attempt}/{retries})")
+        except (socket.timeout, TimeoutError) as e:
+            logger.warning(f"Bulletin {num}: timeout — {e} (attempt {attempt}/{retries})")
         except Exception as e:
             logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
 
