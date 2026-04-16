@@ -21,7 +21,9 @@ import gc
 import time
 import logging
 import argparse
-import concurrent.futures
+import socket
+import urllib.request
+import urllib.error
 from datetime import date, datetime
 from typing import Optional
 
@@ -80,53 +82,48 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-HARD_TIMEOUT_SECS = 30    # wall-clock limit per download attempt
-
-
-def _download_once(url: str) -> Optional[bytes]:
-    """Single blocking download. Runs inside a thread for hard-timeout enforcement."""
-    timeout = httpx.Timeout(connect=10.0, read=30.0, write=10.0, pool=5.0)
-    with httpx.Client(timeout=timeout, follow_redirects=True) as client:
-        r = client.get(url, headers=get_headers())
-    if r.status_code == 404:
-        return b""          # sentinel: not found
-    if r.status_code != 200:
-        raise RuntimeError(f"HTTP {r.status_code}")
-    return r.content
+SOCKET_TIMEOUT = 20    # OS-level socket timeout per recv operation
 
 
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
-    """Download bulletin PDF bytes with a guaranteed wall-clock timeout per attempt.
+    """Download bulletin PDF using urllib with OS-level socket timeout.
 
-    Runs the actual HTTP request in a thread and uses Future.result(timeout=N)
-    so that a hanging INPI server can NEVER block the import thread indefinitely,
-    regardless of how httpx handles the underlying socket.
+    urllib calls socket.settimeout() at the OS level so recv() raises
+    socket.timeout after SOCKET_TIMEOUT seconds of no data — more reliable
+    than httpx or concurrent.futures in Python 3.13/Railway environment.
     """
     url = BULLETIN_BASE_URL.format(num=num)
+    headers = get_headers()
 
     for attempt in range(1, retries + 1):
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        future   = executor.submit(_download_once, url)
-        executor.shutdown(wait=False)   # don't block; thread cleans up on its own
-
         try:
-            content = future.result(timeout=HARD_TIMEOUT_SECS)
-            if content == b"":
-                logger.debug(f"Bulletin {num}: not found (404)")
-                return None             # 404 — stop retrying
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=SOCKET_TIMEOUT) as resp:
+                if resp.status == 404:
+                    logger.debug(f"Bulletin {num}: 404")
+                    return None
+                if resp.status != 200:
+                    logger.warning(f"Bulletin {num}: HTTP {resp.status}")
+                    break
+                content = resp.read()
             if b'%PDF' not in content[:10]:
-                logger.warning(f"Bulletin {num}: response not a PDF")
+                logger.warning(f"Bulletin {num}: not a PDF")
                 return None
             return content
 
-        except concurrent.futures.TimeoutError:
-            logger.warning(f"Bulletin {num}: hard {HARD_TIMEOUT_SECS}s timeout "
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                logger.debug(f"Bulletin {num}: 404")
+                return None
+            logger.warning(f"Bulletin {num}: HTTP error {e.code} (attempt {attempt}/{retries})")
+        except (socket.timeout, TimeoutError):
+            logger.warning(f"Bulletin {num}: socket timeout {SOCKET_TIMEOUT}s "
                            f"(attempt {attempt}/{retries})")
         except Exception as e:
-            logger.warning(f"Bulletin {num}: error — {e} (attempt {attempt}/{retries})")
+            logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
 
         if attempt < retries:
-            time.sleep(2 ** attempt)
+            time.sleep(2)
 
     return None
 
