@@ -70,10 +70,12 @@ def _trigger_bulk_import(years=10, from_override=None, to_override=None, limit=N
             to_num   = max(1, min(to_num,   10000))
             if from_num > to_num:
                 raise ValueError(f"Invalid range: {from_num}–{to_num}")
-            # Resume from last successfully imported bulletin
+            # Resume from last successfully imported bulletin.
+            # Always start from last_ok+1 — even when last_ok < from_num —
+            # so that bulletins imported with a broken parser get re-processed.
             if not from_override:
                 last_ok = get_last_imported_boletin()
-                if last_ok and from_num <= last_ok < to_num:
+                if last_ok and last_ok + 1 <= to_num:
                     logger.info(f"Resuming from bulletin {last_ok + 1} (last OK: {last_ok})")
                     from_num = last_ok + 1
             logger.info(f"Bulk import: {from_num}–{to_num}")
