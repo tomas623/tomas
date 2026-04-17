@@ -84,7 +84,8 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-CURL_TIMEOUT = 60        # seconds: curl's absolute --max-time wall-clock limit (increased for large PDFs)
+CURL_TIMEOUT = 90        # seconds: curl's absolute --max-time wall-clock limit
+MAX_RETRIES = 1          # Reduced: fail-fast instead of retrying slow bulletins
 _curl_ok: Optional[bool] = None  # cached availability check
 
 
@@ -215,7 +216,7 @@ def import_bulletin(num: int, dry_run: bool = False) -> dict:
     result = {"num": num, "status": "ok", "records": 0, "error": None}
 
     # Hardcoded skip list for bulletins with persistent issues
-    SKIP_BULLETINS = {5498}  # Bulletin 5498: corrupted/timeout issues
+    SKIP_BULLETINS = {5497, 5498, 5499, 5500}  # These bulletins cause consistent timeouts
     if num in SKIP_BULLETINS:
         logger.warning(f"Bulletin {num}: on skip list, marking as skip")
         _log_bulletin(num, 0, "skip", "Hardcoded skip due to persistent issues")
