@@ -28,6 +28,7 @@ import urllib.request
 import urllib.error
 from datetime import date, datetime
 from typing import Optional
+import signal
 
 import httpx
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -39,6 +40,14 @@ from database import (
     Marca, BoletinLog, engine
 )
 from bulletin_parser import parse_bulletin_bytes, MarcaRecord
+
+# Optional Selenium support for avoiding anti-bot detection
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,13 +61,26 @@ BULLETIN_BASE_URL = "https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_
 LATEST_BULLETIN = 6009       # Update this or auto-detect
 BULLETINS_PER_YEAR = 52
 HTTP_DELAY = 1.0             # seconds between requests
-MAX_RETRIES = 2              # fewer retries to avoid long hangs
+MAX_RETRIES = 3              # retries with aggressive timeout handling
+BULLETIN_TIMEOUT = 90        # absolute timeout per bulletin (download + parse + import)
 
 
 def get_headers() -> dict:
     return {
-        "User-Agent": "Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
-        "Accept": "application/pdf,*/*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "es-AR,es;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
         "Referer": "https://portaltramites.inpi.gob.ar/Boletines?Tipo_Item=3",
     }
 
@@ -84,8 +106,10 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-CURL_TIMEOUT = 25        # seconds: curl's absolute --max-time wall-clock limit
+CURL_TIMEOUT = 20        # seconds: curl's absolute --max-time wall-clock limit (more aggressive)
+CURL_CONNECT_TIMEOUT = 10  # seconds: timeout for establishing connection
 _curl_ok: Optional[bool] = None  # cached availability check
+_selenium_driver: Optional[object] = None  # cached driver instance
 
 
 def _curl_available() -> bool:
@@ -99,13 +123,77 @@ def _curl_available() -> bool:
     return _curl_ok
 
 
+def _download_selenium(num: int, retries: int) -> Optional[bytes]:
+    """Download using Selenium (real browser) to avoid anti-bot detection."""
+    if not SELENIUM_AVAILABLE:
+        return None
+
+    global _selenium_driver
+    url = BULLETIN_BASE_URL.format(num=num)
+
+    for attempt in range(1, retries + 1):
+        try:
+            # Initialize driver if needed
+            if _selenium_driver is None:
+                opts = ChromeOptions()
+                opts.add_argument('--headless')
+                opts.add_argument('--no-sandbox')
+                opts.add_argument('--disable-dev-shm-usage')
+                opts.add_argument('--disable-blink-features=AutomationControlled')
+                opts.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                try:
+                    _selenium_driver = webdriver.Chrome(options=opts)
+                except Exception as e:
+                    logger.warning(f"Could not init Selenium: {e}")
+                    return None
+
+            # Download with timeout
+            _selenium_driver.set_page_load_timeout(CURL_TIMEOUT)
+            _selenium_driver.get(url)
+
+            # Check if we got redirected to error page
+            if '403' in _selenium_driver.page_source or 'not found' in _selenium_driver.page_source.lower():
+                logger.debug(f"Bulletin {num}: 404 or 403 via Selenium")
+                return None
+
+            # Get PDF via JavaScript execution
+            script = f"""
+            const url = '{url}';
+            const response = await fetch(url);
+            const blob = await response.arrayBuffer();
+            return new Uint8Array(blob);
+            """
+
+            content = _selenium_driver.execute_script(f"""
+            return fetch('{url}').then(r => r.arrayBuffer()).then(b => Array.from(new Uint8Array(b)));
+            """)
+
+            if content and len(content) > 100:
+                pdf_bytes = bytes(content)
+                if b'%PDF' in pdf_bytes[:10]:
+                    logger.debug(f"Bulletin {num}: downloaded via Selenium ({len(pdf_bytes)} bytes)")
+                    return pdf_bytes
+
+        except Exception as e:
+            logger.warning(f"Bulletin {num}: Selenium failed - {e} (attempt {attempt}/{retries})")
+            if attempt < retries:
+                time.sleep(1)
+
+    return None
+
+
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
     """Download bulletin PDF.
 
-    Uses curl subprocess (primary) — curl's --max-time is an absolute wall-clock
-    limit that interrupts trickle-stall scenarios where recv() never times out.
-    Falls back to urllib if curl is not available.
+    Priority:
+    1. Selenium (real browser - avoids anti-bot detection)
+    2. curl subprocess (curl's --max-time is absolute wall-clock limit)
+    3. urllib (fallback)
     """
+    if SELENIUM_AVAILABLE:
+        result = _download_selenium(num, retries)
+        if result:
+            return result
     if _curl_available():
         return _download_curl(num, retries)
     return _download_urllib(num, retries)
@@ -119,9 +207,11 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
                 tmp_path = tmp.name
 
+            # Use connect-timeout + max-time for redundant protection
             result = subprocess.run(
                 [
                     "curl", "-sL",
+                    "--connect-timeout", str(CURL_CONNECT_TIMEOUT),
                     "--max-time", str(CURL_TIMEOUT),
                     "--retry", "0",
                     "-H", "User-Agent: Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
@@ -132,7 +222,7 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
                     url,
                 ],
                 capture_output=True,
-                timeout=CURL_TIMEOUT + 10,
+                timeout=CURL_TIMEOUT + 15,  # subprocess timeout > curl timeout
             )
 
             http_code = result.stdout.decode("ascii", errors="ignore").strip()
@@ -140,7 +230,13 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
             if result.returncode == 28:  # CURLE_OPERATION_TIMEDOUT
                 logger.warning(f"Bulletin {num}: curl timeout {CURL_TIMEOUT}s (attempt {attempt}/{retries})")
                 if attempt < retries:
-                    time.sleep(2)
+                    time.sleep(1)
+                continue
+
+            if result.returncode == 7:  # CURLE_COULDNT_CONNECT
+                logger.warning(f"Bulletin {num}: connection failed (attempt {attempt}/{retries})")
+                if attempt < retries:
+                    time.sleep(1)
                 continue
 
             if http_code == "404":
@@ -150,20 +246,22 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
             if http_code != "200":
                 logger.warning(f"Bulletin {num}: HTTP {http_code} (attempt {attempt}/{retries})")
                 if attempt < retries:
-                    time.sleep(2)
+                    time.sleep(1)
                 continue
 
             with open(tmp_path, "rb") as f:
                 content = f.read()
 
-            if b'%PDF' not in content[:10]:
-                logger.warning(f"Bulletin {num}: not a PDF (size={len(content)})")
-                return None
+            if not content or b'%PDF' not in content[:10]:
+                logger.warning(f"Bulletin {num}: not a valid PDF (size={len(content) if content else 0})")
+                if attempt < retries:
+                    time.sleep(1)
+                continue
 
             return content
 
         except subprocess.TimeoutExpired:
-            logger.warning(f"Bulletin {num}: subprocess killed after {CURL_TIMEOUT+10}s (attempt {attempt}/{retries})")
+            logger.warning(f"Bulletin {num}: subprocess timeout exceeded (attempt {attempt}/{retries})")
         except Exception as e:
             logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
         finally:
@@ -174,7 +272,7 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
                     pass
 
         if attempt < retries:
-            time.sleep(2)
+            time.sleep(1)
 
     return None
 
@@ -206,9 +304,9 @@ def _download_urllib(num: int, retries: int) -> Optional[bytes]:
     return None
 
 
-def import_bulletin(num: int, dry_run: bool = False) -> dict:
+def import_bulletin(num: int, dry_run: bool = False, timeout: int = 90) -> dict:
     """
-    Download, parse and import a single bulletin.
+    Download, parse and import a single bulletin with absolute timeout.
 
     Returns: {num, status, records_imported, error}
     """
@@ -228,41 +326,61 @@ def import_bulletin(num: int, dry_run: bool = False) -> dict:
             result["records"] = existing.registros
             return result
 
-    # Download
-    pdf_bytes = download_bulletin(num)
-    if pdf_bytes is None:
-        result["status"] = "error"
-        result["error"] = "Download failed or not found"
-        _log_bulletin(num, 0, "error", result["error"])
+    start_time = time.time()
+    def timeout_handler(signum, frame):
+        elapsed = time.time() - start_time
+        raise TimeoutError(f"Bulletin {num} processing exceeded {timeout}s (elapsed: {elapsed:.1f}s)")
+
+    # Set absolute timeout
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)
+
+    try:
+        # Download
+        pdf_bytes = download_bulletin(num)
+        if pdf_bytes is None:
+            result["status"] = "error"
+            result["error"] = "Download failed or not found"
+            _log_bulletin(num, 0, "error", result["error"])
+            return result
+
+        # Parse
+        try:
+            records = parse_bulletin_bytes(pdf_bytes, num)
+        except Exception as e:
+            logger.error(f"Bulletin {num}: parse error — {e}")
+            result["status"] = "error"
+            result["error"] = str(e)
+            _log_bulletin(num, 0, "error", str(e))
+            return result
+
+        if not records:
+            logger.info(f"Bulletin {num}: parsed OK but 0 records extracted")
+            _log_bulletin(num, 0, "ok")
+            result["records"] = 0
+            return result
+
+        # Import into DB
+        if not dry_run:
+            imported = _upsert_records(records)
+            _log_bulletin(num, imported, "ok")
+            result["records"] = imported
+            logger.info(f"Bulletin {num}: {imported} records imported")
+        else:
+            result["records"] = len(records)
+            logger.info(f"[DRY RUN] Bulletin {num}: would import {len(records)} records")
+
         return result
 
-    # Parse
-    try:
-        records = parse_bulletin_bytes(pdf_bytes, num)
-    except Exception as e:
-        logger.error(f"Bulletin {num}: parse error — {e}")
+    except TimeoutError as e:
+        logger.error(f"Bulletin {num}: {e}")
         result["status"] = "error"
         result["error"] = str(e)
         _log_bulletin(num, 0, "error", str(e))
         return result
-
-    if not records:
-        logger.info(f"Bulletin {num}: parsed OK but 0 records extracted")
-        _log_bulletin(num, 0, "ok")
-        result["records"] = 0
-        return result
-
-    # Import into DB
-    if not dry_run:
-        imported = _upsert_records(records)
-        _log_bulletin(num, imported, "ok")
-        result["records"] = imported
-        logger.info(f"Bulletin {num}: {imported} records imported")
-    else:
-        result["records"] = len(records)
-        logger.info(f"[DRY RUN] Bulletin {num}: would import {len(records)} records")
-
-    return result
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 def _upsert_records(records: list[MarcaRecord]) -> int:

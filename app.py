@@ -47,10 +47,10 @@ except Exception as e:
 _import_running = False
 
 
-def _trigger_bulk_import(years=10, from_override=None, to_override=None, limit=None) -> bool:
+def _trigger_bulk_import(years=10, from_override=None, to_override=None, limit=None, force=False) -> bool:
     """Start the bulk import background thread. Returns False if already running."""
     global _import_running
-    if _import_running:
+    if _import_running and not force:
         return False
 
     def _run():
@@ -553,7 +553,7 @@ https://legalpacers.com
 
 @app.route("/api/db/status", methods=["GET"])
 def db_status():
-    """Return database stats."""
+    """Return database stats. Auto-fixes stale import state."""
     try:
         from database import get_last_imported_boletin, get_import_state, set_import_state
         total = count_marcas()
@@ -562,6 +562,7 @@ def db_status():
 
         # Auto-fix stale state: DB says running but in-memory thread is not
         if state.get("running") and not _import_running:
+            logger.info(f"Auto-fix: DB said running but thread is dead, resetting state")
             set_import_state(running=False, current_boletin=state.get("current_boletin", 0))
             state["running"] = False
 
@@ -574,6 +575,7 @@ def db_status():
             "import_error": state.get("last_error"),
         })
     except Exception as e:
+        logger.warning(f"Status check error: {e}")
         return success_response({"total_marcas": 0, "db_ready": False, "error": str(e)})
 
 
@@ -618,10 +620,55 @@ def admin_reset():
         return error_response("Unauthorized", 401)
     try:
         from database import set_import_state
-        set_import_state(running=False, current_boletin=0)
+        logger.warning("ADMIN: Forcing import state reset")
+        set_import_state(running=False, current_boletin=0, last_error=None)
         _import_running = False
         return success_response({"ok": True, "message": "Import state reset. Ahora podés iniciar una nueva importación."})
     except Exception as e:
+        return error_response(str(e), 500)
+
+
+@app.route("/api/admin/restart-import", methods=["POST"])
+def admin_restart_import():
+    """Force restart import even if one is supposedly running. Kills old process if needed."""
+    global _import_running
+    admin_key = os.getenv("ADMIN_KEY", "")
+    provided = (request.json or {}).get("key", "")
+    if not admin_key or provided != admin_key:
+        return error_response("Unauthorized", 401)
+
+    try:
+        from database import set_import_state
+        from bulk_importer import detect_latest_bulletin, BULLETINS_PER_YEAR
+
+        logger.warning("ADMIN: Force restarting import")
+
+        # Kill any supposedly-running import
+        _import_running = False
+        set_import_state(running=False, current_boletin=0, last_error=None)
+
+        # Small delay to let cleanup happen
+        import time
+        time.sleep(0.5)
+
+        # Start fresh import
+        years = (request.json or {}).get("years", 10)
+        from_override = (request.json or {}).get("from_num")
+        to_override = (request.json or {}).get("to_num")
+        limit = (request.json or {}).get("limit")
+
+        started = _trigger_bulk_import(years=years, from_override=from_override,
+                                      to_override=to_override, limit=limit, force=True)
+
+        if not started:
+            return error_response("Could not start import", 500)
+
+        return success_response({
+            "ok": True,
+            "message": f"Import forcefully restarted. Check /api/db/status for progress."
+        })
+    except Exception as e:
+        logger.error(f"Restart import error: {e}")
         return error_response(str(e), 500)
 
 
@@ -754,6 +801,43 @@ def admin_probe_suffixes():
         except Exception as e:
             results[f"_{suffix}_"] = {"error": str(e)[:80]}
     return success_response({"bulletin": num, "suffixes": results})
+
+
+@app.route("/api/admin/skip-bulletin", methods=["POST"])
+def admin_skip_bulletin():
+    """Mark a problematic bulletin as skipped so import can continue."""
+    admin_key = os.getenv("ADMIN_KEY", "")
+    provided = (request.json or {}).get("key", "")
+    if not admin_key or provided != admin_key:
+        return error_response("Unauthorized", 401)
+
+    try:
+        from database import get_session, BoletinLog
+        from datetime import datetime
+
+        num = (request.json or {}).get("num")
+        if not num or not isinstance(num, int):
+            return error_response("Bulletin number required", 400)
+
+        with get_session() as s:
+            existing = s.query(BoletinLog).filter_by(numero=num).first()
+            if existing:
+                existing.status = "skip"
+                existing.error_msg = "Manually skipped by admin"
+                existing.imported_at = datetime.utcnow()
+            else:
+                s.add(BoletinLog(
+                    numero=num,
+                    status="skip",
+                    registros=0,
+                    error_msg="Manually skipped by admin"
+                ))
+            s.commit()
+            logger.info(f"ADMIN: Manually skipped bulletin {num}")
+
+        return success_response({"ok": True, "message": f"Bulletin {num} marked as skipped"})
+    except Exception as e:
+        return error_response(str(e), 500)
 
 
 @app.route("/api/admin/logs")
