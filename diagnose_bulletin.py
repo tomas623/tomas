@@ -29,9 +29,18 @@ def main(num: int) -> None:
         print(f"Total pages: {total}")
 
         wipo_hits = table_hits = row_hits = 0
+        # Scan whole bulletin (excluding last 10 admin pages)
+        scan_upto = max(1, total - 10)
+
+        # Sample pages at spread-out positions so we see real trademark data,
+        # not just the regulatory preamble at the start.
+        sample_positions = sorted({
+            min(scan_upto - 1, p)
+            for p in (30, 60, 120, 250, 400, scan_upto // 2)
+        })
         sample_printed = 0
 
-        for i in range(min(total - 10, 40)):
+        for i in range(scan_upto):
             try:
                 text = pdf.pages[i].extract_text() or ""
             except Exception as e:
@@ -46,12 +55,12 @@ def main(num: int) -> None:
                 if RE_TABLE_ROW.match(line.strip()):
                     row_hits += 1
 
-            if 4 <= i <= 9 and sample_printed < 3 and text.strip():
-                print(f"\n── Raw text from page {i+1} (first 1500 chars) ──")
-                print(text[:1500])
+            if i in sample_positions and sample_printed < 4 and text.strip():
+                print(f"\n── Raw text from page {i+1} (first 2000 chars) ──")
+                print(text[:2000])
                 sample_printed += 1
 
-        print(f"\n── Regex summary (first 40 pages) ──")
+        print(f"\n── Regex summary (all {scan_upto} content pages) ──")
         print(f"  WIPO entries found:      {wipo_hits}")
         print(f"  Table headers found:     {table_hits}")
         print(f"  Table rows that match:   {row_hits}")
