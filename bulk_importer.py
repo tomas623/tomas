@@ -41,6 +41,14 @@ from database import (
 )
 from bulletin_parser import parse_bulletin_bytes, MarcaRecord
 
+# Optional Selenium support for avoiding anti-bot detection
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -101,6 +109,7 @@ def detect_latest_bulletin() -> int:
 CURL_TIMEOUT = 20        # seconds: curl's absolute --max-time wall-clock limit (more aggressive)
 CURL_CONNECT_TIMEOUT = 10  # seconds: timeout for establishing connection
 _curl_ok: Optional[bool] = None  # cached availability check
+_selenium_driver: Optional[object] = None  # cached driver instance
 
 
 def _curl_available() -> bool:
@@ -114,13 +123,77 @@ def _curl_available() -> bool:
     return _curl_ok
 
 
+def _download_selenium(num: int, retries: int) -> Optional[bytes]:
+    """Download using Selenium (real browser) to avoid anti-bot detection."""
+    if not SELENIUM_AVAILABLE:
+        return None
+
+    global _selenium_driver
+    url = BULLETIN_BASE_URL.format(num=num)
+
+    for attempt in range(1, retries + 1):
+        try:
+            # Initialize driver if needed
+            if _selenium_driver is None:
+                opts = ChromeOptions()
+                opts.add_argument('--headless')
+                opts.add_argument('--no-sandbox')
+                opts.add_argument('--disable-dev-shm-usage')
+                opts.add_argument('--disable-blink-features=AutomationControlled')
+                opts.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                try:
+                    _selenium_driver = webdriver.Chrome(options=opts)
+                except Exception as e:
+                    logger.warning(f"Could not init Selenium: {e}")
+                    return None
+
+            # Download with timeout
+            _selenium_driver.set_page_load_timeout(CURL_TIMEOUT)
+            _selenium_driver.get(url)
+
+            # Check if we got redirected to error page
+            if '403' in _selenium_driver.page_source or 'not found' in _selenium_driver.page_source.lower():
+                logger.debug(f"Bulletin {num}: 404 or 403 via Selenium")
+                return None
+
+            # Get PDF via JavaScript execution
+            script = f"""
+            const url = '{url}';
+            const response = await fetch(url);
+            const blob = await response.arrayBuffer();
+            return new Uint8Array(blob);
+            """
+
+            content = _selenium_driver.execute_script(f"""
+            return fetch('{url}').then(r => r.arrayBuffer()).then(b => Array.from(new Uint8Array(b)));
+            """)
+
+            if content and len(content) > 100:
+                pdf_bytes = bytes(content)
+                if b'%PDF' in pdf_bytes[:10]:
+                    logger.debug(f"Bulletin {num}: downloaded via Selenium ({len(pdf_bytes)} bytes)")
+                    return pdf_bytes
+
+        except Exception as e:
+            logger.warning(f"Bulletin {num}: Selenium failed - {e} (attempt {attempt}/{retries})")
+            if attempt < retries:
+                time.sleep(1)
+
+    return None
+
+
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
     """Download bulletin PDF.
 
-    Uses curl subprocess (primary) — curl's --max-time is an absolute wall-clock
-    limit that interrupts trickle-stall scenarios where recv() never times out.
-    Falls back to urllib if curl is not available.
+    Priority:
+    1. Selenium (real browser - avoids anti-bot detection)
+    2. curl subprocess (curl's --max-time is absolute wall-clock limit)
+    3. urllib (fallback)
     """
+    if SELENIUM_AVAILABLE:
+        result = _download_selenium(num, retries)
+        if result:
+            return result
     if _curl_available():
         return _download_curl(num, retries)
     return _download_urllib(num, retries)
