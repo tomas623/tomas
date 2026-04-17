@@ -11,7 +11,9 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 
 from bulk_importer import download_bulletin
-from bulletin_parser import RE_ENTRY, RE_TABLE_HEADER, RE_TABLE_ROW
+from bulletin_parser import (
+    RE_ENTRY, RE_TABLE_HEADER, RE_TABLE_ROW, RE_NOTIF_HEADER, RE_NOTIF_ROW,
+)
 
 
 def main(num: int) -> None:
@@ -28,7 +30,7 @@ def main(num: int) -> None:
         total = len(pdf.pages)
         print(f"Total pages: {total}")
 
-        wipo_hits = table_hits = row_hits = 0
+        wipo_hits = table_hits = row_hits = notif_hits = notif_rows = 0
         # Scan whole bulletin (excluding last 10 admin pages)
         scan_upto = max(1, total - 10)
 
@@ -51,9 +53,14 @@ def main(num: int) -> None:
                 wipo_hits += 1
             if RE_TABLE_HEADER.search(text):
                 table_hits += 1
+            if RE_NOTIF_HEADER.search(text):
+                notif_hits += 1
             for line in text.splitlines():
-                if RE_TABLE_ROW.match(line.strip()):
+                s = line.strip()
+                if RE_TABLE_ROW.match(s):
                     row_hits += 1
+                if RE_NOTIF_ROW.match(s):
+                    notif_rows += 1
 
             if i in sample_positions and sample_printed < 4 and text.strip():
                 print(f"\n── Raw text from page {i+1} (first 2000 chars) ──")
@@ -64,8 +71,10 @@ def main(num: int) -> None:
         print(f"  WIPO entries found:      {wipo_hits}")
         print(f"  Table headers found:     {table_hits}")
         print(f"  Table rows that match:   {row_hits}")
+        print(f"  Notif headers found:     {notif_hits}")
+        print(f"  Notif rows that match:   {notif_rows}")
 
-        if wipo_hits == 0 and table_hits == 0 and row_hits == 0:
+        if wipo_hits == 0 and table_hits == 0 and row_hits == 0 and notif_rows == 0:
             print("\n⚠  Neither format matches. The bulletin layout may have changed.")
             print("    Paste the 'Raw text' above into the chat so we can adapt the regex.")
 

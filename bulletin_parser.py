@@ -82,6 +82,31 @@ RE_TABLE_ROW = re.compile(
     r'(\d{2}/\d{2}/\d{4})',       # group 5: fecha
 )
 
+# ── Notification-of-Disposition format (bulletins ~5500+) ─────────────────────
+# Header (spans several lines, we match the most stable tokens):
+#   Tipo de   Número de   Resolu-
+#   Agente Nº Acta Clase Titular Denominación Fecha Disposición Nº
+#   Trámite   Registro    ción
+#
+# Data row (columns concentrated on a single line by pdfplumber):
+#   Part. 4042690  7 PONCE MARIELA SOLANGE  RALLY GLOBAL  M 3393616 C 12/05/2023
+#   1664  4043701  4 WU, MICHELLE FANNY     ZARCO         M 3393113 C 12/05/2023
+RE_NOTIF_HEADER = re.compile(
+    r'Agente\s+N[°º]?\s+Acta\s+Clase\s+Titular',
+    re.IGNORECASE,
+)
+
+RE_NOTIF_ROW = re.compile(
+    r'^(?:Part\.|(\d{1,5}))\s+'     # group 1: agent num (None if "Part.")
+    r'(\d{6,8})\s+'                 # group 2: acta
+    r'(\d{1,2})\s+'                 # group 3: clase
+    r'(.+?)\s+'                     # group 4: middle (titular + denominacion)
+    r'([MDFTE])\s+'                 # group 5: tipo letter
+    r'(\d{6,8})\s+'                 # group 6: registro num
+    r'[A-Z]\s+'                     # estado/tramite letter (e.g., C)
+    r'(\d{2}/\d{2}/\d{4})\b',       # group 7: fecha
+)
+
 # Company-suffix patterns used to split "TITULAR DENOMINACION" blob
 TITULAR_SUFFIX_RE = re.compile(
     r'\b(?:'
@@ -171,6 +196,8 @@ def parse_bulletin_bytes(pdf_bytes: bytes, boletin_num: int) -> List[MarcaRecord
 
             if fmt == 'wipo':
                 records = _parse_wipo(pdf, boletin_num, pages_to_process)
+            elif fmt == 'notif':
+                records = _parse_notification(pdf, boletin_num, pages_to_process)
             else:
                 records = _parse_table(pdf, boletin_num, pages_to_process)
 
@@ -190,17 +217,20 @@ def parse_bulletin_pdf(pdf_path: str, boletin_num: int) -> List[MarcaRecord]:
 # ── Format detection ──────────────────────────────────────────────────────────
 
 def _detect_format(pdf, pages_to_check: int) -> str:
-    """Return 'wipo' or 'table' by scanning the first pages."""
-    for i in range(min(pages_to_check, 25)):
+    """Return 'wipo', 'table', or 'notif' by scanning pages."""
+    # Scan up to 60 pages — the bulletin preamble can be ~30 pages long
+    for i in range(min(pages_to_check, 60)):
         try:
             text = pdf.pages[i].extract_text() or ''
         except Exception:
             continue
         if RE_ENTRY.search(text):
             return 'wipo'
+        if RE_NOTIF_HEADER.search(text):
+            return 'notif'
         if RE_TABLE_HEADER.search(text):
             return 'table'
-    return 'table'   # newer bulletins default
+    return 'notif'   # newer bulletins (5500+) default
 
 
 # ── WIPO parser ───────────────────────────────────────────────────────────────
@@ -376,6 +406,76 @@ def _parse_table(pdf, boletin_num: int, pages_to_process: int) -> List[MarcaReco
                 acta=acta_str,
                 denominacion=denominacion[:300],
                 tipo=None,
+                clase=clase,
+                titular=titular[:300] if titular else None,
+                agente=agente,
+                estado=estado,
+                estado_code=estado_code,
+                fecha_solicitud=_parse_date(fecha_str),
+                fecha_boletin=None,
+                boletin_num=boletin_num,
+            ))
+
+    return records
+
+
+# ── Notification-of-Disposition parser ────────────────────────────────────────
+
+def _parse_notification(pdf, boletin_num: int, pages_to_process: int) -> List[MarcaRecord]:
+    """
+    Parse "Notificación de Disposición" format (bulletins ~5500+).
+
+    Columns: Agente Nº | Acta | Clase | Titular | Denominación | Tipo | Registro | Estado | Fecha
+    """
+    records = []
+    # "Notificación de Disposición" rows are registered trademarks
+    default_section = ('Registrada', 'vigente')
+
+    for page_num in range(pages_to_process):
+        try:
+            text = pdf.pages[page_num].extract_text() or ''
+        except Exception:
+            continue
+        if not text.strip():
+            continue
+
+        for raw_line in text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            m = RE_NOTIF_ROW.match(line)
+            if not m:
+                continue
+
+            agent_str = m.group(1)           # None when "Part."
+            acta_str  = m.group(2)
+            clase_str = m.group(3)
+            middle    = m.group(4).strip()
+            tipo_code = m.group(5).upper()
+            fecha_str = m.group(7)
+
+            try:
+                clase = int(clase_str)
+                if not (1 <= clase <= 45):
+                    continue
+            except (ValueError, TypeError):
+                continue
+
+            titular, denominacion = _split_titular_denominacion(middle)
+            if not denominacion:
+                denominacion = middle
+            # Figurative marks: pdfplumber surfaces "************" as placeholder
+            if denominacion.strip('*').strip() == '':
+                denominacion = f'[Figurativa] {acta_str}'
+
+            estado, estado_code = default_section
+            agente = f'Ag {agent_str}' if agent_str else 'Part.'
+
+            records.append(MarcaRecord(
+                acta=acta_str,
+                denominacion=denominacion[:300],
+                tipo=TIPO_MAP.get(tipo_code, tipo_code),
                 clase=clase,
                 titular=titular[:300] if titular else None,
                 agente=agente,
