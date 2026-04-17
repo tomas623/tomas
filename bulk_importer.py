@@ -84,7 +84,7 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-CURL_TIMEOUT = 25        # seconds: curl's absolute --max-time wall-clock limit
+CURL_TIMEOUT = 60        # seconds: curl's absolute --max-time wall-clock limit (increased for large PDFs)
 _curl_ok: Optional[bool] = None  # cached availability check
 
 
@@ -228,12 +228,14 @@ def import_bulletin(num: int, dry_run: bool = False) -> dict:
             result["records"] = existing.registros
             return result
 
-    # Download
-    pdf_bytes = download_bulletin(num)
+    # Download with expanded retries for problematic bulletins
+    max_tries = MAX_RETRIES + 1  # extra attempt for resilience
+    pdf_bytes = download_bulletin(num, retries=max_tries)
     if pdf_bytes is None:
         result["status"] = "error"
-        result["error"] = "Download failed or not found"
+        result["error"] = "Download failed or not found after retries"
         _log_bulletin(num, 0, "error", result["error"])
+        logger.warning(f"Bulletin {num}: marked as error after {max_tries} attempts")
         return result
 
     # Parse
