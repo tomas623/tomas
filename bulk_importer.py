@@ -28,6 +28,7 @@ import urllib.request
 import urllib.error
 from datetime import date, datetime
 from typing import Optional
+import signal
 
 import httpx
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -52,7 +53,8 @@ BULLETIN_BASE_URL = "https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_
 LATEST_BULLETIN = 6009       # Update this or auto-detect
 BULLETINS_PER_YEAR = 52
 HTTP_DELAY = 1.0             # seconds between requests
-MAX_RETRIES = 2              # fewer retries to avoid long hangs
+MAX_RETRIES = 3              # retries with aggressive timeout handling
+BULLETIN_TIMEOUT = 90        # absolute timeout per bulletin (download + parse + import)
 
 
 def get_headers() -> dict:
@@ -84,7 +86,8 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-CURL_TIMEOUT = 25        # seconds: curl's absolute --max-time wall-clock limit
+CURL_TIMEOUT = 20        # seconds: curl's absolute --max-time wall-clock limit (more aggressive)
+CURL_CONNECT_TIMEOUT = 10  # seconds: timeout for establishing connection
 _curl_ok: Optional[bool] = None  # cached availability check
 
 
@@ -119,9 +122,11 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
                 tmp_path = tmp.name
 
+            # Use connect-timeout + max-time for redundant protection
             result = subprocess.run(
                 [
                     "curl", "-sL",
+                    "--connect-timeout", str(CURL_CONNECT_TIMEOUT),
                     "--max-time", str(CURL_TIMEOUT),
                     "--retry", "0",
                     "-H", "User-Agent: Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
@@ -132,7 +137,7 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
                     url,
                 ],
                 capture_output=True,
-                timeout=CURL_TIMEOUT + 10,
+                timeout=CURL_TIMEOUT + 15,  # subprocess timeout > curl timeout
             )
 
             http_code = result.stdout.decode("ascii", errors="ignore").strip()
@@ -140,7 +145,13 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
             if result.returncode == 28:  # CURLE_OPERATION_TIMEDOUT
                 logger.warning(f"Bulletin {num}: curl timeout {CURL_TIMEOUT}s (attempt {attempt}/{retries})")
                 if attempt < retries:
-                    time.sleep(2)
+                    time.sleep(1)
+                continue
+
+            if result.returncode == 7:  # CURLE_COULDNT_CONNECT
+                logger.warning(f"Bulletin {num}: connection failed (attempt {attempt}/{retries})")
+                if attempt < retries:
+                    time.sleep(1)
                 continue
 
             if http_code == "404":
@@ -150,20 +161,22 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
             if http_code != "200":
                 logger.warning(f"Bulletin {num}: HTTP {http_code} (attempt {attempt}/{retries})")
                 if attempt < retries:
-                    time.sleep(2)
+                    time.sleep(1)
                 continue
 
             with open(tmp_path, "rb") as f:
                 content = f.read()
 
-            if b'%PDF' not in content[:10]:
-                logger.warning(f"Bulletin {num}: not a PDF (size={len(content)})")
-                return None
+            if not content or b'%PDF' not in content[:10]:
+                logger.warning(f"Bulletin {num}: not a valid PDF (size={len(content) if content else 0})")
+                if attempt < retries:
+                    time.sleep(1)
+                continue
 
             return content
 
         except subprocess.TimeoutExpired:
-            logger.warning(f"Bulletin {num}: subprocess killed after {CURL_TIMEOUT+10}s (attempt {attempt}/{retries})")
+            logger.warning(f"Bulletin {num}: subprocess timeout exceeded (attempt {attempt}/{retries})")
         except Exception as e:
             logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
         finally:
@@ -174,7 +187,7 @@ def _download_curl(num: int, retries: int) -> Optional[bytes]:
                     pass
 
         if attempt < retries:
-            time.sleep(2)
+            time.sleep(1)
 
     return None
 
@@ -206,9 +219,9 @@ def _download_urllib(num: int, retries: int) -> Optional[bytes]:
     return None
 
 
-def import_bulletin(num: int, dry_run: bool = False) -> dict:
+def import_bulletin(num: int, dry_run: bool = False, timeout: int = 90) -> dict:
     """
-    Download, parse and import a single bulletin.
+    Download, parse and import a single bulletin with absolute timeout.
 
     Returns: {num, status, records_imported, error}
     """
@@ -228,41 +241,61 @@ def import_bulletin(num: int, dry_run: bool = False) -> dict:
             result["records"] = existing.registros
             return result
 
-    # Download
-    pdf_bytes = download_bulletin(num)
-    if pdf_bytes is None:
-        result["status"] = "error"
-        result["error"] = "Download failed or not found"
-        _log_bulletin(num, 0, "error", result["error"])
+    start_time = time.time()
+    def timeout_handler(signum, frame):
+        elapsed = time.time() - start_time
+        raise TimeoutError(f"Bulletin {num} processing exceeded {timeout}s (elapsed: {elapsed:.1f}s)")
+
+    # Set absolute timeout
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout)
+
+    try:
+        # Download
+        pdf_bytes = download_bulletin(num)
+        if pdf_bytes is None:
+            result["status"] = "error"
+            result["error"] = "Download failed or not found"
+            _log_bulletin(num, 0, "error", result["error"])
+            return result
+
+        # Parse
+        try:
+            records = parse_bulletin_bytes(pdf_bytes, num)
+        except Exception as e:
+            logger.error(f"Bulletin {num}: parse error — {e}")
+            result["status"] = "error"
+            result["error"] = str(e)
+            _log_bulletin(num, 0, "error", str(e))
+            return result
+
+        if not records:
+            logger.info(f"Bulletin {num}: parsed OK but 0 records extracted")
+            _log_bulletin(num, 0, "ok")
+            result["records"] = 0
+            return result
+
+        # Import into DB
+        if not dry_run:
+            imported = _upsert_records(records)
+            _log_bulletin(num, imported, "ok")
+            result["records"] = imported
+            logger.info(f"Bulletin {num}: {imported} records imported")
+        else:
+            result["records"] = len(records)
+            logger.info(f"[DRY RUN] Bulletin {num}: would import {len(records)} records")
+
         return result
 
-    # Parse
-    try:
-        records = parse_bulletin_bytes(pdf_bytes, num)
-    except Exception as e:
-        logger.error(f"Bulletin {num}: parse error — {e}")
+    except TimeoutError as e:
+        logger.error(f"Bulletin {num}: {e}")
         result["status"] = "error"
         result["error"] = str(e)
         _log_bulletin(num, 0, "error", str(e))
         return result
-
-    if not records:
-        logger.info(f"Bulletin {num}: parsed OK but 0 records extracted")
-        _log_bulletin(num, 0, "ok")
-        result["records"] = 0
-        return result
-
-    # Import into DB
-    if not dry_run:
-        imported = _upsert_records(records)
-        _log_bulletin(num, imported, "ok")
-        result["records"] = imported
-        logger.info(f"Bulletin {num}: {imported} records imported")
-    else:
-        result["records"] = len(records)
-        logger.info(f"[DRY RUN] Bulletin {num}: would import {len(records)} records")
-
-    return result
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 def _upsert_records(records: list[MarcaRecord]) -> int:
