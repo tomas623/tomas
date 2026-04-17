@@ -399,7 +399,7 @@ def search_inpi_api():
         if not variants or not classes:
             return error_response("Variants and classes required")
 
-        DB_MIN_RECORDS = 50_000
+        DB_MIN_RECORDS = 2_000  # Reduced from 50k to enable search while import is ongoing
         db_count = count_marcas()
 
         if db_count >= DB_MIN_RECORDS:
