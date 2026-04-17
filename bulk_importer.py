@@ -331,9 +331,12 @@ def import_bulletin(num: int, dry_run: bool = False, timeout: int = 90) -> dict:
         elapsed = time.time() - start_time
         raise TimeoutError(f"Bulletin {num} processing exceeded {timeout}s (elapsed: {elapsed:.1f}s)")
 
-    # Set absolute timeout
-    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(timeout)
+    # Set absolute timeout (Unix only — Windows has no SIGALRM, relies on httpx/curl timeouts inside download_bulletin)
+    has_sigalrm = hasattr(signal, "SIGALRM")
+    old_handler = None
+    if has_sigalrm:
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout)
 
     try:
         # Download
@@ -379,8 +382,9 @@ def import_bulletin(num: int, dry_run: bool = False, timeout: int = 90) -> dict:
         _log_bulletin(num, 0, "error", str(e))
         return result
     finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old_handler)
+        if has_sigalrm:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
 
 
 def _upsert_records(records: list[MarcaRecord]) -> int:
