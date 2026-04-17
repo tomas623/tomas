@@ -27,3 +27,5 @@ env/
 .DS_Store
 Thumbs.db
 import.log
+import.pid
+import_full.log
