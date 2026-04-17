@@ -214,6 +214,14 @@ def import_bulletin(num: int, dry_run: bool = False) -> dict:
     """
     result = {"num": num, "status": "ok", "records": 0, "error": None}
 
+    # Hardcoded skip list for bulletins with persistent issues
+    SKIP_BULLETINS = {5498}  # Bulletin 5498: corrupted/timeout issues
+    if num in SKIP_BULLETINS:
+        logger.warning(f"Bulletin {num}: on skip list, marking as skip")
+        _log_bulletin(num, 0, "skip", "Hardcoded skip due to persistent issues")
+        result["status"] = "skip"
+        return result
+
     # Check if already imported with actual records
     # (skip only if registros > 0 — bulletins with registros=0 may have had a failed upsert)
     with get_session() as s:
