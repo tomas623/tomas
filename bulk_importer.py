@@ -189,8 +189,10 @@ def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
     1. Selenium (real browser - avoids anti-bot detection)
     2. curl subprocess (curl's --max-time is absolute wall-clock limit)
     3. urllib (fallback)
+
+    Set env var SKIP_SELENIUM=1 to bypass Selenium (faster when HTTP fallback works).
     """
-    if SELENIUM_AVAILABLE:
+    if SELENIUM_AVAILABLE and not os.getenv("SKIP_SELENIUM"):
         result = _download_selenium(num, retries)
         if result:
             return result
