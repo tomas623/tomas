@@ -257,12 +257,194 @@ class LegalPacersPDF:
     
     def _footer_section(self):
         """Generate footer with contact info."""
-        
+
         footer_text = """
         <b>Legal Pacers</b> — Monitoreo y Registro de Marcas<br/>
-        <a href="https://api.whatsapp.com/send/?phone=5491128774200">WhatsApp: +54 9 11 2877-4200</a> | 
+        <a href="https://api.whatsapp.com/send/?phone=5491128774200">WhatsApp: +54 9 11 2877-4200</a> |
         <a href="https://www.legalpacers.com">www.legalpacers.com</a><br/>
         <i style='font-size:8'>Este informe fue generado automáticamente. Consulte las bases de datos oficiales del INPI para información actualizada.</i>
         """
-        
+
         return Paragraph(footer_text, self.styles["LPMuted"])
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Premium availability report (Module A)
+# ─────────────────────────────────────────────────────────────────────
+
+RISK_COLORS = {
+    "bajo":  colors.HexColor("#16A34A"),
+    "medio": colors.HexColor("#D97706"),
+    "alto":  colors.HexColor("#DC2626"),
+}
+
+
+def _risk_badge_style(riesgo: str):
+    col = RISK_COLORS.get((riesgo or "").lower(), colors.HexColor("#6B7A99"))
+    return TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), col),
+        ("TEXTCOLOR",  (0, 0), (-1, -1), WHITE),
+        ("FONTNAME",   (0, 0), (-1, -1), HEADING_FONT),
+        ("FONTSIZE",   (0, 0), (-1, -1), 9),
+        ("ALIGN",      (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING",(0, 0), (-1, -1), 8),
+        ("RIGHTPADDING",(0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING",(0, 0), (-1, -1), 3),
+    ])
+
+
+def build_disponibilidad_report(user_email: str, clase: int, enriched: list[dict]) -> bytes:
+    """
+    Build the premium disponibilidad PDF.
+
+    `enriched` items: {marca, clase, disponible, exactas[], similares[],
+      similares_count, ai_riesgo, ai_justificacion, ai_clases_sugeridas[]}
+    Returns PDF bytes.
+    """
+    pdf = LegalPacersPDF()
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        topMargin=1.2*cm, bottomMargin=1.2*cm,
+        leftMargin=1.5*cm, rightMargin=1.5*cm,
+    )
+    story = []
+
+    # Header
+    hdr = Table(
+        [[Paragraph("<b style='font-size:18;color:#0D1B4B'>Legal Pacers</b>",
+                    pdf.styles["LPBody"]),
+          Paragraph("<i style='font-size:10;color:#6B7A99'>Reporte de disponibilidad de marca</i>",
+                    pdf.styles["LPMuted"])]],
+        colWidths=[10*cm, 7*cm],
+    )
+    hdr.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (0, 0), "LEFT"),
+        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.append(hdr)
+    story.append(Spacer(1, 0.3*cm))
+
+    story.append(Paragraph(
+        f"Email: <b>{user_email}</b> · Clase Nice consultada: <b>{clase}</b> · "
+        f"Fecha: <b>{datetime.now().strftime('%d/%m/%Y')}</b>",
+        pdf.styles["LPMuted"],
+    ))
+    story.append(Spacer(1, 0.5*cm))
+
+    # One section per denomination
+    for idx, item in enumerate(enriched):
+        if idx > 0:
+            story.append(Spacer(1, 0.3*cm))
+
+        disponible = item.get("disponible", False)
+        dispo_text = "✓ Disponible" if disponible else "✗ No disponible"
+        dispo_color = "#16A34A" if disponible else "#DC2626"
+
+        title = Paragraph(
+            f"<b>{item.get('marca','')}</b>  "
+            f"<font color='{dispo_color}'>{dispo_text}</font>",
+            pdf.styles["LPSubHeading"],
+        )
+        story.append(title)
+
+        # Risk badge + justification
+        riesgo = (item.get("ai_riesgo") or "medio").lower()
+        badge = Table([[f"Riesgo {riesgo.upper()}"]], colWidths=[3.5*cm])
+        badge.setStyle(_risk_badge_style(riesgo))
+        story.append(badge)
+        story.append(Spacer(1, 0.2*cm))
+
+        if item.get("ai_justificacion"):
+            story.append(Paragraph(item["ai_justificacion"], pdf.styles["LPBody"]))
+            story.append(Spacer(1, 0.25*cm))
+
+        # AI suggested classes
+        clases_sug = item.get("ai_clases_sugeridas") or []
+        if clases_sug:
+            story.append(Paragraph("<b>Clases Nice sugeridas para proteger esta marca:</b>",
+                                   pdf.styles["LPBody"]))
+            data = [["Clase", "Motivo"]] + [
+                [str(c.get("clase","")), str(c.get("motivo",""))[:140]]
+                for c in clases_sug
+            ]
+            t = Table(data, colWidths=[1.5*cm, 15*cm])
+            t.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+                ("TEXTCOLOR",  (0, 0), (-1, 0), WHITE),
+                ("FONTNAME",   (0, 0), (-1, 0), HEADING_FONT),
+                ("FONTSIZE",   (0, 0), (-1, -1), 9),
+                ("GRID",       (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, BG_LIGHT]),
+                ("VALIGN",     (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING",(0, 0), (-1, -1), 5),
+                ("RIGHTPADDING",(0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING",(0, 0), (-1, -1), 4),
+            ]))
+            story.append(t)
+            story.append(Spacer(1, 0.35*cm))
+
+        # Similar/exact marks table
+        rows = (item.get("exactas") or []) + (item.get("similares") or [])
+        if rows:
+            story.append(Paragraph(
+                f"<b>Marcas encontradas ({len(rows)}):</b>",
+                pdf.styles["LPBody"],
+            ))
+            data = [["Denominación", "Clase", "Acta", "Estado", "Titular"]]
+            for r in rows[:50]:
+                data.append([
+                    (r.get("denominacion","") or "")[:36],
+                    str(r.get("clase","")),
+                    (r.get("acta","") or "")[:14],
+                    (r.get("estado","") or "")[:18],
+                    (r.get("titulares","") or "")[:40],
+                ])
+            t = Table(data, colWidths=[4.5*cm, 1.3*cm, 2.3*cm, 3*cm, 5.4*cm])
+            t.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+                ("TEXTCOLOR",  (0, 0), (-1, 0), WHITE),
+                ("FONTNAME",   (0, 0), (-1, 0), HEADING_FONT),
+                ("FONTSIZE",   (0, 0), (-1, -1), 8),
+                ("GRID",       (0, 0), (-1, -1), 0.3, colors.lightgrey),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [WHITE, BG_LIGHT]),
+                ("VALIGN",     (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING",(0, 0), (-1, -1), 4),
+                ("RIGHTPADDING",(0, 0), (-1, -1), 4),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING",(0, 0), (-1, -1), 3),
+            ]))
+            story.append(t)
+            if len(rows) > 50:
+                story.append(Paragraph(
+                    f"<i>(+{len(rows)-50} más no listadas)</i>",
+                    pdf.styles["LPMuted"],
+                ))
+        else:
+            story.append(Paragraph(
+                "No se encontraron marcas idénticas ni fonéticamente similares en la base.",
+                pdf.styles["LPMuted"],
+            ))
+
+        story.append(Spacer(1, 0.4*cm))
+        if idx < len(enriched) - 1:
+            story.append(PageBreak())
+
+    # Disclaimer + footer
+    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph(
+        "<i>Este reporte es una herramienta informativa y no constituye un dictamen legal. "
+        "El análisis de riesgo es asistido por IA y debe ser validado por un profesional antes de "
+        "presentar una solicitud ante el INPI. Los datos de marcas provienen del boletín oficial del INPI.</i>",
+        pdf.styles["LPMuted"],
+    ))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(pdf._footer_section())
+
+    doc.build(story)
+    buf.seek(0)
+    return buf.getvalue()
