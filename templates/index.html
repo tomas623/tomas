@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legal Pacers — Verifica tu Marca</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo" onclick="showModule('checker'); return false;">
+      <img src="/static/logo-icon.png" alt="Legal Pacers">
+    </a>
+    <nav>
+      <a href="#" onclick="showModule('checker'); return false;" class="nav-verificador active">Verificar marca</a>
+      <a href="#" onclick="showModule('wizard'); return false;" class="nav-wizard">Relevamiento</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- MODULE A: VERIFICADOR RÁPIDO -->
+  <div id="moduleChecker" style="display: block;">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-eyebrow">Búsqueda en el INPI</div>
+      <h1>¿Tu marca está<br><span>disponible</span>?</h1>
+      <p>Verificá si tu marca puede registrarse en Argentina consultando la base de datos oficial del INPI.</p>
+
+      <div class="hero-card">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Nombre de la marca</label>
+          <input type="text" id="checkerMarca" placeholder="Ej: Acme, MiMarca, Verbum..." autocomplete="off"
+                 onkeydown="if(event.key==='Enter') verificarMarca()">
+        </div>
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label class="form-label">Clase Nice <span style="font-weight:400; color:var(--text-muted)">(opcional)</span></label>
+          <select id="checkerClase">
+            <option value="">Todas las clases</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-full" id="checkerSearchBtn" onclick="verificarMarca()" style="padding: 0.875rem;">
+          Buscar en INPI
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="section" style="max-width: 680px;">
+      <div id="checkerResults" style="display: none;">
+        <div id="checkerStatus"></div>
+        <div id="checkerTable" style="margin-top: 1rem;"></div>
+
+        <div class="lead-card">
+          <h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Dejá tus datos y te asesoramos
+          </h3>
+          <div class="form-group">
+            <label class="form-label">Nombre</label>
+            <input type="text" id="leadNombre" placeholder="Tu nombre completo">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="leadEmail" placeholder="tu@email.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" id="leadTelefono" placeholder="+54 9 11 ...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contanos sobre tu negocio</label>
+            <textarea id="leadDescripcion" placeholder="¿Qué producto o servicio vas a ofrecer?"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="guardarLead()" style="padding: 0.875rem;">
+            Quiero registrar mi marca — Que me contacten
+          </button>
+        </div>
+
+        <div id="leadSuccess" style="display: none; text-align: center; margin-top: 2rem; padding: 2rem; background: #DCFCE7; border-radius: 12px;">
+          <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">✓</div>
+          <h2 style="color: #15803D; margin-bottom: 0.4rem;">¡Te contactaremos pronto!</h2>
+          <p style="color: #166534; font-size: 0.95rem;">Hemos recibido tu información. Un asesor de Legal Pacers se pondrá en contacto a la brevedad.</p>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 3rem; padding-bottom: 1rem;">
+        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.95rem;">¿Necesitás un relevamiento completo con presupuesto?</p>
+        <button class="btn btn-navy" onclick="showModule('wizard'); return false;">
+          Ir al Relevamiento Completo →
+        </button>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq-section">
+      <div class="faq-inner">
+        <div class="faq-header">
+          <div class="faq-eyebrow">Todo lo que necesitás saber</div>
+          <h2>Preguntas frecuentes</h2>
+        </div>
+
+        <div class="faq-list">
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Cuánto cuesta registrar una marca?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p><strong>$130.000 por tipo y clase de marca.</strong> Es un servicio llave en mano que incluye todo:</p>
+              <ul>
+                <li><strong>Análisis de viabilidad profesional:</strong> No solo buscamos el nombre — evaluamos si hay riesgo real de oposición bajo el sistema vigente del INPI.</li>
+                <li><strong>Gestión y tasas oficiales:</strong> Nos hacemos cargo de los costos del organismo y presentamos el expediente.</li>
+                <li><strong>Seguimiento hasta el título:</strong> Monitoreamos el trámite hasta que tengas la marca concedida.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Cuánto tarda el trámite?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Si no hay oposiciones de terceros, aproximadamente <strong>3 meses</strong>. Mucho más rápido que antes, gracias a los cambios normativos del INPI desde diciembre de 2025.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Cómo funciona el nuevo sistema del INPI?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Desde diciembre de 2025, <strong>el INPI ya no realiza búsquedas de similitud por cuenta del solicitante.</strong> Si presentás sin análisis previo y alguien se opone, perdés el dinero del trámite.</p>
+              <p style="margin-top:0.75rem">Por eso, antes de cualquier presentación, hacemos un análisis de viabilidad a fondo para minimizar ese riesgo.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Por qué tengo que pagar por separado el nombre y el logo?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Porque legalmente son registros distintos que protegen activos diferentes. El <strong>nombre</strong> (marca denominativa) protege el texto; el <strong>logo</strong> (marca figurativa o mixta) protege el diseño visual.</p>
+              <p style="margin-top:0.75rem">Para un blindaje completo, recomendamos registrar ambos. Cada uno es un escudo independiente.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Hay costos adicionales después?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>No. Los $130.000 cubren el proceso estándar completo. Solo si un tercero presenta una oposición formal, te presupuestamos la defensa por separado.</p>
+              <p style="margin-top:0.75rem">Justamente, el objetivo del análisis previo es evitar llegar a esa instancia.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿Qué pasa si encuentran una marca similar a la mía?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Te lo comunicamos <strong>antes de cualquier presentación</strong>. Analizamos el grado de similitud, las clases involucradas y las opciones disponibles: desde ajustar el nombre hasta evaluar la viabilidad de coexistencia.</p>
+              <p style="margin-top:0.75rem">Nunca avanzamos si el riesgo es alto sin que lo sepas.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="faq-cta">
+          <p>¿Tenés alguna otra pregunta?</p>
+          <a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%2C%20tengo%20una%20consulta%20sobre%20el%20registro%20de%20mi%20marca"
+             target="_blank" rel="noopener" class="btn btn-primary">
+            Consultanos por WhatsApp
+          </a>
+        </div>
+      </div>
+    </div><!-- /faq -->
+
+  </div>
+
+  <!-- MODULE B: RELEVAMIENTO WIZARD -->
+  <div id="moduleWizard" style="display: none;">
+    <div style="margin-bottom: 2rem;">
+      <div class="progress-container">
+        <div class="progress-step active" id="step1">
+          <div class="progress-circle">1</div>
+          <div class="progress-label">Tu Marca</div>
+        </div>
+        <div class="progress-connector" id="conn1"></div>
+        <div class="progress-step" id="step2">
+          <div class="progress-circle">2</div>
+          <div class="progress-label">INPI</div>
+        </div>
+        <div class="progress-connector" id="conn2"></div>
+        <div class="progress-step" id="step3">
+          <div class="progress-circle">3</div>
+          <div class="progress-label">Presupuesto</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 1 -->
+    <div class="wizard-page active" id="page1">
+      <div class="card">
+        <h2 class="card-title">Información de tu marca</h2>
+        <p class="card-intro">Cuéntanos sobre tu marca para que podamos sugerir las clases más relevantes</p>
+
+        <div id="page1Error" class="error-box"></div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="emailRelInput" placeholder="tu@email.com" autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre de la marca *</label>
+          <input type="text" id="marcaInput" placeholder="Tu marca" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción del negocio (opcional)</label>
+          <textarea id="descInput" placeholder="¿Qué producto o servicio ofrece tu marca?"></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="sugerirBtn" onclick="sugerirClases()">
+          Sugerir Clases
+        </button>
+
+        <div id="classesSection" style="display: none; margin-top: 2rem;">
+          <hr class="divider" style="margin-top: 0;">
+          <h3 style="margin-bottom: 1rem;">Clases seleccionadas: <span id="selectedCountRel">0</span></h3>
+          <div id="selectedStrip" style="display: none; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+
+          <div class="form-group">
+            <label class="form-label">Buscar clases</label>
+            <input type="search" id="clasesSearchRel" placeholder="Busca por nombre o número..."
+                   oninput="filterClasesRel(this.value)">
+          </div>
+
+          <div class="clases-list" id="clasesListRel"></div>
+          <div class="classes-empty" id="clasesEmptyRel" style="display: none; padding: 2rem; text-align: center;">
+            Sin resultados para tu búsqueda.
+          </div>
+        </div>
+
+        <div class="nav-row" id="page1Next" style="display: none;">
+          <div></div>
+          <button class="btn btn-primary" onclick="goToPage(2)">Siguiente →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2 -->
+    <div class="wizard-page" id="page2">
+      <div class="card">
+        <h2 class="card-title">Búsqueda en el INPI</h2>
+        <p class="card-intro">Buscamos variantes de tu marca en el registro oficial</p>
+
+        <div id="page2Error" class="error-box"></div>
+
+        <div class="form-group">
+          <label class="form-label">Variantes a buscar</label>
+          <div class="variants-list" id="variantsList"></div>
+          <div class="add-variant-row" style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+            <input type="text" id="variantInput" placeholder="Agregar variante…" autocomplete="off"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();addVariant()}">
+            <button class="btn btn-outline" onclick="addVariant()">+ Agregar</button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="buscarBtn" onclick="buscarInpi()">
+          Buscar en INPI
+        </button>
+
+        <div id="inpiLoading" style="display: none; text-align: center; padding: 2rem; margin-top: 2rem;">
+          <div class="spinner" style="width: 32px; height: 32px; margin: 0 auto 1rem; border-width: 3px;"></div>
+          <div style="font-weight: 600; color: var(--navy);">Consultando el portal del INPI…</div>
+          <div id="inpiLoadingSub" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;"></div>
+        </div>
+
+        <div id="resultsSection" style="display: none; margin-top: 2rem;">
+          <hr class="divider" style="margin-top: 0;">
+          <div class="results-tabs">
+            <button class="results-tab active" id="tabExactas" onclick="showResultsTab('exactas')">
+              Tu marca <span class="results-tab-count" id="countExactas">0</span>
+            </button>
+            <button class="results-tab" id="tabSimilares" onclick="showResultsTab('similares')">
+              Variantes <span class="results-tab-count" id="countSimilares">0</span>
+            </button>
+          </div>
+          <div class="results-panel active" id="panelExactas"></div>
+          <div class="results-panel" id="panelSimilares"></div>
+        </div>
+
+        <div class="nav-row">
+          <button class="btn btn-outline" onclick="goToPage(1)">← Volver</button>
+          <button class="btn btn-primary" id="page2Next" style="display: none;" onclick="goToPage(3)">Continuar →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 3 -->
+    <div class="wizard-page" id="page3">
+      <div class="card">
+        <h2 class="card-title">Posiciones y presupuesto</h2>
+        <p class="card-intro">Seleccioná las partidas específicas para cada clase</p>
+
+        <div class="cost-summary">
+          <div>
+            <div class="cost-label">Presupuesto estimado</div>
+            <div class="cost-detail" id="costDetail">—</div>
+          </div>
+          <div class="cost-amount" id="costAmount">$0</div>
+        </div>
+
+        <div id="classBlocksArea"></div>
+
+        <hr class="divider">
+
+        <div id="page3Error" class="error-box"></div>
+
+        <div class="nav-row">
+          <button class="btn btn-outline" onclick="goToPage(2)">← Volver</button>
+          <button class="btn btn-primary" id="sendPdfBtn" onclick="sendPDF()">Enviar PDF por Email</button>
+        </div>
+        <div style="text-align: right; margin-top: 0.5rem;">
+          <p id="posicionesError" style="display: none; color: var(--red); font-size: 0.85rem; margin-bottom: 0.5rem;">
+            Por favor seleccioná al menos una posición.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Success -->
+    <div id="pdfSuccessScreen" style="display: none;">
+      <div class="card" style="text-align: center; padding: 3rem 2rem; max-width: 500px; margin: 3rem auto;">
+        <div style="font-size: 3.5rem; color: var(--green); margin-bottom: 1rem;">✓</div>
+        <h2 class="card-title" style="margin-bottom: 0.5rem;">¡Informe enviado!</h2>
+        <p style="color: var(--text-muted); margin-bottom: 0.5rem;">
+          Se ha enviado el reporte a <strong id="pdfSuccessEmail"></strong>.
+        </p>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+          Si no lo encontrás, revisá tu casilla de correo no deseado (spam).
+        </p>
+
+        <div style="background: var(--blue-light); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1.1rem; color: var(--navy); margin-bottom: 0.75rem;">¿Necesitás más ayuda?</h3>
+          <a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%20me%20gustaría%20saber%20más%20sobre%20mi%20registro" 
+             target="_blank" rel="noopener" class="btn btn-primary btn-full" style="margin-top: 0.5rem;">
+            Contactanos por WhatsApp
+          </a>
+        </div>
+
+        <button class="btn btn-outline btn-full" onclick="location.reload();">
+          Realizar otro Relevamiento
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="/static/logo-color.png" alt="Legal Pacers">
+      <p>Estudio especializado en registro y monitoreo de marcas en Argentina. Asesoramiento profesional ante el INPI.</p>
+    </div>
+    <div class="footer-links">
+      <a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%20quiero%20registrar%20mi%20marca"
+         target="_blank" rel="noopener" class="footer-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        +54 9 11 2877-4200
+      </a>
+      <a href="https://www.instagram.com/legalpacers" target="_blank" rel="noopener" class="footer-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        @legalpacers
+      </a>
+      <a href="https://www.linkedin.com/company/legalpacers" target="_blank" rel="noopener" class="footer-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        Legal Pacers
+      </a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    Los resultados se basan en datos públicos del INPI. Consultá las bases de datos oficiales para información actualizada. © 2025 Legal Pacers.
+  </div>
+</footer>
+
+<a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%20quiero%20registrar%20mi%20marca"
+   target="_blank" rel="noopener" class="wa-floating" title="Contactar por WhatsApp">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+<!-- SCRIPT -->
+<script>
+// ── Nice Classes ──
+const NICE_CLASSES = {
+  1:"Productos químicos",2:"Pinturas y barnices",3:"Cosméticos y limpieza",
+  4:"Aceites y combustibles",5:"Farmacéuticos",6:"Metales comunes",
+  7:"Máquinas y motores",8:"Herramientas de mano",9:"Electrónica y software",
+  10:"Aparatos médicos",11:"Alumbrado y calefacción",12:"Vehículos",
+  13:"Armas de fuego",14:"Joyería y relojes",15:"Instrumentos musicales",
+  16:"Papel e imprenta",17:"Caucho y plásticos",18:"Cuero y bolsos",
+  19:"Materiales de construcción",20:"Muebles",21:"Utensilios domésticos",
+  22:"Cuerdas y fibras",23:"Hilos textiles",24:"Telas y textiles",
+  25:"Ropa y calzado",26:"Encajes y bordados",27:"Alfombras",
+  28:"Juegos y juguetes",29:"Carne y alimentos",30:"Café, té y panadería",
+  31:"Agrícola y animales vivos",32:"Cervezas y bebidas",33:"Bebidas alcohólicas",
+  34:"Tabaco",35:"Publicidad y gestión",36:"Seguros y finanzas",
+  37:"Construcción y reparación",38:"Telecomunicaciones",39:"Transporte",
+  40:"Tratamiento de materiales",41:"Educación y entretenimiento",
+  42:"Servicios tecnológicos",43:"Restauración y alojamiento",
+  44:"Servicios médicos y veterinarios",45:"Servicios jurídicos y seguridad"
+};
+
+// ── Data ──
+const state = {
+  email: null,
+  searchId: null,
+  marca: '',
+  descripcion: '',
+  selectedClasses: [],
+  aiSuggestedClasses: [],
+  variants: [],
+  inpiResults: {},
+  posicionesCache: {},
+  aiPosicionesCache: {},
+};
+
+// ── Utilities ──
+async function api(method, path, body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(path, opts);
+  return resp.json();
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  item.classList.toggle('open');
+}
+
+function showModule(mod) {
+  document.getElementById('moduleChecker').style.display = mod === 'checker' ? 'block' : 'none';
+  document.getElementById('moduleWizard').style.display = mod === 'wizard' ? 'block' : 'none';
+  document.querySelectorAll('nav a').forEach((a, i) => {
+    a.classList.toggle('active', (i === 0 && mod === 'checker') || (i === 1 && mod === 'wizard'));
+  });
+  if (mod === 'wizard') goToPage(1);
+}
+
+// ── MODULE A: CHECKER ──
+async function verificarMarca() {
+  const marca = document.getElementById('checkerMarca').value.trim();
+  const clase = document.getElementById('checkerClase').value;
+
+  if (!marca) { alert('Ingresá el nombre de la marca'); return; }
+
+  const btn = document.getElementById('checkerSearchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Buscando…';
+
+  try {
+    const data = await api('POST', '/api/verificar', { marca, clase: clase ? parseInt(clase) : null });
+
+    if (data.error) {
+      document.getElementById('checkerResults').style.display = 'none';
+      alert('Error: ' + data.error);
+    } else {
+      const results = document.getElementById('checkerResults');
+      const status = document.getElementById('checkerStatus');
+
+      const dbReady = data.db_records > 0;
+      if (!data.disponible) {
+        status.innerHTML = '<div style="padding:1rem;background:#FED7AA;color:#92400E;border-radius:8px;"><strong>⚠ Encontramos ' + data.count + ' coincidencia(s)</strong><br>Revisá los resultados abajo para verificar si son conflictivas.</div>';
+        document.getElementById('checkerTable').innerHTML = buildResultsTable(data.resultados);
+      } else if (!dbReady) {
+        status.innerHTML = '<div style="padding:1rem;background:#FEF3C7;color:#92400E;border-radius:8px;"><strong>⚠ Base de datos en proceso de carga</strong><br>La búsqueda en tiempo real puede ser incompleta. Estamos cargando el historial de marcas del INPI — disponible en unas horas.</div>';
+      } else {
+        status.innerHTML = '<div style="padding:1rem;background:#DBEAFE;color:#0369A1;border-radius:8px;text-align:center;"><strong>✓ Tu marca podría estar disponible</strong><br>No encontramos marcas idénticas registradas en el INPI.</div>';
+      }
+
+      results.style.display = 'block';
+      window.scrollTo({top: results.offsetTop - 200, behavior: 'smooth'});
+    }
+  } catch (e) {
+    alert('Error en la búsqueda: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Buscar en INPI';
+}
+
+async function guardarLead() {
+  const nombre = document.getElementById('leadNombre').value.trim();
+  const email = document.getElementById('leadEmail').value.trim();
+  const telefono = document.getElementById('leadTelefono').value.trim();
+  const marca = document.getElementById('checkerMarca').value.trim();
+  const descripcion = document.getElementById('leadDescripcion').value.trim();
+
+  if (!nombre || !email || !telefono) { alert('Completa todos los campos'); return; }
+
+  try {
+    const data = await api('POST', '/api/lead', { nombre, email, telefono, marca, descripcion });
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      document.getElementById('leadSuccess').style.display = 'block';
+      document.querySelectorAll('#leadNombre, #leadEmail, #leadTelefono, #leadDescripcion').forEach(el => el.value = '');
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+// ── MODULE B: WIZARD ──
+function buildResultsTable(rows) {
+  if (!rows.length) return '<div class="empty-state">No se encontraron marcas.</div>';
+  let html = '<table class="results-table"><tr><th>Marca</th><th>Clase</th><th>Estado</th><th>Titular</th></tr>';
+  rows.slice(0,20).forEach(r => {
+    const stateClass = 'estado-' + (r.estado_code || 'tramite');
+    html += `<tr><td><strong>${escHtml(r.denominacion)}</strong></td><td>${r.clase}</td><td><span class="estado-badge ${stateClass}">${escHtml(r.estado)}</span></td><td style="font-size:0.8rem;">${escHtml(r.titulares)}</td></tr>`;
+  });
+  return html + '</table>';
+}
+
+function goToPage(n) {
+  document.querySelectorAll('.wizard-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page' + n).classList.add('active');
+  for (let i = 1; i <= 3; i++) {
+    const step = document.getElementById('step' + i);
+    step.classList.remove('active', 'done');
+    if (i < n) step.classList.add('done');
+    else if (i === n) step.classList.add('active');
+    const conn = document.getElementById('conn' + i);
+    if (conn) conn.classList.toggle('done', i < n);
+  }
+  window.scrollTo({top: 0, behavior: 'smooth'});
+  if (n === 2) onEnterPage2();
+  if (n === 3) onEnterPage3();
+}
+
+async function sugerirClases() {
+  const email = document.getElementById('emailRelInput').value.trim();
+  const marca = document.getElementById('marcaInput').value.trim();
+  const desc = document.getElementById('descInput').value.trim();
+
+  if (!email || !marca) { alert('Completa email y marca'); return; }
+
+  const btn = document.getElementById('sugerirBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Consultando…';
+
+  try {
+    const data = await api('POST', '/api/relevamiento/suggest-classes', { marca, descripcion: desc, email });
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      state.email = email;
+      state.marca = marca;
+      state.descripcion = desc;
+      state.searchId = data.search_id;
+      state.selectedClasses = [...data.classes];
+      state.aiSuggestedClasses = [...data.classes];
+      renderClasesPanel();
+      document.getElementById('classesSection').style.display = '';
+      document.getElementById('page1Next').style.display = 'flex';
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Sugerir Clases';
+}
+
+function renderClasesPanel() {
+  const html = Array.from({length: 45}, (_, i) => i + 1).map(n => {
+    const suggested = state.aiSuggestedClasses.includes(n);
+    const checked = state.selectedClasses.includes(n);
+    const name = NICE_CLASSES[n] || '';
+    return `<label class="clase-item${suggested ? ' suggested' : ''}" data-num="${n}" data-search="${n} ${name.toLowerCase()}">
+      <input type="checkbox" value="${n}" ${checked ? 'checked' : ''} onchange="onClaseToggle()">
+      <span class="clase-item-body">
+        <span class="clase-num">Clase ${n}</span>
+        <span class="clase-name">${suggested ? '✨ ' : ''}${escHtml(name)}</span>
+      </span>
+    </label>`;
+  }).join('');
+  document.getElementById('clasesListRel').innerHTML = html;
+  updateClasesCount();
+}
+
+function filterClasesRel(q) {
+  const term = q.toLowerCase();
+  document.querySelectorAll('#clasesListRel .clase-item').forEach(el => {
+    el.classList.toggle('hidden', q && !el.dataset.search.includes(term));
+  });
+}
+
+function onClaseToggle() {
+  state.selectedClasses = [...document.querySelectorAll('#clasesListRel input:checked')].map(cb => parseInt(cb.value));
+  updateClasesCount();
+}
+
+function updateClasesCount() {
+  document.getElementById('selectedCountRel').textContent = state.selectedClasses.length;
+  const strip = document.getElementById('selectedStrip');
+  const html = state.selectedClasses.sort((a,b) => a-b).map(n => 
+    `<span class="sel-chip">${state.aiSuggestedClasses.includes(n) ? '✨ ' : ''}<strong>${n}</strong></span>`
+  ).join('');
+  strip.innerHTML = html;
+  strip.classList.toggle('visible', state.selectedClasses.length > 0);
+}
+
+function generateVariants(marca) {
+  const norm = marca.toUpperCase().trim();
+  const seen = new Set([norm]);
+  const variants = [norm];
+  const swaps = [['B','V'],['C','S'],['C','K'],['S','Z'],['I','Y'],['LL','Y']];
+  
+  swaps.forEach(([from,to]) => {
+    let i = 0;
+    while ((i = norm.indexOf(from, i)) !== -1) {
+      const v = norm.substring(0, i) + to + norm.substring(i + from.length);
+      if (!seen.has(v)) { seen.add(v); variants.push(v); }
+      i++;
+    }
+  });
+  
+  return variants.slice(0, 15);
+}
+
+function onEnterPage2() {
+  state.variants = generateVariants(state.marca);
+  document.getElementById('variantsList').innerHTML = state.variants.map((v, i) => `
+    <label class="variant-item${i === 0 ? ' variant-primary' : ''}">
+      <input type="checkbox" value="${v}" ${i === 0 ? 'checked disabled' : 'checked'}>
+      <span>${escHtml(v)}</span>
+      ${i === 0 ? '<span style="font-size:0.75rem;color:var(--text-muted);margin-left:0.5rem;">(tu marca)</span>' : ''}
+    </label>
+  `).join('');
+}
+
+function addVariant() {
+  const input = document.getElementById('variantInput');
+  const val = input.value.toUpperCase().trim();
+  if (!val) return;
+  const existing = new Set([...document.querySelectorAll('#variantsList input')].map(i => i.value));
+  if (existing.has(val)) { input.value = ''; return; }
+  const label = document.createElement('label');
+  label.className = 'variant-item';
+  label.innerHTML = `<input type="checkbox" value="${escHtml(val)}" checked><span>${escHtml(val)}</span>`;
+  document.getElementById('variantsList').appendChild(label);
+  input.value = '';
+}
+
+async function buscarInpi() {
+  const variants = [...document.querySelectorAll('#variantsList input')].filter(i => i.checked).map(i => i.value);
+  if (!variants.length) { alert('Seleccioná al menos una variante'); return; }
+
+  document.getElementById('buscarBtn').style.display = 'none';
+  document.getElementById('inpiLoading').style.display = '';
+
+  try {
+    const data = await api('POST', '/api/relevamiento/search-inpi', {
+      variants,
+      selected_classes: state.selectedClasses,
+      search_id: state.searchId
+    });
+
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      state.inpiResults = data.results;
+      const primary = state.marca.toUpperCase();
+      const exactas = data.results[primary] || [];
+      const similares = [];
+      const seen = new Set(exactas.map(r => r.acta));
+      variants.forEach(v => {
+        (data.results[v] || []).forEach(r => {
+          if (!seen.has(r.acta)) { similares.push(r); seen.add(r.acta); }
+        });
+      });
+
+      document.getElementById('countExactas').textContent = exactas.length;
+      document.getElementById('countSimilares').textContent = similares.length;
+      document.getElementById('panelExactas').innerHTML = buildResultsTable(exactas);
+      document.getElementById('panelSimilares').innerHTML = buildResultsTable(similares);
+      document.getElementById('resultsSection').style.display = '';
+      document.getElementById('page2Next').style.display = '';
+    }
+  } catch (e) {
+    alert('Error en búsqueda: ' + e.message);
+  }
+
+  document.getElementById('buscarBtn').style.display = '';
+  document.getElementById('inpiLoading').style.display = 'none';
+}
+
+function showResultsTab(tab) {
+  document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab' + (tab === 'exactas' ? 'Exactas' : 'Similares')).classList.add('active');
+  document.getElementById('panel' + (tab === 'exactas' ? 'Exactas' : 'Similares')).classList.add('active');
+}
+
+async function onEnterPage3() {
+  const area = document.getElementById('classBlocksArea');
+  area.innerHTML = '';
+  
+  for (const classNum of state.selectedClasses) {
+    const block = document.createElement('div');
+    block.className = 'class-block open';
+    block.dataset.class = classNum;
+    block.innerHTML = `
+      <div class="class-block-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="class-block-title">
+          <span class="class-num-badge">Clase ${classNum}</span>
+          ${NICE_CLASSES[classNum] || 'Clase ' + classNum}
+        </div>
+        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      <div class="class-block-body">
+        <div class="posicion-chips-area" id="posChips-${classNum}"></div>
+        <div class="posicion-search-wrap">
+          <input type="search" class="posicion-search" placeholder="Buscar…" 
+                 oninput="filterPosiciones(${classNum}, this.value)">
+        </div>
+        <div class="posiciones-list" id="poslist-${classNum}">
+          <div style="text-align:center;padding:1rem;color:var(--text-muted);">Cargando…</div>
+        </div>
+      </div>`;
+    area.appendChild(block);
+  }
+
+  for (const classNum of state.selectedClasses) {
+    const data = await api('GET', `/api/relevamiento/posiciones/${classNum}`);
+    if (data.posiciones) {
+      state.posicionesCache[classNum] = data.posiciones;
+      renderPosiciones(classNum);
+      
+      if (state.descripcion) {
+        const aiData = await api('POST', '/api/relevamiento/suggest-posiciones', {
+          class_num: classNum,
+          posiciones: data.posiciones,
+          marca: state.marca,
+          descripcion: state.descripcion
+        });
+        state.aiPosicionesCache[classNum] = aiData.codes || [];
+        renderPosiciones(classNum);
+      }
+    }
+  }
+}
+
+function renderPosiciones(classNum) {
+  const posiciones = state.posicionesCache[classNum] || [];
+  const aiCodes = new Set(state.aiPosicionesCache[classNum] || []);
+  const listEl = document.getElementById('poslist-' + classNum);
+  
+  listEl.innerHTML = posiciones.map(p => `
+    <label class="posicion-item${aiCodes.has(p.codigo) ? ' ai-suggested' : ''}" data-text="${p.partida.toLowerCase()}">
+      <input type="checkbox" ${aiCodes.has(p.codigo) ? 'checked' : ''} onchange="updateCost()">
+      <span class="posicion-code">${escHtml(p.codigo)}</span>
+      <span class="posicion-text">${aiCodes.has(p.codigo) ? '✨ ' : ''}${escHtml(p.partida)}</span>
+    </label>`).join('');
+
+  updateCost();
+}
+
+function filterPosiciones(classNum, q) {
+  const term = q.toLowerCase();
+  document.querySelectorAll(`#poslist-${classNum} .posicion-item`).forEach(item => {
+    item.classList.toggle('hidden', q && !item.dataset.text.includes(term));
+  });
+}
+
+function updateCost() {
+  let total = 0;
+  let clases = 0;
+  document.querySelectorAll('.class-block').forEach(block => {
+    const classNum = parseInt(block.dataset.class);
+    const checked = block.querySelectorAll('input[type="checkbox"]:checked').length;
+    if (checked > 0) {
+      const extra = Math.max(0, checked - 20);
+      total += 17680 + extra * 200;
+      clases++;
+    }
+  });
+
+  document.getElementById('costAmount').textContent = '$' + total.toLocaleString('es-AR');
+  document.getElementById('costDetail').textContent = clases > 0 ? 
+    `${clases} clase${clases !== 1 ? 's' : ''} · 20 posiciones incluidas por clase` : '—';
+}
+
+async function sendPDF() {
+  const posiciones = {};
+  document.querySelectorAll('.class-block').forEach(block => {
+    const classNum = parseInt(block.dataset.class);
+    const checked = block.querySelectorAll('.posicion-item input:checked');
+    if (checked.length > 0) {
+      posiciones[classNum] = Array.from(checked).map(cb => {
+        const item = cb.closest('.posicion-item');
+        return {
+          codigo: item.querySelector('.posicion-code').textContent.trim(),
+          partida: item.querySelector('.posicion-text').textContent.replace(/^✨\s*/, '')
+        };
+      });
+    }
+  });
+
+  if (!Object.keys(posiciones).length) { alert('Seleccioná al menos una posición'); return; }
+
+  const btn = document.getElementById('sendPdfBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-white" style="width:14px;height:14px;border-width:2px;"></span> Generando…';
+
+  try {
+    const data = await api('POST', '/api/relevamiento/send-pdf', {
+      email: state.email,
+      marca: state.marca,
+      descripcion: state.descripcion,
+      clases: state.selectedClasses,
+      variantes: Object.keys(state.inpiResults),
+      posiciones,
+      resultados: state.inpiResults
+    });
+
+    if (data.error) alert('Error: ' + data.error);
+    else {
+      document.getElementById('page3').style.display = 'none';
+      document.getElementById('pdfSuccessEmail').textContent = state.email;
+      document.getElementById('pdfSuccessScreen').style.display = 'block';
+    }
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Enviar PDF por Email';
+}
+
+// Init
+window.addEventListener('DOMContentLoaded', () => {
+  // Populate class selector with all 45 Nice classes
+  const sel = document.getElementById('checkerClase');
+  Object.entries(NICE_CLASSES).forEach(([num, name]) => {
+    const opt = document.createElement('option');
+    opt.value = num;
+    opt.textContent = `${num} - ${name}`;
+    sel.appendChild(opt);
+  });
+  showModule('checker');
+});
+</script>
+
+</body>
+</html>

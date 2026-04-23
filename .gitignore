@@ -1,0 +1,12 @@
+﻿__pycache__/
+*.pyc
+*.log
+import_s*.log
+.env
+.venv/
+venv/
+*.pdf
+cache/
+
+*.mp4
+*.logtype
