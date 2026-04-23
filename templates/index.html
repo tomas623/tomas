@@ -14,85 +14,77 @@
       <img src="/static/logo-icon.png" alt="Legal Pacers">
     </a>
     <nav>
-      <a href="#" onclick="showModule('checker'); return false;" class="nav-verificador active">Verificar marca</a>
-      <a href="#" onclick="showModule('wizard'); return false;" class="nav-wizard">Relevamiento</a>
+      <a href="#" onclick="showModule('checker'); return false;" class="nav-verificador active">Disponibilidad</a>
+      <a href="#" onclick="showModule('wizard'); return false;" class="nav-wizard">Cotizar registro</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <!-- MODULE A: VERIFICADOR RÁPIDO -->
+  <!-- EMAIL GATE MODAL -->
+  <div id="emailGate" class="gate-overlay" style="display: none;">
+    <div class="gate-card">
+      <h2>Antes de verificar</h2>
+      <p>Ingresá tu email para acceder al verificador de disponibilidad.</p>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="gateEmail" placeholder="tu@email.com" autocomplete="email"
+               onkeydown="if(event.key==='Enter') submitGate()">
+      </div>
+      <div id="gateError" style="color:var(--red); font-size: 0.85rem; margin-bottom: 0.5rem; display:none;"></div>
+      <button class="btn btn-primary btn-full" id="gateBtn" onclick="submitGate()" style="padding: 0.875rem;">
+        Continuar
+      </button>
+      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;text-align:center;">
+        Solo usamos tu email para avisarte sobre el resultado y tu suscripción. Sin spam.
+      </p>
+    </div>
+  </div>
+
+  <!-- MODULE A: DISPONIBILIDAD -->
   <div id="moduleChecker" style="display: block;">
+
+    <!-- Premium banner -->
+    <div id="premiumBanner" class="premium-banner" style="display: none;">
+      <span class="premium-dot"></span>
+      <span>Premium activo hasta <strong id="premiumUntil">—</strong></span>
+      <button class="premium-cancel" onclick="cancelSubscription()">Cancelar suscripción</button>
+    </div>
 
     <!-- HERO -->
     <div class="hero">
       <div class="hero-eyebrow">Búsqueda en el INPI</div>
       <h1>¿Tu marca está<br><span>disponible</span>?</h1>
-      <p>Verificá si tu marca puede registrarse en Argentina consultando la base de datos oficial del INPI.</p>
+      <p>Verificá hasta 3 denominaciones en una misma clase Nice contra las 400.000+ marcas del INPI.</p>
 
       <div class="hero-card">
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+          <label class="form-label">Opción 1 <span style="color:var(--red)">*</span></label>
+          <input type="text" id="marca1" placeholder="Tu primera opción" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+          <label class="form-label">Opción 2 <span style="font-weight:400;color:var(--text-muted)">(opcional)</span></label>
+          <input type="text" id="marca2" placeholder="Variante o segunda opción" autocomplete="off">
+        </div>
         <div class="form-group" style="margin-bottom: 1rem;">
-          <label class="form-label">Nombre de la marca</label>
-          <input type="text" id="checkerMarca" placeholder="Ej: Acme, MiMarca, Verbum..." autocomplete="off"
-                 onkeydown="if(event.key==='Enter') verificarMarca()">
+          <label class="form-label">Opción 3 <span style="font-weight:400;color:var(--text-muted)">(opcional)</span></label>
+          <input type="text" id="marca3" placeholder="Tercera opción" autocomplete="off">
         </div>
         <div class="form-group" style="margin-bottom: 1.25rem;">
-          <label class="form-label">Clase Nice <span style="font-weight:400; color:var(--text-muted)">(opcional)</span></label>
-          <select id="checkerClase">
-            <option value="">Todas las clases</option>
+          <label class="form-label">Clase Nice <span style="color:var(--red)">*</span></label>
+          <select id="claseComun" required>
+            <option value="">Elegí una clase…</option>
           </select>
         </div>
-        <button class="btn btn-primary btn-full" id="checkerSearchBtn" onclick="verificarMarca()" style="padding: 0.875rem;">
-          Buscar en INPI
+        <button class="btn btn-primary btn-full" id="batchSearchBtn" onclick="verificarBatch()" style="padding: 0.875rem;">
+          Verificar disponibilidad
         </button>
       </div>
     </div>
 
-    <!-- RESULTS -->
-    <div class="section" style="max-width: 680px;">
-      <div id="checkerResults" style="display: none;">
-        <div id="checkerStatus"></div>
-        <div id="checkerTable" style="margin-top: 1rem;"></div>
-
-        <div class="lead-card">
-          <h3>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Dejá tus datos y te asesoramos
-          </h3>
-          <div class="form-group">
-            <label class="form-label">Nombre</label>
-            <input type="text" id="leadNombre" placeholder="Tu nombre completo">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Email</label>
-            <input type="email" id="leadEmail" placeholder="tu@email.com">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Teléfono</label>
-            <input type="tel" id="leadTelefono" placeholder="+54 9 11 ...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Contanos sobre tu negocio</label>
-            <textarea id="leadDescripcion" placeholder="¿Qué producto o servicio vas a ofrecer?"></textarea>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="guardarLead()" style="padding: 0.875rem;">
-            Quiero registrar mi marca — Que me contacten
-          </button>
-        </div>
-
-        <div id="leadSuccess" style="display: none; text-align: center; margin-top: 2rem; padding: 2rem; background: #DCFCE7; border-radius: 12px;">
-          <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">✓</div>
-          <h2 style="color: #15803D; margin-bottom: 0.4rem;">¡Te contactaremos pronto!</h2>
-          <p style="color: #166534; font-size: 0.95rem;">Hemos recibido tu información. Un asesor de Legal Pacers se pondrá en contacto a la brevedad.</p>
-        </div>
-      </div>
-
-      <div style="text-align: center; margin-top: 3rem; padding-bottom: 1rem;">
-        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.95rem;">¿Necesitás un relevamiento completo con presupuesto?</p>
-        <button class="btn btn-navy" onclick="showModule('wizard'); return false;">
-          Ir al Relevamiento Completo →
-        </button>
-      </div>
+    <!-- BATCH RESULTS -->
+    <div class="section" style="max-width: 720px;">
+      <div id="batchResults" style="display: none;"></div>
     </div>
 
     <!-- FAQ -->
@@ -104,6 +96,17 @@
         </div>
 
         <div class="faq-list">
+
+          <div class="faq-item">
+            <button class="faq-question" onclick="toggleFaq(this)">
+              <span>¿El INPI ya usa IA para verificar marcas?</span>
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="faq-answer">
+              <p>Sí. El INPI aplica un <strong>pre-chequeo automático con IA</strong> antes del análisis humano. Si el sistema detecta un conflicto con una marca registrada, puede rechazar o suspender el trámite al inicio, antes de que llegue al examinador.</p>
+              <p style="margin-top:0.75rem">Por eso conviene verificar disponibilidad <strong>antes</strong> de presentar la solicitud: si presentás y rechazan, perdés el arancel de presentación y el tiempo del trámite.</p>
+            </div>
+          </div>
 
           <div class="faq-item">
             <button class="faq-question" onclick="toggleFaq(this)">
@@ -426,6 +429,9 @@ const NICE_CLASSES = {
 // ── Data ──
 const state = {
   email: null,
+  isPremium: false,
+  premiumUntil: null,
+  lastBatchId: null,
   searchId: null,
   marca: '',
   descripcion: '',
@@ -441,6 +447,7 @@ const state = {
 async function api(method, path, body = null) {
   const opts = {
     method,
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
   };
   if (body) opts.body = JSON.stringify(body);
@@ -466,67 +473,234 @@ function showModule(mod) {
   if (mod === 'wizard') goToPage(1);
 }
 
-// ── MODULE A: CHECKER ──
-async function verificarMarca() {
-  const marca = document.getElementById('checkerMarca').value.trim();
-  const clase = document.getElementById('checkerClase').value;
+// ── MODULE A: EMAIL GATE ──
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-  if (!marca) { alert('Ingresá el nombre de la marca'); return; }
+async function checkSession() {
+  try {
+    const d = await api('GET', '/api/session');
+    if (d.email) {
+      state.email = d.email;
+      state.isPremium = !!d.is_premium;
+      state.premiumUntil = d.premium_until;
+      renderPremiumBanner();
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
 
-  const btn = document.getElementById('checkerSearchBtn');
+function showGate() {
+  document.getElementById('emailGate').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('gateEmail').focus(), 50);
+}
+
+function hideGate() {
+  document.getElementById('emailGate').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function submitGate() {
+  const email = document.getElementById('gateEmail').value.trim();
+  const err = document.getElementById('gateError');
+  err.style.display = 'none';
+  if (!EMAIL_RE.test(email)) {
+    err.textContent = 'Email inválido';
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('gateBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Buscando…';
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Continuando…';
 
   try {
-    const data = await api('POST', '/api/verificar', { marca, clase: clase ? parseInt(clase) : null });
-
-    if (data.error) {
-      document.getElementById('checkerResults').style.display = 'none';
-      alert('Error: ' + data.error);
+    const d = await api('POST', '/api/gate', { email });
+    if (d.error) {
+      err.textContent = d.error;
+      err.style.display = 'block';
     } else {
-      const results = document.getElementById('checkerResults');
-      const status = document.getElementById('checkerStatus');
+      state.email = d.email;
+      state.isPremium = !!d.is_premium;
+      state.premiumUntil = d.premium_until;
+      renderPremiumBanner();
+      hideGate();
+    }
+  } catch (e) {
+    err.textContent = 'Error de red';
+    err.style.display = 'block';
+  }
 
-      const dbReady = data.db_records > 0;
-      if (!data.disponible) {
-        status.innerHTML = '<div style="padding:1rem;background:#FED7AA;color:#92400E;border-radius:8px;"><strong>⚠ Encontramos ' + data.count + ' coincidencia(s)</strong><br>Revisá los resultados abajo para verificar si son conflictivas.</div>';
-        document.getElementById('checkerTable').innerHTML = buildResultsTable(data.resultados);
-      } else if (!dbReady) {
-        status.innerHTML = '<div style="padding:1rem;background:#FEF3C7;color:#92400E;border-radius:8px;"><strong>⚠ Base de datos en proceso de carga</strong><br>La búsqueda en tiempo real puede ser incompleta. Estamos cargando el historial de marcas del INPI — disponible en unas horas.</div>';
-      } else {
-        status.innerHTML = '<div style="padding:1rem;background:#DBEAFE;color:#0369A1;border-radius:8px;text-align:center;"><strong>✓ Tu marca podría estar disponible</strong><br>No encontramos marcas idénticas registradas en el INPI.</div>';
-      }
+  btn.disabled = false;
+  btn.textContent = 'Continuar';
+}
 
-      results.style.display = 'block';
-      window.scrollTo({top: results.offsetTop - 200, behavior: 'smooth'});
+function renderPremiumBanner() {
+  const banner = document.getElementById('premiumBanner');
+  if (state.isPremium && state.premiumUntil) {
+    const d = new Date(state.premiumUntil);
+    document.getElementById('premiumUntil').textContent =
+      d.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// ── MODULE A: BATCH VERIFICATION ──
+async function verificarBatch() {
+  if (!state.email) { showGate(); return; }
+
+  const denoms = [
+    document.getElementById('marca1').value.trim(),
+    document.getElementById('marca2').value.trim(),
+    document.getElementById('marca3').value.trim(),
+  ].filter(Boolean);
+  const clase = document.getElementById('claseComun').value;
+
+  if (!denoms.length) { alert('Ingresá al menos la opción 1'); return; }
+  if (!clase) { alert('Elegí una clase Nice'); return; }
+
+  const btn = document.getElementById('batchSearchBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Verificando…';
+
+  try {
+    const d = await api('POST', '/api/verificar-batch', {
+      denominaciones: denoms, clase: parseInt(clase)
+    });
+
+    if (d.error) {
+      alert('Error: ' + d.error);
+    } else {
+      state.lastBatchId = d.batch_id;
+      state.isPremium = !!d.is_premium;
+      renderBatchResults(d);
+      const container = document.getElementById('batchResults');
+      container.style.display = 'block';
+      window.scrollTo({top: container.offsetTop - 120, behavior: 'smooth'});
     }
   } catch (e) {
     alert('Error en la búsqueda: ' + e.message);
   }
 
   btn.disabled = false;
-  btn.innerHTML = 'Buscar en INPI';
+  btn.textContent = 'Verificar disponibilidad';
 }
 
-async function guardarLead() {
-  const nombre = document.getElementById('leadNombre').value.trim();
-  const email = document.getElementById('leadEmail').value.trim();
-  const telefono = document.getElementById('leadTelefono').value.trim();
-  const marca = document.getElementById('checkerMarca').value.trim();
-  const descripcion = document.getElementById('leadDescripcion').value.trim();
+function renderBatchResults(d) {
+  const cls = d.clase;
+  const clsName = NICE_CLASSES[cls] || ('Clase ' + cls);
+  const price = (d.premium_price_ars || 9900).toLocaleString('es-AR');
+  const days = d.premium_days || 30;
 
-  if (!nombre || !email || !telefono) { alert('Completa todos los campos'); return; }
+  let html = `<div style="margin-bottom:1rem;color:var(--text-muted);font-size:0.95rem;">
+    Resultado para <strong style="color:var(--navy)">Clase ${cls} — ${escHtml(clsName)}</strong>
+  </div>`;
 
+  d.results.forEach(r => {
+    const badge = r.disponible
+      ? '<span class="badge badge-ok">✓ Disponible</span>'
+      : '<span class="badge badge-bad">✗ No disponible</span>';
+    const subline = r.disponible
+      ? `Sin coincidencias exactas · ${r.similares_count} similar${r.similares_count!==1?'es':''} fonéticamente`
+      : `${r.exactas_count} coincidencia${r.exactas_count!==1?'s':''} exacta${r.exactas_count!==1?'s':''} · ${r.similares_count} similar${r.similares_count!==1?'es':''} fonéticamente`;
+
+    html += `<div class="disp-card">
+      <div class="disp-card-head">
+        <div>
+          <div class="disp-marca">${escHtml(r.marca)}</div>
+          <div class="disp-sub">${subline}</div>
+        </div>
+        ${badge}
+      </div>`;
+
+    if (d.is_premium) {
+      const rows = (r.exactas || []).concat(r.similares || []);
+      if (rows.length) {
+        html += `<details class="disp-details"><summary>Ver ${rows.length} marca${rows.length!==1?'s':''} en la base</summary>
+          ${buildResultsTable(rows)}
+        </details>`;
+      }
+    } else if (r.similares_count > 0 || !r.disponible) {
+      html += `<div class="disp-locked">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Marcas similares disponibles con Premium
+      </div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  if (d.is_premium) {
+    html += `<button class="btn btn-primary btn-full" onclick="emailReporte()" style="margin-top:1.5rem;padding:0.875rem;">
+      Recibir reporte completo por email
+    </button>
+    <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
+      Incluye listado completo + análisis de riesgo IA + clases Nice sugeridas.
+    </p>`;
+  } else {
+    html += `<div class="premium-cta">
+      <div class="premium-cta-head">
+        <div>
+          <div class="premium-cta-title">Desbloqueá el detalle completo</div>
+          <div class="premium-cta-sub">Lista de marcas similares + titulares + análisis de riesgo con IA + clases Nice sugeridas. Reporte PDF por email.</div>
+        </div>
+        <div class="premium-cta-price">
+          <div class="premium-cta-amount">ARS $${price}</div>
+          <div class="premium-cta-period">/ mes · cancelás cuando quieras</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="subBtn" onclick="iniciarSuscripcion()" style="padding:0.875rem;">
+        Suscribirme Premium
+      </button>
+    </div>`;
+  }
+
+  html += `<div style="text-align:center;margin-top:2.5rem;padding-bottom:1rem;">
+    <p style="color:var(--text-muted);margin-bottom:1rem;font-size:0.95rem;">¿Querés avanzar con el registro?</p>
+    <button class="btn btn-navy" onclick="showModule('wizard'); return false;">
+      Cotizar registro →
+    </button>
+  </div>`;
+
+  document.getElementById('batchResults').innerHTML = html;
+}
+
+async function iniciarSuscripcion() {
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Redirigiendo a Mercado Pago…';
   try {
-    const data = await api('POST', '/api/lead', { nombre, email, telefono, marca, descripcion });
-    if (data.error) alert('Error: ' + data.error);
-    else {
-      document.getElementById('leadSuccess').style.display = 'block';
-      document.querySelectorAll('#leadNombre, #leadEmail, #leadTelefono, #leadDescripcion').forEach(el => el.value = '');
+    const d = await api('POST', '/api/mp/create-subscription');
+    if (d.error) { alert('Error: ' + d.error); btn.disabled = false; btn.textContent = 'Suscribirme Premium'; return; }
+    if (d.init_point) {
+      window.location.href = d.init_point;
+    } else {
+      alert('No se pudo iniciar el pago');
+      btn.disabled = false;
+      btn.textContent = 'Suscribirme Premium';
     }
   } catch (e) {
     alert('Error: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = 'Suscribirme Premium';
   }
+}
+
+async function cancelSubscription() {
+  if (!confirm('¿Cancelar la suscripción? El acceso premium sigue activo hasta la fecha de vencimiento actual.')) return;
+  const d = await api('POST', '/api/mp/cancel-subscription');
+  if (d.error) alert('Error: ' + d.error);
+  else alert('Suscripción cancelada. Tu acceso sigue activo hasta ' +
+    new Date(state.premiumUntil).toLocaleDateString('es-AR') + '.');
+}
+
+async function emailReporte() {
+  if (!state.lastBatchId) { alert('Volvé a verificar las marcas primero'); return; }
+  const d = await api('POST', '/api/reporte/email', { batch_id: state.lastBatchId });
+  if (d.error) alert('Error: ' + d.error);
+  else alert('Reporte enviado a ' + state.email);
 }
 
 // ── MODULE B: WIZARD ──
@@ -858,9 +1032,9 @@ async function sendPDF() {
 }
 
 // Init
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   // Populate class selector with all 45 Nice classes
-  const sel = document.getElementById('checkerClase');
+  const sel = document.getElementById('claseComun');
   Object.entries(NICE_CLASSES).forEach(([num, name]) => {
     const opt = document.createElement('option');
     opt.value = num;
@@ -868,6 +1042,9 @@ window.addEventListener('DOMContentLoaded', () => {
     sel.appendChild(opt);
   });
   showModule('checker');
+
+  const hasSession = await checkSession();
+  if (!hasSession) showGate();
 });
 </script>
 
