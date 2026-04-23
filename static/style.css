@@ -113,6 +113,15 @@ nav a {
 nav a:hover { color: white; background: rgba(255,255,255,0.08); }
 nav a.active { color: white; background: var(--blue); }
 
+nav a.nav-subscribe {
+  color: white;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  font-weight: 600;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 10px rgba(245,158,11,0.3);
+}
+nav a.nav-subscribe:hover { background: linear-gradient(135deg, #F59E0B 0%, #B45309 100%); }
+
 /* ── HERO (Módulo A) ── */
 .hero {
   background: linear-gradient(135deg, var(--navy) 0%, #0F2260 60%, #1B3A8F 100%);
@@ -1027,6 +1036,110 @@ footer {
 .premium-cta-period { font-size: 0.8rem; color: rgba(255,255,255,0.7); }
 .premium-cta .btn-primary { background: white; color: var(--navy); }
 .premium-cta .btn-primary:hover:not(:disabled) { background: #F7F9FC; }
+
+/* ── HERO OUTLINE-WHITE BUTTON ── */
+.btn-outline-white {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255,255,255,0.4);
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-outline-white:hover:not(:disabled) {
+  background: rgba(255,255,255,0.08);
+  border-color: white;
+}
+
+/* ── MULTI-CLASS CHIPS (Premium) ── */
+.premium-chip-label {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+  padding: 0.15rem 0.55rem;
+  border-radius: 99px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.chip-btn {
+  background: white;
+  border: 1px solid #E2E8F0;
+  color: var(--blue);
+  padding: 0.3rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chip-btn:hover { background: var(--blue-light); }
+
+.clase-multi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.4rem;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  background: #F7F9FC;
+}
+
+.clase-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: white;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
+.clase-chip:hover { border-color: var(--blue); }
+.clase-chip input { margin: 0; accent-color: var(--blue); }
+.clase-chip-num { font-weight: 700; color: var(--navy); flex-shrink: 0; }
+.clase-chip-name {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.clase-chip:has(input:checked) {
+  background: var(--blue-light);
+  border-color: var(--blue);
+}
+.clase-chip:has(input:checked) .clase-chip-name { color: var(--navy); }
+
+/* ── MULTI-CLASS RESULT BREAKDOWN ── */
+.disp-by-clase {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.disp-clase-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+}
+.disp-clase-tag { color: var(--navy); display: flex; align-items: center; gap: 0.4rem; }
+.disp-clase-count { color: var(--text-muted); font-size: 0.8rem; }
+.dot { font-size: 0.6rem; line-height: 1; }
+.dot-ok  { color: var(--green); }
+.dot-bad { color: var(--red); }
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {

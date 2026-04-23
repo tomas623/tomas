@@ -295,14 +295,20 @@ def _risk_badge_style(riesgo: str):
     ])
 
 
-def build_disponibilidad_report(user_email: str, clase: int, enriched: list[dict]) -> bytes:
+def build_disponibilidad_report(user_email: str, clases, enriched: list[dict]) -> bytes:
     """
     Build the premium disponibilidad PDF.
 
-    `enriched` items: {marca, clase, disponible, exactas[], similares[],
-      similares_count, ai_riesgo, ai_justificacion, ai_clases_sugeridas[]}
+    `clases` can be int or list[int]. `enriched` items:
+      {marca, clase, disponible, exactas[], similares[], similares_count,
+       ai_riesgo, ai_justificacion, ai_clases_sugeridas[]}
     Returns PDF bytes.
     """
+    if isinstance(clases, int):
+        clases_list = [clases]
+    else:
+        clases_list = list(clases) if clases else []
+
     pdf = LegalPacersPDF()
     buf = BytesIO()
     doc = SimpleDocTemplate(
@@ -328,8 +334,12 @@ def build_disponibilidad_report(user_email: str, clase: int, enriched: list[dict
     story.append(hdr)
     story.append(Spacer(1, 0.3*cm))
 
+    clases_text = (
+        f"Clase {clases_list[0]}" if len(clases_list) == 1
+        else f"{len(clases_list)} clases: {', '.join(str(c) for c in clases_list)}"
+    ) if clases_list else "—"
     story.append(Paragraph(
-        f"Email: <b>{user_email}</b> · Clase Nice consultada: <b>{clase}</b> · "
+        f"Email: <b>{user_email}</b> · Clases de Niza consultadas: <b>{clases_text}</b> · "
         f"Fecha: <b>{datetime.now().strftime('%d/%m/%Y')}</b>",
         pdf.styles["LPMuted"],
     ))
@@ -344,8 +354,9 @@ def build_disponibilidad_report(user_email: str, clase: int, enriched: list[dict
         dispo_text = "✓ Disponible" if disponible else "✗ No disponible"
         dispo_color = "#16A34A" if disponible else "#DC2626"
 
+        clase_txt = f" — Clase {item.get('clase','')}" if item.get('clase') else ""
         title = Paragraph(
-            f"<b>{item.get('marca','')}</b>  "
+            f"<b>{item.get('marca','')}</b>{clase_txt}  "
             f"<font color='{dispo_color}'>{dispo_text}</font>",
             pdf.styles["LPSubHeading"],
         )
@@ -365,7 +376,7 @@ def build_disponibilidad_report(user_email: str, clase: int, enriched: list[dict
         # AI suggested classes
         clases_sug = item.get("ai_clases_sugeridas") or []
         if clases_sug:
-            story.append(Paragraph("<b>Clases Nice sugeridas para proteger esta marca:</b>",
+            story.append(Paragraph("<b>Clases de Niza sugeridas para proteger esta marca:</b>",
                                    pdf.styles["LPBody"]))
             data = [["Clase", "Motivo"]] + [
                 [str(c.get("clase","")), str(c.get("motivo",""))[:140]]

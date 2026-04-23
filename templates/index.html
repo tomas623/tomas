@@ -16,6 +16,7 @@
     <nav>
       <a href="#" onclick="showModule('checker'); return false;" class="nav-verificador active">Disponibilidad</a>
       <a href="#" onclick="showModule('wizard'); return false;" class="nav-wizard">Cotizar registro</a>
+      <a href="#" id="navSubscribe" onclick="iniciarSuscripcion('nav'); return false;" class="nav-subscribe" style="display:none;">Suscribirme Premium</a>
     </nav>
   </div>
 </header>
@@ -55,7 +56,16 @@
     <div class="hero">
       <div class="hero-eyebrow">Búsqueda en el INPI</div>
       <h1>¿Tu marca está<br><span>disponible</span>?</h1>
-      <p>Verificá hasta 3 denominaciones en una misma clase Nice contra las 400.000+ marcas del INPI.</p>
+      <p>Verificá hasta 3 denominaciones contra la base del INPI Argentina. Con Premium, en múltiples clases a la vez.</p>
+
+      <div id="heroSubscribeWrap" style="display:none; margin: -0.5rem 0 1.25rem;">
+        <button class="btn btn-outline-white" onclick="iniciarSuscripcion('hero')">
+          Suscribirme Premium — ARS $<span id="heroPrice">20.000</span>/mes
+        </button>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.65);margin-top:0.5rem;">
+          Multi-clase · Análisis de riesgo IA · Reporte por email · Cancelás cuando quieras
+        </div>
+      </div>
 
       <div class="hero-card">
         <div class="form-group" style="margin-bottom: 0.75rem;">
@@ -70,12 +80,28 @@
           <label class="form-label">Opción 3 <span style="font-weight:400;color:var(--text-muted)">(opcional)</span></label>
           <input type="text" id="marca3" placeholder="Tercera opción" autocomplete="off">
         </div>
-        <div class="form-group" style="margin-bottom: 1.25rem;">
-          <label class="form-label">Clase Nice <span style="color:var(--red)">*</span></label>
-          <select id="claseComun" required>
+        <!-- Free plan: single class -->
+        <div class="form-group" id="claseSingleWrap" style="margin-bottom: 1.25rem;">
+          <label class="form-label">Clase de Niza <span style="color:var(--red)">*</span></label>
+          <select id="claseComun">
             <option value="">Elegí una clase…</option>
           </select>
         </div>
+
+        <!-- Premium: multi-class selector -->
+        <div class="form-group" id="claseMultiWrap" style="margin-bottom: 1.25rem; display:none;">
+          <label class="form-label">
+            Clases de Niza <span style="color:var(--red)">*</span>
+            <span class="premium-chip-label">Premium · multi-clase</span>
+          </label>
+          <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem; flex-wrap:wrap;">
+            <button type="button" class="chip-btn" onclick="toggleAllClases(true)">Seleccionar todas</button>
+            <button type="button" class="chip-btn" onclick="toggleAllClases(false)">Limpiar</button>
+            <span id="claseMultiCount" style="align-self:center; font-size:0.8rem; color:var(--text-muted);">0 seleccionadas</span>
+          </div>
+          <div id="claseMultiGrid" class="clase-multi-grid"></div>
+        </div>
+
         <button class="btn btn-primary btn-full" id="batchSearchBtn" onclick="verificarBatch()" style="padding: 0.875rem;">
           Verificar disponibilidad
         </button>
@@ -479,6 +505,10 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 async function checkSession() {
   try {
     const d = await api('GET', '/api/session');
+    if (d.premium_price_ars) {
+      const priceEl = document.getElementById('heroPrice');
+      if (priceEl) priceEl.textContent = Number(d.premium_price_ars).toLocaleString('es-AR');
+    }
     if (d.email) {
       state.email = d.email;
       state.isPremium = !!d.is_premium;
@@ -537,14 +567,55 @@ async function submitGate() {
 
 function renderPremiumBanner() {
   const banner = document.getElementById('premiumBanner');
+  const navSub = document.getElementById('navSubscribe');
+  const heroSub = document.getElementById('heroSubscribeWrap');
+  const singleWrap = document.getElementById('claseSingleWrap');
+  const multiWrap = document.getElementById('claseMultiWrap');
+
   if (state.isPremium && state.premiumUntil) {
     const d = new Date(state.premiumUntil);
     document.getElementById('premiumUntil').textContent =
       d.toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'numeric'});
     banner.style.display = 'flex';
+    if (navSub)  navSub.style.display  = 'none';
+    if (heroSub) heroSub.style.display = 'none';
+    if (singleWrap) singleWrap.style.display = 'none';
+    if (multiWrap)  multiWrap.style.display  = '';
+    ensureMultiGrid();
   } else {
     banner.style.display = 'none';
+    // Show subscription CTAs only once we know the user (email captured)
+    const cap = !!state.email;
+    if (navSub)  navSub.style.display  = cap ? '' : 'none';
+    if (heroSub) heroSub.style.display = cap ? '' : 'none';
+    if (singleWrap) singleWrap.style.display = '';
+    if (multiWrap)  multiWrap.style.display  = 'none';
   }
+}
+
+function ensureMultiGrid() {
+  const grid = document.getElementById('claseMultiGrid');
+  if (!grid || grid.dataset.loaded === '1') return;
+  grid.innerHTML = Object.entries(NICE_CLASSES).map(([num, name]) => `
+    <label class="clase-chip" data-num="${num}">
+      <input type="checkbox" value="${num}" onchange="updateMultiClaseCount()">
+      <span class="clase-chip-num">${num}</span>
+      <span class="clase-chip-name">${escHtml(name)}</span>
+    </label>
+  `).join('');
+  grid.dataset.loaded = '1';
+  updateMultiClaseCount();
+}
+
+function toggleAllClases(check) {
+  document.querySelectorAll('#claseMultiGrid input[type="checkbox"]').forEach(cb => cb.checked = check);
+  updateMultiClaseCount();
+}
+
+function updateMultiClaseCount() {
+  const n = document.querySelectorAll('#claseMultiGrid input:checked').length;
+  const el = document.getElementById('claseMultiCount');
+  if (el) el.textContent = n + ' seleccionada' + (n !== 1 ? 's' : '');
 }
 
 // ── MODULE A: BATCH VERIFICATION ──
@@ -556,10 +627,19 @@ async function verificarBatch() {
     document.getElementById('marca2').value.trim(),
     document.getElementById('marca3').value.trim(),
   ].filter(Boolean);
-  const clase = document.getElementById('claseComun').value;
+
+  let clases = [];
+  if (state.isPremium) {
+    clases = [...document.querySelectorAll('#claseMultiGrid input:checked')].map(cb => parseInt(cb.value));
+    if (!clases.length) { alert('Elegí al menos una clase de Niza'); return; }
+    if (clases.length > 10) { alert('Seleccioná hasta 10 clases por búsqueda'); return; }
+  } else {
+    const clase = document.getElementById('claseComun').value;
+    if (!clase) { alert('Elegí una clase de Niza'); return; }
+    clases = [parseInt(clase)];
+  }
 
   if (!denoms.length) { alert('Ingresá al menos la opción 1'); return; }
-  if (!clase) { alert('Elegí una clase Nice'); return; }
 
   const btn = document.getElementById('batchSearchBtn');
   btn.disabled = true;
@@ -567,7 +647,7 @@ async function verificarBatch() {
 
   try {
     const d = await api('POST', '/api/verificar-batch', {
-      denominaciones: denoms, clase: parseInt(clase)
+      denominaciones: denoms, clases
     });
 
     if (d.error) {
@@ -589,40 +669,85 @@ async function verificarBatch() {
 }
 
 function renderBatchResults(d) {
-  const cls = d.clase;
-  const clsName = NICE_CLASSES[cls] || ('Clase ' + cls);
-  const price = (d.premium_price_ars || 9900).toLocaleString('es-AR');
-  const days = d.premium_days || 30;
+  const price = (d.premium_price_ars || 20000).toLocaleString('es-AR');
+  const clases = d.clases || [];
+
+  // Group results by marca, then by clase
+  const byMarca = new Map();
+  d.results.forEach(r => {
+    if (!byMarca.has(r.marca)) byMarca.set(r.marca, []);
+    byMarca.get(r.marca).push(r);
+  });
+
+  const clasesText = clases.length === 1
+    ? `Clase ${clases[0]} — ${escHtml(NICE_CLASSES[clases[0]] || '')}`
+    : `${clases.length} clases: ${clases.join(', ')}`;
 
   let html = `<div style="margin-bottom:1rem;color:var(--text-muted);font-size:0.95rem;">
-    Resultado para <strong style="color:var(--navy)">Clase ${cls} — ${escHtml(clsName)}</strong>
+    Resultado para <strong style="color:var(--navy)">${clasesText}</strong>
   </div>`;
 
-  d.results.forEach(r => {
-    const badge = r.disponible
-      ? '<span class="badge badge-ok">✓ Disponible</span>'
-      : '<span class="badge badge-bad">✗ No disponible</span>';
-    const subline = r.disponible
-      ? `Sin coincidencias exactas · ${r.similares_count} similar${r.similares_count!==1?'es':''} fonéticamente`
-      : `${r.exactas_count} coincidencia${r.exactas_count!==1?'s':''} exacta${r.exactas_count!==1?'s':''} · ${r.similares_count} similar${r.similares_count!==1?'es':''} fonéticamente`;
+  byMarca.forEach((items, marca) => {
+    // Aggregate summary across clases
+    const anyMatch = items.some(r => !r.disponible);
+    const allAvail = items.every(r => r.disponible);
+    const totalSim = items.reduce((a, r) => a + r.similares_count, 0);
+    const totalExact = items.reduce((a, r) => a + r.exactas_count, 0);
+
+    let badge;
+    if (items.length === 1) {
+      badge = items[0].disponible
+        ? '<span class="badge badge-ok">✓ Disponible</span>'
+        : '<span class="badge badge-bad">✗ No disponible</span>';
+    } else if (allAvail) {
+      badge = '<span class="badge badge-ok">✓ Disponible en las ' + items.length + ' clases</span>';
+    } else if (anyMatch) {
+      const blocked = items.filter(r => !r.disponible).length;
+      badge = '<span class="badge badge-bad">✗ No disponible en ' + blocked + '/' + items.length + '</span>';
+    } else {
+      badge = '<span class="badge badge-ok">✓ Disponible</span>';
+    }
+
+    const subline = items.length === 1
+      ? (items[0].disponible
+          ? `Sin coincidencias exactas · ${totalSim} similar${totalSim!==1?'es':''} fonéticamente`
+          : `${totalExact} coincidencia${totalExact!==1?'s':''} exacta${totalExact!==1?'s':''} · ${totalSim} similar${totalSim!==1?'es':''} fonéticamente`)
+      : `${totalExact} exacta${totalExact!==1?'s':''} · ${totalSim} similar${totalSim!==1?'es':''} en total`;
 
     html += `<div class="disp-card">
       <div class="disp-card-head">
         <div>
-          <div class="disp-marca">${escHtml(r.marca)}</div>
+          <div class="disp-marca">${escHtml(marca)}</div>
           <div class="disp-sub">${subline}</div>
         </div>
         ${badge}
       </div>`;
 
+    if (items.length > 1) {
+      html += '<div class="disp-by-clase">';
+      items.forEach(r => {
+        const clsName = NICE_CLASSES[r.clase] || '';
+        const icon = r.disponible ? '<span class="dot dot-ok">●</span>' : '<span class="dot dot-bad">●</span>';
+        html += `<div class="disp-clase-row">
+          <span class="disp-clase-tag">${icon} <strong>Cl. ${r.clase}</strong> ${escHtml(clsName)}</span>
+          <span class="disp-clase-count">${r.exactas_count} exactas · ${r.similares_count} similares</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+
     if (d.is_premium) {
-      const rows = (r.exactas || []).concat(r.similares || []);
+      const rows = [];
+      items.forEach(r => {
+        (r.exactas || []).forEach(x => rows.push({...x, _tipo: 'exacta'}));
+        (r.similares || []).forEach(x => rows.push({...x, _tipo: 'similar'}));
+      });
       if (rows.length) {
         html += `<details class="disp-details"><summary>Ver ${rows.length} marca${rows.length!==1?'s':''} en la base</summary>
           ${buildResultsTable(rows)}
         </details>`;
       }
-    } else if (r.similares_count > 0 || !r.disponible) {
+    } else if (totalSim > 0 || anyMatch) {
       html += `<div class="disp-locked">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Marcas similares disponibles con Premium
@@ -637,14 +762,14 @@ function renderBatchResults(d) {
       Recibir reporte completo por email
     </button>
     <p style="text-align:center;font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
-      Incluye listado completo + análisis de riesgo IA + clases Nice sugeridas.
+      Incluye listado completo + análisis de riesgo IA + clases de Niza sugeridas.
     </p>`;
   } else {
     html += `<div class="premium-cta">
       <div class="premium-cta-head">
         <div>
           <div class="premium-cta-title">Desbloqueá el detalle completo</div>
-          <div class="premium-cta-sub">Lista de marcas similares + titulares + análisis de riesgo con IA + clases Nice sugeridas. Reporte PDF por email.</div>
+          <div class="premium-cta-sub">Lista de marcas similares + titulares + análisis de riesgo con IA + clases de Niza sugeridas. Reporte PDF por email.</div>
         </div>
         <div class="premium-cta-price">
           <div class="premium-cta-amount">ARS $${price}</div>
@@ -667,24 +792,30 @@ function renderBatchResults(d) {
   document.getElementById('batchResults').innerHTML = html;
 }
 
-async function iniciarSuscripcion() {
+async function iniciarSuscripcion(origen) {
+  if (!state.email) { showGate(); return; }
   const btn = document.getElementById('subBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Redirigiendo a Mercado Pago…';
+  const originalLabel = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;"></span> Redirigiendo a Mercado Pago…';
+  }
   try {
     const d = await api('POST', '/api/mp/create-subscription');
-    if (d.error) { alert('Error: ' + d.error); btn.disabled = false; btn.textContent = 'Suscribirme Premium'; return; }
+    if (d.error) {
+      alert('Error: ' + d.error);
+      if (btn) { btn.disabled = false; btn.textContent = originalLabel || 'Suscribirme Premium'; }
+      return;
+    }
     if (d.init_point) {
       window.location.href = d.init_point;
     } else {
       alert('No se pudo iniciar el pago');
-      btn.disabled = false;
-      btn.textContent = 'Suscribirme Premium';
+      if (btn) { btn.disabled = false; btn.textContent = originalLabel || 'Suscribirme Premium'; }
     }
   } catch (e) {
     alert('Error: ' + e.message);
-    btn.disabled = false;
-    btn.textContent = 'Suscribirme Premium';
+    if (btn) { btn.disabled = false; btn.textContent = originalLabel || 'Suscribirme Premium'; }
   }
 }
 

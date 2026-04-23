@@ -344,16 +344,21 @@ def api_gate():
 
 @app.route("/api/session", methods=["GET"])
 def api_session():
-    """Return current session state (email + premium flag)."""
+    """Return current session state (email + premium flag + pricing)."""
     email = (session.get("email") or "").strip().lower()
+    base = {
+        "premium_price_ars": PREMIUM_PRICE_ARS,
+        "premium_days": PREMIUM_DAYS,
+    }
     if not email:
-        return success_response({"email": None, "is_premium": False})
+        return success_response({"email": None, "is_premium": False, **base})
     u = _get_current_user()
     return success_response({
         "email": email,
         "is_premium": is_user_premium(email),
         "premium_until": u.premium_until.isoformat() if (u and u.premium_until) else None,
         "subscription_status": u.subscription_status if u else None,
+        **base,
     })
 
 
@@ -381,7 +386,10 @@ def _rate_limit_ok(email: str) -> bool:
 @app.route("/api/verificar-batch", methods=["POST"])
 @require_email
 def verificar_batch():
-    """Verify up to 3 denominations under a single Nice class for the current user."""
+    """
+    Verify up to 3 denominations under one or more Nice classes.
+    Free users: exactly 1 class. Premium: up to 10 classes (or 'all' = 1..45).
+    """
     try:
         email = session["email"]
         if not _rate_limit_ok(email):
@@ -390,44 +398,61 @@ def verificar_batch():
         data = request.json or {}
         denoms = [d.strip() for d in (data.get("denominaciones") or []) if d and d.strip()]
         denoms = denoms[:3]
-        clase = data.get("clase")
+        premium = is_user_premium(email)
+
+        # Accept either a single `clase` (int) or a list `clases` (ints).
+        raw_clases = data.get("clases")
+        if not raw_clases:
+            raw_clases = [data.get("clase")] if data.get("clase") else []
+
+        clases = []
+        for c in raw_clases:
+            try:
+                ci = int(c)
+                if 1 <= ci <= 45:
+                    clases.append(ci)
+            except (TypeError, ValueError):
+                continue
+        clases = sorted(set(clases))
 
         if not denoms:
             return error_response("Ingresá al menos una denominación")
-        if not clase:
-            return error_response("Seleccioná una clase Nice")
-        try:
-            clase = int(clase)
-        except (TypeError, ValueError):
-            return error_response("Clase inválida")
-        if not (1 <= clase <= 45):
-            return error_response("Clase inválida")
+        if not clases:
+            return error_response("Seleccioná al menos una clase de Niza")
 
-        premium = is_user_premium(email)
+        # Enforce plan limits
+        if not premium and len(clases) > 1:
+            return error_response(
+                "El plan gratuito solo permite una clase. Suscribite a Premium para buscar en varias.",
+                402,
+            )
+        if premium and len(clases) > 10:
+            return error_response("Máximo 10 clases por búsqueda", 400)
 
         full = []
         results = []
         for d in denoms:
-            r = verificar_denominacion(d, clase)
-            full.append({"marca": d, "clase": clase, **r})
-            item = {
-                "marca": d,
-                "clase": clase,
-                "disponible": r["disponible"],
-                "similares_count": r["similares_count"],
-                "exactas_count": len(r["exactas"]),
-            }
-            if premium:
-                item["similares"] = r["similares"]
-                item["exactas"] = r["exactas"]
-            results.append(item)
+            for c in clases:
+                r = verificar_denominacion(d, c)
+                full.append({"marca": d, "clase": c, **r})
+                item = {
+                    "marca": d,
+                    "clase": c,
+                    "disponible": r["disponible"],
+                    "similares_count": r["similares_count"],
+                    "exactas_count": len(r["exactas"]),
+                }
+                if premium:
+                    item["similares"] = r["similares"]
+                    item["exactas"] = r["exactas"]
+                results.append(item)
 
         bump_user_search(email)
 
         batch_id = str(uuid.uuid4())
         _batch_cache[batch_id] = {
             "email": email,
-            "clase": clase,
+            "clases": clases,
             "results_full": full,
             "created_at": datetime.utcnow().isoformat(),
         }
@@ -435,7 +460,7 @@ def verificar_batch():
 
         return success_response({
             "batch_id": batch_id,
-            "clase": clase,
+            "clases": clases,
             "is_premium": premium,
             "results": results,
             "premium_price_ars": PREMIUM_PRICE_ARS,
@@ -530,11 +555,12 @@ def reporte_email():
             return error_response("Batch pertenece a otro usuario", 403)
 
         enriched = _enrich_with_ai(batch)
-        pdf_bytes = build_disponibilidad_report(email, batch["clase"], enriched)
+        clases = batch.get("clases") or ([batch["clase"]] if batch.get("clase") else [])
+        pdf_bytes = build_disponibilidad_report(email, clases, enriched)
 
-        subject = f"Reporte de disponibilidad — {len(enriched)} marca(s)"
+        subject = f"Reporte de disponibilidad — {len(enriched)} resultado(s)"
         body = ("Hola,\n\nAdjuntamos tu reporte completo de disponibilidad de marca con análisis "
-                "de riesgo y clases Nice sugeridas por IA.\n\nLegal Pacers\nhttps://legalpacers.com\n")
+                "de riesgo y clases de Niza sugeridas por IA.\n\nLegal Pacers\nhttps://legalpacers.com\n")
         ok = send_email(email, subject, body,
                         attachment_bytes=pdf_bytes,
                         filename="Reporte_Disponibilidad.pdf")
@@ -717,6 +743,71 @@ def admin_users_page():
                 "is_premium": bool(u.premium_until and u.premium_until > datetime.utcnow()),
             })
     return jsonify({"users": out}), 200
+
+
+@app.route("/api/admin/check-marca")
+def admin_check_marca():
+    """
+    Diagnostic endpoint: show what the DB has for a given denomination.
+    Query: ?key=ADMIN_KEY&q=adidas&clase=25(optional)
+    Returns: {total_matches, by_clase, exact_matches, fuzzy_from_verificar}
+    """
+    if request.args.get("key", "") != os.getenv("ADMIN_KEY", ""):
+        return error_response("Unauthorized", 401)
+
+    q = (request.args.get("q") or "").strip()
+    if not q:
+        return error_response("q param required")
+
+    clase_filter = request.args.get("clase")
+    try:
+        clase_filter = int(clase_filter) if clase_filter else None
+    except ValueError:
+        clase_filter = None
+
+    from database import Marca, _normalize as _norm
+    q_norm = _norm(q)
+
+    with get_session() as s:
+        # ILIKE search (partial) — shows if the DB has ANY marca with that substring
+        sql = s.query(Marca).filter(Marca.denominacion.ilike(f"%{q}%"))
+        if clase_filter:
+            sql = sql.filter(Marca.clase == clase_filter)
+        rows = sql.limit(200).all()
+
+        # Bucket by clase
+        by_clase = {}
+        exact_matches = []
+        for m in rows:
+            by_clase.setdefault(m.clase, 0)
+            by_clase[m.clase] += 1
+            if _norm(m.denominacion or "") == q_norm:
+                exact_matches.append(m.to_dict())
+
+        sample = [r.to_dict() for r in rows[:20]]
+
+    out = {
+        "query": q,
+        "query_norm": q_norm,
+        "clase_filter": clase_filter,
+        "total_ilike_matches": len(rows),
+        "by_clase": by_clase,
+        "exact_matches_by_norm": exact_matches,
+        "sample_first_20": sample,
+    }
+
+    # Also run the actual verificar_denominacion to see what our fuzzy returns
+    if clase_filter:
+        v = verificar_denominacion(q, clase_filter)
+        out["verificar_denominacion_result"] = {
+            "disponible": v["disponible"],
+            "exactas_count": len(v["exactas"]),
+            "similares_count": v["similares_count"],
+            "exactas_sample": v["exactas"][:5],
+            "similares_sample": v["similares"][:10],
+        }
+
+    return jsonify(out), 200
 
 
 @app.route("/api/admin/grant-premium", methods=["POST"])
