@@ -335,26 +335,210 @@
       border: 1.5px solid var(--gray-100);
     }
 
-    /* PLACEHOLDER (temporal hasta Parte 3 — solo para pantalla 6) */
-    .placeholder {
+    /* RESULTS SCREEN */
+    .results {
       flex: 1;
       min-height: 100vh;
-      background: var(--off-white);
+      background: var(--navy);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .results-header {
+      padding: 1rem clamp(1rem, 4vw, 3rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .results-logo img { height: 28px; width: auto; filter: brightness(0) invert(1); }
+    .results-logo .logo-text { color: #fff; font-weight: 900; font-size: 1rem; display: none; }
+    .btn-ghost-light {
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 0.55rem 1.1rem;
+      font-size: 0.85rem;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      font-weight: 700;
+      transition: color var(--transition), border-color var(--transition), transform var(--transition);
+    }
+    .btn-ghost-light:hover { color: #fff; border-color: #fff; transform: translateY(-2px); }
+
+    .results-inner {
+      flex: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem clamp(1rem, 4vw, 3rem) 4rem;
+      width: 100%;
+    }
+
+    @keyframes drawRing {
+      from { stroke-dashoffset: 326.7; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .score-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .score-ring-wrap {
+      position: relative;
+      width: 180px;
+      height: 180px;
+    }
+    .score-ring { width: 100%; height: 100%; }
+    .score-ring__bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.1);
+      stroke-width: 10;
+    }
+    .score-ring__fill {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      stroke-dasharray: 326.7;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      animation: drawRing 1400ms cubic-bezier(.4,0,.2,1) both;
+    }
+    .score-ring-label {
+      position: absolute;
+      inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem 1rem;
-      text-align: center;
-      gap: 1.5rem;
     }
-    .placeholder h2 {
-      color: var(--navy);
-      font-size: 1.5rem;
+    .score-ring-label span {
+      font-size: 2.75rem;
       font-weight: 900;
+      line-height: 1;
+      animation: fadeUp 600ms 400ms both;
     }
-    .placeholder p { color: var(--gray-500); max-width: 420px; }
-    .placeholder-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
+    .score-ring-label small {
+      font-size: 0.7rem;
+      opacity: 0.6;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.5rem;
+      animation: fadeUp 600ms 500ms both;
+    }
+
+    .risk-badge {
+      padding: 0.6rem 1.5rem;
+      border-radius: var(--radius-pill);
+      font-weight: 700;
+      font-size: 0.95rem;
+      animation: fadeUp 600ms 700ms both;
+    }
+    .risk-badge--critical { background: rgba(230,57,70,0.18);  color: #ff8b92; }
+    .risk-badge--high     { background: rgba(244,164,56,0.18); color: #ffcb81; }
+    .risk-badge--medium   { background: rgba(59,142,255,0.18); color: #7fb4ff; }
+    .risk-badge--low      { background: rgba(44,182,125,0.18); color: #6fd5a7; }
+
+    .results-h1 {
+      text-align: center;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 900;
+      margin-bottom: 0.4rem;
+      animation: fadeUp 600ms 800ms both;
+    }
+    .results-h1 span { color: var(--blue-light); }
+    .results-subtitle {
+      text-align: center;
+      opacity: 0.75;
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+      animation: fadeUp 600ms 900ms both;
+    }
+
+    .risks-block { animation: fadeUp 600ms 1000ms both; }
+    .risks-block h3 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.75;
+    }
+    .risks-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-bottom: 2rem;
+    }
+    .risks-list li {
+      padding: 0.9rem 1.1rem;
+      background: rgba(230,57,70,0.12);
+      border-left: 3px solid var(--red);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+    .risks-list li strong {
+      display: block;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+
+    .all-clear-card {
+      padding: 2rem;
+      background: rgba(44,182,125,0.15);
+      border: 1px solid rgba(44,182,125,0.35);
+      border-radius: var(--radius-md);
+      text-align: center;
+      color: #6fd5a7;
+      font-weight: 700;
+      font-size: 1.05rem;
+      margin-bottom: 2rem;
+      animation: fadeUp 600ms 1000ms both;
+    }
+
+    .disclaimer-box {
+      background: rgba(244,164,56,0.1);
+      border-left: 3px solid var(--amber);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      margin-bottom: 2.5rem;
+      color: rgba(255,255,255,0.85);
+      animation: fadeUp 600ms 1100ms both;
+    }
+    .disclaimer-box strong { color: var(--amber); }
+
+    .cta-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      text-align: center;
+      animation: fadeUp 600ms 1200ms both;
+    }
+    .cta-box h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .cta-box p {
+      opacity: 0.75;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
 
     /* WHATSAPP FLOAT */
     .whatsapp-float {
@@ -389,6 +573,11 @@
       .items-list { gap: 0.6rem; margin-bottom: 1.75rem; }
       .item-card { padding: 0.95rem 1rem; }
       .step-nav .btn { padding: 0.8rem 1.1rem; font-size: 0.88rem; }
+      .results-inner { padding: 2rem 1rem 3rem; }
+      .score-ring-wrap { width: 150px; height: 150px; }
+      .score-ring-label span { font-size: 2.25rem; }
+      .cta-box { padding: 1.5rem 1.25rem; }
+      .cta-box h3 { font-size: 1.15rem; }
     }
   </style>
 </head>
@@ -638,22 +827,117 @@
   }
 
   /* ============================================================
-   * SCREEN 6 — PLACEHOLDER (se completa en Parte 3)
+   * SCORE CALCULATION
    * ============================================================ */
-  function renderResultsPlaceholder() {
+  const RING_CIRCUMFERENCE = 326.7;  // 2 * PI * 52
+
+  function calcScore() {
+    const maxW  = ITEMS.reduce((s, i) => s + i.weight, 0);
+    const earn  = ITEMS.filter(i => checked.has(i.id)).reduce((s, i) => s + i.weight, 0);
+    return Math.round((earn / maxW) * 100);
+  }
+
+  function riskLevel(pct) {
+    if (pct < 30) return { cls: 'critical', txt: 'Riesgo Crítico',  color: '#E63946' };
+    if (pct < 60) return { cls: 'high',     txt: 'Riesgo Alto',     color: '#F4A438' };
+    if (pct < 80) return { cls: 'medium',   txt: 'Riesgo Medio',    color: '#3B8EFF' };
+    return                 { cls: 'low',      txt: 'Bien protegido', color: '#2CB67D' };
+  }
+
+  /* ============================================================
+   * SCREEN 6 — RESULTS
+   * ============================================================ */
+  function renderResults() {
+    const pct       = calcScore();
+    const level     = riskLevel(pct);
+    const offset    = RING_CIRCUMFERENCE - (pct / 100) * RING_CIRCUMFERENCE;
+    const unchecked = ITEMS.filter(i => !checked.has(i.id));
+    const firstName = (userData.name || '').trim().split(/\s+/)[0];
+
+    const waText = `Hola! Hice el checklist de Legal Pacers. Mi score es ${pct}% (${level.txt}). Quisiera agendar una llamada.`;
+    const waUrl  = `https://wa.me/5491128774200?text=${encodeURIComponent(waText)}`;
+
+    const subtitle = unchecked.length === 0
+      ? '¡Tu startup está bien cubierta! No identificamos riesgos pendientes.'
+      : `Identificamos ${unchecked.length} riesgo${unchecked.length !== 1 ? 's' : ''} pendiente${unchecked.length !== 1 ? 's' : ''} de resolver.`;
+
+    const risksBlock = unchecked.length === 0
+      ? `<div class="all-clear-card">✓ Sin riesgos identificados. Tu startup está bien cubierta.</div>`
+      : `<div class="risks-block">
+           <h3>Riesgos identificados (${unchecked.length})</h3>
+           <ul class="risks-list">
+             ${unchecked.map(i => `
+               <li>
+                 <strong>${escapeHtml(i.cat)}</strong>
+                 ${escapeHtml(i.risk)}
+               </li>`).join('')}
+           </ul>
+         </div>`;
+
+    const ctaHeadline = unchecked.length === 0
+      ? '¿Querés una revisión profesional?'
+      : '¿Querés cerrar estos riesgos?';
+
     return `
-      <div class="placeholder">
-        <h2>Resultados</h2>
-        <p>Hola <strong>${escapeHtml(userData.name) || 'founder'}</strong>,
-          completaste el checklist. Esta pantalla se construye en la Parte 3.</p>
-        <p style="font-size:0.85rem;">
-          Debug: ${checked.size}/${ITEMS.length} ítems marcados.
-        </p>
-        <div class="placeholder-actions">
-          <button class="btn btn-ghost" onclick="goBack()">← Anterior</button>
+      <div class="results">
+        <div class="results-header">
+          <a href="index.html" class="results-logo" aria-label="Legal Pacers — volver al inicio">
+            <img src="legalpacers-logos-01.png" alt="Legal Pacers"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+            <span class="logo-text">Legal<strong>Pacers</strong></span>
+          </a>
+          <button class="btn-ghost-light" onclick="restart()">Rehacer</button>
+        </div>
+
+        <div class="results-inner">
+          <div class="score-display">
+            <div class="score-ring-wrap">
+              <svg class="score-ring" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="score-ring__bg" cx="60" cy="60" r="52"/>
+                <circle class="score-ring__fill" cx="60" cy="60" r="52"
+                        style="stroke: ${level.color}; stroke-dashoffset: ${offset.toFixed(1)};"/>
+              </svg>
+              <div class="score-ring-label">
+                <span>${pct}%</span>
+                <small>protegido</small>
+              </div>
+            </div>
+            <div class="risk-badge risk-badge--${level.cls}">${level.txt}</div>
+          </div>
+
+          <h1 class="results-h1">
+            ${firstName ? escapeHtml(firstName) + ', tu' : 'Tu'}
+            <span>diagnóstico legal</span>
+          </h1>
+          <p class="results-subtitle">${subtitle}</p>
+
+          ${risksBlock}
+
+          <div class="disclaimer-box">
+            <strong>Importante:</strong> Este score es orientativo. Un puntaje alto no garantiza
+            protección completa — lo que importa es la calidad y solidez de cada documento.
+            Documentos mal redactados o sin un asesor que los respalde pueden no protegerte
+            cuando más lo necesitás.
+          </div>
+
+          <div class="cta-box">
+            <h3>${ctaHeadline}</h3>
+            <p>Agendá una llamada gratuita de 30 minutos. Te decimos cómo resolver cada punto con presupuesto cerrado.</p>
+            <a href="${waUrl}" target="_blank" rel="noopener" class="btn btn-primary">
+              Agendar llamada gratuita →
+            </a>
+          </div>
         </div>
       </div>
     `;
+  }
+
+  function restart() {
+    if (!window.confirm('¿Rehacer el checklist? Se perderán las respuestas actuales.')) return;
+    checked.clear();
+    currentStep = 1;
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   /* ============================================================
@@ -668,7 +952,7 @@
       app.innerHTML = renderStep(currentStep);
       bindStep();
     } else {
-      app.innerHTML = renderResultsPlaceholder();
+      app.innerHTML = renderResults();
     }
   }
 
