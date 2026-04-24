@@ -158,7 +158,184 @@
     }
     .gate-legal a { color: var(--gray-500); text-decoration: underline; }
 
-    /* PLACEHOLDER (temporal hasta Parte 2) */
+    /* STEP SCREEN (pasos 1-5) */
+    .step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--off-white);
+      min-height: 100vh;
+    }
+
+    .step-header {
+      background: var(--navy);
+      color: #fff;
+      padding: 1rem clamp(1rem, 4vw, 3rem);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .step-header-logo img {
+      height: 28px;
+      width: auto;
+      filter: brightness(0) invert(1);
+    }
+    .step-header-logo .logo-text {
+      color: #fff;
+      font-weight: 900;
+      font-size: 1rem;
+      display: none;
+    }
+    .step-header-counter {
+      font-size: 0.82rem;
+      font-weight: 600;
+      opacity: 0.7;
+      letter-spacing: 0.04em;
+    }
+
+    .step-dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 1.25rem 1rem;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .step-dot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gray-100);
+      color: var(--gray-500);
+      font-size: 0.82rem;
+      font-weight: 700;
+      transition: background var(--transition), color var(--transition), transform var(--transition);
+      flex-shrink: 0;
+    }
+    .step-dot.active {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(1,111,251,0.35);
+      transform: scale(1.1);
+    }
+    .step-dot.done { background: var(--green); color: #fff; }
+    .step-dot-line {
+      width: 20px;
+      height: 2px;
+      background: var(--gray-100);
+      transition: background var(--transition);
+    }
+    .step-dot-line.done { background: var(--green); }
+
+    .step-body {
+      flex: 1;
+      padding: 2.5rem clamp(1rem, 4vw, 3rem) 2rem;
+    }
+    .step-inner { max-width: 680px; margin: 0 auto; }
+
+    .step-title {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 2rem;
+    }
+    .step-title-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: var(--blue);
+      color: #fff;
+      font-size: 1.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-title-text h2 {
+      font-size: clamp(1.3rem, 3vw, 1.6rem);
+      font-weight: 900;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .step-title-text p {
+      font-size: 0.88rem;
+      color: var(--gray-500);
+      margin-top: 0.2rem;
+    }
+
+    .items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+    .item-card {
+      background: var(--white);
+      border: 2px solid var(--gray-100);
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1.25rem;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition), transform var(--transition), box-shadow var(--transition);
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      user-select: none;
+    }
+    .item-card:hover {
+      border-color: var(--blue);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(1,111,251,0.08);
+    }
+    .item-card.checked {
+      border-color: var(--green);
+      background: rgba(44,182,125,0.06);
+    }
+    .item-check {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid var(--gray-300);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background var(--transition), border-color var(--transition), color var(--transition);
+      background: var(--white);
+      color: transparent;
+      font-size: 0.9rem;
+      font-weight: 900;
+    }
+    .item-card.checked .item-check {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+    .item-text {
+      flex: 1;
+      font-size: 0.95rem;
+      color: var(--gray-700);
+      line-height: 1.45;
+    }
+
+    .step-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .step-nav .btn-ghost {
+      background: var(--white);
+      border: 1.5px solid var(--gray-100);
+    }
+
+    /* PLACEHOLDER (temporal hasta Parte 3 — solo para pantalla 6) */
     .placeholder {
       flex: 1;
       min-height: 100vh;
@@ -204,6 +381,14 @@
     @media (max-width: 600px) {
       .gate-card { padding: 2.25rem 1.5rem; }
       .gate-card h1 { font-size: 1.4rem; }
+      .step-body { padding: 1.75rem 1rem 1.5rem; }
+      .step-title { margin-bottom: 1.5rem; }
+      .step-title-icon { width: 40px; height: 40px; font-size: 1.15rem; }
+      .step-dot { width: 28px; height: 28px; font-size: 0.75rem; }
+      .step-dot-line { width: 14px; }
+      .items-list { gap: 0.6rem; margin-bottom: 1.75rem; }
+      .item-card { padding: 0.95rem 1rem; }
+      .step-nav .btn { padding: 0.8rem 1.1rem; font-size: 0.88rem; }
     }
   </style>
 </head>
@@ -364,31 +549,127 @@
   }
 
   /* ============================================================
-   * PLACEHOLDER — pantallas 1-6 (se completan en Partes 2 y 3)
+   * SCREENS 1-5 — STEP (categoría + items)
    * ============================================================ */
-  function renderPlaceholder() {
-    const label = currentStep === 6 ? 'Resultados' : `Paso ${currentStep} de 5`;
+  function renderStep(step) {
+    const cat   = CATS.find(c => c.step === step);
+    const items = ITEMS.filter(i => i.step === step);
+    const isLast = step === 5;
+
+    const dots = CATS.map((c, idx) => {
+      const cls = c.step === step ? 'active' : c.step < step ? 'done' : '';
+      const label = c.step < step ? '✓' : c.step;
+      const dot = `<div class="step-dot ${cls}" aria-label="Paso ${c.step}">${label}</div>`;
+      const line = idx < CATS.length - 1
+        ? `<div class="step-dot-line ${c.step < step ? 'done' : ''}"></div>`
+        : '';
+      return dot + line;
+    }).join('');
+
+    const cards = items.map(i => `
+      <div class="item-card ${checked.has(i.id) ? 'checked' : ''}"
+           data-id="${i.id}"
+           onclick="toggleItem('${i.id}')"
+           role="checkbox"
+           tabindex="0"
+           aria-checked="${checked.has(i.id)}">
+        <div class="item-check" aria-hidden="true">✓</div>
+        <div class="item-text">${escapeHtml(i.text)}</div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="step">
+        <div class="step-header">
+          <div class="step-header-logo">
+            <img src="legalpacers-logos-01.png" alt="Legal Pacers"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+            <span class="logo-text">Legal<strong>Pacers</strong></span>
+          </div>
+          <div class="step-header-counter">Paso ${step} de 5</div>
+        </div>
+
+        <div class="step-dots">${dots}</div>
+
+        <div class="step-body">
+          <div class="step-inner">
+            <div class="step-title">
+              <div class="step-title-icon" aria-hidden="true">${cat.icon}</div>
+              <div class="step-title-text">
+                <h2>${escapeHtml(cat.name)}</h2>
+                <p>Marcá lo que ya tenés resuelto.</p>
+              </div>
+            </div>
+
+            <div class="items-list">${cards}</div>
+
+            <div class="step-nav">
+              <button class="btn btn-ghost" onclick="goBack()">← Anterior</button>
+              <button class="btn btn-primary" onclick="goNext()">
+                ${isLast ? 'Ver resultados →' : 'Siguiente →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function toggleItem(id) {
+    if (checked.has(id)) checked.delete(id);
+    else                 checked.add(id);
+    const card = document.querySelector(`.item-card[data-id="${id}"]`);
+    if (card) {
+      const on = checked.has(id);
+      card.classList.toggle('checked', on);
+      card.setAttribute('aria-checked', on);
+    }
+  }
+
+  function bindStep() {
+    document.querySelectorAll('.item-card').forEach(card => {
+      card.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+          toggleItem(card.dataset.id);
+        }
+      });
+    });
+  }
+
+  /* ============================================================
+   * SCREEN 6 — PLACEHOLDER (se completa en Parte 3)
+   * ============================================================ */
+  function renderResultsPlaceholder() {
     return `
       <div class="placeholder">
-        <h2>${label}</h2>
-        <p>Hola <strong>${escapeHtml(userData.name) || 'founder'}</strong>, esta pantalla se construye en la próxima entrega.</p>
+        <h2>Resultados</h2>
+        <p>Hola <strong>${escapeHtml(userData.name) || 'founder'}</strong>,
+          completaste el checklist. Esta pantalla se construye en la Parte 3.</p>
+        <p style="font-size:0.85rem;">
+          Debug: ${checked.size}/${ITEMS.length} ítems marcados.
+        </p>
         <div class="placeholder-actions">
           <button class="btn btn-ghost" onclick="goBack()">← Anterior</button>
-          ${currentStep < 6 ? '<button class="btn btn-primary" onclick="goNext()">Siguiente →</button>' : ''}
         </div>
       </div>
     `;
   }
 
   /* ============================================================
-   * MAIN RENDER
+   * MAIN RENDER (dispatcher)
    * ============================================================ */
   function render() {
     const app = $app();
-    if (currentStep === 0)       app.innerHTML = renderGate();
-    else                          app.innerHTML = renderPlaceholder();
-
-    if (currentStep === 0) bindGate();
+    if (currentStep === 0) {
+      app.innerHTML = renderGate();
+      bindGate();
+    } else if (currentStep >= 1 && currentStep <= 5) {
+      app.innerHTML = renderStep(currentStep);
+      bindStep();
+    } else {
+      app.innerHTML = renderResultsPlaceholder();
+    }
   }
 
   render();
