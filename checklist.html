@@ -54,6 +54,18 @@
     /* APP CONTAINER */
     #app { min-height: 100vh; display: flex; flex-direction: column; }
 
+    /* SCREEN TRANSITIONS */
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(28px); }
+      to   { opacity: 1; transform: none; }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-28px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .screen-in-right { animation: slideInRight 320ms cubic-bezier(.4,0,.2,1); }
+    .screen-in-left  { animation: slideInLeft  320ms cubic-bezier(.4,0,.2,1); }
+
     /* BUTTONS */
     .btn {
       display: inline-flex;
@@ -629,6 +641,7 @@
    * ============================================================ */
   let currentStep = 0;                    // 0 = gate, 1-5 = pasos, 6 = resultados
   let userData    = { name: '', email: '' };
+  let direction   = 'forward';            // 'forward' | 'back' — dirección del slide
   const checked   = new Set();
 
   /* ============================================================
@@ -650,13 +663,17 @@
    * NAVIGATION
    * ============================================================ */
   function goNext() {
-    if (currentStep < 6) currentStep++;
+    if (currentStep >= 6) return;
+    direction = 'forward';
+    currentStep++;
     render();
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   function goBack() {
-    if (currentStep > 0) currentStep--;
+    if (currentStep <= 0) return;
+    direction = 'back';
+    currentStep--;
     render();
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
@@ -935,6 +952,7 @@
   function restart() {
     if (!window.confirm('¿Rehacer el checklist? Se perderán las respuestas actuales.')) return;
     checked.clear();
+    direction = 'back';
     currentStep = 1;
     render();
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -953,6 +971,11 @@
       bindStep();
     } else {
       app.innerHTML = renderResults();
+    }
+
+    const screen = app.firstElementChild;
+    if (screen) {
+      screen.classList.add(direction === 'back' ? 'screen-in-left' : 'screen-in-right');
     }
   }
 
