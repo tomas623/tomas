@@ -162,14 +162,6 @@
       margin-top: -0.35rem;
       min-height: 1rem;
     }
-    .gate-legal {
-      font-size: 0.75rem;
-      color: var(--gray-300);
-      margin-top: 1.25rem;
-      line-height: 1.5;
-    }
-    .gate-legal a { color: var(--gray-500); text-decoration: underline; }
-
     /* STEP SCREEN (pasos 1-5) */
     .step {
       flex: 1;
@@ -457,6 +449,26 @@
     .risk-badge--medium   { background: rgba(59,142,255,0.18); color: #7fb4ff; }
     .risk-badge--low      { background: rgba(44,182,125,0.18); color: #6fd5a7; }
 
+    .quality-warning {
+      background: rgba(244,164,56,0.12);
+      border: 1px solid rgba(244,164,56,0.4);
+      border-left: 4px solid var(--amber);
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.35rem;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 2.25rem;
+      animation: fadeUp 600ms 750ms both;
+    }
+    .quality-warning strong {
+      color: var(--amber);
+      display: block;
+      margin-bottom: 0.35rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
     .results-h1 {
       text-align: center;
       font-size: clamp(1.5rem, 3vw, 2rem);
@@ -534,22 +546,51 @@
     .disclaimer-box strong { color: var(--amber); }
 
     .cta-box {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(135deg, rgba(1,111,251,0.18), rgba(1,111,251,0.08));
+      border: 1px solid rgba(1,111,251,0.35);
       border-radius: var(--radius-lg);
-      padding: 2rem;
+      padding: 2.25rem 2rem;
       text-align: center;
       animation: fadeUp 600ms 1200ms both;
+      box-shadow: 0 8px 32px rgba(1,111,251,0.15);
     }
     .cta-box h3 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
+      font-size: 1.45rem;
+      font-weight: 900;
+      margin-bottom: 0.6rem;
     }
     .cta-box p {
-      opacity: 0.75;
-      margin-bottom: 1.5rem;
+      opacity: 0.85;
+      margin-bottom: 1.75rem;
       font-size: 0.95rem;
+      line-height: 1.55;
+    }
+    @keyframes ctaPulse {
+      0%, 100% { box-shadow: 0 6px 22px rgba(1,111,251,0.4); }
+      50%      { box-shadow: 0 8px 32px rgba(1,111,251,0.65); }
+    }
+    .btn-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1.1rem 2.25rem;
+      border-radius: var(--radius-pill);
+      background: var(--blue);
+      color: #fff;
+      font-family: 'Mundial', sans-serif;
+      font-weight: 900;
+      font-size: 1.05rem;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      animation: ctaPulse 2.2s ease-in-out infinite;
+    }
+    .btn-cta:hover {
+      background: var(--blue-light);
+      transform: translateY(-2px);
+      color: #fff;
     }
 
     /* WHATSAPP FLOAT */
@@ -617,11 +658,11 @@
   ];
 
   const ITEMS = [
-    { id:'c1',  step:1, cat:'Constitución',          text:'Tengo una sociedad legalmente constituida',                                       risk:'Responsabilidad ilimitada sobre tu patrimonio personal', weight:2 },
+    { id:'c1',  step:1, cat:'Constitución',          text:'Tengo una sociedad legalmente constituida',                                       risk:'Tu patrimonio personal queda expuesto ante cualquier demanda.', weight:5 },
     { id:'c2',  step:1, cat:'Constitución',          text:'La estructura es adecuada para recibir inversión extranjera',                      risk:'Inversores no pueden entrar a la sociedad',              weight:3 },
-    { id:'c3',  step:1, cat:'Constitución',          text:'Existe un pacto de socios / SHA firmado',                                          risk:'Conflicto entre socios sin mecanismo de resolución',     weight:3 },
-    { id:'c4',  step:1, cat:'Constitución',          text:'El vesting de los founders está documentado',                                      risk:'Un socio puede irse con equity sin haber trabajado',     weight:3 },
-    { id:'ip1', step:2, cat:'Propiedad Intelectual', text:'El código y la marca están a nombre de la empresa (no del founder)',               risk:'IP personal bloquea cualquier due diligence',            weight:3 },
+    { id:'c3',  step:1, cat:'Constitución',          text:'Existe un pacto de socios / SHA firmado',                                          risk:'Parálisis total de la empresa por falta de reglas claras entre socios.', weight:5 },
+    { id:'c4',  step:1, cat:'Constitución',          text:'El vesting de los founders está documentado',                                      risk:'Un socio puede irse con equity sin haber trabajado',     weight:5 },
+    { id:'ip1', step:2, cat:'Propiedad Intelectual', text:'El código y la marca están a nombre de la empresa (no del founder)',               risk:'Tu producto legalmente no te pertenece; construís sobre arena.', weight:5 },
     { id:'ip2', step:2, cat:'Propiedad Intelectual', text:'Los contratos con freelancers/empleados incluyen cesión de IP',                    risk:'IP de terceros dentro de tu producto',                   weight:3 },
     { id:'ip3', step:2, cat:'Propiedad Intelectual', text:'La marca está registrada o en proceso',                                            risk:'Terceros pueden usar tu marca sin consecuencias',        weight:2 },
     { id:'ip4', step:2, cat:'Propiedad Intelectual', text:'No usás código open source con licencias restrictivas (GPL) sin análisis',         risk:'Contaminación de licencia que afecta al producto',       weight:2 },
@@ -632,7 +673,7 @@
     { id:'l1',  step:4, cat:'Laboral y Contratos',   text:'Los empleados y contratistas tienen contratos firmados',                           risk:'Pasivo laboral oculto que aparece al crecer',            weight:2 },
     { id:'l2',  step:4, cat:'Laboral y Contratos',   text:'Los contratos con clientes incluyen cláusulas de limitación de responsabilidad',   risk:'Responsabilidad ilimitada ante cualquier incidente',     weight:3 },
     { id:'l3',  step:4, cat:'Laboral y Contratos',   text:'Los NDAs con partners y empleados están vigentes',                                 risk:'Filtración de información sin consecuencias legales',    weight:2 },
-    { id:'i1',  step:5, cat:'Inversión',             text:'Tenés un cap table actualizado y documentado',                                     risk:'Disputas de equity con inversores actuales o futuros',   weight:2 },
+    { id:'i1',  step:5, cat:'Inversión',             text:'Tenés un cap table actualizado y documentado',                                     risk:'Inversores rechazarán tu cap table por falta de transparencia. Ronda seed bloqueada.', weight:5 },
     { id:'i2',  step:5, cat:'Inversión',             text:'Entendés la diferencia entre SAFE, convertible note y equity round',               risk:'Dilución inesperada en tu próxima ronda',                weight:2 },
   ];
 
@@ -693,8 +734,10 @@
 
           <h1>Tu <span>diagnóstico legal</span> en 2 minutos</h1>
           <p class="gate-subtitle">
-            Respondé 17 preguntas rápidas y descubrí los riesgos legales
-            que más impactan a tu startup.
+            Ingresá tu email para validar tu identidad. Los resultados de este diagnóstico son
+            confidenciales y se utilizarán solo en caso para tu sesión de validación de riesgos
+            personalizada. En caso de usarse para muestro de datos, se usarán de forma de anónima.
+            No enviamos spam.
           </p>
 
           <form class="gate-form" id="gateForm" novalidate>
@@ -723,9 +766,6 @@
             </button>
           </form>
 
-          <p class="gate-legal">
-            Al continuar aceptás recibir el resultado por email. No te vamos a spamear.
-          </p>
         </div>
       </div>
     `;
@@ -922,6 +962,14 @@
             <div class="risk-badge risk-badge--${level.cls}">${level.txt}</div>
           </div>
 
+          <div class="quality-warning">
+            <strong>⚠️ Nota:</strong>
+            Haber marcado un ítem como "cumplido" significa que el documento existe, pero eso
+            no garantiza su solidez legal. Un contrato genérico o mal redactado puede darte
+            falsa seguridad y fallar ante un juicio o un Due Diligence. La validez real se
+            obtiene únicamente mediante una auditoría profesional.
+          </div>
+
           <h1 class="results-h1">
             ${firstName ? escapeHtml(firstName) + ', tu' : 'Tu'}
             <span>diagnóstico legal</span>
@@ -939,9 +987,9 @@
 
           <div class="cta-box">
             <h3>${ctaHeadline}</h3>
-            <p>Agendá una llamada gratuita de 30 minutos. Te decimos cómo resolver cada punto con presupuesto cerrado.</p>
-            <a href="${waUrl}" target="_blank" rel="noopener" class="btn btn-primary">
-              Agendar llamada gratuita →
+            <p>Validá punto por punto con un abogado experto en startups. Te decimos qué priorizar y cómo resolverlo con presupuesto cerrado.</p>
+            <a href="${waUrl}" target="_blank" rel="noopener" class="btn-cta">
+              Agendar Validación de Riesgos (30 min sin cargo) →
             </a>
           </div>
         </div>
