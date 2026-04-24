@@ -35,439 +35,149 @@
       --radius-lg: 20px;
       --radius-pill: 999px;
       --shadow-card: 0 4px 24px rgba(0,0,0,0.10);
+      --shadow-lg: 0 20px 60px rgba(0,0,0,0.3);
       --transition: 200ms ease;
     }
 
     body {
       font-family: 'Mundial', system-ui, sans-serif;
-      background: var(--off-white);
+      background: var(--navy);
       color: var(--gray-700);
       line-height: 1.6;
       font-weight: 400;
+      min-height: 100vh;
     }
 
     a { color: var(--blue); text-decoration: none; }
+    button { font-family: inherit; }
 
-    /* NAV */
-    nav {
-      background: var(--navy);
-      height: 60px;
-      display: flex;
-      align-items: center;
-      padding: 0 clamp(1rem, 4vw, 3rem);
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
+    /* APP CONTAINER */
+    #app { min-height: 100vh; display: flex; flex-direction: column; }
 
-    .nav-logo img {
-      height: 32px;
-      width: auto;
-      filter: brightness(0) invert(1);
-    }
-
-    .logo-text {
-      font-family: 'Mundial', sans-serif;
-      font-size: 1.1rem;
-      color: #fff;
-      font-weight: 900;
-    }
-
-    .nav-back {
-      font-size: 0.85rem;
-      color: rgba(255,255,255,0.7);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: color var(--transition);
-    }
-
-    .nav-back:hover { color: #fff; }
-
-    /* HEADER */
-    .page-header {
-      background: var(--navy);
-      color: #fff;
-      padding: 3rem clamp(1rem, 4vw, 3rem) 3.5rem;
-      text-align: center;
-    }
-
-    .page-header h1 {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 900;
-      line-height: 1.1;
-      margin-bottom: 1rem;
-    }
-
-    .page-header h1 span { color: var(--blue-light); }
-
-    .page-header p {
-      font-size: 1.1rem;
-      font-weight: 300;
-      opacity: 0.85;
-      max-width: 520px;
-      margin: 0 auto;
-    }
-
-    /* MAIN LAYOUT */
-    .checklist-page {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 2.5rem clamp(1rem, 4vw, 2rem) 4rem;
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 2.5rem;
-      align-items: start;
-    }
-
-    @media (max-width: 900px) {
-      .checklist-page {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* SIDEBAR */
-    .cl-sidebar {
-      position: sticky;
-      top: 80px;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    @media (max-width: 900px) {
-      .cl-sidebar {
-        position: static;
-        order: 2;
-      }
-    }
-
-    .score-card {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      padding: 2rem;
-      box-shadow: var(--shadow-card);
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.25rem;
-    }
-
-    .score-display {
-      position: relative;
-      width: 160px;
-      height: 160px;
-    }
-
-    .score-ring { width: 100%; height: 100%; }
-
-    .score-ring__bg {
-      fill: none;
-      stroke: var(--gray-100);
-      stroke-width: 10;
-    }
-
-    .score-ring__fill {
-      fill: none;
-      stroke: var(--blue);
-      stroke-width: 10;
-      stroke-linecap: round;
-      stroke-dasharray: 326.7;
-      stroke-dashoffset: 326.7;
-      transform: rotate(-90deg);
-      transform-origin: 50% 50%;
-      transition: stroke-dashoffset 500ms ease, stroke 400ms ease;
-    }
-
-    .score-label {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .score-label span {
-      font-size: 2.2rem;
-      font-weight: 900;
-      color: var(--blue);
-      line-height: 1;
-    }
-
-    .score-label small {
-      font-size: 0.75rem;
-      color: var(--gray-500);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .risk-badge {
-      width: 100%;
-      padding: 10px 16px;
-      border-radius: var(--radius-sm);
-      font-weight: 700;
-      font-size: 0.9rem;
-      text-align: center;
-    }
-
-    .risk-badge--critical { background: rgba(230,57,70,0.1); color: var(--red); }
-    .risk-badge--high     { background: rgba(244,164,56,0.1); color: var(--amber); }
-    .risk-badge--medium   { background: rgba(1,111,251,0.1);  color: var(--blue); }
-    .risk-badge--low      { background: rgba(44,182,125,0.1); color: var(--green); }
-
-    .score-note {
-      font-size: 0.75rem;
-      color: var(--gray-500);
-      font-style: italic;
-      line-height: 1.5;
-      text-align: left;
-    }
-
-    /* RISKS LIST */
-    .risks-card {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      box-shadow: var(--shadow-card);
-    }
-
-    .risks-card h4 {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--gray-700);
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .risks-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-      max-height: 280px;
-      overflow-y: auto;
-    }
-
-    .risks-list li {
-      padding: 0.5rem 0.6rem;
-      background: rgba(230,57,70,0.05);
-      border-left: 2px solid var(--red);
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      color: var(--gray-700);
-      line-height: 1.4;
-    }
-
-    .risks-list li strong {
-      color: var(--red);
-      display: block;
-      font-size: 0.75rem;
-      margin-bottom: 1px;
-    }
-
-    .all-clear {
-      color: var(--green);
-      font-weight: 700;
-      font-size: 1rem;
-    }
-
-    /* CTA */
-    .cta-card {
-      background: var(--navy);
-      color: #fff;
-      border-radius: var(--radius-lg);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .cta-card h4 { font-size: 1rem; font-weight: 700; }
-    .cta-card p  { font-size: 0.85rem; opacity: 0.8; line-height: 1.5; }
-
+    /* BUTTONS */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.75rem 1.5rem;
+      padding: 0.9rem 1.75rem;
       border-radius: var(--radius-pill);
       font-family: 'Mundial', sans-serif;
       font-weight: 700;
       font-size: 0.95rem;
-      text-decoration: none;
       border: none;
       cursor: pointer;
-      transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+      transition: transform var(--transition), background var(--transition), box-shadow var(--transition);
       white-space: nowrap;
+      text-decoration: none;
     }
-
-    .btn:hover { transform: translateY(-2px); }
-
+    .btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-primary {
       background: var(--blue);
       color: #fff;
       box-shadow: 0 4px 16px rgba(1,111,251,0.35);
     }
-
-    .btn-primary:hover { background: var(--blue-light); }
+    .btn-primary:hover:not(:disabled) { background: var(--blue-light); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--gray-500);
+    }
+    .btn-ghost:hover { color: var(--navy); transform: translateY(-2px); }
     .btn-full { width: 100%; }
 
-    /* CHECKLIST MAIN */
-    .cl-main { display: flex; flex-direction: column; gap: 1.5rem; }
-
-    @media (max-width: 900px) {
-      .cl-main { order: 1; }
-    }
-
-    .cl-category {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      box-shadow: var(--shadow-card);
-    }
-
-    .cl-cat-header {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid var(--gray-100);
-    }
-
-    .cl-cat-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-sm);
-      background: var(--blue-glow);
+    /* SCREEN 0 — GATE */
+    .gate {
+      flex: 1;
+      min-height: 100vh;
+      background: var(--navy);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
+      padding: 2rem 1rem;
     }
-
-    .cl-cat-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--navy);
-    }
-
-    .cl-cat-progress {
-      margin-left: auto;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--gray-500);
-    }
-
-    .cl-items { display: flex; flex-direction: column; gap: 0.6rem; }
-
-    .cl-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.9rem;
-      padding: 0.85rem 1rem;
-      border-radius: var(--radius-sm);
-      border: 1.5px solid transparent;
-      cursor: pointer;
-      transition: background var(--transition), border-color var(--transition);
-    }
-
-    .cl-item:hover { background: var(--off-white); }
-
-    .cl-item.checked {
-      background: rgba(44,182,125,0.06);
-      border-color: rgba(44,182,125,0.3);
-    }
-
-    .cl-checkbox {
-      width: 20px;
-      height: 20px;
-      margin-top: 1px;
-      cursor: pointer;
-      accent-color: var(--blue);
-      flex-shrink: 0;
-    }
-
-    .cl-item-content { flex: 1; }
-
-    .cl-item-text {
-      font-size: 0.95rem;
-      line-height: 1.5;
-      color: var(--gray-700);
-    }
-
-    .cl-item-risk {
-      font-size: 0.78rem;
-      color: var(--red);
-      margin-top: 3px;
-      display: none;
-    }
-
-    .cl-item:not(.checked):hover .cl-item-risk,
-    .cl-item.risk-shown .cl-item-risk {
-      display: block;
-    }
-
-    /* PROGRESS BAR */
-    .page-progress {
+    .gate-card {
       background: var(--white);
-      padding: 1rem clamp(1rem, 4vw, 3rem);
-      border-bottom: 1px solid var(--gray-100);
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .progress-bar-wrap {
-      flex: 1;
-      height: 6px;
-      background: var(--gray-100);
-      border-radius: var(--radius-pill);
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      background: var(--blue);
-      border-radius: var(--radius-pill);
-      transition: width 400ms ease;
-      width: 0%;
-    }
-
-    .progress-text {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--gray-500);
-      white-space: nowrap;
-    }
-
-    /* RESULT BANNER */
-    .result-banner {
-      display: none;
-      background: var(--navy);
-      color: #fff;
-      padding: 2rem clamp(1rem, 4vw, 3rem);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
       text-align: center;
     }
+    .gate-logo { margin-bottom: 1.75rem; }
+    .gate-logo img { height: 42px; width: auto; }
+    .gate-logo .logo-text {
+      font-size: 1.3rem;
+      color: var(--navy);
+      font-weight: 900;
+      display: none;
+    }
+    .gate-card h1 {
+      font-size: 1.65rem;
+      font-weight: 900;
+      color: var(--navy);
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+    }
+    .gate-card h1 span { color: var(--blue); }
+    .gate-card .gate-subtitle {
+      color: var(--gray-500);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+      line-height: 1.55;
+    }
+    .gate-form { display: flex; flex-direction: column; gap: 0.85rem; }
+    .input-field {
+      padding: 0.95rem 1.1rem;
+      border: 1.5px solid var(--gray-100);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--gray-700);
+      background: var(--off-white);
+      transition: border-color var(--transition), background var(--transition);
+      width: 100%;
+    }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--blue);
+      background: var(--white);
+    }
+    .input-error {
+      color: var(--red);
+      font-size: 0.8rem;
+      text-align: left;
+      margin-top: -0.35rem;
+      min-height: 1rem;
+    }
+    .gate-legal {
+      font-size: 0.75rem;
+      color: var(--gray-300);
+      margin-top: 1.25rem;
+      line-height: 1.5;
+    }
+    .gate-legal a { color: var(--gray-500); text-decoration: underline; }
 
-    .result-banner.visible { display: block; }
-
-    .result-banner h2 {
+    /* PLACEHOLDER (temporal hasta Parte 2) */
+    .placeholder {
+      flex: 1;
+      min-height: 100vh;
+      background: var(--off-white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      text-align: center;
+      gap: 1.5rem;
+    }
+    .placeholder h2 {
+      color: var(--navy);
       font-size: 1.5rem;
       font-weight: 900;
-      margin-bottom: 0.5rem;
     }
-
-    .result-banner p {
-      font-size: 1rem;
-      opacity: 0.8;
-      margin-bottom: 1.5rem;
-    }
+    .placeholder p { color: var(--gray-500); max-width: 420px; }
+    .placeholder-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
 
     /* WHATSAPP FLOAT */
     .whatsapp-float {
@@ -487,226 +197,19 @@
       box-shadow: 0 4px 20px rgba(37,211,102,0.4);
       transition: transform var(--transition);
     }
-
     .whatsapp-float:hover { transform: scale(1.1); color: #fff; }
     .whatsapp-float svg { width: 28px; height: 28px; }
 
-    /* DISCLAIMER BANNER */
-    .disclaimer-banner {
-      background: rgba(244,164,56,0.1);
-      border-left: 4px solid var(--amber);
-      padding: 0.85rem clamp(1rem, 4vw, 3rem);
-      font-size: 0.85rem;
-      color: var(--gray-700);
-      line-height: 1.5;
-    }
-    .disclaimer-banner strong { color: #b36c00; }
-
-    /* DISCLAIMER CARD (sidebar) */
-    .disclaimer-card {
-      background: rgba(244,164,56,0.07);
-      border: 1px solid rgba(244,164,56,0.25);
-      border-left: 3px solid var(--amber);
-      border-radius: var(--radius-md);
-      padding: 1rem 1.25rem;
-      font-size: 0.82rem;
-      color: var(--gray-700);
-      line-height: 1.55;
-    }
-    .disclaimer-card strong {
-      display: block;
-      color: #b36c00;
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.35rem;
-    }
-
-    /* RESULTS SECTION */
-    .results-section {
-      display: none;
-      background: var(--navy);
-      color: #fff;
-      padding: 4rem clamp(1rem, 4vw, 3rem) 5rem;
-    }
-    .results-inner {
-      max-width: 760px;
-      margin: 0 auto;
-    }
-    .results-section h2 {
-      font-size: clamp(1.6rem, 3vw, 2.2rem);
-      font-weight: 900;
-      margin-bottom: 0.5rem;
-    }
-    .results-score-summary {
-      font-size: 1rem;
-      opacity: 0.7;
-      margin-bottom: 2rem;
-    }
-    .results-risk-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin-bottom: 2rem;
-    }
-    .results-risk-list li {
-      padding: 0.85rem 1rem;
-      background: rgba(230,57,70,0.12);
-      border-left: 3px solid var(--red);
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-    .results-risk-list li strong {
-      display: block;
-      color: rgba(255,255,255,0.45);
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 2px;
-    }
-    .results-all-clear {
-      padding: 1.5rem;
-      background: rgba(44,182,125,0.15);
-      border: 1px solid rgba(44,182,125,0.35);
-      border-radius: var(--radius-md);
-      color: var(--green);
-      font-weight: 700;
-      font-size: 1.05rem;
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .results-quality-note {
-      padding: 1rem 1.25rem;
-      background: rgba(244,164,56,0.1);
-      border-left: 3px solid var(--amber);
-      border-radius: var(--radius-sm);
-      font-size: 0.875rem;
-      color: rgba(255,255,255,0.8);
-      margin-bottom: 2.5rem;
-      line-height: 1.6;
-    }
-    .results-quality-note strong { color: var(--amber); }
-    .results-cta-box {
-      text-align: center;
-      padding: 2rem;
-      background: rgba(255,255,255,0.05);
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .results-cta-box h3 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-    .results-cta-box p {
-      font-size: 0.9rem;
-      opacity: 0.75;
-      margin-bottom: 1.5rem;
-    }
-
-    .results-section.visible {
-      display: block;
-      animation: fadeInUp 400ms ease;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: none; }
-    }
-
     /* MOBILE */
     @media (max-width: 600px) {
-      .page-header { padding: 2rem 1.25rem 2.5rem; }
-      .cl-category { padding: 1.25rem; }
-      .score-display { width: 130px; height: 130px; }
-      .score-label span { font-size: 1.8rem; }
+      .gate-card { padding: 2.25rem 1.5rem; }
+      .gate-card h1 { font-size: 1.4rem; }
     }
   </style>
 </head>
 <body>
 
-<nav>
-  <a href="index.html" class="nav-logo">
-    <img src="legalpacers-logos-01.png" alt="Legal Pacers"
-         onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-    <span class="logo-text" style="display:none">Legal<strong>Pacers</strong></span>
-  </a>
-  <a href="index.html" class="nav-back">← Volver al inicio</a>
-</nav>
-
-<div class="page-header">
-  <h1>¿Cuál es tu <span>nivel de riesgo legal</span>?</h1>
-  <p>Marcá lo que ya tenés resuelto. En 2 minutos sabés dónde está parada tu startup.</p>
-</div>
-
-<div class="page-progress">
-  <span class="progress-text" id="progressText">0 de 17 completados</span>
-  <div class="progress-bar-wrap">
-    <div class="progress-bar-fill" id="progressBar"></div>
-  </div>
-  <span class="progress-text" id="progressPct">0%</span>
-</div>
-
-<div class="disclaimer-banner">
-  <strong>Importante:</strong> Este score es orientativo. Un puntaje alto no garantiza protección completa —
-  lo que importa es la calidad y solidez de cada documento.
-</div>
-
-<div class="checklist-page">
-
-  <!-- SIDEBAR -->
-  <aside class="cl-sidebar">
-
-    <div class="score-card">
-      <div class="score-display">
-        <svg class="score-ring" viewBox="0 0 120 120">
-          <circle class="score-ring__bg" cx="60" cy="60" r="52"/>
-          <circle class="score-ring__fill" id="scoreCircle" cx="60" cy="60" r="52"/>
-        </svg>
-        <div class="score-label">
-          <span id="scorePercent">0%</span>
-          <small>protegido</small>
-        </div>
-      </div>
-
-      <div id="riskLevel" style="width:100%">
-        <div class="risk-badge risk-badge--critical">Riesgo Crítico</div>
-      </div>
-    </div>
-
-    <div class="disclaimer-card">
-      <strong>Sobre este score</strong>
-      Un puntaje alto no garantiza protección completa — lo que importa es la calidad y solidez de cada documento.
-    </div>
-
-    <a href="#resultados" class="btn btn-primary btn-full" onclick="verResultado(event)">Ver riesgos identificados →</a>
-
-  </aside>
-
-  <!-- CHECKLIST ITEMS -->
-  <main class="cl-main" id="clMain"></main>
-
-</div>
-
-<section id="resultados" class="results-section">
-  <div class="results-inner">
-    <h2>Tus riesgos identificados</h2>
-    <p class="results-score-summary" id="resultsSummary">Marcá los ítems del checklist para actualizar este análisis en tiempo real.</p>
-    <div id="resultsList"></div>
-    <div class="results-quality-note">
-      <strong>Recordá:</strong> Este score es orientativo. Un puntaje alto no garantiza protección completa —
-      lo que importa es la calidad y solidez de cada documento. Documentos mal redactados o sin un asesor
-      que los respalde pueden no protegerte cuando más lo necesitás.
-    </div>
-    <div class="results-cta-box">
-      <h3>¿Querés cerrar estos riesgos?</h3>
-      <p>Agendá una llamada gratuita de 30 minutos. Te decimos cómo resolver cada punto con presupuesto cerrado.</p>
-      <a href="index.html#contacto" class="btn btn-primary">Agendar llamada gratuita →</a>
-    </div>
-  </div>
-</section>
+<div id="app"></div>
 
 <a href="https://wa.me/5491128774200?text=Hola!%20Quisiera%20consultar%20sobre%20asesor%C3%ADa%20legal%20para%20mi%20startup"
    class="whatsapp-float" target="_blank" rel="noopener" aria-label="Contactar por WhatsApp">
@@ -716,145 +219,179 @@
 </a>
 
 <script>
-  const ITEMS = [
-    { id:'c1',  cat:'Constitución',         icon:'🏗️', text:'Tengo una sociedad legalmente constituida',                                        risk:'Responsabilidad ilimitada sobre tu patrimonio personal', weight:2 },
-    { id:'c2',  cat:'Constitución',         icon:'🏗️', text:'La estructura es adecuada para recibir inversión extranjera',                       risk:'Inversores no pueden entrar a la sociedad',              weight:3 },
-    { id:'c3',  cat:'Constitución',         icon:'🏗️', text:'Existe un pacto de socios / SHA firmado',                                           risk:'Conflicto entre socios sin mecanismo de resolución',     weight:3 },
-    { id:'c4',  cat:'Constitución',         icon:'🏗️', text:'El vesting de los founders está documentado',                                       risk:'Un socio puede irse con equity sin haber trabajado',     weight:3 },
-
-    { id:'ip1', cat:'Propiedad Intelectual', icon:'🔐', text:'El código fuente y marca están a nombre de la empresa (no del founder)',             risk:'IP personal bloquea cualquier due diligence',            weight:3 },
-    { id:'ip2', cat:'Propiedad Intelectual', icon:'🔐', text:'Los contratos con freelancers/empleados incluyen cesión de IP',                      risk:'IP de terceros dentro de tu producto',                  weight:3 },
-    { id:'ip3', cat:'Propiedad Intelectual', icon:'🔐', text:'La marca está registrada o en proceso',                                             risk:'Terceros pueden usar tu marca sin consecuencias',        weight:2 },
-    { id:'ip4', cat:'Propiedad Intelectual', icon:'🔐', text:'No usás código open source con licencias restrictivas (GPL) sin análisis',           risk:'Contaminación de licencia que afecta al producto',      weight:2 },
-
-    { id:'p1',  cat:'Privacidad y Datos',    icon:'📋', text:'Tenés Términos y Condiciones propios (no copiados de otro servicio)',                risk:'Sin defensa contractual ante reclamos de usuarios',     weight:2 },
-    { id:'p2',  cat:'Privacidad y Datos',    icon:'📋', text:'Tenés Política de Privacidad actualizada (LPDP / GDPR)',                             risk:'Multas y sanciones regulatorias',                       weight:3 },
-    { id:'p3',  cat:'Privacidad y Datos',    icon:'📋', text:'Tenés mecanismo de consentimiento para cookies y datos',                             risk:'Incumplimiento regulatorio desde el día 1',             weight:2 },
-    { id:'p4',  cat:'Privacidad y Datos',    icon:'📋', text:'Los datos de usuarios están alojados conforme a la normativa aplicable',             risk:'Transferencia internacional no autorizada',             weight:2 },
-
-    { id:'l1',  cat:'Laboral y Contratos',   icon:'👥', text:'Los empleados y contratistas tienen contratos firmados',                             risk:'Pasivo laboral oculto que aparece al crecer',           weight:2 },
-    { id:'l2',  cat:'Laboral y Contratos',   icon:'👥', text:'Los contratos con clientes incluyen cláusulas de limitación de responsabilidad',     risk:'Responsabilidad ilimitada ante cualquier incidente',    weight:3 },
-    { id:'l3',  cat:'Laboral y Contratos',   icon:'👥', text:'Los NDAs con partners y empleados están vigentes',                                   risk:'Filtración de información sin consecuencias legales',   weight:2 },
-
-    { id:'i1',  cat:'Inversión',             icon:'📈', text:'Tenés un cap table actualizado y documentado',                                       risk:'Disputas de equity con inversores actuales o futuros',  weight:2 },
-    { id:'i2',  cat:'Inversión',             icon:'📈', text:'Entendés la diferencia entre SAFE, convertible note y equity round',                 risk:'Dilución inesperada en tu próxima ronda',               weight:2 },
-  ];
-
+  /* ============================================================
+   * DATA — mismas categorías e ítems del checklist original
+   * ============================================================ */
   const CATS = [
-    { name:'Constitución',          icon:'🏗️' },
-    { name:'Propiedad Intelectual', icon:'🔐' },
-    { name:'Privacidad y Datos',    icon:'📋' },
-    { name:'Laboral y Contratos',   icon:'👥' },
-    { name:'Inversión',             icon:'📈' },
+    { name:'Constitución',          icon:'🏗️', step:1 },
+    { name:'Propiedad Intelectual', icon:'🔐', step:2 },
+    { name:'Privacidad y Datos',    icon:'📋', step:3 },
+    { name:'Laboral y Contratos',   icon:'👥', step:4 },
+    { name:'Inversión',             icon:'📈', step:5 },
   ];
 
-  const checked = new Set();
+  const ITEMS = [
+    { id:'c1',  step:1, cat:'Constitución',          text:'Tengo una sociedad legalmente constituida',                                       risk:'Responsabilidad ilimitada sobre tu patrimonio personal', weight:2 },
+    { id:'c2',  step:1, cat:'Constitución',          text:'La estructura es adecuada para recibir inversión extranjera',                      risk:'Inversores no pueden entrar a la sociedad',              weight:3 },
+    { id:'c3',  step:1, cat:'Constitución',          text:'Existe un pacto de socios / SHA firmado',                                          risk:'Conflicto entre socios sin mecanismo de resolución',     weight:3 },
+    { id:'c4',  step:1, cat:'Constitución',          text:'El vesting de los founders está documentado',                                      risk:'Un socio puede irse con equity sin haber trabajado',     weight:3 },
+    { id:'ip1', step:2, cat:'Propiedad Intelectual', text:'El código y la marca están a nombre de la empresa (no del founder)',               risk:'IP personal bloquea cualquier due diligence',            weight:3 },
+    { id:'ip2', step:2, cat:'Propiedad Intelectual', text:'Los contratos con freelancers/empleados incluyen cesión de IP',                    risk:'IP de terceros dentro de tu producto',                   weight:3 },
+    { id:'ip3', step:2, cat:'Propiedad Intelectual', text:'La marca está registrada o en proceso',                                            risk:'Terceros pueden usar tu marca sin consecuencias',        weight:2 },
+    { id:'ip4', step:2, cat:'Propiedad Intelectual', text:'No usás código open source con licencias restrictivas (GPL) sin análisis',         risk:'Contaminación de licencia que afecta al producto',       weight:2 },
+    { id:'p1',  step:3, cat:'Privacidad y Datos',    text:'Tenés Términos y Condiciones propios (no copiados de otro servicio)',              risk:'Sin defensa contractual ante reclamos de usuarios',      weight:2 },
+    { id:'p2',  step:3, cat:'Privacidad y Datos',    text:'Tenés Política de Privacidad actualizada (LPDP / GDPR)',                           risk:'Multas y sanciones regulatorias',                        weight:3 },
+    { id:'p3',  step:3, cat:'Privacidad y Datos',    text:'Tenés mecanismo de consentimiento para cookies y datos',                           risk:'Incumplimiento regulatorio desde el día 1',              weight:2 },
+    { id:'p4',  step:3, cat:'Privacidad y Datos',    text:'Los datos de usuarios están alojados conforme a la normativa aplicable',           risk:'Transferencia internacional no autorizada',              weight:2 },
+    { id:'l1',  step:4, cat:'Laboral y Contratos',   text:'Los empleados y contratistas tienen contratos firmados',                           risk:'Pasivo laboral oculto que aparece al crecer',            weight:2 },
+    { id:'l2',  step:4, cat:'Laboral y Contratos',   text:'Los contratos con clientes incluyen cláusulas de limitación de responsabilidad',   risk:'Responsabilidad ilimitada ante cualquier incidente',     weight:3 },
+    { id:'l3',  step:4, cat:'Laboral y Contratos',   text:'Los NDAs con partners y empleados están vigentes',                                 risk:'Filtración de información sin consecuencias legales',    weight:2 },
+    { id:'i1',  step:5, cat:'Inversión',             text:'Tenés un cap table actualizado y documentado',                                     risk:'Disputas de equity con inversores actuales o futuros',   weight:2 },
+    { id:'i2',  step:5, cat:'Inversión',             text:'Entendés la diferencia entre SAFE, convertible note y equity round',               risk:'Dilución inesperada en tu próxima ronda',                weight:2 },
+  ];
 
+  /* ============================================================
+   * STATE
+   * ============================================================ */
+  let currentStep = 0;                    // 0 = gate, 1-5 = pasos, 6 = resultados
+  let userData    = { name: '', email: '' };
+  const checked   = new Set();
+
+  /* ============================================================
+   * HELPERS
+   * ============================================================ */
+  const $app = () => document.getElementById('app');
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  }
+
+  /* ============================================================
+   * NAVIGATION
+   * ============================================================ */
+  function goNext() {
+    if (currentStep < 6) currentStep++;
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  function goBack() {
+    if (currentStep > 0) currentStep--;
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  /* ============================================================
+   * SCREEN 0 — GATE (nombre + email)
+   * ============================================================ */
+  function renderGate() {
+    return `
+      <div class="gate">
+        <div class="gate-card">
+          <div class="gate-logo">
+            <img src="legalpacers-logos-01.png" alt="Legal Pacers"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
+            <span class="logo-text">Legal<strong>Pacers</strong></span>
+          </div>
+
+          <h1>Tu <span>diagnóstico legal</span> en 2 minutos</h1>
+          <p class="gate-subtitle">
+            Respondé 17 preguntas rápidas y descubrí los riesgos legales
+            que más impactan a tu startup.
+          </p>
+
+          <form class="gate-form" id="gateForm" novalidate>
+            <input
+              type="text"
+              id="gateName"
+              class="input-field"
+              placeholder="Tu nombre"
+              autocomplete="given-name"
+              value="${escapeHtml(userData.name)}"
+              required>
+
+            <input
+              type="email"
+              id="gateEmail"
+              class="input-field"
+              placeholder="Tu email"
+              autocomplete="email"
+              value="${escapeHtml(userData.email)}"
+              required>
+
+            <div class="input-error" id="gateError"></div>
+
+            <button type="submit" class="btn btn-primary btn-full">
+              Empezar el diagnóstico →
+            </button>
+          </form>
+
+          <p class="gate-legal">
+            Al continuar aceptás recibir el resultado por email. No te vamos a spamear.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindGate() {
+    const form  = document.getElementById('gateForm');
+    const nameI = document.getElementById('gateName');
+    const mailI = document.getElementById('gateEmail');
+    const errEl = document.getElementById('gateError');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name  = nameI.value.trim();
+      const email = mailI.value.trim();
+
+      if (!name) { errEl.textContent = 'Ingresá tu nombre.'; nameI.focus(); return; }
+      if (!isValidEmail(email)) { errEl.textContent = 'Ingresá un email válido.'; mailI.focus(); return; }
+
+      userData.name  = name;
+      userData.email = email;
+      errEl.textContent = '';
+      goNext();
+    });
+
+    setTimeout(() => nameI.focus(), 50);
+  }
+
+  /* ============================================================
+   * PLACEHOLDER — pantallas 1-6 (se completan en Partes 2 y 3)
+   * ============================================================ */
+  function renderPlaceholder() {
+    const label = currentStep === 6 ? 'Resultados' : `Paso ${currentStep} de 5`;
+    return `
+      <div class="placeholder">
+        <h2>${label}</h2>
+        <p>Hola <strong>${escapeHtml(userData.name) || 'founder'}</strong>, esta pantalla se construye en la próxima entrega.</p>
+        <div class="placeholder-actions">
+          <button class="btn btn-ghost" onclick="goBack()">← Anterior</button>
+          ${currentStep < 6 ? '<button class="btn btn-primary" onclick="goNext()">Siguiente →</button>' : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  /* ============================================================
+   * MAIN RENDER
+   * ============================================================ */
   function render() {
-    const container = document.getElementById('clMain');
-    CATS.forEach(cat => {
-      const items = ITEMS.filter(i => i.cat === cat.name);
-      const card = document.createElement('div');
-      card.className = 'cl-category';
-      card.id = 'cat-' + cat.name.replace(/\s/g,'-');
+    const app = $app();
+    if (currentStep === 0)       app.innerHTML = renderGate();
+    else                          app.innerHTML = renderPlaceholder();
 
-      card.innerHTML = `
-        <div class="cl-cat-header">
-          <div class="cl-cat-icon">${cat.icon}</div>
-          <div class="cl-cat-title">${cat.name}</div>
-          <div class="cl-cat-progress" id="prog-${cat.name.replace(/\s/g,'-')}">0/${items.length}</div>
-        </div>
-        <div class="cl-items">
-          ${items.map(item => `
-            <label class="cl-item" id="item-${item.id}">
-              <input type="checkbox" class="cl-checkbox" data-id="${item.id}" onchange="toggle('${item.id}', this)">
-              <div class="cl-item-content">
-                <div class="cl-item-text">${item.text}</div>
-                <div class="cl-item-risk">⚠ ${item.risk}</div>
-              </div>
-            </label>
-          `).join('')}
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  }
-
-  function toggle(id, el) {
-    if (el.checked) checked.add(id); else checked.delete(id);
-    const item = document.getElementById('item-' + id);
-    item.classList.toggle('checked', el.checked);
-    item.classList.toggle('risk-shown', !el.checked);
-    update();
-  }
-
-  function update() {
-    const maxW = ITEMS.reduce((s,i) => s + i.weight, 0);
-    const earnW = ITEMS.filter(i => checked.has(i.id)).reduce((s,i) => s + i.weight, 0);
-    const pct   = Math.round((earnW / maxW) * 100);
-    const total = ITEMS.length;
-    const done  = checked.size;
-
-    // Progress bar
-    document.getElementById('progressBar').style.width  = (done/total*100) + '%';
-    document.getElementById('progressText').textContent = `${done} de ${total} completados`;
-    document.getElementById('progressPct').textContent  = pct + '%';
-
-    // Score ring
-    const C = 2 * Math.PI * 52;
-    document.getElementById('scoreCircle').style.strokeDashoffset = C - (pct/100)*C;
-    document.getElementById('scorePercent').textContent = pct + '%';
-
-    // Ring color
-    const ring = document.getElementById('scoreCircle');
-    ring.style.stroke = pct < 30 ? '#E63946' : pct < 60 ? '#F4A438' : pct < 80 ? '#016FFB' : '#2CB67D';
-
-    // Risk badge
-    let cls, txt;
-    if      (pct < 30) { cls='critical'; txt='Riesgo Crítico'; }
-    else if (pct < 60) { cls='high';     txt='Riesgo Alto'; }
-    else if (pct < 80) { cls='medium';   txt='Riesgo Medio'; }
-    else               { cls='low';      txt='Bien protegido'; }
-    document.getElementById('riskLevel').innerHTML =
-      `<div class="risk-badge risk-badge--${cls}">${txt}</div>`;
-
-    // Category counters
-    CATS.forEach(cat => {
-      const catItems = ITEMS.filter(i => i.cat === cat.name);
-      const catDone  = catItems.filter(i => checked.has(i.id)).length;
-      const el = document.getElementById('prog-' + cat.name.replace(/\s/g,'-'));
-      if (el) el.textContent = `${catDone}/${catItems.length}`;
-    });
-
-    // Results section
-    const unchecked = ITEMS.filter(i => !checked.has(i.id));
-    const listEl    = document.getElementById('resultsList');
-    const summaryEl = document.getElementById('resultsSummary');
-
-    summaryEl.textContent = done === 0
-      ? 'Marcá los ítems del checklist para actualizar este análisis en tiempo real.'
-      : `Score actual: ${pct}% — ${done} de ${total} ítems completados, ${unchecked.length} riesgo${unchecked.length !== 1 ? 's' : ''} identificado${unchecked.length !== 1 ? 's' : ''}.`;
-
-    if (unchecked.length === 0) {
-      listEl.innerHTML = '<div class="results-all-clear">✓ ¡Tu startup está bien cubierta! Sin riesgos identificados.</div>';
-    } else {
-      listEl.innerHTML = `<ul class="results-risk-list">${
-        unchecked.map(i => `<li><strong>${i.cat}</strong>${i.risk}</li>`).join('')
-      }</ul>`;
-    }
-  }
-
-  function verResultado(e) {
-    if (e) e.preventDefault();
-    const section = document.getElementById('resultados');
-    if (section) {
-      section.classList.add('visible');
-      setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    }
+    if (currentStep === 0) bindGate();
   }
 
   render();
-  update();
 </script>
 
 </body>
