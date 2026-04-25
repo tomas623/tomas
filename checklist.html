@@ -694,6 +694,72 @@
 
 <script>
   /* ============================================================
+   * CONFIG (rellenar antes de deploy)
+   * ============================================================ */
+  const LEAD_ENDPOINT   = 'REPLACE_ME';      // ej: https://formspree.io/f/xxxxxxx
+  const ANALYTICS_ID    = 'REPLACE_ME';      // GA4 measurement ID (G-XXXXXXXXXX)
+  const CALENDLY_URL    = 'REPLACE_ME';      // ej: https://calendly.com/legalpacers/30min
+  const WHATSAPP_NUMBER = '5491128774200';   // sin +, sin espacios
+  const SOURCE_NAME     = 'checklist-riesgo-legal';
+
+  const isConfigured = (v) => v && v !== 'REPLACE_ME';
+
+  /* ============================================================
+   * ANALYTICS (GA4) — se carga solo si ANALYTICS_ID está seteado
+   * ============================================================ */
+  function initAnalytics() {
+    if (!isConfigured(ANALYTICS_ID)) return;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtag/js?id=${ANALYTICS_ID}`;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function() { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', ANALYTICS_ID);
+  }
+
+  const _trackedOnce = new Set();
+  function track(event, props = {}) {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', event, props);
+    } else {
+      console.log('[track]', event, props);
+    }
+  }
+  function trackOnce(event, props = {}) {
+    if (_trackedOnce.has(event)) return;
+    _trackedOnce.add(event);
+    track(event, props);
+  }
+
+  /* ============================================================
+   * LEAD CAPTURE — POST al endpoint configurado (silencioso)
+   * ============================================================ */
+  async function postLead(payload) {
+    if (!isConfigured(LEAD_ENDPOINT)) {
+      console.log('[lead] LEAD_ENDPOINT no configurado, payload:', payload);
+      return;
+    }
+    try {
+      await fetch(LEAD_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn('[lead] POST falló:', err);
+    }
+  }
+
+  /* ============================================================
+   * URL BUILDERS
+   * ============================================================ */
+  function buildWhatsappUrl(text) {
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+  }
+
+  /* ============================================================
    * DATA — mismas categorías e ítems del checklist original
    * ============================================================ */
   const CATS = [
@@ -758,6 +824,9 @@
    * ============================================================ */
   function goNext() {
     if (currentStep >= 6) return;
+    if (currentStep >= 1 && currentStep <= 5) {
+      track('checklist_step_completed', { step: currentStep });
+    }
     direction = 'forward';
     currentStep++;
     render();
@@ -974,8 +1043,16 @@
   }
 
   function renderUnlockedResults(unchecked) {
-    const waText = `Hola! Hice el checklist de Legal Pacers. Mi score es ${calcScore()}% (${riskLevel(calcScore()).txt}). Quisiera agendar una llamada.`;
-    const waUrl  = `https://wa.me/5491128774200?text=${encodeURIComponent(waText)}`;
+    const pct      = calcScore();
+    const levelTxt = riskLevel(pct).txt;
+    const waText   = `Hola! Hice el checklist de Legal Pacers. Mi score es ${pct}% (${levelTxt}). Quisiera agendar una llamada.`;
+    const waUrl    = buildWhatsappUrl(waText);
+
+    // CTA primary: Calendly si está configurado, fallback a WhatsApp
+    const usingCalendly = isConfigured(CALENDLY_URL);
+    const primaryUrl    = usingCalendly ? CALENDLY_URL : waUrl;
+    const primaryEvent  = usingCalendly ? 'cta_calendly_clicked' : 'cta_whatsapp_clicked';
+    const trackProps    = `{score_pct:${pct},risk_level:'${levelTxt}'}`;
 
     const risksBlock = unchecked.length === 0
       ? `<div class="all-clear-card">✓ Sin riesgos identificados. Tu startup está bien cubierta.</div>`
@@ -1013,8 +1090,9 @@
         <h3>${ctaHeadline}</h3>
         <p>Validamos tus riesgos con un abogado experto en startups y te decimos qué priorizar — sin cargo.</p>
 
-        <!-- TODO Tanda 2: reemplazar href por CALENDLY_URL cuando esté configurado -->
-        <a href="${waUrl}" target="_blank" rel="noopener" class="btn-cta" data-cta="primary">
+        <a href="${primaryUrl}" target="_blank" rel="noopener" class="btn-cta"
+           data-cta="primary"
+           onclick="track('${primaryEvent}', ${trackProps})">
           <img src="tomas-avatar.jpg" alt="Tomas" class="cta-avatar"
                onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
           <span class="cta-avatar-fallback" aria-hidden="true">T</span>
@@ -1025,7 +1103,9 @@
         </a>
 
         <div>
-          <a href="${waUrl}" target="_blank" rel="noopener" class="cta-secondary" data-cta="whatsapp-secondary">
+          <a href="${waUrl}" target="_blank" rel="noopener" class="cta-secondary"
+             data-cta="whatsapp-secondary"
+             onclick="track('cta_whatsapp_clicked', ${trackProps})">
             O escribime por WhatsApp →
           </a>
         </div>
@@ -1049,11 +1129,25 @@
     errEl.textContent = '';
     leadCaptured = true;
 
+    // Persistencia + analytics (no bloqueante)
+    const pct       = calcScore();
+    const level     = riskLevel(pct);
+    const unchecked = ITEMS.filter(i => !checked.has(i.id));
+    postLead({
+      email,
+      score_pct:       pct,
+      risk_level:      level.txt,
+      unchecked_items: unchecked.map(i => i.id),
+      completed:       true,
+      source:          SOURCE_NAME,
+      timestamp:       new Date().toISOString(),
+    });
+    track('lead_captured', { score_pct: pct, risk_level: level.txt });
+
     // Reemplazo quirúrgico: solo se reemplaza el contenido bloqueado,
     // así el ring/quality-warning/h1 no se re-animan.
     const root = document.getElementById('resultsLockedRoot');
     if (root) {
-      const unchecked = ITEMS.filter(i => !checked.has(i.id));
       root.innerHTML = renderUnlockedResults(unchecked);
     }
   }
@@ -1075,9 +1169,12 @@
   function render() {
     const app = $app();
     if (currentStep >= 1 && currentStep <= 5) {
+      if (currentStep === 1) trackOnce('checklist_start');
       app.innerHTML = renderStep(currentStep);
       bindStep();
     } else {
+      const pct = calcScore();
+      trackOnce('checklist_completed', { score_pct: pct, risk_level: riskLevel(pct).txt });
       app.innerHTML = renderResults();
     }
 
@@ -1085,6 +1182,18 @@
     if (screen) {
       screen.classList.add(direction === 'back' ? 'screen-in-left' : 'screen-in-right');
     }
+  }
+
+  /* ============================================================
+   * INIT
+   * ============================================================ */
+  initAnalytics();
+
+  // Cablear WhatsApp flotante: usa WHATSAPP_NUMBER + tracking de click.
+  const _waFloat = document.querySelector('.whatsapp-float');
+  if (_waFloat) {
+    _waFloat.href = buildWhatsappUrl('Hola! Quisiera consultar sobre asesoría legal para mi startup');
+    _waFloat.addEventListener('click', () => track('cta_whatsapp_floating_clicked'));
   }
 
   render();
