@@ -572,26 +572,68 @@
     .btn-cta {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 1.1rem 2.25rem;
+      gap: 0.85rem;
+      padding: 0.7rem 1.6rem 0.7rem 0.7rem;
       border-radius: var(--radius-pill);
       background: var(--blue);
       color: #fff;
       font-family: 'Mundial', sans-serif;
-      font-weight: 900;
-      font-size: 1.05rem;
       text-decoration: none;
       border: none;
       cursor: pointer;
       transition: background var(--transition), transform var(--transition);
       animation: ctaPulse 2.2s ease-in-out infinite;
+      text-align: left;
+      max-width: 100%;
     }
     .btn-cta:hover {
       background: var(--blue-light);
       transform: translateY(-2px);
       color: #fff;
     }
+    .cta-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: rgba(255,255,255,0.18);
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .cta-avatar-fallback {
+      display: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.05rem;
+      color: #fff;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .cta-text { display: flex; flex-direction: column; line-height: 1.2; }
+    .cta-text strong { font-size: 1.02rem; font-weight: 900; }
+    .cta-text small {
+      font-size: 0.78rem;
+      opacity: 0.88;
+      font-weight: 400;
+      margin-top: 0.2rem;
+      line-height: 1.35;
+    }
+    .cta-secondary {
+      display: inline-block;
+      margin-top: 1rem;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.88rem;
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.3);
+      text-underline-offset: 3px;
+      transition: color var(--transition);
+    }
+    .cta-secondary:hover { color: #fff; }
 
     /* WHATSAPP FLOAT */
     .whatsapp-float {
@@ -662,6 +704,7 @@
     { id:'c2',  step:1, cat:'Constitución',          text:'La estructura es adecuada para recibir inversión extranjera',                      risk:'Inversores no pueden entrar a la sociedad',              weight:3 },
     { id:'c3',  step:1, cat:'Constitución',          text:'Existe un pacto de socios / SHA firmado',                                          risk:'Parálisis total de la empresa por falta de reglas claras entre socios.', weight:5 },
     { id:'c4',  step:1, cat:'Constitución',          text:'El vesting de los founders está documentado',                                      risk:'Un socio puede irse con equity sin haber trabajado',     weight:5 },
+    { id:'c5',  step:1, cat:'Constitución',          text:'Las cuentas bancarias y tarjetas están a nombre de la sociedad (no del founder)',  risk:'Confusión patrimonial: el velo societario se cae en juicio.', weight:3 },
     { id:'ip1', step:2, cat:'Propiedad Intelectual', text:'El código y la marca están a nombre de la empresa (no del founder)',               risk:'Tu producto legalmente no te pertenece; construís sobre arena.', weight:5 },
     { id:'ip2', step:2, cat:'Propiedad Intelectual', text:'Los contratos con freelancers/empleados incluyen cesión de IP',                    risk:'IP de terceros dentro de tu producto',                   weight:3 },
     { id:'ip3', step:2, cat:'Propiedad Intelectual', text:'La marca está registrada o en proceso',                                            risk:'Terceros pueden usar tu marca sin consecuencias',        weight:2 },
@@ -673,8 +716,12 @@
     { id:'l1',  step:4, cat:'Laboral y Contratos',   text:'Los empleados y contratistas tienen contratos firmados',                           risk:'Pasivo laboral oculto que aparece al crecer',            weight:2 },
     { id:'l2',  step:4, cat:'Laboral y Contratos',   text:'Los contratos con clientes incluyen cláusulas de limitación de responsabilidad',   risk:'Responsabilidad ilimitada ante cualquier incidente',     weight:3 },
     { id:'l3',  step:4, cat:'Laboral y Contratos',   text:'Los NDAs con partners y empleados están vigentes',                                 risk:'Filtración de información sin consecuencias legales',    weight:2 },
+    { id:'l4',  step:4, cat:'Laboral y Contratos',   text:'La diferencia entre empleados y contratistas (monotributistas) está bien delimitada', risk:'Reclasificación laboral: contingencia oculta que estalla al crecer o vender.', weight:5 },
+    { id:'l5',  step:4, cat:'Laboral y Contratos',   text:'Existe un plan de respuesta a incidentes de datos / brechas',                       risk:'Multas LPDP/GDPR + daño reputacional ante un breach.',   weight:2 },
     { id:'i1',  step:5, cat:'Inversión',             text:'Tenés un cap table actualizado y documentado',                                     risk:'Inversores rechazarán tu cap table por falta de transparencia. Ronda seed bloqueada.', weight:5 },
     { id:'i2',  step:5, cat:'Inversión',             text:'Entendés la diferencia entre SAFE, convertible note y equity round',               risk:'Dilución inesperada en tu próxima ronda',                weight:2 },
+    { id:'i3',  step:5, cat:'Inversión',             text:'Tenés un plan de stock options (ESOP) para empleados clave documentado',            risk:'Pérdida de talento clave + dilución desordenada al regularizar.', weight:3 },
+    { id:'i4',  step:5, cat:'Inversión',             text:'Las cláusulas de la última ronda (liquidation preferences, drag/tag along) fueron revisadas', risk:'Founders pueden quedarse con cero en un exit por liquidation preferences mal negociadas.', weight:5 },
   ];
 
   /* ============================================================
@@ -895,10 +942,11 @@
   }
 
   function riskLevel(pct) {
-    if (pct < 30) return { cls: 'critical', txt: 'Riesgo Crítico',  color: '#E63946' };
-    if (pct < 60) return { cls: 'high',     txt: 'Riesgo Alto',     color: '#F4A438' };
-    if (pct < 80) return { cls: 'medium',   txt: 'Riesgo Medio',    color: '#3B8EFF' };
-    return                 { cls: 'low',      txt: 'Bien protegido', color: '#2CB67D' };
+    if (pct < 30) return { cls: 'critical', txt: 'Riesgo Crítico',          color: '#E63946' };
+    if (pct < 60) return { cls: 'high',     txt: 'Riesgo Alto',             color: '#F4A438' };
+    if (pct < 80) return { cls: 'medium',   txt: 'Riesgo Medio',            color: '#3B8EFF' };
+    if (pct < 95) return { cls: 'medium',   txt: 'Razonablemente cubierto', color: '#3B8EFF' };
+    return                 { cls: 'low',      txt: 'Bien protegido',          color: '#2CB67D' };
   }
 
   /* ============================================================
@@ -987,10 +1035,24 @@
 
           <div class="cta-box">
             <h3>${ctaHeadline}</h3>
-            <p>Validá punto por punto con un abogado experto en startups. Te decimos qué priorizar y cómo resolverlo con presupuesto cerrado.</p>
-            <a href="${waUrl}" target="_blank" rel="noopener" class="btn-cta">
-              Agendar Validación de Riesgos (30 min sin cargo) →
+            <p>Validamos tus riesgos con un abogado experto en startups y te decimos qué priorizar — sin cargo.</p>
+
+            <!-- TODO Tanda 2: reemplazar href por CALENDLY_URL cuando esté configurado -->
+            <a href="${waUrl}" target="_blank" rel="noopener" class="btn-cta" data-cta="primary">
+              <img src="tomas-avatar.jpg" alt="Tomas" class="cta-avatar"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+              <span class="cta-avatar-fallback" aria-hidden="true">T</span>
+              <span class="cta-text">
+                <strong>Agendá 30 min con Tomas</strong>
+                <small>Validamos tus riesgos y te decimos qué priorizar — sin cargo</small>
+              </span>
             </a>
+
+            <div>
+              <a href="${waUrl}" target="_blank" rel="noopener" class="cta-secondary" data-cta="whatsapp-secondary">
+                O escribime por WhatsApp →
+              </a>
+            </div>
           </div>
         </div>
       </div>
