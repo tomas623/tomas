@@ -97,48 +97,7 @@
     .btn-ghost:hover { color: var(--navy); transform: translateY(-2px); }
     .btn-full { width: 100%; }
 
-    /* SCREEN 0 — GATE */
-    .gate {
-      flex: 1;
-      min-height: 100vh;
-      background: var(--navy);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1rem;
-    }
-    .gate-card {
-      background: var(--white);
-      border-radius: var(--radius-lg);
-      padding: 3rem 2.5rem;
-      max-width: 480px;
-      width: 100%;
-      box-shadow: var(--shadow-lg);
-      text-align: center;
-    }
-    .gate-logo { margin-bottom: 1.75rem; }
-    .gate-logo img { height: 42px; width: auto; }
-    .gate-logo .logo-text {
-      font-size: 1.3rem;
-      color: var(--navy);
-      font-weight: 900;
-      display: none;
-    }
-    .gate-card h1 {
-      font-size: 1.65rem;
-      font-weight: 900;
-      color: var(--navy);
-      line-height: 1.2;
-      margin-bottom: 0.75rem;
-    }
-    .gate-card h1 span { color: var(--blue); }
-    .gate-card .gate-subtitle {
-      color: var(--gray-500);
-      font-size: 0.95rem;
-      margin-bottom: 2rem;
-      line-height: 1.55;
-    }
-    .gate-form { display: flex; flex-direction: column; gap: 0.85rem; }
+    /* SHARED FORM INPUTS */
     .input-field {
       padding: 0.95rem 1.1rem;
       border: 1.5px solid var(--gray-100);
@@ -485,7 +444,7 @@
       animation: fadeUp 600ms 900ms both;
     }
 
-    .risks-block { animation: fadeUp 600ms 1000ms both; }
+    .risks-block { animation: fadeUp 500ms both; }
     .risks-block h3 {
       font-size: 0.8rem;
       font-weight: 700;
@@ -529,7 +488,7 @@
       font-weight: 700;
       font-size: 1.05rem;
       margin-bottom: 2rem;
-      animation: fadeUp 600ms 1000ms both;
+      animation: fadeUp 500ms both;
     }
 
     .disclaimer-box {
@@ -541,9 +500,57 @@
       line-height: 1.6;
       margin-bottom: 2.5rem;
       color: rgba(255,255,255,0.85);
-      animation: fadeUp 600ms 1100ms both;
+      animation: fadeUp 500ms 100ms both;
     }
     .disclaimer-box strong { color: var(--amber); }
+
+    /* RESULTS GATE (mini-form que oculta riesgos + CTA) */
+    .results-gate {
+      background: var(--white);
+      color: var(--gray-700);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2rem;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+      animation: fadeUp 600ms 1000ms both;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .results-gate-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .results-gate h3 {
+      color: var(--navy);
+      font-size: 1.2rem;
+      font-weight: 900;
+      line-height: 1.3;
+      margin-bottom: 0.65rem;
+    }
+    .results-gate p {
+      color: var(--gray-500);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+    .results-gate-form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .results-gate-legal {
+      font-size: 0.75rem;
+      color: var(--gray-300);
+      margin-top: 1rem;
+    }
+
+    .email-confirmation {
+      background: rgba(44,182,125,0.12);
+      border: 1px solid rgba(44,182,125,0.3);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1.1rem;
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 1.5rem;
+      animation: fadeUp 500ms both;
+    }
+    .email-confirmation strong { color: #6fd5a7; font-weight: 700; }
 
     .cta-box {
       background: linear-gradient(135deg, rgba(1,111,251,0.18), rgba(1,111,251,0.08));
@@ -551,7 +558,7 @@
       border-radius: var(--radius-lg);
       padding: 2.25rem 2rem;
       text-align: center;
-      animation: fadeUp 600ms 1200ms both;
+      animation: fadeUp 600ms 200ms both;
       box-shadow: 0 8px 32px rgba(1,111,251,0.15);
     }
     .cta-box h3 {
@@ -658,8 +665,6 @@
 
     /* MOBILE */
     @media (max-width: 600px) {
-      .gate-card { padding: 2.25rem 1.5rem; }
-      .gate-card h1 { font-size: 1.4rem; }
       .step-body { padding: 1.75rem 1rem 1.5rem; }
       .step-title { margin-bottom: 1.5rem; }
       .step-title-icon { width: 40px; height: 40px; font-size: 1.15rem; }
@@ -727,10 +732,11 @@
   /* ============================================================
    * STATE
    * ============================================================ */
-  let currentStep = 0;                    // 0 = gate, 1-5 = pasos, 6 = resultados
-  let userData    = { name: '', email: '' };
-  let direction   = 'forward';            // 'forward' | 'back' — dirección del slide
-  const checked   = new Set();
+  let currentStep   = 1;                  // 1-5 = pasos, 6 = resultados (ya no hay paso 0)
+  let userData      = { name: '', email: '' };
+  let leadCaptured  = false;              // true cuando el usuario completó el form en pantalla 6
+  let direction     = 'forward';          // 'forward' | 'back' — dirección del slide
+  const checked     = new Set();
 
   /* ============================================================
    * HELPERS
@@ -759,87 +765,13 @@
   }
 
   function goBack() {
-    if (currentStep <= 0) return;
+    if (currentStep <= 1) return;
     direction = 'back';
     currentStep--;
     render();
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
-  /* ============================================================
-   * SCREEN 0 — GATE (nombre + email)
-   * ============================================================ */
-  function renderGate() {
-    return `
-      <div class="gate">
-        <div class="gate-card">
-          <div class="gate-logo">
-            <img src="legalpacers-logos-01.png" alt="Legal Pacers"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'">
-            <span class="logo-text">Legal<strong>Pacers</strong></span>
-          </div>
-
-          <h1>Tu <span>diagnóstico legal</span> en 2 minutos</h1>
-          <p class="gate-subtitle">
-            Ingresá tu email para validar tu identidad. Los resultados de este diagnóstico son
-            confidenciales y se utilizarán solo en caso para tu sesión de validación de riesgos
-            personalizada. En caso de usarse para muestro de datos, se usarán de forma de anónima.
-            No enviamos spam.
-          </p>
-
-          <form class="gate-form" id="gateForm" novalidate>
-            <input
-              type="text"
-              id="gateName"
-              class="input-field"
-              placeholder="Tu nombre"
-              autocomplete="given-name"
-              value="${escapeHtml(userData.name)}"
-              required>
-
-            <input
-              type="email"
-              id="gateEmail"
-              class="input-field"
-              placeholder="Tu email"
-              autocomplete="email"
-              value="${escapeHtml(userData.email)}"
-              required>
-
-            <div class="input-error" id="gateError"></div>
-
-            <button type="submit" class="btn btn-primary btn-full">
-              Empezar el diagnóstico →
-            </button>
-          </form>
-
-        </div>
-      </div>
-    `;
-  }
-
-  function bindGate() {
-    const form  = document.getElementById('gateForm');
-    const nameI = document.getElementById('gateName');
-    const mailI = document.getElementById('gateEmail');
-    const errEl = document.getElementById('gateError');
-
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name  = nameI.value.trim();
-      const email = mailI.value.trim();
-
-      if (!name) { errEl.textContent = 'Ingresá tu nombre.'; nameI.focus(); return; }
-      if (!isValidEmail(email)) { errEl.textContent = 'Ingresá un email válido.'; mailI.focus(); return; }
-
-      userData.name  = name;
-      userData.email = email;
-      errEl.textContent = '';
-      goNext();
-    });
-
-    setTimeout(() => nameI.focus(), 50);
-  }
 
   /* ============================================================
    * SCREENS 1-5 — STEP (categoría + items)
@@ -897,7 +829,9 @@
             <div class="items-list">${cards}</div>
 
             <div class="step-nav">
-              <button class="btn btn-ghost" onclick="goBack()">← Anterior</button>
+              ${step > 1
+                ? '<button class="btn btn-ghost" onclick="goBack()">← Anterior</button>'
+                : '<span></span>'}
               <button class="btn btn-primary" onclick="goNext()">
                 ${isLast ? 'Ver resultados →' : 'Siguiente →'}
               </button>
@@ -959,29 +893,9 @@
     const unchecked = ITEMS.filter(i => !checked.has(i.id));
     const firstName = (userData.name || '').trim().split(/\s+/)[0];
 
-    const waText = `Hola! Hice el checklist de Legal Pacers. Mi score es ${pct}% (${level.txt}). Quisiera agendar una llamada.`;
-    const waUrl  = `https://wa.me/5491128774200?text=${encodeURIComponent(waText)}`;
-
     const subtitle = unchecked.length === 0
       ? '¡Tu startup está bien cubierta! No identificamos riesgos pendientes.'
       : `Identificamos ${unchecked.length} riesgo${unchecked.length !== 1 ? 's' : ''} pendiente${unchecked.length !== 1 ? 's' : ''} de resolver.`;
-
-    const risksBlock = unchecked.length === 0
-      ? `<div class="all-clear-card">✓ Sin riesgos identificados. Tu startup está bien cubierta.</div>`
-      : `<div class="risks-block">
-           <h3>Riesgos identificados (${unchecked.length})</h3>
-           <ul class="risks-list">
-             ${unchecked.map(i => `
-               <li>
-                 <strong>${escapeHtml(i.cat)}</strong>
-                 ${escapeHtml(i.risk)}
-               </li>`).join('')}
-           </ul>
-         </div>`;
-
-    const ctaHeadline = unchecked.length === 0
-      ? '¿Querés una revisión profesional?'
-      : '¿Querés cerrar estos riesgos?';
 
     return `
       <div class="results">
@@ -1024,44 +938,131 @@
           </h1>
           <p class="results-subtitle">${subtitle}</p>
 
-          ${risksBlock}
-
-          <div class="disclaimer-box">
-            <strong>Importante:</strong> Este score es orientativo. Un puntaje alto no garantiza
-            protección completa — lo que importa es la calidad y solidez de cada documento.
-            Documentos mal redactados o sin un asesor que los respalde pueden no protegerte
-            cuando más lo necesitás.
-          </div>
-
-          <div class="cta-box">
-            <h3>${ctaHeadline}</h3>
-            <p>Validamos tus riesgos con un abogado experto en startups y te decimos qué priorizar — sin cargo.</p>
-
-            <!-- TODO Tanda 2: reemplazar href por CALENDLY_URL cuando esté configurado -->
-            <a href="${waUrl}" target="_blank" rel="noopener" class="btn-cta" data-cta="primary">
-              <img src="tomas-avatar.jpg" alt="Tomas" class="cta-avatar"
-                   onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
-              <span class="cta-avatar-fallback" aria-hidden="true">T</span>
-              <span class="cta-text">
-                <strong>Agendá 30 min con Tomas</strong>
-                <small>Validamos tus riesgos y te decimos qué priorizar — sin cargo</small>
-              </span>
-            </a>
-
-            <div>
-              <a href="${waUrl}" target="_blank" rel="noopener" class="cta-secondary" data-cta="whatsapp-secondary">
-                O escribime por WhatsApp →
-              </a>
-            </div>
+          <div id="resultsLockedRoot">
+            ${leadCaptured ? renderUnlockedResults(unchecked) : renderResultsGate(unchecked.length)}
           </div>
         </div>
       </div>
     `;
   }
 
+  function renderResultsGate(unckdCount) {
+    const headline = unckdCount === 0
+      ? 'Ingresá tu email para recibir tu reporte completo'
+      : `Ingresá tu email para ver los ${unckdCount} riesgos detectados`;
+    const sub = unckdCount === 0
+      ? 'Te enviamos una copia del diagnóstico y los próximos pasos recomendados.'
+      : `Te mostramos cada riesgo, su impacto, y te enviamos una copia del reporte por email.`;
+
+    return `
+      <div class="results-gate">
+        <div class="results-gate-icon" aria-hidden="true">🔒</div>
+        <h3>${headline}</h3>
+        <p>${sub}</p>
+        <form class="results-gate-form" id="resultsGateForm" onsubmit="captureResultsLead(event)" novalidate>
+          <input type="email" id="rgEmail" class="input-field"
+                 placeholder="tu@email.com" autocomplete="email"
+                 value="${escapeHtml(userData.email)}" required>
+          <div class="input-error" id="rgError"></div>
+          <button type="submit" class="btn btn-primary btn-full">
+            ${unckdCount === 0 ? 'Recibir mi reporte →' : `Ver mis ${unckdCount} riesgos →`}
+          </button>
+        </form>
+        <p class="results-gate-legal">Confidencial. No enviamos spam.</p>
+      </div>
+    `;
+  }
+
+  function renderUnlockedResults(unchecked) {
+    const waText = `Hola! Hice el checklist de Legal Pacers. Mi score es ${calcScore()}% (${riskLevel(calcScore()).txt}). Quisiera agendar una llamada.`;
+    const waUrl  = `https://wa.me/5491128774200?text=${encodeURIComponent(waText)}`;
+
+    const risksBlock = unchecked.length === 0
+      ? `<div class="all-clear-card">✓ Sin riesgos identificados. Tu startup está bien cubierta.</div>`
+      : `<div class="risks-block">
+           <h3>Riesgos identificados (${unchecked.length})</h3>
+           <ul class="risks-list">
+             ${unchecked.map(i => `
+               <li>
+                 <strong>${escapeHtml(i.cat)}</strong>
+                 ${escapeHtml(i.risk)}
+               </li>`).join('')}
+           </ul>
+         </div>`;
+
+    const ctaHeadline = unchecked.length === 0
+      ? '¿Querés una revisión profesional?'
+      : '¿Querés cerrar estos riesgos?';
+
+    const emailMsg = userData.email
+      ? `<p class="email-confirmation">📧 Te enviamos también una copia del reporte a <strong>${escapeHtml(userData.email)}</strong>.</p>`
+      : '';
+
+    return `
+      ${emailMsg}
+      ${risksBlock}
+
+      <div class="disclaimer-box">
+        <strong>Importante:</strong> Este score es orientativo. Un puntaje alto no garantiza
+        protección completa — lo que importa es la calidad y solidez de cada documento.
+        Documentos mal redactados o sin un asesor que los respalde pueden no protegerte
+        cuando más lo necesitás.
+      </div>
+
+      <div class="cta-box">
+        <h3>${ctaHeadline}</h3>
+        <p>Validamos tus riesgos con un abogado experto en startups y te decimos qué priorizar — sin cargo.</p>
+
+        <!-- TODO Tanda 2: reemplazar href por CALENDLY_URL cuando esté configurado -->
+        <a href="${waUrl}" target="_blank" rel="noopener" class="btn-cta" data-cta="primary">
+          <img src="tomas-avatar.jpg" alt="Tomas" class="cta-avatar"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'">
+          <span class="cta-avatar-fallback" aria-hidden="true">T</span>
+          <span class="cta-text">
+            <strong>Agendá 30 min con Tomas</strong>
+            <small>Validamos tus riesgos y te decimos qué priorizar — sin cargo</small>
+          </span>
+        </a>
+
+        <div>
+          <a href="${waUrl}" target="_blank" rel="noopener" class="cta-secondary" data-cta="whatsapp-secondary">
+            O escribime por WhatsApp →
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  function captureResultsLead(e) {
+    e.preventDefault();
+    const mailI = document.getElementById('rgEmail');
+    const errEl = document.getElementById('rgError');
+    const email = mailI.value.trim();
+
+    if (!isValidEmail(email)) {
+      errEl.textContent = 'Ingresá un email válido.';
+      mailI.focus();
+      return;
+    }
+
+    userData.email = email;
+    errEl.textContent = '';
+    leadCaptured = true;
+
+    // Reemplazo quirúrgico: solo se reemplaza el contenido bloqueado,
+    // así el ring/quality-warning/h1 no se re-animan.
+    const root = document.getElementById('resultsLockedRoot');
+    if (root) {
+      const unchecked = ITEMS.filter(i => !checked.has(i.id));
+      root.innerHTML = renderUnlockedResults(unchecked);
+    }
+  }
+
   function restart() {
     if (!window.confirm('¿Rehacer el checklist? Se perderán las respuestas actuales.')) return;
     checked.clear();
+    leadCaptured = false;
+    userData = { name: '', email: '' };
     direction = 'back';
     currentStep = 1;
     render();
@@ -1073,10 +1074,7 @@
    * ============================================================ */
   function render() {
     const app = $app();
-    if (currentStep === 0) {
-      app.innerHTML = renderGate();
-      bindGate();
-    } else if (currentStep >= 1 && currentStep <= 5) {
+    if (currentStep >= 1 && currentStep <= 5) {
       app.innerHTML = renderStep(currentStep);
       bindStep();
     } else {
