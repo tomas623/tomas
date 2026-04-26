@@ -1,16 +1,21 @@
 """
 One-shot migration: SQLite (marcas.db) -> Railway PostgreSQL.
 
+Imports the ORM models from database.py so the column types translate
+correctly per dialect (DATETIME on SQLite, TIMESTAMP on Postgres).
+
 Usage:
     python migrate_to_postgres.py "postgresql://user:pass@host:port/dbname"
-
-Reads the schema directly from marcas.db and creates the same tables in
-Postgres. Drops any existing tables in Postgres first (destination is
-expected to be empty or stale from a previous run).
 """
+import os
 import sys
 import time
-from sqlalchemy import create_engine, MetaData
+
+# Ensure database.py reads from local SQLite, not from any DATABASE_URL env var
+os.environ.pop("DATABASE_URL", None)
+
+from sqlalchemy import create_engine, select, func
+from database import Base  # noqa: E402  -- imports all model classes
 
 
 SQLITE_URL = "sqlite:///marcas.db"
@@ -27,24 +32,22 @@ def main(pg_url: str) -> None:
     src = create_engine(SQLITE_URL)
     dst = create_engine(pg_url)
 
-    meta = MetaData()
-    meta.reflect(bind=src)
-    print(f"Tables found: {[t.name for t in meta.sorted_tables]}")
+    print(f"Tables: {[t.name for t in Base.metadata.sorted_tables]}")
 
     print("\nDropping existing tables in Postgres (if any)...")
-    meta.drop_all(bind=dst, checkfirst=True)
+    Base.metadata.drop_all(bind=dst, checkfirst=True)
 
     print("Creating tables in Postgres...")
-    meta.create_all(bind=dst)
+    Base.metadata.create_all(bind=dst)
 
     total_start = time.time()
 
     with src.connect() as src_conn:
-        for table in meta.sorted_tables:
+        for table in Base.metadata.sorted_tables:
             count = src_conn.execute(
-                table.count() if hasattr(table, "count")
-                else __import__("sqlalchemy").select(__import__("sqlalchemy").func.count()).select_from(table)
-            ).scalar()
+                select(func.count()).select_from(table)
+            ).scalar() or 0
+
             if not count:
                 print(f"  {table.name}: 0 rows (skip)")
                 continue
@@ -53,7 +56,9 @@ def main(pg_url: str) -> None:
             t0 = time.time()
             copied = 0
 
-            result = src_conn.execution_options(stream_results=True).execute(table.select())
+            result = src_conn.execution_options(stream_results=True).execute(
+                table.select()
+            )
             batch = []
             with dst.begin() as dst_conn:
                 for row in result:
