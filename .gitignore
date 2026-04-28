@@ -29,3 +29,6 @@ Thumbs.db
 import.log
 import.pid
 import_full.log
+
+# Logs del importador (rotan por fecha)
+logs/

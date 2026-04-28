@@ -6,10 +6,10 @@ Uses SQLAlchemy with PostgreSQL (Railway) or SQLite (local dev).
 import os
 from datetime import datetime
 from sqlalchemy import (
-    create_engine, Column, Integer, String, Date, DateTime,
-    Text, Index, UniqueConstraint, Boolean, func, text
+    create_engine, Column, Integer, String, Date, DateTime, Float,
+    Text, Index, UniqueConstraint, Boolean, ForeignKey, JSON, func, text
 )
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.orm import DeclarativeBase, Session, relationship
 from sqlalchemy.pool import NullPool
 import logging
 
@@ -103,6 +103,160 @@ class ImportState(Base):
     last_error = Column(Text)
 
 
+# ─────────────────────────────────────────────────────────────────────
+# Modelos del portal de marcas (clientes, consultas, pagos, vigilancia)
+# ─────────────────────────────────────────────────────────────────────
+
+
+class User(Base):
+    """Cliente registrado del portal."""
+
+    __tablename__ = "users"
+
+    id            = Column(Integer, primary_key=True, autoincrement=True)
+    email         = Column(String(200), unique=True, nullable=False, index=True)
+    password_hash = Column(String(200))                        # bcrypt; null si solo magic-link
+    nombre        = Column(String(200))
+    telefono      = Column(String(40))
+    email_verified = Column(Boolean, default=False)
+    is_admin      = Column(Boolean, default=False)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+    last_login_at = Column(DateTime)
+
+
+class MagicLinkToken(Base):
+    """Token de login sin contraseña (magic link enviado por email)."""
+
+    __tablename__ = "magic_link_tokens"
+
+    id         = Column(Integer, primary_key=True, autoincrement=True)
+    email      = Column(String(200), nullable=False, index=True)
+    token      = Column(String(80), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used_at    = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Lead(Base):
+    """Lead capturado en consulta gratuita o formulario de contacto."""
+
+    __tablename__ = "leads"
+
+    id          = Column(Integer, primary_key=True, autoincrement=True)
+    email       = Column(String(200), nullable=False, index=True)
+    nombre      = Column(String(200))
+    telefono    = Column(String(40))
+    marca       = Column(String(300))
+    descripcion = Column(Text)
+    clases      = Column(JSON)             # lista de clases consultadas
+    fuente      = Column(String(40))       # 'consulta_gratuita', 'cotizar_registro', 'contacto'
+    search_id   = Column(String(80))       # vincula al cache de búsqueda en memoria
+    nurtured_step = Column(Integer, default=0)   # último email de nurturing enviado (0/1/2/3)
+    nurtured_at = Column(DateTime)
+    created_at  = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Consulta(Base):
+    """Búsqueda realizada (gratuita o paga)."""
+
+    __tablename__ = "consultas"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    user_id         = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    email           = Column(String(200), index=True)
+    marca           = Column(String(300), nullable=False)
+    descripcion     = Column(Text)
+    clases          = Column(JSON)               # [35, 42]
+    nivel           = Column(String(20), default="gratuita")   # 'gratuita' | 'completa'
+    diagnostico     = Column(String(40))         # 'viable' | 'viable_con_ajustes' | 'riesgo_alto'
+    pre_analisis_ia = Column(Text)               # texto generado por Claude
+    resultados      = Column(JSON)               # lista completa de coincidencias con score
+    pago_id         = Column(Integer, ForeignKey("pagos.id"), nullable=True)
+    paid            = Column(Boolean, default=False)
+    created_at      = Column(DateTime, default=datetime.utcnow, index=True)
+    viewed_at       = Column(DateTime)
+
+
+class Pago(Base):
+    """Registro de pago vía MercadoPago (único o suscripción)."""
+
+    __tablename__ = "pagos"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    user_id         = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    email           = Column(String(200), index=True)
+    tipo            = Column(String(40), nullable=False)
+    # 'consulta_completa' | 'registro' | 'vigilancia_marca' | 'vigilancia_portfolio'
+    monto           = Column(Float, nullable=False)
+    moneda          = Column(String(10), default="ARS")
+    mp_preference_id   = Column(String(80))
+    mp_payment_id      = Column(String(80), index=True)
+    mp_subscription_id = Column(String(80), index=True)
+    status          = Column(String(20), default="pending")
+    # 'pending' | 'approved' | 'rejected' | 'cancelled' | 'refunded'
+    metadata_json   = Column(JSON)
+    created_at      = Column(DateTime, default=datetime.utcnow, index=True)
+    paid_at         = Column(DateTime)
+
+
+class MarcaCliente(Base):
+    """Marca propia del cliente (registrada por LegalPacers o ya existente)."""
+
+    __tablename__ = "marcas_cliente"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    user_id         = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    denominacion    = Column(String(300), nullable=False)
+    clase           = Column(Integer)
+    acta            = Column(String(20))
+    titular         = Column(String(300))
+    estado          = Column(String(80))
+    fecha_solicitud   = Column(Date)
+    fecha_concesion   = Column(Date)
+    fecha_vencimiento = Column(Date)
+    notas           = Column(Text)
+    created_at      = Column(DateTime, default=datetime.utcnow)
+
+
+class SuscripcionVigilancia(Base):
+    """Suscripción mensual de vigilancia sobre una marca o portfolio."""
+
+    __tablename__ = "suscripciones_vigilancia"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    user_id         = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    marca_cliente_id = Column(Integer, ForeignKey("marcas_cliente.id"), nullable=True)
+    tipo            = Column(String(20), default="marca")    # 'marca' | 'portfolio'
+    status          = Column(String(20), default="active")   # 'active' | 'paused' | 'cancelled'
+    monto           = Column(Float, nullable=False)
+    mp_subscription_id = Column(String(80), index=True)
+    activated_at    = Column(DateTime, default=datetime.utcnow)
+    paused_at       = Column(DateTime)
+    cancelled_at    = Column(DateTime)
+    next_check_at   = Column(DateTime)
+
+
+class AlertaVigilancia(Base):
+    """Alerta de coincidencia detectada en boletín nuevo."""
+
+    __tablename__ = "alertas_vigilancia"
+
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    user_id         = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    suscripcion_id  = Column(Integer, ForeignKey("suscripciones_vigilancia.id"))
+    marca_cliente_id = Column(Integer, ForeignKey("marcas_cliente.id"))
+    marca_nueva_id  = Column(Integer, ForeignKey("marcas.id"))
+    marca_nueva_acta         = Column(String(20))
+    marca_nueva_denominacion = Column(String(300))
+    marca_nueva_clase        = Column(Integer)
+    marca_nueva_titular      = Column(String(300))
+    score           = Column(Float)
+    nivel           = Column(String(20))            # 'alto' | 'medio' | 'bajo'
+    boletin_num     = Column(Integer)
+    email_sent_at   = Column(DateTime)
+    created_at      = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 def get_import_state() -> dict:
     try:
         with get_session() as s:
@@ -145,6 +299,8 @@ def init_db():
     # Safe column migrations — only adds missing columns, never drops anything
     if engine.dialect.name == "postgresql":
         migrations = [
+            # extensión trigramas para búsqueda rápida en 300k filas
+            "CREATE EXTENSION IF NOT EXISTS pg_trgm",
             "ALTER TABLE boletin_log ADD COLUMN IF NOT EXISTS error_msg TEXT",
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS estado_code VARCHAR(20) DEFAULT 'tramite'",
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS agente VARCHAR(200)",
@@ -163,6 +319,11 @@ def init_db():
                 ALTER TABLE marcas ADD CONSTRAINT uq_acta_clase UNIQUE (acta, clase);
               END IF;
             END $$""",
+            # índices de performance para 300k registros + similitud
+            "CREATE INDEX IF NOT EXISTS ix_marcas_denominacion_trgm "
+            "ON marcas USING GIN (denominacion gin_trgm_ops)",
+            "CREATE INDEX IF NOT EXISTS ix_marcas_clase ON marcas (clase)",
+            "CREATE INDEX IF NOT EXISTS ix_marcas_estado_code ON marcas (estado_code)",
         ]
         with engine.connect() as conn:
             for sql in migrations:
