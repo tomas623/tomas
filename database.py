@@ -414,30 +414,19 @@ def bump_user_search(email: str):
 
 def verificar_denominacion(term: str, clase: int, fuzzy_threshold: int = 80,
                            limit_similares: int = 100) -> dict:
-    """
-    Check availability of a trademark denomination in a given Nice class.
+    """Check availability of a trademark denomination in a given Nice class.
 
-    Returns:
-      {
-        "term": str,
-        "term_norm": str,
-        "clase": int,
-        "exactas": [dict, ...],
-        "similares": [dict, ...],        # not exact, ordered by ratio desc
-        "similares_count": int,
-        "disponible": bool,
-      }
+    Matches when the term equals the full normalized denomination OR appears
+    as one of its words (handles parser-concatenated rows like "ADIDAS AG X").
+    Similar matches use partial_ratio so substrings still score high.
     """
     try:
         from rapidfuzz import fuzz
-    except ImportError:  # soft fallback if rapidfuzz isn't installed yet
+    except ImportError:
         fuzz = None
 
     term_norm = _normalize(term)
     clase = int(clase)
-
-    exactas: list[dict] = []
-    similares: list[dict] = []
 
     if not term_norm:
         return {
@@ -446,39 +435,36 @@ def verificar_denominacion(term: str, clase: int, fuzzy_threshold: int = 80,
             "disponible": False,
         }
 
-    first_char = term_norm[0]
-    min_len = max(1, len(term_norm) - 3)
-    max_len = len(term_norm) + 3
+    exactas: list[dict] = []
+    similares: list[dict] = []
+    seen = set()
 
     with get_session() as s:
-        # Candidate set: same class, similar length. We filter first-letter in Python
-        # because first-char-of-normalized differs from first-char-of-raw (accents).
-        candidates = s.query(Marca).filter(
-            Marca.clase == clase,
-            func.length(Marca.denominacion) >= min_len,
-            func.length(Marca.denominacion) <= max_len,
-        ).limit(20000).all()
+        candidates = s.query(Marca).filter(Marca.clase == clase).limit(50000).all()
 
         for m in candidates:
             denom_norm = _normalize(m.denominacion or "")
             if not denom_norm:
                 continue
-
-            if denom_norm == term_norm:
-                exactas.append(m.to_dict())
+            key = (m.acta, m.clase)
+            if key in seen:
                 continue
 
-            if denom_norm[0] != first_char:
+            words = denom_norm.split()
+            if denom_norm == term_norm or term_norm in words:
+                exactas.append(m.to_dict())
+                seen.add(key)
                 continue
 
             if fuzz is None:
                 continue
 
-            ratio = fuzz.ratio(term_norm, denom_norm)
+            ratio = fuzz.partial_ratio(term_norm, denom_norm)
             if ratio >= fuzzy_threshold:
                 d = m.to_dict()
                 d["_ratio"] = int(ratio)
                 similares.append(d)
+                seen.add(key)
 
     similares.sort(key=lambda d: d.get("_ratio", 0), reverse=True)
     similares = similares[:limit_similares]
@@ -492,7 +478,6 @@ def verificar_denominacion(term: str, clase: int, fuzzy_threshold: int = 80,
         "similares_count": len(similares),
         "disponible": len(exactas) == 0,
     }
-
 
 def get_or_set_risk_cache(denom_norm: str, clase: int, compute_fn) -> dict:
     """
