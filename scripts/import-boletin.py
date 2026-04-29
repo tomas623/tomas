@@ -53,6 +53,10 @@ from database import (  # noqa: E402
 from bulk_importer import (  # noqa: E402
     import_new_only, bulk_import, detect_latest_bulletin,
 )
+from services.vigilancia import (  # noqa: E402
+    run_vigilancia_post_import, run_avisos_vencimiento,
+)
+from services.nurturing import run_lead_nurturing  # noqa: E402
 
 
 def setup_logging() -> Path:
@@ -158,10 +162,46 @@ def run(force_from: int | None, dry_run: bool) -> int:
         log.warning("Boletines con error (no detendrán el cron — se reintentan): %s",
                     ", ".join(str(b.numero) for b in boletines_error))
     log.info("Total marcas en DB ahora: %d (antes: %d)", total_after, total_before)
+
+    # Si se importó algo, correr vigilancia + lead nurturing + avisos de vencimiento.
+    # Estos jobs son rápidos (segundos) y son la razón por la que el cliente paga
+    # vigilancia: los queremos correr inmediatamente después de cada nuevo boletín.
+    if not dry_run and boletines_ok:
+        try:
+            log.info("Disparando job de vigilancia...")
+            v = run_vigilancia_post_import(window_hours=window_hours_for_vigilancia(boletines_ok))
+            log.info("Vigilancia: %d suscripciones, %d alertas creadas, %d emails enviados",
+                     v.suscripciones_revisadas, v.alertas_creadas, v.emails_enviados)
+        except Exception as e:
+            log.exception("Error en vigilancia (no bloquea el import): %s", e)
+
+        try:
+            log.info("Disparando lead nurturing...")
+            n = run_lead_nurturing()
+            log.info("Lead nurturing: %d emails enviados", n)
+        except Exception as e:
+            log.exception("Error en nurturing (no bloquea el import): %s", e)
+
+        try:
+            log.info("Disparando avisos de vencimiento...")
+            a = run_avisos_vencimiento()
+            log.info("Avisos de vencimiento: %d emails enviados", a)
+        except Exception as e:
+            log.exception("Error en avisos de vencimiento (no bloquea el import): %s", e)
+
     log.info("Fin: %s", datetime.now().isoformat(timespec="seconds"))
     log.info("=" * 60)
 
     return 0
+
+
+def window_hours_for_vigilancia(boletines_ok) -> int:
+    """Calcula la ventana de horas para la vigilancia.
+
+    Si la importación trajo varios boletines viejos (catch-up), igual la ventana
+    es ahora — los `imported_at` son recientes. 24h cubre cualquier corrida normal.
+    """
+    return 24
 
 
 def main() -> int:

@@ -15,7 +15,7 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, render_template_string, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from anthropic import Anthropic
@@ -36,6 +36,22 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-key-change-in-production")
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.getenv("FLASK_ENV", "development") == "production",
+    PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,   # 30 días
+)
+
+# Registrar blueprints del portal
+from routes.auth import bp as auth_bp
+from routes.marca import bp as marca_bp
+from routes.pagos import bp as pagos_bp
+from routes.dashboard import bp as dashboard_bp
+app.register_blueprint(auth_bp)
+app.register_blueprint(marca_bp)
+app.register_blueprint(pagos_bp)
+app.register_blueprint(dashboard_bp)
 
 # Init DB on startup
 try:
@@ -218,8 +234,20 @@ def save_lead(nombre: str, email: str, telefono: str, marca: str, descripcion: s
 
 @app.route("/")
 def index():
-    """Serve main SPA."""
+    """Landing nueva (Nivel 1 + plans + FAQ)."""
     return render_template("index.html")
+
+
+@app.route("/relevamiento")
+def relevamiento_legacy():
+    """Wizard de relevamiento de marcas (versión anterior). Conservada para enlaces existentes."""
+    return render_template("relevamiento.html")
+
+
+@app.route("/marca/consulta/<int:consulta_id>")
+def informe_consulta(consulta_id: int):
+    """Renderiza la página de informe (Nivel 2). Si todavía no se pagó, muestra preview."""
+    return render_template("informe.html", consulta_id=consulta_id)
 
 @app.route("/api/verificar", methods=["POST"])
 def verificar_marca():
