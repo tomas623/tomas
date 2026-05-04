@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Informe de marca — LegalPacers</title>
+  <link rel="icon" href="/static/logo-icon.png">
+  <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --navy:#0D1B4B; --blue:#1B6EF3; --blue-dark:#1656c4;
+      --gray:#64748b; --gray-light:#e2e8f0; --bg:#F4F5F9;
+      --green:#16A34A; --yellow:#F59E0B; --red:#DC2626; --wa:#25D366;
+    }
+    body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--navy);
+         line-height:1.5;-webkit-font-smoothing:antialiased}
+    a{color:var(--blue);text-decoration:none}
+    a:hover{text-decoration:underline}
+    button{font-family:inherit;cursor:pointer;border:none}
+
+    header{background:#fff;border-bottom:1px solid var(--gray-light)}
+    .header-inner{max-width:1100px;margin:0 auto;padding:14px 24px;
+                  display:flex;align-items:center;justify-content:space-between}
+    .logo{font-weight:800;font-size:18px;letter-spacing:.5px}
+    .logo .accent{color:var(--blue)}
+
+    main{max-width:900px;margin:32px auto;padding:0 24px}
+
+    .breadcrumb{font-size:13px;color:var(--gray);margin-bottom:16px}
+    .breadcrumb a{color:var(--gray)}
+
+    .head-card{background:#fff;border-radius:14px;padding:28px;margin-bottom:20px;
+               box-shadow:0 1px 4px rgba(0,0,0,.05)}
+    .marca-h1{font-size:30px;font-weight:800;margin-bottom:6px}
+    .marca-sub{color:var(--gray);font-size:15px}
+    .badges{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+           border-radius:99px;font-size:12px;font-weight:600}
+    .badge.green{background:#DCFCE7;color:#16A34A}
+    .badge.yellow{background:#FEF9C3;color:#B45309}
+    .badge.red{background:#FEE2E2;color:#DC2626}
+    .badge.gray{background:#E5E7EB;color:#374151}
+    .badge.blue{background:#DBEAFE;color:#1B6EF3}
+
+    /* PAYWALL */
+    .paywall{background:linear-gradient(135deg,#1B6EF3 0%,#1656c4 100%);
+             color:#fff;border-radius:14px;padding:36px;margin-bottom:20px;text-align:center}
+    .paywall h2{font-size:24px;font-weight:800;margin-bottom:10px;color:#fff}
+    .paywall p{opacity:.92;margin-bottom:20px}
+    .paywall .price{font-size:40px;font-weight:800;margin:14px 0}
+    .paywall .price small{font-size:14px;font-weight:500;opacity:.85;display:block;margin-top:4px}
+    .paywall button{background:#fff;color:var(--blue);padding:14px 32px;border-radius:8px;
+                    font-weight:700;font-size:15px}
+    .paywall button:hover{transform:translateY(-1px)}
+    .paywall .features{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;
+                       max-width:480px;margin:20px auto 24px;text-align:left;font-size:14px}
+    @media(max-width:560px){.paywall .features{grid-template-columns:1fr}}
+    .paywall .features div::before{content:"✓ ";font-weight:800;margin-right:4px}
+
+    .preview-card{background:#fff;border-radius:14px;padding:24px;margin-bottom:20px;
+                  position:relative;overflow:hidden}
+    .preview-card::after{content:"";position:absolute;inset:0;background:linear-gradient(
+      transparent 60%, rgba(255,255,255,.95) 100%);pointer-events:none}
+    .preview-row{display:flex;justify-content:space-between;align-items:center;
+                 padding:14px 0;border-bottom:1px solid var(--gray-light)}
+    .preview-row:last-child{border:none}
+    .preview-blur{filter:blur(6px);user-select:none}
+
+    /* INFORME COMPLETO */
+    .panel{background:#fff;border-radius:14px;padding:28px;margin-bottom:20px;
+           box-shadow:0 1px 4px rgba(0,0,0,.05)}
+    .panel h2{font-size:20px;font-weight:800;margin-bottom:16px;display:flex;
+              align-items:center;gap:10px}
+    .panel h2 .num{background:var(--blue);color:#fff;width:28px;height:28px;
+                   border-radius:50%;display:inline-flex;align-items:center;
+                   justify-content:center;font-size:14px}
+
+    .diag-card{padding:20px;border-radius:10px;margin-bottom:8px}
+    .diag-card.viable{background:#ECFDF5;border:1px solid #A7F3D0}
+    .diag-card.viable_con_ajustes{background:#FFFBEB;border:1px solid #FCD34D}
+    .diag-card.riesgo_alto{background:#FEF2F2;border:1px solid #FCA5A5}
+    .diag-title{font-weight:700;font-size:18px;margin-bottom:6px}
+    .diag-desc{font-size:14px}
+
+    /* TABLA COINCIDENCIAS */
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    table th,table td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--gray-light)}
+    table th{font-size:12px;color:var(--gray);text-transform:uppercase;
+             font-weight:700;letter-spacing:.5px}
+    table tr:hover td{background:#F8FAFC}
+    .score-bar{display:inline-block;width:60px;height:6px;background:var(--gray-light);
+               border-radius:3px;overflow:hidden;vertical-align:middle;margin-right:8px}
+    .score-fill{height:100%;background:var(--blue)}
+    .score-fill.alto{background:var(--red)}
+    .score-fill.medio{background:var(--yellow)}
+
+    /* PRE-ANÁLISIS IA (markdown rendered) */
+    .ai-text{font-size:15px;line-height:1.7}
+    .ai-text h2{font-size:18px;color:var(--navy);margin:18px 0 8px;display:block;
+                background:none;padding:0}
+    .ai-text h2:first-child{margin-top:0}
+    .ai-text h3{font-size:16px;color:var(--blue);margin:14px 0 6px}
+    .ai-text p{margin-bottom:12px;color:#334155}
+    .ai-text ul,.ai-text ol{margin:8px 0 12px 22px;color:#334155}
+    .ai-text strong{color:var(--navy)}
+
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+    .btn{padding:12px 24px;border-radius:8px;font-weight:600;font-size:14px;
+         display:inline-block;text-align:center;cursor:pointer}
+    .btn-primary{background:var(--blue);color:#fff}
+    .btn-primary:hover{background:var(--blue-dark);text-decoration:none;color:#fff}
+    .btn-outline{background:#fff;color:var(--navy);border:1px solid var(--gray-light)}
+    .btn-outline:hover{border-color:var(--blue);color:var(--blue);text-decoration:none}
+
+    .empty-loading{text-align:center;padding:60px 20px;color:var(--gray)}
+    .spinner{width:32px;height:32px;border:3px solid var(--gray-light);
+             border-top-color:var(--blue);border-radius:50%;
+             animation:spin 1s linear infinite;margin:0 auto 12px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* WhatsApp FAB */
+    .wa-fab{position:fixed;bottom:24px;right:24px;background:var(--wa);color:#fff;
+            border-radius:99px;padding:14px 20px;box-shadow:0 4px 16px rgba(37,211,102,.4);
+            font-weight:600;font-size:14px;display:flex;align-items:center;gap:10px;z-index:50}
+    .wa-fab:hover{transform:translateY(-2px);text-decoration:none;color:#fff}
+    .wa-fab svg{width:20px;height:20px;fill:#fff}
+    @media(max-width:600px){.wa-fab span{display:none}.wa-fab{padding:14px}}
+
+    [x-cloak]{display:none!important}
+  </style>
+</head>
+<body x-data="informe({{ consulta_id }})" x-init="cargar()">
+
+<header>
+  <div class="header-inner">
+    <a href="/" class="logo">LEGAL<span class="accent">PACERS</span></a>
+    <a href="/dashboard" class="badge blue">Mi panel →</a>
+  </div>
+</header>
+
+<main>
+  <div class="breadcrumb">
+    <a href="/">Inicio</a> ›
+    <a href="/dashboard">Mi panel</a> ›
+    <span>Informe #{{ consulta_id }}</span>
+  </div>
+
+  <!-- Cargando -->
+  <div class="empty-loading" x-show="cargando" x-cloak>
+    <div class="spinner"></div>
+    <p>Generando tu informe…</p>
+  </div>
+
+  <!-- Error -->
+  <div class="panel" x-show="error" x-cloak>
+    <h2>No pudimos cargar el informe</h2>
+    <p x-text="error"></p>
+    <div class="actions">
+      <a href="/" class="btn btn-outline">Volver al inicio</a>
+    </div>
+  </div>
+
+  <!-- Estado pago pendiente desde MP redirect -->
+  <div class="panel" x-show="statusFromMP==='pending'" x-cloak
+       style="background:#FFFBEB;border:1px solid #FCD34D">
+    <h2>⏳ Pago pendiente</h2>
+    <p>Estamos esperando confirmación de MercadoPago. Recargá esta página en
+       1-2 minutos para ver tu informe.</p>
+  </div>
+  <div class="panel" x-show="statusFromMP==='failure'" x-cloak
+       style="background:#FEF2F2;border:1px solid #FCA5A5">
+    <h2>✕ Pago no completado</h2>
+    <p>Podés intentarlo de nuevo desde el botón de abajo o escribirnos por WhatsApp.</p>
+  </div>
+
+  <!-- HEADER del informe -->
+  <div class="head-card" x-show="data" x-cloak>
+    <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="marca-h1" x-text="data.marca"></div>
+        <div class="marca-sub" x-text="data.descripcion || '(sin descripción)'"></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">
+          Fecha del informe
+        </div>
+        <div style="font-weight:600" x-text="fmtDate(data.created_at)"></div>
+      </div>
+    </div>
+    <div class="badges">
+      <template x-for="c in (data.clases||[])">
+        <span class="badge blue">Clase <span x-text="c"></span></span>
+      </template>
+      <span class="badge" :class="data.paid?'green':'gray'"
+            x-text="data.paid?'Pagado':'Pendiente de pago'"></span>
+      <span class="badge" :class="diagBadge(data.diagnostico)" x-show="data.diagnostico"
+            x-text="diagLabel(data.diagnostico)"></span>
+    </div>
+  </div>
+
+  <!-- PAYWALL si no está pagado -->
+  <div class="paywall" x-show="data && !data.paid" x-cloak>
+    <h2>Desbloqueá el informe completo</h2>
+    <p>Estás viendo un preview. Pagá una sola vez y recibí el análisis completo en minutos.</p>
+    <div class="price">$<span x-text="(data && data.monto_pendiente || 25000).toLocaleString('es-AR')"></span>
+      <small>ARS · pago único</small>
+    </div>
+    <div class="features">
+      <div>+300k marcas analizadas</div>
+      <div>Análisis fonético español</div>
+      <div>Similitud conceptual con IA</div>
+      <div>Pre-análisis legal de abogado</div>
+      <div>Diagnóstico de viabilidad</div>
+      <div>Acceso permanente al informe</div>
+    </div>
+    <button @click="reintentarPago()" :disabled="reintentando">
+      <span x-show="!reintentando">Pagar y desbloquear →</span>
+      <span x-show="reintentando" x-cloak>Generando link…</span>
+    </button>
+  </div>
+
+  <!-- PREVIEW (cuando no pagó) -->
+  <div class="preview-card" x-show="data && !data.paid && data.preview && data.preview.length" x-cloak>
+    <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Vista previa de coincidencias</h2>
+    <template x-for="p in (data && data.preview || [])" :key="$id('p')">
+      <div class="preview-row">
+        <div>
+          <span class="preview-blur" x-text="p.denominacion"></span>
+          <span class="badge gray" style="margin-left:8px">Clase <span x-text="p.clase"></span></span>
+        </div>
+        <span class="badge" :class="p.nivel==='alto'?'red':p.nivel==='medio'?'yellow':'gray'"
+              x-text="(p.score*100).toFixed(0)+'% · '+p.nivel"></span>
+      </div>
+    </template>
+  </div>
+
+  <!-- INFORME COMPLETO (cuando pagó) -->
+  <template x-if="data && data.paid">
+    <div>
+      <!-- 1. Diagnóstico -->
+      <div class="panel">
+        <h2><span class="num">1</span> Diagnóstico de viabilidad</h2>
+        <div class="diag-card" :class="data.diagnostico">
+          <div class="diag-title" x-text="diagLabel(data.diagnostico)"></div>
+          <div class="diag-desc" x-text="diagDesc(data.diagnostico)"></div>
+        </div>
+      </div>
+
+      <!-- 2. Pre-análisis IA -->
+      <div class="panel" x-show="data.pre_analisis_ia">
+        <h2><span class="num">2</span> Pre-análisis legal</h2>
+        <div class="ai-text" x-html="renderMarkdown(data.pre_analisis_ia)"></div>
+      </div>
+
+      <!-- 3. Coincidencias -->
+      <div class="panel" x-show="data.resultados && data.resultados.length">
+        <h2><span class="num">3</span> Coincidencias detectadas
+          (<span x-text="data.resultados.length"></span>)
+        </h2>
+        <table>
+          <thead><tr>
+            <th>Marca</th><th>Clase</th><th>Estado</th>
+            <th>Titular</th><th>Score</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="r in data.resultados" :key="r.id">
+              <tr>
+                <td>
+                  <strong x-text="r.denominacion"></strong>
+                  <div style="font-size:12px;color:var(--gray)" x-text="'Acta '+r.acta"></div>
+                </td>
+                <td x-text="r.clase || '—'"></td>
+                <td><span class="badge gray" x-text="r.estado_code || '—'"></span></td>
+                <td style="font-size:13px" x-text="(r.titular||'').slice(0,40)"></td>
+                <td>
+                  <span class="score-bar">
+                    <span class="score-fill" :class="r.nivel"
+                          :style="`width:${(r.score*100).toFixed(0)}%`"></span>
+                  </span>
+                  <span x-text="(r.score*100).toFixed(0)+'%'"></span>
+                  <span class="badge" :class="r.nivel==='alto'?'red':r.nivel==='medio'?'yellow':'gray'"
+                        style="margin-left:4px;font-size:10px;padding:2px 6px"
+                        x-text="r.nivel"></span>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Sin coincidencias -->
+      <div class="panel" x-show="!data.resultados || !data.resultados.length"
+           style="text-align:center;padding:40px">
+        <div style="font-size:40px;margin-bottom:8px">✓</div>
+        <h2 style="display:block;margin-bottom:4px">Sin coincidencias relevantes</h2>
+        <p style="color:var(--gray)">No encontramos marcas similares en las clases consultadas.
+           Es un excelente punto de partida para registrar.</p>
+      </div>
+
+      <!-- Acciones -->
+      <div class="panel" style="text-align:center;background:linear-gradient(135deg,#F0F5FF,#fff)">
+        <h2 style="display:block;justify-content:center">¿Querés avanzar con el registro?</h2>
+        <p style="color:var(--gray);margin-bottom:20px">
+          Un abogado especialista te prepara la cotización personalizada en 24 hs.
+        </p>
+        <div class="actions" style="justify-content:center">
+          <a href="/#planes" class="btn btn-primary">Solicitar cotización de registro</a>
+          <a href="/dashboard" class="btn btn-outline">Volver al panel</a>
+        </div>
+      </div>
+    </div>
+  </template>
+</main>
+
+<a class="wa-fab" :href="waLink" target="_blank">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.149-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+  <span>Consultar a un abogado</span>
+</a>
+
+<script>
+function informe(consultaId) {
+  return {
+    consultaId,
+    cargando: true,
+    error: '',
+    data: null,
+    statusFromMP: new URLSearchParams(location.search).get('status') || '',
+    reintentando: false,
+    pollTimer: null,
+
+    get waLink() {
+      const m = this.data?.marca || 'mi marca';
+      const msg = this.data?.diagnostico === 'riesgo_alto'
+        ? `Hola LegalPacers, mi informe sobre "${m}" muestra riesgo alto. Quiero asesorarme.`
+        : `Hola LegalPacers, tengo el informe de "${m}" y quiero avanzar.`;
+      return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
+    },
+
+    async cargar() {
+      this.cargando = true;
+      try {
+        const r = await fetch(`/api/marca/consulta/${this.consultaId}`);
+        const d = await r.json();
+        if (!d.ok) {
+          this.error = d.error || 'Informe no encontrado';
+        } else {
+          this.data = d.data;
+          // Si volvimos de MP con success y todavía no figura paid, polleo cada 4s
+          // hasta 60s para dar tiempo al webhook
+          if (this.statusFromMP === 'success' && !this.data.paid) {
+            this.iniciarPoll();
+          }
+        }
+      } catch(e) {
+        this.error = 'Error de red';
+      } finally {
+        this.cargando = false;
+      }
+    },
+
+    iniciarPoll() {
+      let intentos = 0;
+      this.pollTimer = setInterval(async () => {
+        intentos++;
+        const r = await fetch(`/api/marca/consulta/${this.consultaId}`);
+        const d = await r.json();
+        if (d.ok && d.data.paid) {
+          this.data = d.data;
+          clearInterval(this.pollTimer);
+        } else if (intentos > 15) {
+          clearInterval(this.pollTimer);
+        }
+      }, 4000);
+    },
+
+    async reintentarPago() {
+      this.reintentando = true;
+      try {
+        const r = await fetch('/api/marca/consulta/iniciar', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            marca: this.data.marca,
+            email: this.data.email || '',
+            descripcion: this.data.descripcion || '',
+            clases: this.data.clases || [],
+          })
+        });
+        const d = await r.json();
+        if (d.ok && d.data.init_point) {
+          window.location.href = d.data.init_point;
+        } else {
+          alert(d.error || 'No pudimos generar el link de pago.');
+        }
+      } catch(e) {
+        alert('Error de red');
+      } finally {
+        this.reintentando = false;
+      }
+    },
+
+    fmtDate(s) {
+      if (!s) return '—';
+      const d = new Date(s);
+      return d.toLocaleDateString('es-AR', {day:'2-digit',month:'long',year:'numeric'});
+    },
+
+    diagLabel(d) {
+      return ({
+        viable: '✓ Viable',
+        viable_con_ajustes: '⚠ Viable con ajustes',
+        riesgo_alto: '✕ Riesgo alto',
+      })[d] || 'Pendiente de análisis';
+    },
+
+    diagDesc(d) {
+      return ({
+        viable: 'No detectamos coincidencias significativas. Tu marca es un buen candidato para registrar en las clases consultadas.',
+        viable_con_ajustes: 'Hay coincidencias relevantes. Recomendamos ajustar la marca o las clases antes de presentar el expediente.',
+        riesgo_alto: 'Detectamos múltiples coincidencias altas. El registro tiene riesgo significativo de oposición o rechazo. Coordinemos una llamada.',
+      })[d] || '';
+    },
+
+    diagBadge(d) {
+      return ({viable:'green',viable_con_ajustes:'yellow',riesgo_alto:'red'})[d] || 'gray';
+    },
+
+    // Markdown muy básico (headers, bold, listas, párrafos) — sin libs externas
+    renderMarkdown(text) {
+      if (!text) return '';
+      let t = text;
+      // Escape HTML primero
+      t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      // Headers (en orden de mayor a menor)
+      t = t.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+      t = t.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+      t = t.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+      // Bold
+      t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      // Listas (bullet)
+      t = t.replace(/^[*\-] (.+)$/gm, '<li>$1</li>');
+      t = t.replace(/(<li>.*<\/li>\s*)+/g, m => '<ul>' + m + '</ul>');
+      // Párrafos: cualquier línea no-vacía que no sea ya un tag
+      t = t.replace(/^(?!<h\d|<ul|<li|<\/)(.+)$/gm, '<p>$1</p>');
+      // Limpiar párrafos vacíos y juntar consecutivos
+      t = t.replace(/<p>\s*<\/p>/g,'');
+      return t;
+    },
+  };
+}
+</script>
+</body>
+</html>
