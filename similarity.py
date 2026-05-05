@@ -246,14 +246,15 @@ def fetch_candidates(
                 ))
             return out
 
-        # SQLite: prefilter con LIKE %sub% para limitar a algo razonable
-        like = f"%{term_norm}%"
-        rows = s.query(Marca).filter(
-            Marca.denominacion.ilike(like)
-        )
-        if clases:
-            rows = rows.filter(Marca.clase.in_(clases))
-        rows = rows.limit(limit).all()
+        # SQLite: usar FTS5 si está disponible (búsqueda en milisegundos sobre 300k+),
+        # con fallback a ILIKE %term% si la tabla FTS no existe.
+        rows = _fetch_sqlite_fts(s, term_norm, clases, limit)
+        if rows is None:
+            like = f"%{term_norm}%"
+            q = s.query(Marca).filter(Marca.denominacion.ilike(like))
+            if clases:
+                q = q.filter(Marca.clase.in_(clases))
+            rows = q.limit(limit).all()
         return [
             CandidateRow(
                 id=r.id, acta=r.acta, denominacion=r.denominacion,
@@ -265,6 +266,40 @@ def fetch_candidates(
             )
             for r in rows
         ]
+
+
+def _fetch_sqlite_fts(session, term_norm: str, clases, limit: int):
+    """SQLite FTS5 query. Returns Marca rows or None if FTS is unavailable."""
+    from sqlalchemy import text as sa_text
+    from database import Marca
+
+    # FTS5 query syntax: prefix-match each token (e.g. 'nike' → 'nike*')
+    tokens = [t for t in term_norm.split() if t]
+    if not tokens:
+        return None
+    fts_query = " ".join(f'"{t}"*' for t in tokens)
+
+    sql = """
+        SELECT m.id FROM marcas_fts f
+        JOIN marcas m ON m.id = f.rowid
+        WHERE marcas_fts MATCH :q
+    """
+    params = {"q": fts_query, "limit": limit}
+    if clases:
+        placeholders = ",".join(f":c{i}" for i in range(len(clases)))
+        sql += f" AND m.clase IN ({placeholders})"
+        for i, c in enumerate(clases):
+            params[f"c{i}"] = c
+    sql += " ORDER BY rank LIMIT :limit"
+
+    try:
+        ids = [r[0] for r in session.execute(sa_text(sql), params).all()]
+    except Exception as e:
+        logger.warning(f"SQLite FTS query failed, falling back to ILIKE: {e}")
+        return None
+    if not ids:
+        return []
+    return session.query(Marca).filter(Marca.id.in_(ids)).all()
 
 
 # ─────────────────────────────────────────────────────────────────────

@@ -85,7 +85,7 @@ def nivel_1_check():
 
     if not marca:
         return _err("El nombre de la marca es requerido")
-    if not email or not EMAIL_RE.match(email):
+    if email and not EMAIL_RE.match(email):
         return _err("Email inválido")
 
     # Normalizar clases a int
@@ -94,9 +94,11 @@ def nivel_1_check():
     except (ValueError, TypeError):
         clases = []
 
-    # Persistir lead siempre
-    lead_id = _save_lead(email, marca, descripcion, clases,
-                         nombre=nombre, telefono=telefono)
+    # Persistir lead solo si dejó email (Lead.email es NOT NULL)
+    lead_id = None
+    if email:
+        lead_id = _save_lead(email, marca, descripcion, clases,
+                             nombre=nombre, telefono=telefono)
 
     # Búsqueda liviana: sin IA, top 5
     matches = search_similar(

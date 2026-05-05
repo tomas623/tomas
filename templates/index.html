@@ -197,10 +197,10 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <span class="eyebrow">Argentina · Buscador en la base oficial del INPI</span>
-    <h1>¿Querés saber si tu <span>marca está libre</span> antes de registrarla?</h1>
-    <p class="lead">Verificá en segundos contra +300.000 marcas del INPI.
-       Análisis ortográfico, fonético y conceptual con IA. Después, registramos y vigilamos por vos.</p>
+    <span class="eyebrow">Búsqueda en el INPI</span>
+    <h1>¿Tu marca está <span>disponible</span>?</h1>
+    <p class="lead">Verificá hasta 3 denominaciones en una misma Clase antes de invertir
+       en logo, branding y publicidad.</p>
 
     <div class="search-card">
       <div class="search-row">
@@ -218,8 +218,8 @@
         </div>
       </div>
       <div class="input-group" style="margin-top:14px">
-        <label for="email">Tu email</label>
-        <input id="email" type="email" x-model="form.email" placeholder="vos@empresa.com" required>
+        <label for="email">Tu email <span style="color:var(--gray);font-weight:400">(opcional)</span></label>
+        <input id="email" type="email" x-model="form.email" placeholder="vos@empresa.com">
       </div>
       <button class="btn btn-primary" @click="buscar()" :disabled="cargando">
         <span x-show="!cargando">Buscar gratis →</span>
@@ -581,6 +581,8 @@ function landing() {
     },
 
     faqs: [
+      {q: "¿Cómo funciona la búsqueda?",
+       a: "Cotejamos tu marca con las marcas registradas en Argentina (base oficial del INPI), para saber si en principio es registrable o no. Hacemos un análisis ortográfico, fonético y conceptual para detectar coincidencias y similitudes que podrían generar oposición."},
       {q: "¿Cuánto cuesta registrar una marca en Argentina?",
        a: "Hay dos costos: las tasas oficiales del INPI (que pagás directamente al organismo) y los honorarios profesionales de LegalPacers. Las tasas dependen de la cantidad de clases. Cotizamos los honorarios según cada caso desde nuestro formulario."},
       {q: "¿Cuánto tarda el registro?",
@@ -592,7 +594,7 @@ function landing() {
       {q: "¿Qué pasa si alguien presenta oposición?",
        a: "El INPI te notifica y tenés un plazo para responder. Si tenés contratado el registro con nosotros, asumimos la defensa. La mayoría se resuelven negociando o demostrando que las marcas pueden coexistir."},
       {q: "¿La consulta gratuita es realmente gratis?",
-       a: "Sí. La búsqueda Nivel 1 no tiene costo y no pedimos tarjeta. Solo capturamos tu email para enviarte el resultado y, si querés, ofrecerte servicios. Podés darte de baja cuando quieras."},
+       a: "Sí. La búsqueda Nivel 1 no tiene costo y no pedimos tarjeta. El email es opcional: si lo dejás te mandamos el resultado y novedades; si no, podés ver el veredicto en pantalla igual."},
       {q: "¿Por qué necesito vigilancia mensual?",
        a: "Cada miércoles el INPI publica un boletín con marcas nuevas. Tenés <strong>30 días</strong> para oponerte si alguna es similar a la tuya. Sin vigilancia automática, leerías 50+ páginas semanales para no perder ninguna."},
       {q: "¿Puedo cancelar la suscripción?",
@@ -600,8 +602,8 @@ function landing() {
     ],
 
     async buscar() {
-      if (!this.form.marca.trim() || !this.form.email.trim()) {
-        this.errorMsg = 'Completá la marca y el email para empezar.';
+      if (!this.form.marca.trim()) {
+        this.errorMsg = 'Ingresá una marca para buscar.';
         return;
       }
       this.cargando = true;

@@ -23,29 +23,44 @@ BG_LIGHT = colors.HexColor("#F7F9FC")
 TEXT_MUTED = colors.HexColor("#6B7A99")
 WHITE = colors.whitesmoke
 
-# Try to register fonts
+# Register brand fonts. ReportLab only supports TTF/OTF-CFF2; the .otf files
+# in static/fonts/ are PostScript-based OTFs which fail to register, so we
+# prefer TTF files first and silently fall back to Helvetica.
+#
+# To enable Mundial in PDFs, drop TTF versions of the fonts here and they will
+# be picked up automatically:
+#   static/fonts/MundialRegular.ttf
+#   static/fonts/MundialBold.ttf
+#   ...
 FONTS_DIR = os.path.join(os.path.dirname(__file__), "static", "fonts")
 FONTS = {
-    "Regular": "MundialRegular.otf",
-    "Light": "MundialLight.otf",
-    "Bold": "MundialBold.otf",
-    "Demibold": "MundialDemibold.otf",
+    "Regular": "MundialRegular",
+    "Light": "MundialLight",
+    "Bold": "MundialBold",
+    "Demibold": "MundialDemibold",
 }
 
 _fonts_loaded = True
-for style_name, font_file in FONTS.items():
-    font_path = os.path.join(FONTS_DIR, font_file)
-    if os.path.exists(font_path):
+for style_name, base_name in FONTS.items():
+    registered = False
+    for ext in (".ttf", ".otf"):
+        font_path = os.path.join(FONTS_DIR, base_name + ext)
+        if not os.path.exists(font_path):
+            continue
         try:
             pdfmetrics.registerFont(TTFont(f"Mundial{style_name}", font_path))
+            registered = True
+            break
         except Exception as e:
-            logger.warning(f"Could not register font {font_file}: {e}")
-            _fonts_loaded = False
-    else:
-        logger.warning(f"Font file not found: {font_path}")
+            # PostScript-outlined OTFs trip this; we'll just fall back below.
+            logger.debug(f"Could not register {font_path}: {e}")
+    if not registered:
         _fonts_loaded = False
 
-# Fall back to Helvetica when OTF fonts are not loadable by ReportLab
+if not _fonts_loaded:
+    logger.info("Brand fonts (Mundial TTF) not available — PDFs will use Helvetica.")
+
+# Fall back to Helvetica when brand fonts are not loadable by ReportLab
 BASE_FONT = "MundialRegular" if _fonts_loaded else "Helvetica"
 HEADING_FONT = "MundialBold" if _fonts_loaded else "Helvetica-Bold"
 

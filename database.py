@@ -333,6 +333,51 @@ def init_db():
                 except Exception as e:
                     logger.warning(f"Migration skipped: {e}")
 
+    elif engine.dialect.name == "sqlite":
+        # FTS5 virtual table for fast text search on 300k+ marcas
+        # Without this, ILIKE %term% does a full scan (~20s on 300k rows)
+        with engine.connect() as conn:
+            try:
+                conn.execute(text("""
+                    CREATE VIRTUAL TABLE IF NOT EXISTS marcas_fts USING fts5(
+                        denominacion,
+                        content='marcas',
+                        content_rowid='id',
+                        tokenize='unicode61 remove_diacritics 2'
+                    )
+                """))
+                conn.execute(text("""
+                    CREATE TRIGGER IF NOT EXISTS marcas_ai AFTER INSERT ON marcas BEGIN
+                        INSERT INTO marcas_fts(rowid, denominacion) VALUES (new.id, new.denominacion);
+                    END
+                """))
+                conn.execute(text("""
+                    CREATE TRIGGER IF NOT EXISTS marcas_ad AFTER DELETE ON marcas BEGIN
+                        INSERT INTO marcas_fts(marcas_fts, rowid, denominacion) VALUES('delete', old.id, old.denominacion);
+                    END
+                """))
+                conn.execute(text("""
+                    CREATE TRIGGER IF NOT EXISTS marcas_au AFTER UPDATE ON marcas BEGIN
+                        INSERT INTO marcas_fts(marcas_fts, rowid, denominacion) VALUES('delete', old.id, old.denominacion);
+                        INSERT INTO marcas_fts(rowid, denominacion) VALUES (new.id, new.denominacion);
+                    END
+                """))
+                conn.commit()
+                # Backfill if FTS is empty but marcas has rows (one-time, on existing DBs)
+                fts_count = conn.execute(text("SELECT COUNT(*) FROM marcas_fts")).scalar()
+                marcas_count = conn.execute(text("SELECT COUNT(*) FROM marcas")).scalar()
+                if marcas_count and fts_count < marcas_count:
+                    logger.info(f"Backfilling FTS index ({marcas_count} rows)…")
+                    conn.execute(text(
+                        "INSERT INTO marcas_fts(rowid, denominacion) "
+                        "SELECT id, denominacion FROM marcas "
+                        "WHERE id NOT IN (SELECT rowid FROM marcas_fts)"
+                    ))
+                    conn.commit()
+                    logger.info("FTS backfill complete")
+            except Exception as e:
+                logger.warning(f"SQLite FTS5 setup skipped: {e}")
+
     logger.info("Database tables ready")
 
 
