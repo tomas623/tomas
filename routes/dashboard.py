@@ -325,7 +325,7 @@ def api_precios():
     return _ok({
         "vigilancia_marca": PRECIO_VIGILANCIA_MARCA,
         "vigilancia_portfolio": PRECIO_VIGILANCIA_PORTFOLIO,
-        "consulta_completa": float(os.getenv("PRECIO_CONSULTA_COMPLETA", "25000")),
+        "consulta_completa": float(os.getenv("PRECIO_CONSULTA_COMPLETA", "15000")),
     })
 
 

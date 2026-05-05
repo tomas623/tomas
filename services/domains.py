@@ -89,11 +89,12 @@ def _check_dns(domain: str) -> DomainStatus:
 
 
 def check_domains(marca: str) -> list[DomainStatus]:
-    """Chequea .com y .com.ar para una marca."""
+    """Chequea .com, .com.ar y .ar para una marca."""
     label = normalize_label(marca)
     if not label:
         return []
     out = []
     out.append(_check_com_via_rdap(f"{label}.com"))
     out.append(_check_dns(f"{label}.com.ar"))
+    out.append(_check_dns(f"{label}.ar"))
     return out

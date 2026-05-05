@@ -24,12 +24,13 @@ import json
 import logging
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from flask import Blueprint, jsonify, request
+from sqlalchemy import func
 
-from database import Consulta, Lead, Pago, get_session
+from database import Consulta, FreeSearchLog, Lead, Pago, get_session
 from services.auth import current_user
 from services.domains import check_domains
 from similarity import diagnose, search_similar, NIVEL_ALTO, NIVEL_MEDIO
@@ -38,10 +39,62 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("marca", __name__)
 
 
-PRECIO_NIVEL_2 = float(os.getenv("PRECIO_CONSULTA_COMPLETA", "25000"))
+PRECIO_NIVEL_2 = float(os.getenv("PRECIO_CONSULTA_COMPLETA", "15000"))
 PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "20000"))
 
+# Rate limit Nivel 1 por IP. Suscriptores premium y usuarios autenticados
+# pueden saltearlo (lo manejamos en _check_rate_limit).
+FREE_SEARCH_LIMIT = int(os.getenv("FREE_SEARCH_LIMIT", "3"))
+FREE_SEARCH_WINDOW_HOURS = int(os.getenv("FREE_SEARCH_WINDOW_HOURS", "24"))
+
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+def _client_ip() -> str:
+    """Mejor esfuerzo para obtener la IP del cliente respetando proxies."""
+    fwd = request.headers.get("X-Forwarded-For", "")
+    if fwd:
+        return fwd.split(",")[0].strip()[:45]
+    return (request.remote_addr or "0.0.0.0")[:45]
+
+
+def _has_unlimited_searches(user) -> bool:
+    """Suscriptores premium activos no tienen rate limit."""
+    if not user:
+        return False
+    try:
+        from database import SuscripcionVigilancia
+        with get_session() as s:
+            active = (s.query(SuscripcionVigilancia)
+                      .filter_by(user_id=user.id, status="active")
+                      .first())
+            return active is not None
+    except Exception:
+        return False
+
+
+def _check_rate_limit(user, ip: str) -> Optional[tuple[int, int]]:
+    """Cuenta búsquedas recientes y devuelve (used, limit) si excede, sino None."""
+    if _has_unlimited_searches(user):
+        return None
+    cutoff = datetime.utcnow() - timedelta(hours=FREE_SEARCH_WINDOW_HOURS)
+    with get_session() as s:
+        used = (s.query(func.count(FreeSearchLog.id))
+                .filter(FreeSearchLog.ip == ip,
+                        FreeSearchLog.created_at >= cutoff)
+                .scalar()) or 0
+    if used >= FREE_SEARCH_LIMIT:
+        return (used, FREE_SEARCH_LIMIT)
+    return None
+
+
+def _log_free_search(ip: str, fingerprint: Optional[str], marca: str) -> None:
+    try:
+        with get_session() as s:
+            s.add(FreeSearchLog(ip=ip, fingerprint=fingerprint, marca=marca[:300]))
+            s.commit()
+    except Exception as e:
+        logger.warning(f"No se pudo loguear búsqueda libre: {e}")
 
 
 def _ok(data, status=200):
@@ -82,17 +135,38 @@ def nivel_1_check():
     clases = data.get("clases") or []
     nombre = (data.get("nombre") or "").strip() or None
     telefono = (data.get("telefono") or "").strip() or None
+    fingerprint = (data.get("fingerprint") or "").strip()[:120] or None
 
     if not marca:
         return _err("El nombre de la marca es requerido")
     if email and not EMAIL_RE.match(email):
         return _err("Email inválido")
 
+    # Rate limit: Nivel 1 anónimo limitado por IP en una ventana móvil.
+    user = current_user()
+    ip = _client_ip()
+    over = _check_rate_limit(user, ip)
+    if over is not None:
+        used, limit = over
+        return jsonify({
+            "ok": False,
+            "error": (f"Llegaste al límite de {limit} búsquedas gratuitas en "
+                      f"{FREE_SEARCH_WINDOW_HOURS} hs. Suscribite al plan mensual "
+                      "para tener consultas ilimitadas, o esperá unas horas."),
+            "rate_limited": True,
+            "used": used,
+            "limit": limit,
+            "window_hours": FREE_SEARCH_WINDOW_HOURS,
+        }), 429
+
     # Normalizar clases a int
     try:
         clases = [int(c) for c in clases if c]
     except (ValueError, TypeError):
         clases = []
+
+    # Loguear esta búsqueda (alimenta el contador del rate limit)
+    _log_free_search(ip, fingerprint, marca)
 
     # Persistir lead solo si dejó email (Lead.email es NOT NULL)
     lead_id = None
@@ -145,7 +219,7 @@ def nivel_1_check():
             "precio": PRECIO_NIVEL_2,
             "moneda": "ARS",
             "descripcion": "Informe completo con análisis fonético, conceptual y "
-                           "pre-análisis legal de viabilidad firmado por nuestro equipo.",
+                           "pre-análisis automático de viabilidad de registro.",
         },
     })
 
@@ -298,7 +372,7 @@ def _generar_informe_completo(consulta: Consulta) -> None:
 
 
 def _analisis_legal(consulta: Consulta, matches: list) -> str:
-    """Genera el pre-análisis legal con Claude (texto formateado en markdown)."""
+    """Genera un pre-análisis automatizado de viabilidad con IA (markdown)."""
     if not os.getenv("ANTHROPIC_API_KEY"):
         return ""
     from anthropic import Anthropic
@@ -314,7 +388,11 @@ def _analisis_legal(consulta: Consulta, matches: list) -> str:
             f"score: {m.score:.2f})"
         )
 
-    prompt = f"""Sos abogado especialista en marcas en Argentina (INPI).
+    prompt = f"""Sos un asistente experto en el sistema de marcas del INPI Argentina.
+Tu tarea es generar un pre-análisis automatizado de viabilidad de registro a
+partir de las coincidencias detectadas. NO sos abogado y el análisis NO es
+asesoramiento legal: es una orientación previa para que el usuario decida si
+contratar un abogado para el trámite.
 
 Marca consultada: "{consulta.marca}"
 Descripción del producto/servicio: {consulta.descripcion or '(sin descripción)'}
@@ -323,11 +401,11 @@ Clases solicitadas: {consulta.clases or 'no especificadas'}
 Coincidencias relevantes detectadas:
 {chr(10).join(contexto) if contexto else '(ninguna coincidencia significativa)'}
 
-Escribí un pre-análisis legal de viabilidad de registro, en español neutro,
-estructurado en estas secciones (usá Markdown con headers):
+Escribí el pre-análisis en español neutro, estructurado en estas secciones
+(usá Markdown con headers):
 
 ## Resumen ejecutivo
-(2-3 oraciones con la recomendación general)
+(2-3 oraciones con la orientación general)
 
 ## Análisis de coincidencias
 (comentá las más relevantes y por qué importan)
@@ -335,13 +413,15 @@ estructurado en estas secciones (usá Markdown con headers):
 ## Riesgos identificados
 (clase, similitud fonética/conceptual, oposiciones probables)
 
-## Recomendación
+## Orientación
 (viable / viable con ajustes / riesgo alto — y qué ajustes sugerirías)
 
 ## Próximos pasos
-(qué hacer con LegalPacers — registrar, modificar, vigilar)
+(qué hacer — registrar, modificar, vigilar; sugerí coordinar con un abogado
+para el trámite ante el INPI)
 
-Sé concreto, profesional y conciso. No más de 400 palabras."""
+Sé concreto y conciso, máximo 400 palabras. Evitá afirmaciones tajantes;
+usá fórmulas como "podría", "sugiere", "se recomienda evaluar"."""
 
     client = Anthropic()
     resp = client.messages.create(

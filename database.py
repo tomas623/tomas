@@ -137,6 +137,18 @@ class MagicLinkToken(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class FreeSearchLog(Base):
+    """Una búsqueda gratuita anónima — alimenta el rate-limit por IP."""
+
+    __tablename__ = "free_search_log"
+
+    id          = Column(Integer, primary_key=True, autoincrement=True)
+    ip          = Column(String(45), index=True)   # IPv6 max 45 chars
+    fingerprint = Column(String(120), index=True)  # opcional, para detectar refresh
+    marca       = Column(String(300))
+    created_at  = Column(DateTime, default=datetime.utcnow, index=True)
+
+
 class Lead(Base):
     """Lead capturado en consulta gratuita o formulario de contacto."""
 

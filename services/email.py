@@ -191,7 +191,7 @@ def template_pago_confirmado(marca: str, monto: float, informe_url: str) -> tupl
              padding:14px 28px;border-radius:8px;font-weight:600;display:inline-block">Ver informe</a>
         </p>
         <p>El informe incluye coincidencias en toda la base del INPI con análisis ortográfico,
-           fonético y conceptual, además del pre-análisis de viabilidad escrito por nuestro equipo.</p>
+           fonético y conceptual, además del pre-análisis automático de viabilidad de registro.</p>
     """, f"Tu informe de \"{marca}\" está listo")
     text = f"Pago confirmado. Ver informe: {informe_url}"
     return subject, html, text

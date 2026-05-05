@@ -203,15 +203,15 @@
   <div class="paywall" x-show="data && !data.paid" x-cloak>
     <h2>Desbloqueá el informe completo</h2>
     <p>Estás viendo un preview. Pagá una sola vez y recibí el análisis completo en minutos.</p>
-    <div class="price">$<span x-text="(data && data.monto_pendiente || 25000).toLocaleString('es-AR')"></span>
+    <div class="price">$<span x-text="(data && data.monto_pendiente || 15000).toLocaleString('es-AR')"></span>
       <small>ARS · pago único</small>
     </div>
     <div class="features">
       <div>+300k marcas analizadas</div>
       <div>Análisis fonético español</div>
       <div>Similitud conceptual con IA</div>
-      <div>Pre-análisis legal de abogado</div>
-      <div>Diagnóstico de viabilidad</div>
+      <div>Pre-análisis automático de viabilidad</div>
+      <div>Diagnóstico de riesgo de oposición</div>
       <div>Acceso permanente al informe</div>
     </div>
     <button @click="reintentarPago()" :disabled="reintentando">

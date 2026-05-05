@@ -268,7 +268,12 @@
       </template>
 
       <template x-if="errorMsg">
-        <div class="result-card bad"><div class="verdict-msg" x-text="errorMsg"></div></div>
+        <div class="result-card bad">
+          <div class="verdict-msg" x-text="errorMsg"></div>
+          <div x-show="rateLimited" style="margin-top:14px">
+            <a href="#planes" class="btn btn-primary">Ver suscripción ilimitada</a>
+          </div>
+        </div>
       </template>
     </div>
   </div>
@@ -314,12 +319,12 @@
       <div class="plan">
         <div class="plan-tag">Nivel 1</div>
         <h3>Consulta gratuita</h3>
-        <div class="plan-price">$0<small>siempre</small></div>
+        <div class="plan-price">$0<small>3 búsquedas / día</small></div>
         <p class="plan-desc">Veredicto rápido para saber si vale la pena seguir.</p>
         <ul>
           <li>Búsqueda en +300k marcas INPI</li>
           <li>Disponibilidad por clase</li>
-          <li>Chequeo de dominios .com / .com.ar</li>
+          <li>Chequeo de dominios .com / .com.ar / .ar</li>
         </ul>
         <a onclick="document.getElementById('marca').focus()" class="btn btn-outline" style="cursor:pointer">Empezar</a>
       </div>
@@ -327,13 +332,13 @@
       <div class="plan featured">
         <div class="plan-tag">Nivel 2 · Más elegido</div>
         <h3>Análisis completo</h3>
-        <div class="plan-price">$25.000<small>pago único</small></div>
-        <p class="plan-desc">Informe detallado con análisis legal escrito por nuestro equipo.</p>
+        <div class="plan-price">$15.000<small>pago único</small></div>
+        <p class="plan-desc">Informe detallado con análisis de viabilidad de registro.</p>
         <ul>
           <li>Todo lo del Nivel 1</li>
           <li>Análisis fonético y conceptual con IA</li>
-          <li>Pre-análisis legal escrito por abogado</li>
-          <li>Diagnóstico de viabilidad de registro</li>
+          <li>Pre-análisis automático de viabilidad</li>
+          <li>Diagnóstico de riesgo de oposición</li>
           <li>PDF descargable</li>
         </ul>
         <a onclick="document.getElementById('marca').focus()" class="btn btn-primary" style="cursor:pointer">Pedir informe</a>
@@ -354,17 +359,18 @@
       </div>
 
       <div class="plan">
-        <div class="plan-tag">Nivel 4</div>
-        <h3>Vigilancia mensual</h3>
-        <div class="plan-price">$20.000<small>por marca · por mes</small></div>
-        <p class="plan-desc">Monitoreo automático de cada nuevo boletín del INPI.</p>
+        <div class="plan-tag">Premium</div>
+        <h3>Suscripción mensual</h3>
+        <div class="plan-price">$9.900<small>por mes</small></div>
+        <p class="plan-desc">Vigilancia + consultas ilimitadas para tu portfolio de marcas.</p>
         <ul>
-          <li>Alertas semanales por email</li>
-          <li>Detección con IA y análisis fonético</li>
+          <li>Consultas y análisis completos <strong>ilimitados</strong></li>
+          <li>Vigilancia automática de hasta 3 marcas</li>
+          <li>Alertas semanales por email del boletín INPI</li>
           <li>Aviso 90/30 días antes del vencimiento</li>
           <li>Cancelás cuando quieras</li>
         </ul>
-        <a href="/login?next=/dashboard" class="btn btn-outline">Activar vigilancia</a>
+        <a href="/login?next=/dashboard" class="btn btn-outline">Suscribirme</a>
       </div>
     </div>
   </div>
@@ -563,6 +569,17 @@ function landing() {
     cargando: false,
     iniciandoPago: false,
     errorMsg: '',
+    rateLimited: false,
+    fingerprint: (function(){
+      try {
+        let fp = localStorage.getItem('lp_fp');
+        if (!fp) {
+          fp = 'fp_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+          localStorage.setItem('lp_fp', fp);
+        }
+        return fp;
+      } catch(e) { return ''; }
+    })(),
     faqAbierto: 0,
     modalCotizar: false,
     cotForm: {marca:'', descripcion:'', nombre:'', email:'', telefono:''},
@@ -615,12 +632,15 @@ function landing() {
           body: JSON.stringify({
             marca: this.form.marca, email: this.form.email,
             clases: this.form.clase ? [parseInt(this.form.clase)] : [],
+            fingerprint: this.fingerprint || '',
           })
         });
         const d = await r.json();
         if (!d.ok) {
+          this.rateLimited = !!d.rate_limited;
           this.errorMsg = d.error || 'No pudimos procesar la búsqueda.';
         } else {
+          this.rateLimited = false;
           this.resultado = d.data;
           setTimeout(() => {
             document.querySelector('.result-card')?.scrollIntoView({behavior:'smooth', block:'center'});
