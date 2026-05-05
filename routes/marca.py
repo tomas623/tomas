@@ -45,7 +45,19 @@ PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "20000"))
 # Rate limit Nivel 1 por IP. Suscriptores premium y usuarios autenticados
 # pueden saltearlo (lo manejamos en _check_rate_limit).
 FREE_SEARCH_LIMIT = int(os.getenv("FREE_SEARCH_LIMIT", "3"))
-FREE_SEARCH_WINDOW_HOURS = int(os.getenv("FREE_SEARCH_WINDOW_HOURS", "24"))
+FREE_SEARCH_WINDOW_HOURS = int(os.getenv("FREE_SEARCH_WINDOW_HOURS", "168"))
+
+
+def _window_label() -> str:
+    """Texto humano de la ventana del rate limit (para el mensaje de error)."""
+    h = FREE_SEARCH_WINDOW_HOURS
+    if h % 168 == 0:
+        n = h // 168
+        return "semana" if n == 1 else f"{n} semanas"
+    if h % 24 == 0:
+        n = h // 24
+        return "día" if n == 1 else f"{n} días"
+    return f"{h} hs"
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -150,9 +162,9 @@ def nivel_1_check():
         used, limit = over
         return jsonify({
             "ok": False,
-            "error": (f"Llegaste al límite de {limit} búsquedas gratuitas en "
-                      f"{FREE_SEARCH_WINDOW_HOURS} hs. Suscribite al plan mensual "
-                      "para tener consultas ilimitadas, o esperá unas horas."),
+            "error": (f"Llegaste al límite de {limit} búsquedas gratuitas por "
+                      f"{_window_label()}. Suscribite al plan mensual "
+                      "para tener consultas ilimitadas."),
             "rate_limited": True,
             "used": used,
             "limit": limit,
