@@ -197,7 +197,7 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <span class="eyebrow">Búsqueda en el INPI</span>
+    <span class="eyebrow">Búsqueda de marcas</span>
     <h1>¿Tu marca está <span>disponible</span>?</h1>
     <p class="lead">Verificá hasta 3 denominaciones en una misma Clase antes de invertir
        en logo, branding y publicidad.</p>
@@ -210,9 +210,9 @@
                  @keydown.enter="buscar()" autocomplete="off">
         </div>
         <div class="input-group">
-          <label for="clase">Clase Nice</label>
-          <select id="clase" x-model="form.clase">
-            <option value="">Todas</option>
+          <label for="clase">Clase Niza</label>
+          <select id="clase" x-model="form.clase" required>
+            <option value="" disabled>Elegí una clase</option>
             <template x-for="n in 45"><option :value="n" x-text="n"></option></template>
           </select>
         </div>
@@ -289,20 +289,24 @@
       <div class="step">
         <div class="step-num">1</div>
         <h3>Verificá disponibilidad</h3>
-        <p>Buscamos en +300k marcas del INPI con análisis ortográfico, fonético y conceptual.
-           Te decimos en 30 segundos si tu marca está libre.</p>
+        <p>Buscamos en las marcas registradas de Argentina y hacemos análisis
+           de <strong>confundibilidad</strong> en tres dimensiones: gráfica, fonética e
+           ideológica. Aplicamos las reglas que usa el INPI para decidir si una marca puede
+           confundirse con otra.</p>
       </div>
       <div class="step">
         <div class="step-num">2</div>
-        <h3>Registrá con respaldo legal</h3>
-        <p>Un abogado especialista revisa tu caso, define las clases óptimas y presenta el
-           expediente ante el INPI. Vos solo pagás los costos del organismo + nuestros honorarios.</p>
+        <h3>Registrá tu marca</h3>
+        <p>Si la marca es viable, contactás a uno de nuestros especialistas: definimos las
+           clases óptimas, preparamos el expediente y lo presentamos ante el INPI.
+           Vos solo pagás los costos del organismo + nuestros honorarios.</p>
       </div>
       <div class="step">
         <div class="step-num">3</div>
         <h3>Vigilamos por vos</h3>
-        <p>Cada miércoles que el INPI publica boletín, escaneamos automáticamente las marcas
-           nuevas. Si alguna se parece a la tuya, te alertamos por email para presentar oposición.</p>
+        <p>Las marcas duran 10 años, pero en ese plazo alguien puede registrar una similar
+           que se confunda con la tuya. Cada semana revisamos el boletín del INPI y te
+           avisamos si aparece algo parecido para que puedas presentar oposición a tiempo.</p>
       </div>
     </div>
   </div>
@@ -317,42 +321,43 @@
 
     <div class="plans-grid">
       <div class="plan">
-        <div class="plan-tag">Nivel 1</div>
+        <div class="plan-tag">Free</div>
         <h3>Consulta gratuita</h3>
-        <div class="plan-price">$0<small>3 búsquedas / semana</small></div>
-        <p class="plan-desc">Veredicto rápido para saber si vale la pena seguir.</p>
+        <div class="plan-price">$0<small>3 nombres / semana</small></div>
+        <p class="plan-desc">Veredicto rápido en una clase específica.</p>
         <ul>
-          <li>Búsqueda en +300k marcas INPI</li>
-          <li>Disponibilidad por clase</li>
+          <li>Hasta 3 denominaciones por semana</li>
+          <li>En una misma clase Niza</li>
+          <li>Análisis de confundibilidad básico</li>
           <li>Chequeo de dominios .com / .com.ar / .ar</li>
         </ul>
         <a onclick="document.getElementById('marca').focus()" class="btn btn-outline" style="cursor:pointer">Empezar</a>
       </div>
 
       <div class="plan featured">
-        <div class="plan-tag">Nivel 2 · Más elegido</div>
+        <div class="plan-tag">Más elegido</div>
         <h3>Análisis completo</h3>
-        <div class="plan-price">$15.000<small>pago único</small></div>
-        <p class="plan-desc">Informe detallado con análisis de viabilidad de registro.</p>
+        <div class="plan-price">$20.000<small>por informe</small></div>
+        <p class="plan-desc">Viabilidad de registro en todas las clases.</p>
         <ul>
-          <li>Todo lo del Nivel 1</li>
-          <li>Análisis fonético y conceptual con IA</li>
-          <li>Pre-análisis automático de viabilidad</li>
-          <li>Diagnóstico de riesgo de oposición</li>
-          <li>PDF descargable</li>
+          <li>Análisis de confundibilidad en las 45 clases Niza</li>
+          <li>Cotejo gráfico, fonético e ideológico con IA</li>
+          <li>Chequeo de usuario en redes sociales</li>
+          <li>Chequeo de dominios disponibles</li>
+          <li>Informe PDF descargable</li>
         </ul>
         <a onclick="document.getElementById('marca').focus()" class="btn btn-primary" style="cursor:pointer">Pedir informe</a>
       </div>
 
       <div class="plan">
-        <div class="plan-tag">Nivel 3</div>
+        <div class="plan-tag">Registro</div>
         <h3>Registro de marca</h3>
         <div class="plan-price">A cotizar<small>según caso</small></div>
-        <p class="plan-desc">Trámite completo ante el INPI con respaldo de abogados.</p>
+        <p class="plan-desc">Trámite completo ante el INPI con nuestros especialistas.</p>
         <ul>
-          <li>Clasificación profesional (clases Nice)</li>
+          <li>Clasificación profesional (clases Niza)</li>
           <li>Presentación del expediente</li>
-          <li>Seguimiento durante 18-24 meses</li>
+          <li>Seguimiento del trámite</li>
           <li>Defensa ante oposiciones</li>
         </ul>
         <button class="btn btn-outline" @click="modalCotizar=true">Solicitar cotización</button>
@@ -361,18 +366,26 @@
       <div class="plan">
         <div class="plan-tag">Premium</div>
         <h3>Suscripción mensual</h3>
-        <div class="plan-price">$9.900<small>por mes</small></div>
-        <p class="plan-desc">Vigilancia + consultas ilimitadas para tu portfolio de marcas.</p>
+        <div class="plan-price">$30.000<small>por mes</small></div>
+        <p class="plan-desc">Para quienes manejan varias marcas.</p>
         <ul>
           <li>Consultas y análisis completos <strong>ilimitados</strong></li>
-          <li>Vigilancia automática de hasta 3 marcas</li>
-          <li>Alertas semanales por email del boletín INPI</li>
-          <li>Aviso 90/30 días antes del vencimiento</li>
+          <li>Vigilancia de hasta 3 marcas con alertas</li>
+          <li>Aviso de declaración de uso (5 años) y vencimiento (10 años)</li>
+          <li>Panel de marcas con fechas y estados</li>
           <li>Cancelás cuando quieras</li>
         </ul>
         <a href="/login?next=/dashboard" class="btn btn-outline">Suscribirme</a>
       </div>
     </div>
+
+    <p class="section-sub" style="margin-top:24px;max-width:780px">
+      <strong>¿Para quién es la suscripción?</strong> Pensada para emprendedores que
+      gestionan varias marcas y para <strong>agencias de marketing y branding</strong> que
+      necesitan validar nombres rápido antes de cada lanzamiento de cliente. Si trabajás
+      con varios proyectos a la vez, te ahorra el ida y vuelta con abogados cada vez
+      que aparece una idea nueva.
+    </p>
   </div>
 </section>
 
@@ -391,28 +404,28 @@
       </div>
       <div class="compare-row">
         <div><strong>Búsqueda en INPI</strong></div>
-        <div class="col-bad">Búsqueda exacta sin similitud fonética</div>
-        <div class="col-good">+300k marcas con similitud trigrama, fonética y conceptual con IA</div>
+        <div class="col-bad">Búsqueda casera, coincidencias exactas</div>
+        <div class="col-good">Análisis de confundibilidad gráfica, fonética e ideológica con IA</div>
       </div>
       <div class="compare-row">
-        <div><strong>Clasificación Nice</strong></div>
-        <div class="col-bad">Adivinar entre 45 clases con descripciones técnicas</div>
-        <div class="col-good">Sugerencia automática + revisión por abogado</div>
+        <div><strong>Clasificación Niza</strong></div>
+        <div class="col-bad">Adivinar qué clase conviene entre 45 disponibles</div>
+        <div class="col-good">Sugerencia automática + validación con especialistas</div>
       </div>
       <div class="compare-row">
         <div><strong>Detección de riesgos</strong></div>
-        <div class="col-bad">No vés marcas similares hasta que el INPI rechaza</div>
-        <div class="col-good">Pre-análisis legal antes de presentar el expediente</div>
+        <div class="col-bad">No te enterás de marcas similares hasta el rechazo</div>
+        <div class="col-good">Pre-análisis de viabilidad antes de presentar el expediente</div>
       </div>
       <div class="compare-row">
         <div><strong>Vigilancia post-registro</strong></div>
-        <div class="col-bad">Tenés que leer cada boletín semanal manualmente</div>
+        <div class="col-bad">Tenés que fijarte el boletín manualmente</div>
         <div class="col-good">Alertas automáticas por cada marca similar nueva</div>
       </div>
       <div class="compare-row">
-        <div><strong>Renovación a 10 años</strong></div>
-        <div class="col-bad">Si te olvidás, perdés la marca</div>
-        <div class="col-good">Avisos automáticos a 90 y 30 días</div>
+        <div><strong>Declaración de uso (5 años) y renovación (10 años)</strong></div>
+        <div class="col-bad">Te las acordás por tu cuenta o perdés la marca</div>
+        <div class="col-good">Avisos automáticos 90 y 30 días antes</div>
       </div>
     </div>
   </div>
@@ -599,21 +612,21 @@ function landing() {
 
     faqs: [
       {q: "¿Cómo funciona la búsqueda?",
-       a: "Cotejamos tu marca con las marcas registradas en Argentina (base oficial del INPI), para saber si en principio es registrable o no. Hacemos un análisis ortográfico, fonético y conceptual para detectar coincidencias y similitudes que podrían generar oposición."},
-      {q: "¿Cuánto cuesta registrar una marca en Argentina?",
-       a: "Hay dos costos: las tasas oficiales del INPI (que pagás directamente al organismo) y los honorarios profesionales de LegalPacers. Las tasas dependen de la cantidad de clases. Cotizamos los honorarios según cada caso desde nuestro formulario."},
+       a: "Analizamos tu marca contra las marcas registradas en Argentina y evaluamos la <strong>confundibilidad</strong> en tres dimensiones: <em>gráfica</em> (cómo se ve), <em>fonética</em> (cómo suena) e <em>ideológica</em> (qué significa, incluyendo sinónimos, traducciones y asociación de ideas). Aplicamos las mismas reglas que usa el INPI para decidir si dos marcas pueden coexistir."},
+      {q: "¿Cuánto cuesta registrar una marca?",
+       a: "Hay dos costos: las tasas oficiales del INPI (que pagás directamente al organismo) y los honorarios de nuestros especialistas. Las tasas dependen de la cantidad de clases. Te pasamos la cotización desde el formulario."},
       {q: "¿Cuánto tarda el registro?",
-       a: "Entre <strong>18 y 24 meses</strong> si no hay oposiciones. La marca se publica en el boletín del INPI a los pocos meses, y desde ahí terceros tienen 30 días para oponerse. Si nadie se opone, sigue su curso normal."},
+       a: "Aproximadamente <strong>3 meses</strong> si no hay oposiciones. La marca se publica en el boletín del INPI a los pocos meses, y desde ahí terceros tienen un plazo para oponerse. Si hay oposición, el trámite se extiende mientras se resuelve."},
       {q: "¿Por cuánto tiempo dura el registro?",
-       a: "<strong>10 años</strong>, renovable indefinidamente. Si no la renovás, perdés la marca. Por eso enviamos avisos 90 y 30 días antes del vencimiento."},
+       a: "<strong>10 años</strong>, renovable indefinidamente. A los <strong>5 años</strong> tenés que presentar una <strong>declaración jurada de uso</strong>, y a los 10 renovás. Si te olvidás de alguno de estos hitos, perdés la marca. Por eso enviamos avisos automáticos."},
       {q: "¿Qué son las clases de Niza?",
-       a: "Es la clasificación internacional de productos y servicios. En Argentina hay 45 clases (1-34 productos, 35-45 servicios). Tenés que elegir las clases donde vas a usar tu marca; cada clase tiene un costo INPI separado."},
-      {q: "¿Qué pasa si alguien presenta oposición?",
-       a: "El INPI te notifica y tenés un plazo para responder. Si tenés contratado el registro con nosotros, asumimos la defensa. La mayoría se resuelven negociando o demostrando que las marcas pueden coexistir."},
+       a: "Es la <strong>clasificación internacional</strong> de productos y servicios. Hay 45 clases (1-34 productos, 35-45 servicios). Elegís las clases donde vas a usar tu marca; cada clase tiene un costo INPI separado."},
       {q: "¿La consulta gratuita es realmente gratis?",
-       a: "Sí. La búsqueda Nivel 1 no tiene costo y no pedimos tarjeta. El email es opcional: si lo dejás te mandamos el resultado y novedades; si no, podés ver el veredicto en pantalla igual."},
-      {q: "¿Por qué necesito vigilancia mensual?",
-       a: "Cada miércoles el INPI publica un boletín con marcas nuevas. Tenés <strong>30 días</strong> para oponerte si alguna es similar a la tuya. Sin vigilancia automática, leerías 50+ páginas semanales para no perder ninguna."},
+       a: "Sí. Podés hacer hasta 3 búsquedas por semana, en una misma clase, sin tarjeta. El email es opcional: si lo dejás te mandamos el resultado por mail; si no, lo ves igual en pantalla."},
+      {q: "¿Por qué necesito vigilancia?",
+       a: "Una vez registrada tu marca, alguien puede registrar una similar en los 10 años siguientes y generar confusión con tu negocio. La vigilancia revisa cada nuevo boletín del INPI y te avisa si aparece algo parecido para que puedas presentar oposición a tiempo."},
+      {q: "¿Para quién es la suscripción Premium?",
+       a: "Pensada para emprendedores que manejan varias marcas y para <strong>agencias de marketing y branding</strong> que validan nombres seguido para sus clientes. Si trabajás con varios proyectos a la vez, el costo por consulta se diluye y tenés vigilancia y panel de marcas incluidos."},
       {q: "¿Puedo cancelar la suscripción?",
        a: "Cuando quieras, desde tu panel. No hay permanencia ni penalidades. Si cancelás a mitad de mes, te dejamos terminar el ciclo pago."},
     ],
@@ -621,6 +634,10 @@ function landing() {
     async buscar() {
       if (!this.form.marca.trim()) {
         this.errorMsg = 'Ingresá una marca para buscar.';
+        return;
+      }
+      if (!this.form.clase) {
+        this.errorMsg = 'Elegí una clase Niza para la búsqueda gratuita.';
         return;
       }
       this.cargando = true;

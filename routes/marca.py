@@ -154,6 +154,16 @@ def nivel_1_check():
     if email and not EMAIL_RE.match(email):
         return _err("Email inválido")
 
+    # Normalizar clases a int para validar antes del rate limit
+    try:
+        clases = [int(c) for c in (clases or []) if c]
+    except (ValueError, TypeError):
+        clases = []
+    # La consulta gratuita exige una clase específica. El Nivel 2 (paga) sí
+    # puede pedir "todas las clases".
+    if not clases:
+        return _err("Elegí una clase Niza para la búsqueda gratuita.")
+
     # Rate limit: Nivel 1 anónimo limitado por IP en una ventana móvil.
     user = current_user()
     ip = _client_ip()
@@ -170,12 +180,6 @@ def nivel_1_check():
             "limit": limit,
             "window_hours": FREE_SEARCH_WINDOW_HOURS,
         }), 429
-
-    # Normalizar clases a int
-    try:
-        clases = [int(c) for c in clases if c]
-    except (ValueError, TypeError):
-        clases = []
 
     # Loguear esta búsqueda (alimenta el contador del rate limit)
     _log_free_search(ip, fingerprint, marca)
@@ -404,7 +408,7 @@ def _analisis_legal(consulta: Consulta, matches: list) -> str:
 Tu tarea es generar un pre-análisis automatizado de viabilidad de registro a
 partir de las coincidencias detectadas. NO sos abogado y el análisis NO es
 asesoramiento legal: es una orientación previa para que el usuario decida si
-contratar un abogado para el trámite.
+contratar un especialista para el trámite.
 
 Marca consultada: "{consulta.marca}"
 Descripción del producto/servicio: {consulta.descripcion or '(sin descripción)'}
@@ -413,27 +417,68 @@ Clases solicitadas: {consulta.clases or 'no especificadas'}
 Coincidencias relevantes detectadas:
 {chr(10).join(contexto) if contexto else '(ninguna coincidencia significativa)'}
 
+== MARCO DE CONFUNDIBILIDAD (aplicalo en cada match relevante) ==
+
+Tipos de confusión que tenés que clasificar:
+- DIRECTA (inmediata): el consumidor cree que es la misma marca.
+- INDIRECTA (mediata): cree que vienen de la misma empresa o línea de productos.
+- AMPLIA: cree que hay un vínculo comercial/jurídico (licencia, franquicia).
+
+Dimensiones a evaluar (cualquiera basta para denegar el registro):
+1. GRÁFICA: similitud visual (no aplica si no hay logo, indicalo).
+2. FONÉTICA: cómo suenan. Considerá aliteración, ubicación de vocales,
+   secuencia de consonantes. "Hasúcar" vs "Azúcar" suenan igual aunque se
+   escriban distinto.
+3. IDEOLÓGICA: significado. Detectá sinónimos ("Los Criadores"/"Los Ganaderos"),
+   traducciones ("Norte"/"Notte", "L'Etoile"/"Stella"), antónimos
+   ("Fiel"/"Infiel") y asociación de ideas.
+
+Reglas de apreciación que tenés que aplicar:
+- COTEJO DE CONJUNTO: comparar por impresión global, no fragmentando.
+  Excepción "Mot Vedette": si hay un elemento predominante, centrate en él.
+- APRECIACIÓN SUCESIVA: no comparar lado a lado; simular el recuerdo —
+  evocar la primera marca y ver si la segunda la trae a la mente.
+- PESO MAYOR A LAS SEMEJANZAS que a las diferencias: cambiar una letra rara
+  vez es suficiente para diferenciar.
+- SÍLABAS: las primeras (raíz) pesan más en la memoria auditiva. Excepción
+  "marcas débiles": si la raíz es genérica/descriptiva (ej. "Rapi-", "-farma")
+  el peso va a las desinencias.
+- ESPECIALIDAD Y PÚBLICO RELEVANTE: la confusión cuenta sobre todo si las
+  marcas se aplican a productos similares y el público es susceptible de
+  error. Consumo masivo / bajo precio → más riesgo. Medicamentos / alto
+  valor → menos riesgo (compra atenta).
+- MARCAS NOTORIAS: si una marca es muy famosa, su protección rompe la
+  barrera de las clases — se extiende a otros rubros para evitar
+  aprovechamiento parasitario.
+
 Escribí el pre-análisis en español neutro, estructurado en estas secciones
 (usá Markdown con headers):
 
 ## Resumen ejecutivo
-(2-3 oraciones con la orientación general)
+(2-3 oraciones con la orientación general: viable / viable con ajustes / riesgo alto)
 
-## Análisis de coincidencias
-(comentá las más relevantes y por qué importan)
+## Análisis de confundibilidad
+Para las coincidencias relevantes, comentá:
+- Tipo de confusión probable (directa/indirecta/amplia)
+- Dimensión predominante (gráfica/fonética/ideológica)
+- Si hay "Mot Vedette" o si la raíz es débil
+- Si la marca de referencia parece notoria
 
 ## Riesgos identificados
-(clase, similitud fonética/conceptual, oposiciones probables)
+(clase, similitud por dimensión, probabilidad de oposición, público relevante)
 
 ## Orientación
-(viable / viable con ajustes / riesgo alto — y qué ajustes sugerirías)
+(viable / viable con ajustes / riesgo alto — y qué ajustes concretos sugerirías:
+cambiar desinencia, agregar elemento distintivo, otra clase, etc.)
 
 ## Próximos pasos
-(qué hacer — registrar, modificar, vigilar; sugerí coordinar con un abogado
-para el trámite ante el INPI)
+(qué hacer — registrar, modificar, vigilar; sugerí coordinar con uno de
+nuestros especialistas para el trámite ante el INPI)
 
-Sé concreto y conciso, máximo 400 palabras. Evitá afirmaciones tajantes;
-usá fórmulas como "podría", "sugiere", "se recomienda evaluar"."""
+Sé concreto y conciso, máximo 500 palabras. Evitá afirmaciones tajantes;
+usá fórmulas como "podría", "sugiere", "se recomienda evaluar". Nunca
+afirmes que la marca "puede registrarse sin problemas" — siempre dejá que
+el especialista lo valide."""
 
     client = Anthropic()
     resp = client.messages.create(

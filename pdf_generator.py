@@ -139,7 +139,11 @@ class LegalPacersPDF:
         # Brand info
         story.append(self._brand_section(marca, descripcion))
         story.append(Spacer(1, 0.8*cm))
-        
+
+        # Methodology (criterio de confundibilidad)
+        story.append(self._metodologia_section())
+        story.append(Spacer(1, 0.8*cm))
+
         # Search results
         if resultados:
             story.append(self._results_section(variantes, resultados))
@@ -270,6 +274,48 @@ class LegalPacersPDF:
         
         return story[0] if len(story) == 1 else Table([[s] for s in story], colWidths=[13*cm])
     
+    def _metodologia_section(self):
+        """Explica el marco de confundibilidad que usamos en el análisis."""
+        story = [
+            Paragraph("Criterio de análisis de confundibilidad", self.styles["LPSubHeading"]),
+            Spacer(1, 0.2 * cm),
+            Paragraph(
+                "Para evaluar el riesgo de confusión entre tu marca y las registradas, "
+                "aplicamos las mismas reglas que sigue el INPI:",
+                self.styles["LPBody"],
+            ),
+            Spacer(1, 0.25 * cm),
+            Paragraph("<b>Tipos de confusión</b>", self.styles["LPBody"]),
+            Paragraph(
+                "<b>Directa:</b> el consumidor cree que son la misma marca. "
+                "<b>Indirecta:</b> cree que vienen de la misma empresa. "
+                "<b>Amplia:</b> cree que hay un vínculo comercial o jurídico (licencia, franquicia).",
+                self.styles["LPBody"],
+            ),
+            Spacer(1, 0.25 * cm),
+            Paragraph("<b>Dimensiones del cotejo</b>", self.styles["LPBody"]),
+            Paragraph(
+                "<b>Gráfica:</b> diseño, colores, tipografía. "
+                "<b>Fonética:</b> cómo suena (vocales, secuencia de consonantes, aliteraciones). "
+                "<b>Ideológica:</b> significado, sinónimos, traducciones, asociación de ideas, incluso antónimos.",
+                self.styles["LPBody"],
+            ),
+            Spacer(1, 0.25 * cm),
+            Paragraph("<b>Reglas que aplicamos</b>", self.styles["LPBody"]),
+            Paragraph(
+                "• Cotejo de conjunto (impresión global, no fragmentar). "
+                "Si hay un elemento dominante (Mot Vedette), pesa más.<br/>"
+                "• Apreciación sucesiva, no lado-a-lado: simulamos el recuerdo.<br/>"
+                "• Mayor peso a las semejanzas que a las diferencias.<br/>"
+                "• Las primeras sílabas (raíz) pesan más, salvo que sean genéricas (marcas débiles).<br/>"
+                "• Especialidad y público relevante: mismo rubro y consumo masivo = más riesgo.<br/>"
+                "• Marcas notorias: la protección se extiende a clases distintas.",
+                self.styles["LPBody"],
+            ),
+        ]
+        return Table([[s] for s in story], colWidths=[16 * cm])
+
+
     def _footer_section(self):
         """Generate footer with contact info."""
         

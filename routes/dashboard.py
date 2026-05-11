@@ -134,19 +134,38 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   <!-- MIS MARCAS -->
   <div x-show="tab==='marcas'" class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="margin:0">Mis marcas registradas</h3>
+      <h3 style="margin:0">Mis marcas</h3>
       <button class="small" @click="modalMarca=true">+ Agregar marca</button>
     </div>
-    <p x-show="!marcas.length" class="empty">Cargá tus marcas para activar la vigilancia mensual.</p>
+    <p style="color:#64748b;font-size:14px;margin-top:0">
+      Cargá las marcas que tenés registradas o en trámite y seguí las fechas clave:
+      <strong>declaración jurada de uso</strong> a los 5 años y <strong>renovación</strong> a los 10.
+      Activá vigilancia para que te avisemos si aparece alguna similar.
+    </p>
+    <p x-show="!marcas.length" class="empty">Todavía no cargaste ninguna marca. Tocá "Agregar marca" arriba.</p>
     <table x-show="marcas.length">
-      <thead><tr><th>Denominación</th><th>Clase</th><th>Estado</th><th>Vence</th><th></th></tr></thead>
+      <thead><tr>
+        <th>Denominación</th><th>Clase</th><th>Estado</th>
+        <th>DJU (5 años)</th><th>Vence (10 años)</th><th></th>
+      </tr></thead>
       <tbody>
         <template x-for="m in marcas" :key="m.id">
           <tr>
-            <td><strong x-text="m.denominacion"></strong></td>
+            <td><strong x-text="m.denominacion"></strong>
+              <div style="font-size:12px;color:#64748b" x-show="m.acta">Acta <span x-text="m.acta"></span></div>
+            </td>
             <td x-text="m.clase || '—'"></td>
             <td><span class="badge gray" x-text="m.estado||'—'"></span></td>
-            <td x-text="m.fecha_vencimiento || '—'"></td>
+            <td>
+              <span x-text="fmtDate(m.fecha_dju)"></span>
+              <span class="badge" :class="hitoBadge(m.fecha_dju)"
+                    x-show="m.fecha_dju" x-text="hitoLabel(m.fecha_dju)"></span>
+            </td>
+            <td>
+              <span x-text="fmtDate(m.fecha_vencimiento)"></span>
+              <span class="badge" :class="hitoBadge(m.fecha_vencimiento)"
+                    x-show="m.fecha_vencimiento" x-text="hitoLabel(m.fecha_vencimiento)"></span>
+            </td>
             <td>
               <button class="small sec" x-show="!hasVigilancia(m.id)"
                       @click="iniciarVigilancia(m.id)">Activar vigilancia</button>
@@ -233,13 +252,23 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <div class="modal-content">
       <h3 style="margin-top:0">Agregar marca</h3>
       <label>Denominación</label>
-      <input type="text" x-model="nueva.denominacion">
-      <label>Clase Nice</label>
-      <input type="number" x-model.number="nueva.clase" min="1" max="45">
+      <input type="text" x-model="nueva.denominacion" placeholder="Mi Marca">
+      <label>Clase Niza</label>
+      <input type="number" x-model.number="nueva.clase" min="1" max="45" placeholder="ej: 25">
       <label>Acta INPI (opcional)</label>
       <input type="text" x-model="nueva.acta">
-      <label>Fecha de vencimiento (opcional)</label>
-      <input type="date" x-model="nueva.fecha_vencimiento">
+      <label>Estado (opcional)</label>
+      <select x-model="nueva.estado">
+        <option value="">—</option>
+        <option value="solicitada">Solicitada (en trámite)</option>
+        <option value="concedida">Concedida / Registrada</option>
+        <option value="oposicion">Con oposición</option>
+      </select>
+      <label>Fecha de concesión (opcional)</label>
+      <input type="date" x-model="nueva.fecha_concesion">
+      <p style="font-size:12px;color:#64748b;margin:4px 0 0">
+        Si la cargás, calculamos automáticamente DJU (5 años) y vencimiento (10 años).
+      </p>
       <div style="display:flex;gap:8px;margin-top:20px">
         <button class="sec" @click="modalMarca=false" style="flex:1">Cancelar</button>
         <button @click="guardarMarca()" style="flex:1">Guardar</button>
@@ -256,7 +285,7 @@ function dashboard(){
     user: {email:'', nombre:''},
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 20000, vigilancia_portfolio: 50000},
-    modalMarca: false, nueva: {denominacion:'', clase:null, acta:'', fecha_vencimiento:''},
+    modalMarca: false, nueva: {denominacion:'', clase:null, acta:'', estado:'', fecha_concesion:''},
 
     async cargar(){
       const me = await fetch('/api/auth/me').then(r=>r.json());
@@ -279,6 +308,30 @@ function dashboard(){
     diagBadge(d){ return ({
       'viable':'green','viable_con_ajustes':'yellow','riesgo_alto':'red',
     })[d] || 'gray'; },
+    _daysTo(dateStr){
+      if(!dateStr) return null;
+      const target = new Date(dateStr);
+      const now = new Date();
+      return Math.floor((target - now) / (1000*60*60*24));
+    },
+    hitoBadge(dateStr){
+      const d = this._daysTo(dateStr);
+      if(d === null) return 'gray';
+      if(d < 0) return 'red';
+      if(d <= 30) return 'red';
+      if(d <= 90) return 'yellow';
+      return 'green';
+    },
+    hitoLabel(dateStr){
+      const d = this._daysTo(dateStr);
+      if(d === null) return '';
+      if(d < 0) return 'vencido';
+      if(d === 0) return 'hoy';
+      if(d <= 30) return d + 'd';
+      if(d <= 90) return d + 'd';
+      if(d <= 365) return Math.round(d/30) + 'm';
+      return Math.round(d/365) + 'a';
+    },
     hasVigilancia(marcaId){
       return this.vigilancia.some(v => v.marca_cliente_id===marcaId && v.status==='active');
     },
@@ -351,12 +404,26 @@ def api_marcas_list():
     user = current_user()
     with get_session() as s:
         rows = s.query(MarcaCliente).filter_by(user_id=user.id).all()
-        return _ok([{
-            "id": m.id, "denominacion": m.denominacion, "clase": m.clase,
-            "acta": m.acta, "estado": m.estado, "titular": m.titular,
-            "fecha_solicitud": m.fecha_solicitud.isoformat() if m.fecha_solicitud else None,
-            "fecha_vencimiento": m.fecha_vencimiento.isoformat() if m.fecha_vencimiento else None,
-        } for m in rows])
+        return _ok([_marca_payload(m) for m in rows])
+
+
+def _marca_payload(m: "MarcaCliente") -> dict:
+    """Serializa MarcaCliente y calcula DJU (5 años) desde fecha de concesión."""
+    fecha_dju = None
+    if m.fecha_concesion:
+        try:
+            fecha_dju = m.fecha_concesion.replace(year=m.fecha_concesion.year + 5).isoformat()
+        except ValueError:  # 29 feb → 28 feb del año destino
+            fecha_dju = m.fecha_concesion.replace(year=m.fecha_concesion.year + 5,
+                                                  day=28).isoformat()
+    return {
+        "id": m.id, "denominacion": m.denominacion, "clase": m.clase,
+        "acta": m.acta, "estado": m.estado, "titular": m.titular,
+        "fecha_solicitud": m.fecha_solicitud.isoformat() if m.fecha_solicitud else None,
+        "fecha_concesion": m.fecha_concesion.isoformat() if m.fecha_concesion else None,
+        "fecha_vencimiento": m.fecha_vencimiento.isoformat() if m.fecha_vencimiento else None,
+        "fecha_dju": fecha_dju,
+    }
 
 
 @bp.route("/api/dashboard/marcas", methods=["POST"])
@@ -368,9 +435,6 @@ def api_marcas_add():
     if not deno:
         return _err("Denominación requerida")
 
-    fecha_venc = data.get("fecha_vencimiento")
-    fecha_solic = data.get("fecha_solicitud")
-
     def _parse_date(v):
         if not v:
             return None
@@ -378,6 +442,17 @@ def api_marcas_add():
             return datetime.fromisoformat(v).date()
         except Exception:
             return None
+
+    fecha_solic = _parse_date(data.get("fecha_solicitud"))
+    fecha_conc = _parse_date(data.get("fecha_concesion"))
+    fecha_venc = _parse_date(data.get("fecha_vencimiento"))
+
+    # Si dieron fecha de concesión pero no de vencimiento, calculamos 10 años después.
+    if fecha_conc and not fecha_venc:
+        try:
+            fecha_venc = fecha_conc.replace(year=fecha_conc.year + 10)
+        except ValueError:
+            fecha_venc = fecha_conc.replace(year=fecha_conc.year + 10, day=28)
 
     with get_session() as s:
         m = MarcaCliente(
@@ -387,8 +462,9 @@ def api_marcas_add():
             acta=(data.get("acta") or "").strip() or None,
             titular=(data.get("titular") or "").strip() or None,
             estado=(data.get("estado") or "").strip() or None,
-            fecha_solicitud=_parse_date(fecha_solic),
-            fecha_vencimiento=_parse_date(fecha_venc),
+            fecha_solicitud=fecha_solic,
+            fecha_concesion=fecha_conc,
+            fecha_vencimiento=fecha_venc,
             notas=(data.get("notas") or "").strip() or None,
         )
         s.add(m)
