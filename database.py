@@ -238,14 +238,17 @@ class SuscripcionVigilancia(Base):
     id              = Column(Integer, primary_key=True, autoincrement=True)
     user_id         = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     marca_cliente_id = Column(Integer, ForeignKey("marcas_cliente.id"), nullable=True)
-    tipo            = Column(String(20), default="marca")    # 'marca' | 'portfolio'
-    status          = Column(String(20), default="active")   # 'active' | 'paused' | 'cancelled'
+    tipo            = Column(String(20), default="marca")    # 'marca' | 'portfolio' | 'premium'
+    status          = Column(String(20), default="active")   # 'active' | 'paused' | 'cancelled' | 'pending'
     monto           = Column(Float, nullable=False)
     mp_subscription_id = Column(String(80), index=True)
     activated_at    = Column(DateTime, default=datetime.utcnow)
     paused_at       = Column(DateTime)
     cancelled_at    = Column(DateTime)
     next_check_at   = Column(DateTime)
+    # Para Premium: guarda credenciales temporales hasta el primer envío
+    # por email. Se borra apenas se manda. NUNCA se persiste en logs.
+    metadata_json   = Column(JSON)
 
 
 class AlertaVigilancia(Base):

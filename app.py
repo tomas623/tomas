@@ -48,10 +48,12 @@ from routes.auth import bp as auth_bp
 from routes.marca import bp as marca_bp
 from routes.pagos import bp as pagos_bp
 from routes.dashboard import bp as dashboard_bp
+from routes.premium import bp as premium_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(marca_bp)
 app.register_blueprint(pagos_bp)
 app.register_blueprint(dashboard_bp)
+app.register_blueprint(premium_bp)
 
 # Init DB on startup
 try:

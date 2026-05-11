@@ -342,19 +342,72 @@ def _process_preapproval_update(sdk, preapproval_id: str) -> dict:
     }
     nuevo_status = map_status.get(mp_status, mp_status)
 
+    sent_credentials = False
     with get_session() as s:
         sub = (s.query(SuscripcionVigilancia)
                .filter_by(mp_subscription_id=str(preapproval_id)).first())
         if not sub:
             return {"ok": True, "no_match": True}
+        previous_status = sub.status
         sub.status = nuevo_status
         if nuevo_status == "paused":
             sub.paused_at = datetime.utcnow()
         if nuevo_status == "cancelled":
             sub.cancelled_at = datetime.utcnow()
+        # Si recién se activa una premium con credenciales pendientes, mandamos email
+        if (nuevo_status == "active" and sub.tipo == "premium"
+                and previous_status != "active"
+                and (sub.metadata_json or {}).get("pending_password")):
+            try:
+                from database import User
+                user = s.query(User).filter_by(id=sub.user_id).first()
+                if user:
+                    _send_premium_welcome(user, sub.metadata_json["pending_password"])
+                    sent_credentials = True
+                    # Borramos la password en claro apenas se envía
+                    md = dict(sub.metadata_json or {})
+                    md.pop("pending_password", None)
+                    md["credentials_sent_at"] = datetime.utcnow().isoformat()
+                    sub.metadata_json = md
+            except Exception as e:
+                logger.exception(f"No se pudo mandar credenciales premium {sub.id}: {e}")
         s.commit()
 
-    return {"ok": True, "status": nuevo_status}
+    return {"ok": True, "status": nuevo_status, "credentials_sent": sent_credentials}
+
+
+def _send_premium_welcome(user, password: str) -> None:
+    """Manda el email de bienvenida Premium con credenciales temporales."""
+    from services.email import send_email, _wrap
+    base = os.getenv("PUBLIC_BASE_URL", "").rstrip("/") or ""
+    login_url = f"{base}/login" if base else "/login"
+
+    html = _wrap(f"""
+        <h2 style="color:#1B6EF3;margin:0 0 16px">¡Bienvenido a LegalPacers Premium!</h2>
+        <p>Tu suscripción está activa. Estos son tus datos para entrar al panel:</p>
+        <div style="background:#F4F5F9;border-radius:10px;padding:18px;margin:18px 0;
+                    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px">
+          <strong>Usuario:</strong> {user.email}<br>
+          <strong>Contraseña:</strong> {password}
+        </div>
+        <p>
+          <a href="{login_url}" style="background:#1B6EF3;color:#fff;text-decoration:none;
+             padding:14px 28px;border-radius:10px;font-weight:600;display:inline-block">
+            Acceder al panel
+          </a>
+        </p>
+        <p style="color:#64748b;font-size:14px;margin-top:24px">
+          Te recomendamos cambiar la contraseña apenas entres, desde tu panel.
+          Si necesitás ayuda, escribinos por WhatsApp.
+        </p>
+    """, "Tu cuenta Premium ya está activa")
+
+    text = (f"Bienvenido a LegalPacers Premium.\n\n"
+            f"Usuario: {user.email}\nContraseña: {password}\n\n"
+            f"Accedé al panel: {login_url}")
+
+    send_email(user.email, "Tu cuenta Premium en LegalPacers ya está activa",
+               html, text=text)
 
 
 def _process_recurring_payment(sdk, authorized_payment_id: str) -> dict:
