@@ -307,6 +307,34 @@ def set_import_state(running: bool, current_boletin: int = None, last_error: str
         logger.warning(f"Could not update import state: {e}")
 
 
+def _sqlite_add_missing_columns() -> None:
+    """Recorre las tablas declaradas en los modelos y agrega columnas faltantes.
+
+    SQLite no permite ALTER TABLE ... ADD COLUMN con DEFAULT no constante ni con
+    NOT NULL para tablas con datos, así que generamos las columnas como
+    nullables sin default. Eso es seguro para columnas opcionales recientes
+    (password_hash, metadata_json, fecha_concesion, etc.).
+    """
+    from sqlalchemy import inspect as sa_inspect
+    insp = sa_inspect(engine)
+    with engine.connect() as conn:
+        for table in Base.metadata.sorted_tables:
+            if not insp.has_table(table.name):
+                continue
+            existing_cols = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in existing_cols:
+                    continue
+                col_type = col.type.compile(dialect=engine.dialect)
+                sql = f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {col_type}'
+                try:
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info(f"Added missing column {table.name}.{col.name}")
+                except Exception as e:
+                    logger.warning(f"Could not add {table.name}.{col.name}: {e}")
+
+
 def init_db():
     """Create tables and apply safe additive migrations."""
     Base.metadata.create_all(engine)
@@ -349,7 +377,13 @@ def init_db():
                     logger.warning(f"Migration skipped: {e}")
 
     elif engine.dialect.name == "sqlite":
-        # FTS5 virtual table for fast text search on 300k+ marcas
+        # 1) Migración aditiva de columnas que faltan en DBs viejas.
+        # create_all() solo crea tablas nuevas, NO agrega columnas a tablas
+        # existentes. Esto recorre las columnas declaradas en los modelos y
+        # ejecuta ALTER TABLE ADD COLUMN para las que faltan.
+        _sqlite_add_missing_columns()
+
+        # 2) FTS5 virtual table for fast text search on 300k+ marcas
         # Without this, ILIKE %term% does a full scan (~20s on 300k rows)
         with engine.connect() as conn:
             try:
