@@ -12,3 +12,4 @@ psycopg2-binary>=2.9
 bcrypt>=4.1
 mercadopago>=2.2
 itsdangerous>=2.1
+openpyxl>=3.1

@@ -221,9 +221,12 @@ class MarcaCliente(Base):
     denominacion    = Column(String(300), nullable=False)
     clase           = Column(Integer)
     acta            = Column(String(20))
-    titular         = Column(String(300))
+    titular         = Column(String(300))     # si es_propia=False, dueño tercero
     estado          = Column(String(80))
-    fecha_solicitud   = Column(Date)
+    es_propia       = Column(Boolean, default=True)
+    fecha_solicitud   = Column(Date)          # inicio del trámite
+    fecha_publicacion = Column(Date)          # publicación en boletín INPI
+    fecha_oposicion   = Column(Date)          # fecha de la oposición presentada (si hay)
     fecha_concesion   = Column(Date)
     fecha_vencimiento = Column(Date)
     notas           = Column(Text)

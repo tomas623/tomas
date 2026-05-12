@@ -17,7 +17,7 @@ from database import (
     AlertaVigilancia, Consulta, MarcaCliente, Pago,
     SuscripcionVigilancia, get_session,
 )
-from services.auth import current_user, login_required
+from services.auth import current_user, has_active_premium, login_required, premium_required
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("dashboard", __name__)
@@ -133,29 +133,45 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 
   <!-- MIS MARCAS -->
   <div x-show="tab==='marcas'" class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
       <h3 style="margin:0">Mis marcas</h3>
-      <button class="small" @click="modalMarca=true">+ Agregar marca</button>
+      <div style="display:flex;gap:8px">
+        <button class="small sec" @click="modalBulk=true">Cargar desde Excel</button>
+        <button class="small" @click="modalMarca=true">+ Agregar marca</button>
+      </div>
     </div>
     <p style="color:#64748b;font-size:14px;margin-top:0">
-      Cargá las marcas que tenés registradas o en trámite y seguí las fechas clave:
-      <strong>declaración jurada de uso</strong> a los 5 años y <strong>renovación</strong> a los 10.
-      Activá vigilancia para que te avisemos si aparece alguna similar.
+      Cargá las marcas que tenés registradas, en trámite o de terceros que te interesa seguir.
+      Te avisamos las fechas clave: oposición (90 días desde la publicación),
+      <strong>DJU</strong> a los 5 años y <strong>renovación</strong> a los 10.
     </p>
-    <p x-show="!marcas.length" class="empty">Todavía no cargaste ninguna marca. Tocá "Agregar marca" arriba.</p>
-    <table x-show="marcas.length">
+    <p x-show="!marcas.length" class="empty">Todavía no cargaste ninguna marca. Tocá "Agregar marca" o "Cargar desde Excel".</p>
+    <div x-show="marcas.length" style="overflow-x:auto">
+    <table>
       <thead><tr>
-        <th>Denominación</th><th>Clase</th><th>Estado</th>
-        <th>DJU (5 años)</th><th>Vence (10 años)</th><th></th>
+        <th>Marca</th><th>Clase</th><th>Tipo</th><th>Estado</th>
+        <th>Oposición vence</th><th>DJU (5 años)</th><th>Vence (10 años)</th><th></th>
       </tr></thead>
       <tbody>
         <template x-for="m in marcas" :key="m.id">
           <tr>
             <td><strong x-text="m.denominacion"></strong>
-              <div style="font-size:12px;color:#64748b" x-show="m.acta">Acta <span x-text="m.acta"></span></div>
+              <div style="font-size:12px;color:#64748b">
+                <span x-show="m.acta">Acta <span x-text="m.acta"></span></span>
+                <span x-show="!m.es_propia && m.titular"> · titular: <span x-text="m.titular"></span></span>
+              </div>
             </td>
             <td x-text="m.clase || '—'"></td>
+            <td>
+              <span class="badge" :class="m.es_propia ? 'green' : 'gray'"
+                    x-text="m.es_propia ? 'Propia' : 'Tercero'"></span>
+            </td>
             <td><span class="badge gray" x-text="m.estado||'—'"></span></td>
+            <td>
+              <span x-text="fmtDate(m.fecha_oposicion_fin)"></span>
+              <span class="badge" :class="hitoBadge(m.fecha_oposicion_fin)"
+                    x-show="m.fecha_oposicion_fin" x-text="hitoLabel(m.fecha_oposicion_fin)"></span>
+            </td>
             <td>
               <span x-text="fmtDate(m.fecha_dju)"></span>
               <span class="badge" :class="hitoBadge(m.fecha_dju)"
@@ -175,25 +191,33 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
         </template>
       </tbody>
     </table>
+    </div>
   </div>
 
   <!-- VIGILANCIA -->
   <div x-show="tab==='vigilancia'" class="card">
     <h3 style="margin-top:0">Suscripciones de vigilancia</h3>
     <p style="color:#64748b">
-      Cada miércoles, cuando el INPI publica su boletín, escaneamos automáticamente
-      las nuevas marcas y te alertamos por email si alguna se parece a la tuya.
-      <strong>$<span x-text="precios.vigilancia_marca.toLocaleString('es-AR')"></span> ARS / marca / mes</strong>.
+      Cada semana, cuando el INPI publica su boletín, escaneamos automáticamente
+      las marcas nuevas y te alertamos por email y en este panel si alguna se parece a las tuyas.
+      Tu plan <strong>Premium</strong> incluye <strong>3 vigilancias activas</strong>;
+      las adicionales son $<span x-text="precios.vigilancia_marca.toLocaleString('es-AR')"></span> ARS / mes cada una.
     </p>
-    <p x-show="!vigilancia.length" class="empty">Aún no tenés vigilancia activa. Agregá una marca y activala.</p>
+    <p x-show="!vigilancia.length" class="empty">
+      Aún no tenés vigilancia activa. Andá a <a href="#" @click.prevent="tab='marcas'">Mis marcas</a> y activala desde una marca cargada.
+    </p>
     <table x-show="vigilancia.length">
       <thead><tr><th>Marca vigilada</th><th>Tipo</th><th>Monto</th><th>Estado</th><th></th></tr></thead>
       <tbody>
         <template x-for="v in vigilancia" :key="v.id">
           <tr>
             <td x-text="v.marca_nombre || '(portfolio)'"></td>
-            <td x-text="v.tipo"></td>
-            <td>$<span x-text="v.monto.toLocaleString('es-AR')"></span></td>
+            <td>
+              <span x-text="v.tipo"></span>
+              <span class="badge green" x-show="v.monto === 0">Incluida en Premium</span>
+            </td>
+            <td><span x-show="v.monto > 0">$<span x-text="v.monto.toLocaleString('es-AR')"></span></span>
+                <span x-show="v.monto === 0" style="color:#16A34A">$0</span></td>
             <td>
               <span class="badge" :class="v.status==='active'?'green':'gray'" x-text="v.status"></span>
             </td>
@@ -249,29 +273,107 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 
   <!-- MODAL agregar marca -->
   <div class="modal" x-show="modalMarca" x-cloak @click.self="modalMarca=false">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width:560px">
       <h3 style="margin-top:0">Agregar marca</h3>
-      <label>Denominación</label>
+
+      <label>Denominación *</label>
       <input type="text" x-model="nueva.denominacion" placeholder="Mi Marca">
-      <label>Clase Niza</label>
-      <input type="number" x-model.number="nueva.clase" min="1" max="45" placeholder="ej: 25">
-      <label>Acta INPI (opcional)</label>
-      <input type="text" x-model="nueva.acta">
+
+      <label>Tipo</label>
+      <select x-model="nueva.es_propia">
+        <option :value="true">Propia (la tengo o la voy a registrar)</option>
+        <option :value="false">De tercero (la quiero monitorear)</option>
+      </select>
+
+      <label x-show="!nueva.es_propia">Titular (de quién es)</label>
+      <input x-show="!nueva.es_propia" type="text" x-model="nueva.titular"
+             placeholder="Ej: Acme S.A.">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>Clase Niza</label>
+          <input type="number" x-model.number="nueva.clase" min="1" max="45" placeholder="ej: 25">
+        </div>
+        <div>
+          <label>Acta INPI (opcional)</label>
+          <input type="text" x-model="nueva.acta">
+        </div>
+      </div>
+
       <label>Estado (opcional)</label>
       <select x-model="nueva.estado">
         <option value="">—</option>
         <option value="solicitada">Solicitada (en trámite)</option>
-        <option value="concedida">Concedida / Registrada</option>
+        <option value="publicada">Publicada en boletín</option>
         <option value="oposicion">Con oposición</option>
+        <option value="concedida">Concedida / Registrada</option>
+        <option value="vencida">Vencida</option>
       </select>
-      <label>Fecha de concesión (opcional)</label>
-      <input type="date" x-model="nueva.fecha_concesion">
-      <p style="font-size:12px;color:#64748b;margin:4px 0 0">
-        Si la cargás, calculamos automáticamente DJU (5 años) y vencimiento (10 años).
-      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>Inicio de trámite</label>
+          <input type="date" x-model="nueva.fecha_solicitud">
+        </div>
+        <div>
+          <label>Fecha de publicación</label>
+          <input type="date" x-model="nueva.fecha_publicacion">
+          <p style="font-size:11px;color:#64748b;margin:2px 0 0">Para contar los 90 días de oposición.</p>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>Fecha de oposición</label>
+          <input type="date" x-model="nueva.fecha_oposicion">
+          <p style="font-size:11px;color:#64748b;margin:2px 0 0">Si hubo oposición.</p>
+        </div>
+        <div>
+          <label>Fecha de concesión</label>
+          <input type="date" x-model="nueva.fecha_concesion">
+          <p style="font-size:11px;color:#64748b;margin:2px 0 0">Si la cargás, calculamos DJU y vencimiento.</p>
+        </div>
+      </div>
+
       <div style="display:flex;gap:8px;margin-top:20px">
         <button class="sec" @click="modalMarca=false" style="flex:1">Cancelar</button>
         <button @click="guardarMarca()" style="flex:1">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL carga masiva (Excel/CSV) -->
+  <div class="modal" x-show="modalBulk" x-cloak @click.self="modalBulk=false">
+    <div class="modal-content" style="max-width:520px">
+      <h3 style="margin-top:0">Cargar marcas desde Excel</h3>
+      <p style="color:#475569;font-size:14px;margin-top:0">
+        Subí un .xlsx o .csv con una fila por marca. La primera fila tiene que tener los nombres de las columnas.
+      </p>
+      <p style="font-size:13px;color:#64748b">
+        <strong>Columnas reconocidas:</strong>
+        denominacion (obligatoria), clase, acta, titular, estado, es_propia (sí/no),
+        fecha_solicitud, fecha_publicacion, fecha_oposicion,
+        fecha_concesion, fecha_vencimiento, notas.
+      </p>
+      <input type="file" accept=".xlsx,.xlsm,.csv" @change="bulkFile = $event.target.files[0]">
+      <div x-show="bulkResult" style="margin-top:14px;background:#F4F5F9;
+                                       padding:12px;border-radius:8px;font-size:14px">
+        <div><strong x-text="bulkResult?.creadas"></strong> marcas creadas.</div>
+        <div x-show="bulkResult?.errores?.length" style="margin-top:8px">
+          <strong>Errores:</strong>
+          <ul style="margin:6px 0 0;padding-left:20px;color:#991B1B">
+            <template x-for="e in (bulkResult?.errores || [])">
+              <li><span x-text="'Fila ' + e.fila + ': ' + e.motivo"></span></li>
+            </template>
+          </ul>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:20px">
+        <button class="sec" @click="modalBulk=false; bulkFile=null; bulkResult=null" style="flex:1">Cerrar</button>
+        <button @click="subirBulk()" :disabled="!bulkFile || bulkLoading" style="flex:1">
+          <span x-show="!bulkLoading">Subir archivo</span>
+          <span x-show="bulkLoading" x-cloak>Procesando…</span>
+        </button>
       </div>
     </div>
   </div>
@@ -285,7 +387,13 @@ function dashboard(){
     user: {email:'', nombre:''},
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 20000, vigilancia_portfolio: 50000},
-    modalMarca: false, nueva: {denominacion:'', clase:null, acta:'', estado:'', fecha_concesion:''},
+    modalMarca: false,
+    nueva: {
+      denominacion:'', clase:null, acta:'', estado:'',
+      es_propia: true, titular:'',
+      fecha_solicitud:'', fecha_publicacion:'', fecha_oposicion:'', fecha_concesion:'',
+    },
+    modalBulk: false, bulkFile: null, bulkResult: null, bulkLoading: false,
 
     async cargar(){
       const me = await fetch('/api/auth/me').then(r=>r.json());
@@ -340,14 +448,41 @@ function dashboard(){
         body: JSON.stringify(this.nueva)}).then(r=>r.json());
       if(!r.ok){ alert(r.error||'Error'); return; }
       this.modalMarca=false;
-      this.nueva={denominacion:'',clase:null,acta:'',fecha_vencimiento:''};
+      this.nueva = {
+        denominacion:'', clase:null, acta:'', estado:'',
+        es_propia: true, titular:'',
+        fecha_solicitud:'', fecha_publicacion:'', fecha_oposicion:'', fecha_concesion:'',
+      };
       await this.fetchMarcas();
+    },
+
+    async subirBulk(){
+      if(!this.bulkFile) return;
+      this.bulkLoading = true;
+      this.bulkResult = null;
+      try {
+        const fd = new FormData();
+        fd.append('file', this.bulkFile);
+        const r = await fetch('/api/dashboard/marcas/bulk', {method:'POST', body: fd}).then(r=>r.json());
+        if(!r.ok){ alert(r.error || 'Error'); return; }
+        this.bulkResult = r.data;
+        await this.fetchMarcas();
+      } catch(e){
+        alert('Error de red al subir el archivo.');
+      } finally {
+        this.bulkLoading = false;
+      }
     },
     async iniciarVigilancia(marcaId){
       const r = await fetch('/api/dashboard/vigilancia/activar',{method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({marca_cliente_id: marcaId})}).then(r=>r.json());
       if(!r.ok){ alert(r.error||'Error'); return; }
+      if(r.data.covered_by_premium){
+        alert('Vigilancia activada (incluida en tu plan Premium).');
+        await Promise.all([this.fetchVigilancia(), this.fetchMarcas()]);
+        return;
+      }
       if(r.data.init_point){ window.location.href = r.data.init_point; }
       else { await this.fetchVigilancia(); }
     },
@@ -364,7 +499,7 @@ function dashboard(){
 
 
 @bp.route("/dashboard")
-@login_required
+@premium_required
 def dashboard_page():
     return render_template_string(DASHBOARD_PAGE)
 
@@ -408,18 +543,28 @@ def api_marcas_list():
 
 
 def _marca_payload(m: "MarcaCliente") -> dict:
-    """Serializa MarcaCliente y calcula DJU (5 años) desde fecha de concesión."""
+    """Serializa MarcaCliente y calcula DJU (5a) y fin del plazo de oposición (90d)."""
     fecha_dju = None
     if m.fecha_concesion:
         try:
             fecha_dju = m.fecha_concesion.replace(year=m.fecha_concesion.year + 5).isoformat()
-        except ValueError:  # 29 feb → 28 feb del año destino
+        except ValueError:
             fecha_dju = m.fecha_concesion.replace(year=m.fecha_concesion.year + 5,
                                                   day=28).isoformat()
+
+    fecha_oposicion_fin = None
+    if m.fecha_publicacion:
+        from datetime import timedelta as _td
+        fecha_oposicion_fin = (m.fecha_publicacion + _td(days=90)).isoformat()
+
     return {
         "id": m.id, "denominacion": m.denominacion, "clase": m.clase,
         "acta": m.acta, "estado": m.estado, "titular": m.titular,
+        "es_propia": bool(m.es_propia) if m.es_propia is not None else True,
         "fecha_solicitud": m.fecha_solicitud.isoformat() if m.fecha_solicitud else None,
+        "fecha_publicacion": m.fecha_publicacion.isoformat() if m.fecha_publicacion else None,
+        "fecha_oposicion": m.fecha_oposicion.isoformat() if m.fecha_oposicion else None,
+        "fecha_oposicion_fin": fecha_oposicion_fin,
         "fecha_concesion": m.fecha_concesion.isoformat() if m.fecha_concesion else None,
         "fecha_vencimiento": m.fecha_vencimiento.isoformat() if m.fecha_vencimiento else None,
         "fecha_dju": fecha_dju,
@@ -444,15 +589,22 @@ def api_marcas_add():
             return None
 
     fecha_solic = _parse_date(data.get("fecha_solicitud"))
+    fecha_pub = _parse_date(data.get("fecha_publicacion"))
+    fecha_opo = _parse_date(data.get("fecha_oposicion"))
     fecha_conc = _parse_date(data.get("fecha_concesion"))
     fecha_venc = _parse_date(data.get("fecha_vencimiento"))
 
-    # Si dieron fecha de concesión pero no de vencimiento, calculamos 10 años después.
     if fecha_conc and not fecha_venc:
         try:
             fecha_venc = fecha_conc.replace(year=fecha_conc.year + 10)
         except ValueError:
             fecha_venc = fecha_conc.replace(year=fecha_conc.year + 10, day=28)
+
+    es_propia = data.get("es_propia")
+    if es_propia is None:
+        es_propia = True
+    else:
+        es_propia = bool(es_propia)
 
     with get_session() as s:
         m = MarcaCliente(
@@ -462,7 +614,10 @@ def api_marcas_add():
             acta=(data.get("acta") or "").strip() or None,
             titular=(data.get("titular") or "").strip() or None,
             estado=(data.get("estado") or "").strip() or None,
+            es_propia=es_propia,
             fecha_solicitud=fecha_solic,
+            fecha_publicacion=fecha_pub,
+            fecha_oposicion=fecha_opo,
             fecha_concesion=fecha_conc,
             fecha_vencimiento=fecha_venc,
             notas=(data.get("notas") or "").strip() or None,
@@ -470,6 +625,118 @@ def api_marcas_add():
         s.add(m)
         s.commit()
         return _ok({"id": m.id}, 201)
+
+
+@bp.route("/api/dashboard/marcas/bulk", methods=["POST"])
+@login_required
+def api_marcas_bulk():
+    """Carga masiva de marcas vía Excel (.xlsx) o CSV.
+
+    Columnas esperadas (case-insensitive, en cualquier orden):
+      denominacion (obligatoria), clase, acta, titular, estado, es_propia,
+      fecha_solicitud, fecha_publicacion, fecha_oposicion, fecha_concesion,
+      fecha_vencimiento, notas
+
+    Devuelve {creadas, errores: [{fila, motivo}]}.
+    """
+    user = current_user()
+    f = request.files.get("file")
+    if not f:
+        return _err("Subí un archivo .xlsx o .csv")
+
+    filename = (f.filename or "").lower()
+    rows = []
+    try:
+        if filename.endswith(".csv"):
+            import csv, io
+            text = f.stream.read().decode("utf-8-sig", errors="replace")
+            reader = csv.DictReader(io.StringIO(text))
+            rows = [dict(r) for r in reader]
+        elif filename.endswith(".xlsx") or filename.endswith(".xlsm"):
+            from openpyxl import load_workbook
+            wb = load_workbook(f.stream, read_only=True, data_only=True)
+            ws = wb.active
+            headers = None
+            for r in ws.iter_rows(values_only=True):
+                if not any(r):
+                    continue
+                if headers is None:
+                    headers = [str(c).strip().lower() if c is not None else f"col{i}"
+                               for i, c in enumerate(r)]
+                    continue
+                row = {headers[i]: r[i] for i in range(min(len(headers), len(r)))}
+                rows.append(row)
+        else:
+            return _err("Formato no soportado. Usá .xlsx o .csv")
+    except Exception as e:
+        logger.exception("Error parseando bulk upload")
+        return _err(f"No pudimos leer el archivo: {e}")
+
+    if not rows:
+        return _err("El archivo está vacío")
+
+    def _to_date(v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, datetime):
+            return v.date()
+        if hasattr(v, "year") and hasattr(v, "month"):  # date
+            return v
+        try:
+            return datetime.fromisoformat(str(v).strip()[:10]).date()
+        except Exception:
+            for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%m/%d/%Y"):
+                try:
+                    return datetime.strptime(str(v).strip(), fmt).date()
+                except Exception:
+                    continue
+            return None
+
+    def _to_bool_propia(v):
+        if v is None or v == "":
+            return True
+        s = str(v).strip().lower()
+        if s in ("no", "tercero", "false", "0", "n"):
+            return False
+        return True
+
+    creadas = 0
+    errores = []
+    with get_session() as s:
+        for idx, row in enumerate(rows, start=2):  # fila 1 = headers
+            r = {(k or "").strip().lower(): v for k, v in row.items()}
+            deno = (r.get("denominacion") or r.get("denominación") or r.get("marca") or "").strip() if isinstance(r.get("denominacion") or r.get("denominación") or r.get("marca"), str) else r.get("denominacion") or r.get("denominación") or r.get("marca")
+            if not deno or not str(deno).strip():
+                errores.append({"fila": idx, "motivo": "Falta denominación"})
+                continue
+            try:
+                clase_raw = r.get("clase")
+                clase_int = int(clase_raw) if clase_raw not in (None, "") else None
+            except (ValueError, TypeError):
+                clase_int = None
+            try:
+                m = MarcaCliente(
+                    user_id=user.id,
+                    denominacion=str(deno).strip()[:300],
+                    clase=clase_int,
+                    acta=(str(r.get("acta") or "").strip() or None),
+                    titular=(str(r.get("titular") or "").strip() or None),
+                    estado=(str(r.get("estado") or "").strip() or None),
+                    es_propia=_to_bool_propia(r.get("es_propia") or r.get("propia")),
+                    fecha_solicitud=_to_date(r.get("fecha_solicitud") or r.get("inicio")),
+                    fecha_publicacion=_to_date(r.get("fecha_publicacion") or r.get("publicacion") or r.get("publicación")),
+                    fecha_oposicion=_to_date(r.get("fecha_oposicion") or r.get("oposicion") or r.get("oposición")),
+                    fecha_concesion=_to_date(r.get("fecha_concesion") or r.get("concesion") or r.get("concesión")),
+                    fecha_vencimiento=_to_date(r.get("fecha_vencimiento") or r.get("vencimiento")),
+                    notas=(str(r.get("notas") or "").strip() or None),
+                )
+                s.add(m)
+                creadas += 1
+            except Exception as e:
+                errores.append({"fila": idx, "motivo": str(e)[:200]})
+        s.commit()
+
+    return _ok({"creadas": creadas, "errores": errores})
 
 
 @bp.route("/api/dashboard/marcas/<int:marca_id>", methods=["DELETE"])
@@ -511,6 +778,9 @@ def api_vigilancia_list():
         return _ok(out)
 
 
+PREMIUM_VIGILANCIA_CAP = 3
+
+
 @bp.route("/api/dashboard/vigilancia/activar", methods=["POST"])
 @login_required
 def api_vigilancia_activar():
@@ -540,6 +810,39 @@ def api_vigilancia_activar():
         if existing:
             return _err("Ya tenés vigilancia activa sobre esa marca", 409)
 
+        # ¿Premium activo? — entonces vigilancia gratis hasta el cap (3 marcas)
+        premium = has_active_premium(user)
+        vigiladas_count = (s.query(SuscripcionVigilancia)
+                           .filter_by(user_id=user.id, status="active", tipo="marca")
+                           .count())
+        covered_by_premium = premium and vigiladas_count < PREMIUM_VIGILANCIA_CAP
+
+        if covered_by_premium:
+            # Activación inmediata, sin pasar por MP
+            sub = SuscripcionVigilancia(
+                user_id=user.id,
+                marca_cliente_id=marca_cliente_id,
+                tipo=tipo, status="active", monto=0.0,
+                activated_at=datetime.utcnow(),
+                metadata_json={"covered_by": "premium"},
+            )
+            s.add(sub)
+            s.commit()
+            s.refresh(sub)
+            return _ok({
+                "suscripcion_id": sub.id,
+                "monto": 0.0,
+                "covered_by_premium": True,
+                "init_point": None,
+            })
+
+        if premium and vigiladas_count >= PREMIUM_VIGILANCIA_CAP:
+            return _err(
+                f"Tu plan Premium cubre {PREMIUM_VIGILANCIA_CAP} marcas. "
+                "Cancelá una vigilancia existente o pagá esta como vigilancia individual.",
+                402,
+            )
+
         sub = SuscripcionVigilancia(
             user_id=user.id,
             marca_cliente_id=marca_cliente_id,
@@ -559,6 +862,7 @@ def api_vigilancia_activar():
     return _ok({
         "suscripcion_id": sub_id,
         "monto": monto,
+        "covered_by_premium": False,
         "init_point": pref.get("init_point"),
         "preapproval_id": pref.get("id"),
     })

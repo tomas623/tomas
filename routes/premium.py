@@ -57,7 +57,14 @@ def _generate_password(length: int = 12) -> str:
 
 @bp.route("/premium")
 def premium_page():
-    return render_template_string(PREMIUM_PAGE, precio=int(PRECIO_PREMIUM_MES))
+    reason = request.args.get("reason", "")
+    aviso = ""
+    if reason == "needs_subscription":
+        aviso = ("Para acceder al panel necesitás una suscripción Premium activa. "
+                 "Suscribite acá abajo y te mandamos las credenciales por email.")
+    return render_template_string(
+        PREMIUM_PAGE, precio=int(PRECIO_PREMIUM_MES), aviso=aviso,
+    )
 
 
 @bp.route("/api/premium/iniciar", methods=["POST"])
@@ -190,6 +197,13 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     Para quienes manejan varias marcas y necesitan validar nombres seguido sin
     pagar consulta por consulta.
   </p>
+
+  {% if aviso %}
+  <div style="background:#FEF9C3;border:1px solid #FDE68A;color:#854D0E;
+              padding:14px 16px;border-radius:10px;margin:12px 0">
+    {{ aviso }}
+  </div>
+  {% endif %}
 
   <div class="price-box">
     <div class="price">${{ "{:,}".format(precio).replace(",", ".") }}<small>ARS / mes — cancelás cuando quieras</small></div>

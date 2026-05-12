@@ -145,6 +145,42 @@ def login_required(view: Callable) -> Callable:
     return wrapper
 
 
+def has_active_premium(user: Optional[User]) -> bool:
+    """True si el user tiene una suscripción premium activa o es admin."""
+    if not user:
+        return False
+    if getattr(user, "is_admin", False):
+        return True
+    try:
+        from database import SuscripcionVigilancia
+        with get_session() as s:
+            sub = (s.query(SuscripcionVigilancia)
+                   .filter_by(user_id=user.id, tipo="premium", status="active")
+                   .first())
+            return sub is not None
+    except Exception:
+        return False
+
+
+def premium_required(view: Callable) -> Callable:
+    """Login + suscripción premium activa. Redirige a /premium si falta pagar."""
+
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        u = current_user()
+        if u is None:
+            if request.is_json or request.path.startswith("/api/"):
+                return {"ok": False, "error": "auth_required"}, 401
+            return redirect(url_for("auth.login_page", next=request.path))
+        if not has_active_premium(u):
+            if request.is_json or request.path.startswith("/api/"):
+                return {"ok": False, "error": "premium_required"}, 402
+            return redirect("/premium?reason=needs_subscription")
+        return view(*args, **kwargs)
+
+    return wrapper
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Linkeo de leads anteriores cuando un user se loguea
 # ─────────────────────────────────────────────────────────────────────
