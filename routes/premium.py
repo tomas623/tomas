@@ -1,6 +1,6 @@
 """
 Suscripción Premium — $30.000/mes con consultas ilimitadas, vigilancia de
-hasta 3 marcas y panel completo.
+hasta 10 marcas y panel completo.
 
 Flujo:
 1. Usuario va a /premium, lee qué incluye, completa email + nombre + tel.
@@ -16,7 +16,7 @@ Flujo:
 Notas:
 - Reutilizamos SuscripcionVigilancia con tipo='premium'. _has_unlimited_searches
   ya lo reconoce porque solo chequea status='active'.
-- El cap de 3 marcas vigiladas se controla en el endpoint que activa vigilancia
+- El cap de 10 marcas vigiladas se controla en el endpoint que activa vigilancia
   cuando el usuario tiene una premium activa (próxima iteración).
 """
 
@@ -128,7 +128,7 @@ def iniciar():
     pref = create_vigilancia_subscription(
         suscripcion_id=sub_id, email=sub_email,
         monto=PRECIO_PREMIUM_MES,
-        descripcion="LegalPacers Premium — consultas ilimitadas + vigilancia hasta 3 marcas",
+        descripcion="LegalPacers Premium — consultas ilimitadas + vigilancia hasta 10 marcas",
         request_host=request.host_url.rstrip("/"),
     )
 
@@ -223,7 +223,7 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Vigilancia automática de hasta 3 marcas</strong>
+        <strong>Vigilancia automática de hasta 10 marcas</strong>
         <span>Cada semana revisamos el boletín del INPI y te avisamos si aparece alguna marca similar a las tuyas.</span>
       </div>
     </div>

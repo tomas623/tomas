@@ -120,6 +120,7 @@ class User(Base):
     telefono      = Column(String(40))
     email_verified = Column(Boolean, default=False)
     is_admin      = Column(Boolean, default=False)
+    alertas_whatsapp = Column(Boolean, default=False)          # opt-in WhatsApp alerts
     created_at    = Column(DateTime, default=datetime.utcnow)
     last_login_at = Column(DateTime)
 

@@ -107,6 +107,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <div class="tab" :class="tab==='vigilancia'&&'active'" @click="tab='vigilancia'">Vigilancia</div>
     <div class="tab" :class="tab==='alertas'&&'active'" @click="tab='alertas'">Alertas</div>
     <div class="tab" :class="tab==='pagos'&&'active'" @click="tab='pagos'">Pagos</div>
+    <div class="tab" :class="tab==='config'&&'active'" @click="tab='config'">Configuración</div>
   </div>
 
   <!-- CONSULTAS -->
@@ -200,7 +201,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <p style="color:#64748b">
       Cada semana, cuando el INPI publica su boletín, escaneamos automáticamente
       las marcas nuevas y te alertamos por email y en este panel si alguna se parece a las tuyas.
-      Tu plan <strong>Premium</strong> incluye <strong>3 vigilancias activas</strong>;
+      Tu plan <strong>Premium</strong> incluye <strong x-text="precios.vigilancia_cap + ' vigilancias activas'"></strong>;
       las adicionales son $<span x-text="precios.vigilancia_marca.toLocaleString('es-AR')"></span> ARS / mes cada una.
     </p>
     <p x-show="!vigilancia.length" class="empty">
@@ -269,6 +270,34 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
         </template>
       </tbody>
     </table>
+  </div>
+
+  <!-- CONFIGURACIÓN -->
+  <div x-show="tab==='config'" class="card">
+    <h3 style="margin-top:0">Configuración de cuenta</h3>
+
+    <label>Nombre</label>
+    <input type="text" x-model="config.nombre" placeholder="Cómo querés que te llamemos">
+
+    <label>Teléfono (con código de país, ej: +54 9 11 1234-5678)</label>
+    <input type="tel" x-model="config.telefono" placeholder="+5491112345678">
+
+    <div style="margin:18px 0;padding:14px;background:#F4F5F9;border-radius:10px">
+      <label style="display:flex;gap:10px;align-items:center;cursor:pointer;font-weight:600">
+        <input type="checkbox" x-model="config.alertas_whatsapp" style="width:auto">
+        Recibir alertas también por WhatsApp
+      </label>
+      <p style="font-size:13px;color:#64748b;margin:8px 0 0">
+        Te avisamos por WhatsApp además del email cuando aparezca una marca similar a las
+        tuyas o se acerque un vencimiento. Necesitás tener tu teléfono cargado arriba.
+      </p>
+    </div>
+
+    <button @click="guardarConfig()" :disabled="configLoading">
+      <span x-show="!configLoading">Guardar cambios</span>
+      <span x-show="configLoading" x-cloak>Guardando…</span>
+    </button>
+    <span x-show="configMsg" x-text="configMsg" style="margin-left:12px;color:#16A34A;font-weight:600"></span>
   </div>
 
   <!-- MODAL agregar marca -->
@@ -386,7 +415,7 @@ function dashboard(){
     tab: new URLSearchParams(location.search).get('tab') || 'consultas',
     user: {email:'', nombre:''},
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
-    precios: {vigilancia_marca: 20000, vigilancia_portfolio: 50000},
+    precios: {vigilancia_marca: 20000, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
     nueva: {
       denominacion:'', clase:null, acta:'', estado:'',
@@ -394,16 +423,36 @@ function dashboard(){
       fecha_solicitud:'', fecha_publicacion:'', fecha_oposicion:'', fecha_concesion:'',
     },
     modalBulk: false, bulkFile: null, bulkResult: null, bulkLoading: false,
+    config: {nombre:'', telefono:'', alertas_whatsapp:false},
+    configLoading: false, configMsg: '',
 
     async cargar(){
       const me = await fetch('/api/auth/me').then(r=>r.json());
       if(!me.data.authenticated){ location.href='/login'; return; }
       this.user = me.data;
+      this.config.nombre = me.data.nombre || '';
+      this.config.telefono = me.data.telefono || '';
+      this.config.alertas_whatsapp = !!me.data.alertas_whatsapp;
       await Promise.all([
         this.fetchConsultas(), this.fetchMarcas(),
         this.fetchVigilancia(), this.fetchAlertas(), this.fetchPagos(),
         this.fetchPrecios(),
       ]);
+    },
+    async guardarConfig(){
+      this.configLoading = true;
+      this.configMsg = '';
+      try {
+        const r = await fetch('/api/dashboard/config', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(this.config),
+        }).then(r=>r.json());
+        if(!r.ok){ alert(r.error||'Error guardando'); return; }
+        this.configMsg = 'Guardado ✓';
+        setTimeout(() => this.configMsg = '', 3000);
+      } finally {
+        this.configLoading = false;
+      }
     },
     async fetchConsultas(){ this.consultas = (await fetch('/api/dashboard/consultas').then(r=>r.json())).data || []; },
     async fetchMarcas(){    this.marcas    = (await fetch('/api/dashboard/marcas').then(r=>r.json())).data || []; },
@@ -513,6 +562,7 @@ def api_precios():
     return _ok({
         "vigilancia_marca": PRECIO_VIGILANCIA_MARCA,
         "vigilancia_portfolio": PRECIO_VIGILANCIA_PORTFOLIO,
+        "vigilancia_cap": PREMIUM_VIGILANCIA_CAP,
         "consulta_completa": float(os.getenv("PRECIO_CONSULTA_COMPLETA", "15000")),
     })
 
@@ -778,7 +828,7 @@ def api_vigilancia_list():
         return _ok(out)
 
 
-PREMIUM_VIGILANCIA_CAP = 3
+PREMIUM_VIGILANCIA_CAP = int(os.getenv("PREMIUM_VIGILANCIA_CAP", "10"))
 
 
 @bp.route("/api/dashboard/vigilancia/activar", methods=["POST"])
@@ -810,7 +860,7 @@ def api_vigilancia_activar():
         if existing:
             return _err("Ya tenés vigilancia activa sobre esa marca", 409)
 
-        # ¿Premium activo? — entonces vigilancia gratis hasta el cap (3 marcas)
+        # ¿Premium activo? — entonces vigilancia gratis hasta el cap (10 marcas)
         premium = has_active_premium(user)
         vigiladas_count = (s.query(SuscripcionVigilancia)
                            .filter_by(user_id=user.id, status="active", tipo="marca")
@@ -872,6 +922,7 @@ def api_vigilancia_activar():
 @login_required
 def api_vigilancia_cancelar(sub_id: int):
     user = current_user()
+    paused_covered = 0
     with get_session() as s:
         sub = (s.query(SuscripcionVigilancia)
                .filter_by(id=sub_id, user_id=user.id).first())
@@ -886,8 +937,21 @@ def api_vigilancia_cancelar(sub_id: int):
 
         sub.status = "cancelled"
         sub.cancelled_at = datetime.utcnow()
+
+        # Si cancela el Premium, pausamos todas las vigilancias cubiertas por el plan.
+        if sub.tipo == "premium":
+            covered = (s.query(SuscripcionVigilancia)
+                       .filter_by(user_id=user.id, status="active")
+                       .filter(SuscripcionVigilancia.id != sub.id).all())
+            for v in covered:
+                md = v.metadata_json or {}
+                if md.get("covered_by") == "premium":
+                    v.status = "paused"
+                    v.paused_at = datetime.utcnow()
+                    paused_covered += 1
+
         s.commit()
-        return _ok({"cancelled": True})
+        return _ok({"cancelled": True, "paused_covered": paused_covered})
 
 
 @bp.route("/api/dashboard/alertas", methods=["GET"])
@@ -914,6 +978,30 @@ def api_alertas():
                 "created_at": a.created_at.isoformat(),
             })
         return _ok(out)
+
+
+@bp.route("/api/dashboard/config", methods=["POST"])
+@login_required
+def api_config():
+    user = current_user()
+    data = request.get_json(silent=True) or {}
+    nombre = (data.get("nombre") or "").strip() or None
+    telefono = (data.get("telefono") or "").strip() or None
+    alertas_wa = bool(data.get("alertas_whatsapp"))
+
+    if alertas_wa and not telefono:
+        return _err("Cargá un teléfono para activar alertas por WhatsApp")
+
+    with get_session() as s:
+        from database import User
+        u = s.query(User).filter_by(id=user.id).first()
+        if not u:
+            return _err("Usuario no encontrado", 404)
+        u.nombre = nombre
+        u.telefono = telefono
+        u.alertas_whatsapp = alertas_wa
+        s.commit()
+    return _ok({"saved": True})
 
 
 @bp.route("/api/dashboard/pagos", methods=["GET"])

@@ -151,6 +151,8 @@ def api_me():
         "user_id": u.id,
         "email": u.email,
         "nombre": u.nombre,
+        "telefono": u.telefono,
+        "alertas_whatsapp": bool(u.alertas_whatsapp) if u.alertas_whatsapp is not None else False,
         "is_admin": u.is_admin,
     })
 

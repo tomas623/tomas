@@ -343,6 +343,7 @@ def _process_preapproval_update(sdk, preapproval_id: str) -> dict:
     nuevo_status = map_status.get(mp_status, mp_status)
 
     sent_credentials = False
+    paused_covered = 0
     with get_session() as s:
         sub = (s.query(SuscripcionVigilancia)
                .filter_by(mp_subscription_id=str(preapproval_id)).first())
@@ -364,16 +365,30 @@ def _process_preapproval_update(sdk, preapproval_id: str) -> dict:
                 if user:
                     _send_premium_welcome(user, sub.metadata_json["pending_password"])
                     sent_credentials = True
-                    # Borramos la password en claro apenas se envía
                     md = dict(sub.metadata_json or {})
                     md.pop("pending_password", None)
                     md["credentials_sent_at"] = datetime.utcnow().isoformat()
                     sub.metadata_json = md
             except Exception as e:
                 logger.exception(f"No se pudo mandar credenciales premium {sub.id}: {e}")
+        # Si cancelan/pausan la Premium, pausamos también todas las vigilancias
+        # que estaban cubiertas por ese plan (monto=0, covered_by=premium).
+        if (sub.tipo == "premium" and nuevo_status in ("cancelled", "paused")
+                and previous_status == "active"):
+            covered = (s.query(SuscripcionVigilancia)
+                       .filter_by(user_id=sub.user_id, status="active")
+                       .filter(SuscripcionVigilancia.id != sub.id).all())
+            for v in covered:
+                md = v.metadata_json or {}
+                if md.get("covered_by") == "premium":
+                    v.status = "paused"
+                    v.paused_at = datetime.utcnow()
+                    paused_covered += 1
         s.commit()
 
-    return {"ok": True, "status": nuevo_status, "credentials_sent": sent_credentials}
+    return {"ok": True, "status": nuevo_status,
+            "credentials_sent": sent_credentials,
+            "paused_covered": paused_covered}
 
 
 def _send_premium_welcome(user, password: str) -> None:

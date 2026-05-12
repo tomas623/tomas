@@ -228,16 +228,19 @@ def _scorear(mp: MarcaCliente, cand) -> tuple[float, str]:
 
 def _enviar_email_alerta(sub: SuscripcionVigilancia, mp: MarcaCliente,
                          cand, score: float, nivel: str) -> bool:
-    """Envía el email de alerta al usuario. Retorna True si se mandó."""
+    """Envía la alerta al usuario (email + WhatsApp si está opt-in). True si email OK."""
     from database import User, get_session as _gs
 
     with _gs() as s:
         user = s.query(User).filter_by(id=sub.user_id).first()
         if not user or not user.email:
             return False
+        user_email = user.email
+        user_phone = user.telefono if user.alertas_whatsapp else None
 
-    base = os.getenv("APP_BASE_URL", "")
-    dashboard_url = f"{base}/dashboard?tab=alertas"
+    base = os.getenv("APP_BASE_URL", "") or os.getenv("PUBLIC_BASE_URL", "")
+    dashboard_url = f"{base.rstrip('/')}/dashboard?tab=alertas"
+
     subject, html, text = template_alerta_vigilancia(
         marca_propia=mp.denominacion,
         marca_nueva=getattr(cand, "denominacion", ""),
@@ -246,7 +249,24 @@ def _enviar_email_alerta(sub: SuscripcionVigilancia, mp: MarcaCliente,
         nivel=nivel,
         dashboard_url=dashboard_url,
     )
-    return send_email(user.email, subject, html, text=text)
+    email_ok = send_email(user_email, subject, html, text=text)
+
+    if user_phone:
+        try:
+            from services.whatsapp import notify_alerta as wa_alerta
+            wa_alerta(
+                telefono=user_phone,
+                marca_propia=mp.denominacion,
+                marca_nueva=getattr(cand, "denominacion", ""),
+                titular=getattr(cand, "titular", "") or "—",
+                clase=getattr(cand, "clase", 0) or 0,
+                nivel=nivel,
+                dashboard_url=dashboard_url,
+            )
+        except Exception as e:
+            logger.warning(f"WhatsApp alerta falló (no crítico): {e}")
+
+    return email_ok
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -274,14 +294,30 @@ def run_avisos_vencimiento() -> int:
                 user = s.query(User).filter_by(id=m.user_id).first()
                 if not user:
                     continue
-                base = os.getenv("APP_BASE_URL", "")
+                # Sólo notificamos si tiene Premium activa (sin pago no hay alertas)
+                from services.auth import has_active_premium
+                if not has_active_premium(user):
+                    continue
+                base = os.getenv("APP_BASE_URL", "") or os.getenv("PUBLIC_BASE_URL", "")
+                dashboard_url = f"{base.rstrip('/')}/dashboard?tab=marcas"
                 subject, html, text = template_vencimiento_marca(
                     marca=m.denominacion,
                     fecha_vencimiento=fecha_obj.isoformat(),
                     dias_restantes=dias,
-                    dashboard_url=f"{base}/dashboard?tab=marcas",
+                    dashboard_url=dashboard_url,
                 )
                 if send_email(user.email, subject, html, text=text):
                     enviados += 1
+
+                if user.alertas_whatsapp and user.telefono:
+                    try:
+                        from services.whatsapp import notify_vencimiento as wa_venc
+                        wa_venc(
+                            telefono=user.telefono, marca=m.denominacion,
+                            dias=dias, fecha=fecha_obj.isoformat(),
+                            dashboard_url=dashboard_url,
+                        )
+                    except Exception as e:
+                        logger.warning(f"WhatsApp vencimiento falló (no crítico): {e}")
     logger.info(f"Avisos de vencimiento enviados: {enviados}")
     return enviados
