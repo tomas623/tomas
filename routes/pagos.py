@@ -195,12 +195,33 @@ def dev_checkout_resolve():
             sub = s.query(SuscripcionVigilancia).filter_by(id=sus_id).first()
             if not sub:
                 return jsonify({"ok": False, "error": "Suscripción no encontrada"}), 404
+            previous_status = sub.status
             sub.status = "active" if status == "approved" else "cancelled"
             if status == "approved":
                 sub.activated_at = datetime.utcnow()
             else:
                 sub.cancelled_at = datetime.utcnow()
+            # Si activamos una premium en dev, simulamos el envío de credenciales
+            credentials_sent = False
+            if (sub.status == "active" and sub.tipo == "premium"
+                    and previous_status != "active"
+                    and (sub.metadata_json or {}).get("pending_password")):
+                try:
+                    from database import User
+                    from services.mercadopago import _send_premium_welcome
+                    user = s.query(User).filter_by(id=sub.user_id).first()
+                    if user:
+                        _send_premium_welcome(user, sub.metadata_json["pending_password"])
+                        credentials_sent = True
+                        md = dict(sub.metadata_json or {})
+                        # Dejamos la password en metadata en dev para poder verla,
+                        # pero marcamos como enviada
+                        md["credentials_sent_at"] = datetime.utcnow().isoformat()
+                        sub.metadata_json = md
+                except Exception:
+                    logger.exception("Dev checkout: error mandando credenciales")
             s.commit()
-        return jsonify({"ok": True, "redirect": "/dashboard?tab=vigilancia"})
+        target = "/dashboard?tab=marcas" if sub.tipo == "premium" else "/dashboard?tab=vigilancia"
+        return jsonify({"ok": True, "redirect": target, "credentials_sent": credentials_sent})
 
     return jsonify({"ok": False, "error": "Sin pago ni suscripción"}), 400
