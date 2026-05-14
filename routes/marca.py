@@ -40,7 +40,7 @@ bp = Blueprint("marca", __name__)
 
 
 PRECIO_NIVEL_2 = float(os.getenv("PRECIO_CONSULTA_COMPLETA", "15000"))
-PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "20000"))
+PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "1500"))
 
 # Rate limit Nivel 1 por IP. Suscriptores premium y usuarios autenticados
 # pueden saltearlo (lo manejamos en _check_rate_limit).
@@ -71,16 +71,14 @@ def _client_ip() -> str:
 
 
 def _has_unlimited_searches(user) -> bool:
-    """Suscriptores premium activos no tienen rate limit."""
+    """Admins y suscriptores premium activos no tienen rate limit."""
     if not user:
         return False
+    if getattr(user, "is_admin", False):
+        return True
     try:
-        from database import SuscripcionVigilancia
-        with get_session() as s:
-            active = (s.query(SuscripcionVigilancia)
-                      .filter_by(user_id=user.id, status="active")
-                      .first())
-            return active is not None
+        from services.auth import has_active_premium
+        return has_active_premium(user)
     except Exception:
         return False
 

@@ -22,7 +22,7 @@ from services.auth import current_user, has_active_premium, login_required, prem
 logger = logging.getLogger(__name__)
 bp = Blueprint("dashboard", __name__)
 
-PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "20000"))
+PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "1500"))
 PRECIO_VIGILANCIA_PORTFOLIO = float(os.getenv("PRECIO_VIGILANCIA_PORTFOLIO", "50000"))
 
 
@@ -183,7 +183,9 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
               <span class="badge" :class="hitoBadge(m.fecha_vencimiento)"
                     x-show="m.fecha_vencimiento" x-text="hitoLabel(m.fecha_vencimiento)"></span>
             </td>
-            <td>
+            <td style="white-space:nowrap">
+              <button class="small sec" @click="abrirEditar(m)"
+                      style="margin-right:4px">Editar</button>
               <button class="small sec" x-show="!hasVigilancia(m.id)"
                       @click="iniciarVigilancia(m.id)">Activar vigilancia</button>
               <span class="badge green" x-show="hasVigilancia(m.id)">Vigilando</span>
@@ -325,10 +327,10 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <p x-show="!premium" style="color:#64748b">No tenés información de tu suscripción.</p>
   </div>
 
-  <!-- MODAL agregar marca -->
-  <div class="modal" x-show="modalMarca" x-cloak @click.self="modalMarca=false">
+  <!-- MODAL agregar / editar marca -->
+  <div class="modal" x-show="modalMarca" x-cloak @click.self="cerrarModalMarca()">
     <div class="modal-content" style="max-width:560px">
-      <h3 style="margin-top:0">Agregar marca</h3>
+      <h3 style="margin-top:0" x-text="editandoMarcaId ? 'Editar marca' : 'Agregar marca'"></h3>
 
       <label>Denominación *</label>
       <input type="text" x-model="nueva.denominacion" placeholder="Mi Marca">
@@ -390,8 +392,10 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       </div>
 
       <div style="display:flex;gap:8px;margin-top:20px">
-        <button class="sec" @click="modalMarca=false" style="flex:1">Cancelar</button>
-        <button @click="guardarMarca()" style="flex:1">Guardar</button>
+        <button class="sec" @click="cerrarModalMarca()" style="flex:1">Cancelar</button>
+        <button @click="guardarMarca()" style="flex:1">
+          <span x-text="editandoMarcaId ? 'Guardar cambios' : 'Crear marca'"></span>
+        </button>
       </div>
     </div>
   </div>
@@ -456,8 +460,9 @@ function dashboard(){
     tab: new URLSearchParams(location.search).get('tab') || 'consultas',
     user: {email:'', nombre:''},
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
-    precios: {vigilancia_marca: 20000, vigilancia_portfolio: 50000, vigilancia_cap: 10},
+    precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
+    editandoMarcaId: null,
     nueva: {
       denominacion:'', clase:null, acta:'', estado:'',
       es_propia: true, titular:'',
@@ -549,16 +554,42 @@ function dashboard(){
     hasVigilancia(marcaId){
       return this.vigilancia.some(v => v.marca_cliente_id===marcaId && v.status==='active');
     },
-    async guardarMarca(){
-      const r = await fetch('/api/dashboard/marcas',{method:'POST',headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(this.nueva)}).then(r=>r.json());
-      if(!r.ok){ alert(r.error||'Error'); return; }
-      this.modalMarca=false;
+    abrirEditar(m){
+      this.editandoMarcaId = m.id;
+      this.nueva = {
+        denominacion: m.denominacion || '',
+        clase: m.clase || null,
+        acta: m.acta || '',
+        estado: m.estado || '',
+        es_propia: m.es_propia !== false,
+        titular: m.titular || '',
+        fecha_solicitud: m.fecha_solicitud || '',
+        fecha_publicacion: m.fecha_publicacion || '',
+        fecha_oposicion: m.fecha_oposicion || '',
+        fecha_concesion: m.fecha_concesion || '',
+      };
+      this.modalMarca = true;
+    },
+    cerrarModalMarca(){
+      this.modalMarca = false;
+      this.editandoMarcaId = null;
       this.nueva = {
         denominacion:'', clase:null, acta:'', estado:'',
         es_propia: true, titular:'',
         fecha_solicitud:'', fecha_publicacion:'', fecha_oposicion:'', fecha_concesion:'',
       };
+    },
+    async guardarMarca(){
+      const url = this.editandoMarcaId
+        ? '/api/dashboard/marcas/' + this.editandoMarcaId
+        : '/api/dashboard/marcas';
+      const method = this.editandoMarcaId ? 'PATCH' : 'POST';
+      const r = await fetch(url, {
+        method, headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(this.nueva),
+      }).then(r=>r.json());
+      if(!r.ok){ alert(r.error||'Error'); return; }
+      this.cerrarModalMarca();
       await this.fetchMarcas();
     },
 
@@ -977,6 +1008,60 @@ def api_marcas_bulk():
     return _ok({"creadas": creadas, "errores": errores})
 
 
+@bp.route("/api/dashboard/marcas/<int:marca_id>", methods=["PATCH", "PUT"])
+@login_required
+def api_marcas_update(marca_id: int):
+    """Edita los campos de una marca existente. Acepta cualquier subset de campos."""
+    user = current_user()
+    data = request.get_json(silent=True) or {}
+
+    def _parse_date(v):
+        if v in (None, ""):
+            return None
+        if hasattr(v, "year") and hasattr(v, "month"):  # ya es date
+            return v
+        try:
+            return datetime.fromisoformat(str(v)[:10]).date()
+        except Exception:
+            return None
+
+    with get_session() as s:
+        m = s.query(MarcaCliente).filter_by(id=marca_id, user_id=user.id).first()
+        if not m:
+            return _err("No encontrada", 404)
+
+        # String fields: actualizamos solo si vinieron en el payload
+        for field in ("denominacion", "acta", "titular", "estado", "notas"):
+            if field in data:
+                v = (data.get(field) or "").strip() if isinstance(data.get(field), str) else data.get(field)
+                setattr(m, field, v or None)
+
+        if "clase" in data:
+            try:
+                m.clase = int(data["clase"]) if data["clase"] not in (None, "") else None
+            except (ValueError, TypeError):
+                pass
+
+        if "es_propia" in data:
+            m.es_propia = bool(data["es_propia"])
+
+        for date_field in ("fecha_solicitud", "fecha_publicacion", "fecha_oposicion",
+                            "fecha_concesion", "fecha_vencimiento"):
+            if date_field in data:
+                setattr(m, date_field, _parse_date(data[date_field]))
+
+        # Si actualizan fecha_concesion y NO mandan fecha_vencimiento, recalculamos
+        if "fecha_concesion" in data and "fecha_vencimiento" not in data and m.fecha_concesion:
+            try:
+                m.fecha_vencimiento = m.fecha_concesion.replace(year=m.fecha_concesion.year + 10)
+            except ValueError:
+                m.fecha_vencimiento = m.fecha_concesion.replace(year=m.fecha_concesion.year + 10, day=28)
+
+        s.commit()
+        s.refresh(m)
+        return _ok(_marca_payload(m))
+
+
 @bp.route("/api/dashboard/marcas/<int:marca_id>", methods=["DELETE"])
 @login_required
 def api_marcas_delete(marca_id: int):
@@ -1048,6 +1133,25 @@ def api_vigilancia_activar():
         if existing:
             return _err("Ya tenés vigilancia activa sobre esa marca", 409)
 
+        # ¿Admin? Acceso full sin caps ni cobros.
+        if user.is_admin:
+            sub = SuscripcionVigilancia(
+                user_id=user.id,
+                marca_cliente_id=marca_cliente_id,
+                tipo=tipo, status="active", monto=0.0,
+                activated_at=datetime.utcnow(),
+                metadata_json={"covered_by": "admin"},
+            )
+            s.add(sub)
+            s.commit()
+            s.refresh(sub)
+            return _ok({
+                "suscripcion_id": sub.id,
+                "monto": 0.0,
+                "covered_by_premium": True,
+                "init_point": None,
+            })
+
         # ¿Premium activo? — entonces vigilancia gratis hasta el cap (10 marcas)
         premium = has_active_premium(user)
         vigiladas_count = (s.query(SuscripcionVigilancia)
@@ -1074,12 +1178,8 @@ def api_vigilancia_activar():
                 "init_point": None,
             })
 
-        if premium and vigiladas_count >= PREMIUM_VIGILANCIA_CAP:
-            return _err(
-                f"Tu plan Premium cubre {PREMIUM_VIGILANCIA_CAP} marcas. "
-                "Cancelá una vigilancia existente o pagá esta como vigilancia individual.",
-                402,
-            )
+        # Premium con cap superado → vigilancia adicional al precio extra.
+        # No bloqueamos: cobramos $1.500/mes (configurable) y sigue.
 
         sub = SuscripcionVigilancia(
             user_id=user.id,
