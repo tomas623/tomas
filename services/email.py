@@ -304,3 +304,103 @@ def template_lead_nurturing(step: int, marca: str, search_url: str) -> tuple[str
     html = _wrap(body, subject)
     text = f"{subject}\n\n{search_url}"
     return subject, html, text
+
+
+def template_invoice(
+    *, user_email: str, nombre: str, concepto: str, monto: float,
+    moneda: str, fecha, mp_payment_id: str,
+    paid_through: str, plan_freq: str, auto_renew: bool, dashboard_url: str,
+) -> tuple[str, str, str]:
+    fecha_str = fecha.strftime("%d/%m/%Y") if hasattr(fecha, "strftime") else str(fecha)
+    saludo = f"Hola{', ' + nombre if nombre else ''}"
+    periodo = "año" if plan_freq == "anual" else "mes"
+    proxima = (f"Próximo cobro automático: <strong>{paid_through}</strong>"
+               if auto_renew and paid_through
+               else (f"Tu acceso está vigente hasta <strong>{paid_through}</strong>. "
+                     f"Renovación automática desactivada — te avisamos antes para que renueves."
+                     if paid_through else
+                     "Tu suscripción está activa."))
+    subject = f"Recibo LegalPacers — {concepto} — ${monto:,.0f} {moneda}"
+    body = f"""
+        <h2 style="color:{BRAND_COLOR};margin:0 0 8px">Recibimos tu pago ✓</h2>
+        <p style="color:#64748b;margin:0 0 20px">{saludo}, te confirmamos el cobro de tu suscripción.</p>
+
+        <table cellpadding="0" cellspacing="0" style="width:100%;background:#f8fafc;
+               border-radius:8px;padding:16px;margin-bottom:20px">
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Concepto</td>
+              <td style="padding:6px 0;text-align:right;font-weight:600">{concepto}</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Importe</td>
+              <td style="padding:6px 0;text-align:right;font-weight:700;font-size:18px">
+                  ${monto:,.0f} {moneda}</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Fecha</td>
+              <td style="padding:6px 0;text-align:right">{fecha_str}</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Período</td>
+              <td style="padding:6px 0;text-align:right">por {periodo}</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Método</td>
+              <td style="padding:6px 0;text-align:right">Mercado Pago</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">ID de pago</td>
+              <td style="padding:6px 0;text-align:right;font-family:monospace;font-size:12px">
+                  {mp_payment_id}</td></tr>
+        </table>
+
+        <p style="margin:0 0 20px">{proxima}</p>
+
+        <p style="margin:0 0 24px">
+          <a href="{dashboard_url}" style="background:{ACCENT_COLOR};color:#fff;text-decoration:none;
+             padding:14px 28px;border-radius:8px;font-weight:600;display:inline-block">
+             Ver mis pagos</a>
+        </p>
+
+        <p style="font-size:12px;color:#94a3b8;margin-top:32px;border-top:1px solid #e2e8f0;padding-top:16px">
+          Este es un recibo automático. Si necesitás factura electrónica AFIP, escribinos
+          por WhatsApp y la generamos manualmente.
+        </p>
+    """
+    html = _wrap(body, subject)
+    text = (f"Recibo LegalPacers\nConcepto: {concepto}\nImporte: ${monto:,.0f} {moneda}\n"
+            f"Fecha: {fecha_str}\nID pago: {mp_payment_id}\nVer pagos: {dashboard_url}")
+    return subject, html, text
+
+
+def template_annual_reminder(
+    *, nombre: str, fecha_corte: str, plan_freq: str, auto_renew: bool,
+    paid_through: str, stats: dict, dashboard_url: str,
+) -> tuple[str, str, str]:
+    """Recordatorio anual del 21/12 con resumen del año."""
+    saludo = f"Hola{', ' + nombre if nombre else ''}"
+    cierre = (f"Tu plan se renueva automáticamente el <strong>{paid_through}</strong>."
+              if auto_renew and paid_through
+              else (f"Tu plan vence el <strong>{paid_through}</strong>. "
+                    f"Renová desde el panel si querés mantener el servicio."
+                    if paid_through else ""))
+    subject = f"Resumen del año en LegalPacers ({fecha_corte})"
+    body = f"""
+        <h2 style="color:{BRAND_COLOR};margin:0 0 8px">{saludo}, así fue tu año en LegalPacers</h2>
+        <p style="color:#64748b;margin:0 0 20px">Resumen al cierre del ciclo anual ({fecha_corte}).</p>
+
+        <table cellpadding="0" cellspacing="0" style="width:100%;background:#f8fafc;
+               border-radius:8px;padding:16px;margin-bottom:20px">
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Consultas hechas</td>
+              <td style="padding:6px 0;text-align:right;font-weight:700">{stats.get('consultas', 0)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Análisis completos</td>
+              <td style="padding:6px 0;text-align:right;font-weight:700">{stats.get('analisis', 0)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Marcas vigiladas</td>
+              <td style="padding:6px 0;text-align:right;font-weight:700">{stats.get('vigiladas', 0)}</td></tr>
+          <tr><td style="padding:6px 0;font-size:13px;color:#64748b">Alertas recibidas</td>
+              <td style="padding:6px 0;text-align:right;font-weight:700">{stats.get('alertas', 0)}</td></tr>
+        </table>
+
+        <p style="margin:0 0 20px">{cierre}</p>
+
+        <p style="margin:0 0 24px">
+          <a href="{dashboard_url}" style="background:{ACCENT_COLOR};color:#fff;text-decoration:none;
+             padding:14px 28px;border-radius:8px;font-weight:600;display:inline-block">
+             Ver mi panel</a>
+        </p>
+    """
+    html = _wrap(body, subject)
+    text = (f"Resumen del año en LegalPacers ({fecha_corte})\n"
+            f"Consultas: {stats.get('consultas', 0)} · Análisis: {stats.get('analisis', 0)} · "
+            f"Vigiladas: {stats.get('vigiladas', 0)} · Alertas: {stats.get('alertas', 0)}\n"
+            f"Ver panel: {dashboard_url}")
+    return subject, html, text

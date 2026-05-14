@@ -142,17 +142,24 @@ def create_consulta_preference(
 def create_vigilancia_subscription(
     suscripcion_id: int, email: str, monto: float,
     descripcion: str, request_host: Optional[str] = None,
+    plan_freq: str = "mensual",
 ) -> dict:
-    """Crea una preapproval mensual y retorna {id, init_point}.
+    """Crea una preapproval recurrente y retorna {id, init_point}.
+
+    plan_freq:
+      'mensual' → MP cobra cada 1 mes
+      'anual'   → MP cobra cada 12 meses
 
     En Argentina MP llama a esto "Suscripción sin plan asociado". El cliente la
-    autoriza una vez en Checkout y MP cobra automáticamente cada mes hasta que
-    el cliente o nosotros la cancelemos.
+    autoriza una vez en Checkout y MP cobra automáticamente cada período hasta
+    que el cliente o nosotros la cancelemos.
     """
     base = _base_url(request_host)
+    frequency = 12 if plan_freq == "anual" else 1
+    period_label = "año" if plan_freq == "anual" else "mes"
 
     if _is_dev_mode():
-        logger.info(f"[MP DEV] Suscripción simulada {suscripcion_id} (${monto}/mes)")
+        logger.info(f"[MP DEV] Suscripción simulada {suscripcion_id} (${monto}/{period_label})")
         return {
             "id": f"DEV-SUB-{suscripcion_id}",
             "init_point": f"{base}/dev/checkout?suscripcion={suscripcion_id}",
@@ -169,7 +176,7 @@ def create_vigilancia_subscription(
         "payer_email": email,
         "back_url": f"{base}/dashboard?tab=vigilancia",
         "auto_recurring": {
-            "frequency": 1,
+            "frequency": frequency,
             "frequency_type": "months",
             "transaction_amount": float(monto),
             "currency_id": "ARS",
@@ -446,16 +453,19 @@ def _process_recurring_payment(sdk, authorized_payment_id: str) -> dict:
     monto = float(ap.get("transaction_amount") or 0)
     status = ap.get("status")
 
+    invoice_sent = False
     with get_session() as s:
         sub = (s.query(SuscripcionVigilancia)
                .filter_by(mp_subscription_id=str(mp_sub_id)).first())
         if not sub:
             return {"ok": True, "no_match": True}
 
+        tipo_pago = sub.tipo if sub.tipo == "premium" else (
+            "vigilancia_marca" if sub.tipo == "marca" else "vigilancia_portfolio")
+
         pago = Pago(
             user_id=sub.user_id, email=None,
-            tipo=("vigilancia_marca" if sub.tipo == "marca" else "vigilancia_portfolio"),
-            monto=monto, moneda="ARS",
+            tipo=tipo_pago, monto=monto, moneda="ARS",
             mp_payment_id=str(ap.get("id")),
             mp_subscription_id=str(mp_sub_id),
             status=status,
@@ -463,6 +473,60 @@ def _process_recurring_payment(sdk, authorized_payment_id: str) -> dict:
             metadata_json={"suscripcion_id": sub.id, "authorized_payment": True},
         )
         s.add(pago)
-        s.commit()
 
-    return {"ok": True, "status": status}
+        # Update paid_through_date para Premium: hoy + 30 días (mensual) o 365 días (anual)
+        if status == "approved" and sub.tipo == "premium":
+            from datetime import timedelta as _td
+            base_date = sub.paid_through_date if (sub.paid_through_date
+                        and sub.paid_through_date > datetime.utcnow().date()) else datetime.utcnow().date()
+            extra_days = 365 if sub.plan_freq == "anual" else 30
+            sub.paid_through_date = base_date + _td(days=extra_days)
+
+        s.commit()
+        s.refresh(sub)
+
+        # Mandar recibo / factura por email
+        if status == "approved":
+            try:
+                from database import User
+                user = s.query(User).filter_by(id=sub.user_id).first()
+                if user and user.email:
+                    _send_invoice_email(user, sub, pago)
+                    invoice_sent = True
+            except Exception as e:
+                logger.exception(f"Error enviando recibo para Pago#{pago.id}: {e}")
+
+    return {"ok": True, "status": status, "invoice_sent": invoice_sent}
+
+
+def _send_invoice_email(user, sub, pago) -> None:
+    """Manda el recibo HTML por cada cobro exitoso."""
+    from services.email import send_email, template_invoice
+    base = os.getenv("PUBLIC_BASE_URL", "").rstrip("/") or ""
+    dashboard_url = f"{base}/dashboard?tab=pagos" if base else "/dashboard?tab=pagos"
+
+    subject, html, text = template_invoice(
+        user_email=user.email,
+        nombre=user.nombre or "",
+        concepto=_invoice_concepto(sub),
+        monto=pago.monto,
+        moneda=pago.moneda or "ARS",
+        fecha=pago.paid_at or datetime.utcnow(),
+        mp_payment_id=pago.mp_payment_id or "",
+        paid_through=sub.paid_through_date.isoformat() if sub.paid_through_date else None,
+        plan_freq=sub.plan_freq or "mensual",
+        auto_renew=bool(sub.auto_renew),
+        dashboard_url=dashboard_url,
+    )
+    send_email(user.email, subject, html, text=text)
+
+
+def _invoice_concepto(sub) -> str:
+    if sub.tipo == "premium":
+        periodo = "anual" if sub.plan_freq == "anual" else "mensual"
+        return f"Suscripción Premium — pago {periodo}"
+    if sub.tipo == "marca":
+        return "Vigilancia mensual de marca"
+    if sub.tipo == "portfolio":
+        return "Vigilancia mensual de portfolio"
+    return f"Suscripción {sub.tipo}"

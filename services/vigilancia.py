@@ -321,3 +321,124 @@ def run_avisos_vencimiento() -> int:
                         logger.warning(f"WhatsApp vencimiento falló (no crítico): {e}")
     logger.info(f"Avisos de vencimiento enviados: {enviados}")
     return enviados
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Suscripciones: chequeo diario + recordatorio anual del 21/12
+# ─────────────────────────────────────────────────────────────────────
+
+def run_subscription_maintenance() -> dict:
+    """Daily-safe: maneja expiración de suscripciones y mando del recordatorio anual.
+
+    1) Marca como 'cancelled' las suscripciones premium con paid_through < today
+       (cuando el user había desactivado la auto-renovación), pausando vigilancias
+       cubiertas por el plan.
+    2) El 21 de diciembre, manda el recordatorio anual a todos los Premium activos
+       (idempotente — guarda annual_reminder_sent_at por suscripción/año).
+    """
+    from database import (
+        AlertaVigilancia, Consulta, MarcaCliente, Pago,
+        SuscripcionVigilancia, User,
+    )
+    from services.email import template_annual_reminder
+
+    expired_count = 0
+    annual_sent = 0
+    hoy = datetime.utcnow().date()
+
+    with get_session() as s:
+        # 1) Expirar suscripciones cuyo paid_through pasó (auto-renew off)
+        expiradas = (s.query(SuscripcionVigilancia)
+                     .filter(SuscripcionVigilancia.status == "active",
+                             SuscripcionVigilancia.tipo == "premium",
+                             SuscripcionVigilancia.auto_renew.is_(False),
+                             SuscripcionVigilancia.paid_through_date.is_not(None),
+                             SuscripcionVigilancia.paid_through_date < hoy)
+                     .all())
+        for sub in expiradas:
+            sub.status = "cancelled"
+            sub.cancelled_at = datetime.utcnow()
+            covered = (s.query(SuscripcionVigilancia)
+                       .filter_by(user_id=sub.user_id, status="active")
+                       .filter(SuscripcionVigilancia.id != sub.id).all())
+            for v in covered:
+                if (v.metadata_json or {}).get("covered_by") == "premium":
+                    v.status = "paused"
+                    v.paused_at = datetime.utcnow()
+            expired_count += 1
+        if expiradas:
+            s.commit()
+
+        # 2) Recordatorio anual el 21/12 (10 días antes del 31/12)
+        if hoy.month == 12 and hoy.day == 21:
+            anio_actual = hoy.year
+            fecha_corte = f"31/12/{anio_actual}"
+            base = os.getenv("APP_BASE_URL", "") or os.getenv("PUBLIC_BASE_URL", "")
+            dashboard_url = f"{base.rstrip('/')}/dashboard"
+
+            premiums = (s.query(SuscripcionVigilancia)
+                        .filter_by(tipo="premium", status="active").all())
+            for sub in premiums:
+                # Idempotente: si ya mandamos este año, saltar
+                if (sub.annual_reminder_sent_at
+                        and sub.annual_reminder_sent_at.year == anio_actual):
+                    continue
+                user = s.query(User).filter_by(id=sub.user_id).first()
+                if not user or not user.email:
+                    continue
+
+                year_start = datetime(anio_actual, 1, 1)
+                stats = {
+                    "consultas": s.query(Consulta).filter(
+                        Consulta.user_id == user.id,
+                        Consulta.created_at >= year_start).count(),
+                    "analisis": s.query(Consulta).filter(
+                        Consulta.user_id == user.id, Consulta.paid.is_(True),
+                        Consulta.created_at >= year_start).count(),
+                    "vigiladas": s.query(SuscripcionVigilancia).filter(
+                        SuscripcionVigilancia.user_id == user.id,
+                        SuscripcionVigilancia.tipo == "marca",
+                        SuscripcionVigilancia.status == "active").count(),
+                    "alertas": s.query(AlertaVigilancia).filter(
+                        AlertaVigilancia.user_id == user.id,
+                        AlertaVigilancia.created_at >= year_start).count(),
+                }
+
+                subject, html, text = template_annual_reminder(
+                    nombre=user.nombre or "",
+                    fecha_corte=fecha_corte,
+                    plan_freq=sub.plan_freq or "mensual",
+                    auto_renew=bool(sub.auto_renew),
+                    paid_through=(sub.paid_through_date.isoformat()
+                                  if sub.paid_through_date else ""),
+                    stats=stats, dashboard_url=dashboard_url,
+                )
+                ok = send_email(user.email, subject, html, text=text)
+                if ok:
+                    sub.annual_reminder_sent_at = datetime.utcnow()
+                    annual_sent += 1
+
+                # WhatsApp resumen si está optado
+                if user.alertas_whatsapp and user.telefono:
+                    try:
+                        from services.whatsapp import send_whatsapp
+                        renew_line = (f"Renovación automática el {sub.paid_through_date.isoformat()}."
+                                      if sub.auto_renew and sub.paid_through_date
+                                      else f"Renová manualmente antes del {sub.paid_through_date.isoformat()}."
+                                      if sub.paid_through_date else "")
+                        send_whatsapp(
+                            user.telefono,
+                            f"📊 LegalPacers — resumen {anio_actual}\n\n"
+                            f"Consultas: {stats['consultas']} · Análisis: {stats['analisis']}\n"
+                            f"Marcas vigiladas: {stats['vigiladas']} · Alertas: {stats['alertas']}\n\n"
+                            f"{renew_line}\nVer panel: {dashboard_url}",
+                        )
+                    except Exception as e:
+                        logger.warning(f"WhatsApp anual falló (no crítico): {e}")
+            s.commit()
+
+    logger.info(
+        "Subscription maintenance: %d expiradas, %d recordatorios anuales enviados",
+        expired_count, annual_sent,
+    )
+    return {"expired": expired_count, "annual_sent": annual_sent}

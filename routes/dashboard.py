@@ -298,6 +298,31 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       <span x-show="configLoading" x-cloak>Guardando…</span>
     </button>
     <span x-show="configMsg" x-text="configMsg" style="margin-left:12px;color:#16A34A;font-weight:600"></span>
+
+    <hr style="border:none;border-top:1px solid #E2E8F0;margin:32px 0">
+    <h3>Tu suscripción</h3>
+    <div x-show="premium" style="background:#F0F5FF;padding:16px;border-radius:10px">
+      <p style="margin:0 0 6px"><strong x-text="premium ? ('Plan ' + (premium.plan_freq||'mensual')) : ''"></strong>
+         · $<span x-text="(premium?.monto||0).toLocaleString('es-AR')"></span>
+         <span x-text="premium?.plan_freq === 'anual' ? '/ año' : '/ mes'"></span></p>
+      <p style="margin:0;color:#64748b;font-size:14px" x-show="premium?.paid_through_date">
+        Vigente hasta <strong x-text="fmtDate(premium?.paid_through_date)"></strong>
+      </p>
+
+      <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;
+                    margin-top:14px;padding-top:14px;border-top:1px solid #DBEAFE">
+        <input type="checkbox" x-model="premiumRenew" @change="cambiarAutoRenew()"
+               style="width:auto;margin-top:3px">
+        <div>
+          <div style="font-weight:600">Renovación automática</div>
+          <div style="font-size:13px;color:#64748b">
+            Si lo dejás activado, te cobramos automáticamente al fin de cada período.
+            Si lo desactivás, te avisamos antes del vencimiento para que renueves vos.
+          </div>
+        </div>
+      </label>
+    </div>
+    <p x-show="!premium" style="color:#64748b">No tenés información de tu suscripción.</p>
   </div>
 
   <!-- MODAL agregar marca -->
@@ -425,6 +450,7 @@ function dashboard(){
     modalBulk: false, bulkFile: null, bulkResult: null, bulkLoading: false,
     config: {nombre:'', telefono:'', alertas_whatsapp:false},
     configLoading: false, configMsg: '',
+    premium: null, premiumRenew: true,
 
     async cargar(){
       const me = await fetch('/api/auth/me').then(r=>r.json());
@@ -436,8 +462,23 @@ function dashboard(){
       await Promise.all([
         this.fetchConsultas(), this.fetchMarcas(),
         this.fetchVigilancia(), this.fetchAlertas(), this.fetchPagos(),
-        this.fetchPrecios(),
+        this.fetchPrecios(), this.fetchPremium(),
       ]);
+    },
+    async fetchPremium(){
+      const r = await fetch('/api/dashboard/premium').then(r=>r.json());
+      this.premium = r.data || null;
+      this.premiumRenew = this.premium ? !!this.premium.auto_renew : true;
+    },
+    async cambiarAutoRenew(){
+      const r = await fetch('/api/dashboard/premium/auto_renew', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({auto_renew: this.premiumRenew}),
+      }).then(r=>r.json());
+      if(!r.ok){ alert(r.error || 'Error'); this.premiumRenew = !this.premiumRenew; return; }
+      this.configMsg = this.premiumRenew ? 'Renovación automática activada ✓' : 'Renovación automática desactivada ✓';
+      setTimeout(() => this.configMsg = '', 4000);
+      await this.fetchPremium();
     },
     async guardarConfig(){
       this.configLoading = true;
@@ -978,6 +1019,61 @@ def api_alertas():
                 "created_at": a.created_at.isoformat(),
             })
         return _ok(out)
+
+
+@bp.route("/api/dashboard/premium", methods=["GET"])
+@login_required
+def api_premium_info():
+    """Devuelve la suscripción premium activa del usuario, si tiene."""
+    user = current_user()
+    with get_session() as s:
+        sub = (s.query(SuscripcionVigilancia)
+               .filter_by(user_id=user.id, tipo="premium")
+               .filter(SuscripcionVigilancia.status.in_(["active", "paused"]))
+               .order_by(SuscripcionVigilancia.activated_at.desc())
+               .first())
+        if not sub:
+            return _ok(None)
+        return _ok({
+            "id": sub.id,
+            "status": sub.status,
+            "plan_freq": sub.plan_freq or "mensual",
+            "monto": sub.monto,
+            "auto_renew": bool(sub.auto_renew),
+            "paid_through_date": sub.paid_through_date.isoformat() if sub.paid_through_date else None,
+            "activated_at": sub.activated_at.isoformat() if sub.activated_at else None,
+        })
+
+
+@bp.route("/api/dashboard/premium/auto_renew", methods=["POST"])
+@login_required
+def api_premium_auto_renew():
+    """Activa o desactiva la renovación automática del Premium del usuario."""
+    user = current_user()
+    data = request.get_json(silent=True) or {}
+    new_value = bool(data.get("auto_renew", True))
+
+    with get_session() as s:
+        sub = (s.query(SuscripcionVigilancia)
+               .filter_by(user_id=user.id, tipo="premium", status="active")
+               .order_by(SuscripcionVigilancia.activated_at.desc())
+               .first())
+        if not sub:
+            return _err("No tenés una suscripción premium activa", 404)
+        sub.auto_renew = new_value
+        s.commit()
+
+        # Si desactivó la renovación, cancelamos el preapproval en MP para
+        # que no haya más cobros. La suscripción local sigue 'active' hasta
+        # paid_through (lo maneja run_subscription_maintenance).
+        if not new_value and sub.mp_subscription_id:
+            try:
+                from services.mercadopago import cancel_subscription
+                cancel_subscription(sub.mp_subscription_id)
+            except Exception as e:
+                logger.warning(f"No pude cancelar MP preapproval {sub.mp_subscription_id}: {e}")
+
+    return _ok({"auto_renew": new_value})
 
 
 @bp.route("/api/dashboard/config", methods=["POST"])

@@ -38,6 +38,7 @@ bp = Blueprint("premium", __name__)
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 PRECIO_PREMIUM_MES = float(os.getenv("PRECIO_PREMIUM_MES", "30000"))
+PRECIO_PREMIUM_ANUAL = float(os.getenv("PRECIO_PREMIUM_ANUAL", "300000"))
 
 
 def _ok(data, status=200):
@@ -63,7 +64,12 @@ def premium_page():
         aviso = ("Para acceder al panel necesitás una suscripción Premium activa. "
                  "Suscribite acá abajo y te mandamos las credenciales por email.")
     return render_template_string(
-        PREMIUM_PAGE, precio=int(PRECIO_PREMIUM_MES), aviso=aviso,
+        PREMIUM_PAGE,
+        precio_mes=int(PRECIO_PREMIUM_MES),
+        precio_anual=int(PRECIO_PREMIUM_ANUAL),
+        precio_anual_equiv=int(PRECIO_PREMIUM_ANUAL / 12),
+        descuento_pct=int((1 - PRECIO_PREMIUM_ANUAL / (PRECIO_PREMIUM_MES * 12)) * 100),
+        aviso=aviso,
     )
 
 
@@ -73,6 +79,11 @@ def iniciar():
     email = (data.get("email") or "").strip().lower()
     nombre = (data.get("nombre") or "").strip() or None
     telefono = (data.get("telefono") or "").strip() or None
+    plan_freq = (data.get("plan_freq") or "mensual").strip().lower()
+    if plan_freq not in ("mensual", "anual"):
+        plan_freq = "mensual"
+    auto_renew = bool(data.get("auto_renew", True))
+    monto = PRECIO_PREMIUM_ANUAL if plan_freq == "anual" else PRECIO_PREMIUM_MES
 
     if not EMAIL_RE.match(email):
         return _err("Email inválido")
@@ -109,8 +120,12 @@ def iniciar():
 
         sub = existing or SuscripcionVigilancia(
             user_id=user.id, tipo="premium", status="pending",
-            monto=PRECIO_PREMIUM_MES,
+            monto=monto, plan_freq=plan_freq, auto_renew=auto_renew,
         )
+        if existing:
+            sub.monto = monto
+            sub.plan_freq = plan_freq
+            sub.auto_renew = auto_renew
         # Guardamos la password temporal hasta el envío de credenciales
         sub.metadata_json = {
             "pending_password": new_password,
@@ -125,11 +140,13 @@ def iniciar():
 
     # Crear preapproval MP
     from services.mercadopago import create_vigilancia_subscription
+    desc = (f"LegalPacers Premium {plan_freq.title()} — consultas ilimitadas + "
+            "vigilancia hasta 10 marcas")
     pref = create_vigilancia_subscription(
         suscripcion_id=sub_id, email=sub_email,
-        monto=PRECIO_PREMIUM_MES,
-        descripcion="LegalPacers Premium — consultas ilimitadas + vigilancia hasta 10 marcas",
+        monto=monto, descripcion=desc,
         request_host=request.host_url.rstrip("/"),
+        plan_freq=plan_freq,
     )
 
     if not pref.get("init_point"):
@@ -205,8 +222,48 @@ PREMIUM_PAGE = """<!DOCTYPE html>
   </div>
   {% endif %}
 
-  <div class="price-box">
-    <div class="price">${{ "{:,}".format(precio).replace(",", ".") }}<small>ARS / mes — cancelás cuando quieras</small></div>
+  <div class="card" style="padding:18px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <label style="border:2px solid #E2E8F0;border-radius:12px;padding:18px;cursor:pointer;
+                    transition:.15s" :style="form.plan_freq==='mensual' ? 'border-color:#1B6EF3;background:#F0F5FF' : ''">
+        <input type="radio" value="mensual" x-model="form.plan_freq" style="display:none">
+        <div style="font-weight:700;font-size:16px;color:#0D1B4B">Mensual</div>
+        <div style="font-size:28px;font-weight:800;color:#1B6EF3;margin:6px 0 2px">
+          ${{ "{:,}".format(precio_mes).replace(",", ".") }}
+        </div>
+        <div style="font-size:13px;color:#64748b">por mes</div>
+      </label>
+
+      <label style="border:2px solid #E2E8F0;border-radius:12px;padding:18px;cursor:pointer;
+                    transition:.15s;position:relative" :style="form.plan_freq==='anual' ? 'border-color:#1B6EF3;background:#F0F5FF' : ''">
+        <input type="radio" value="anual" x-model="form.plan_freq" style="display:none">
+        <div style="position:absolute;top:-10px;right:12px;background:#16A34A;color:#fff;
+                    font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px">
+          {{ descuento_pct }}% OFF
+        </div>
+        <div style="font-weight:700;font-size:16px;color:#0D1B4B">Anual</div>
+        <div style="font-size:28px;font-weight:800;color:#1B6EF3;margin:6px 0 2px">
+          ${{ "{:,}".format(precio_anual).replace(",", ".") }}
+        </div>
+        <div style="font-size:13px;color:#64748b">
+          por año (equiv. ${{ "{:,}".format(precio_anual_equiv).replace(",", ".") }}/mes)
+        </div>
+      </label>
+    </div>
+
+    <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;
+                  margin-top:18px;padding:12px;background:#F4F5F9;border-radius:8px">
+      <input type="checkbox" x-model="form.auto_renew" style="margin-top:3px">
+      <div>
+        <div style="font-weight:600">Renovación automática</div>
+        <div style="font-size:13px;color:#64748b">
+          Activado por defecto: te cobramos cada
+          <span x-text="form.plan_freq==='anual' ? 'año' : 'mes'"></span>
+          y mantenés acceso sin interrupciones. Si lo desactivás, te avisamos antes del
+          vencimiento para que renueves manualmente.
+        </div>
+      </div>
+    </label>
   </div>
 
   <div class="card">
@@ -275,7 +332,10 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     <input id="telefono" type="tel" x-model="form.telefono" placeholder="+54 9 11 ...">
 
     <button @click="iniciar()" :disabled="cargando">
-      <span x-show="!cargando">Pagar y activar — ${{ "{:,}".format(precio).replace(",", ".") }} / mes</span>
+      <span x-show="!cargando">
+        Pagar y activar — $<span x-text="precioActual().toLocaleString('es-AR')"></span>
+        <span x-text="form.plan_freq==='anual' ? '/ año' : '/ mes'"></span>
+      </span>
       <span x-show="cargando" x-cloak>Generando link de pago…</span>
     </button>
 
@@ -288,11 +348,17 @@ PREMIUM_PAGE = """<!DOCTYPE html>
 </main>
 
 <script>
+const PRECIO_MES = {{ precio_mes }};
+const PRECIO_ANUAL = {{ precio_anual }};
+
 function premium(){
   return {
-    form: {email:'', nombre:'', telefono:''},
+    form: {email:'', nombre:'', telefono:'', plan_freq:'mensual', auto_renew: true},
     cargando: false,
     errorMsg: '',
+    precioActual(){
+      return this.form.plan_freq === 'anual' ? PRECIO_ANUAL : PRECIO_MES;
+    },
     async iniciar(){
       if(!this.form.email.trim()){
         this.errorMsg = 'Ingresá tu email para continuar.';
