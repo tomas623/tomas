@@ -102,12 +102,120 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   <h1>Hola<span x-show="user.nombre" x-text="', ' + user.nombre"></span> 👋</h1>
 
   <div class="tabs">
+    <div class="tab" :class="tab==='buscar'&&'active'" @click="tab='buscar'">Buscar marca</div>
     <div class="tab" :class="tab==='consultas'&&'active'" @click="tab='consultas'">Consultas</div>
     <div class="tab" :class="tab==='marcas'&&'active'" @click="tab='marcas'">Mis marcas</div>
     <div class="tab" :class="tab==='vigilancia'&&'active'" @click="tab='vigilancia'">Vigilancia</div>
     <div class="tab" :class="tab==='alertas'&&'active'" @click="tab='alertas'">Alertas</div>
     <div class="tab" :class="tab==='pagos'&&'active'" @click="tab='pagos'">Pagos</div>
     <div class="tab" :class="tab==='config'&&'active'" @click="tab='config'">Configuración</div>
+  </div>
+
+  <!-- BUSCAR (premium) -->
+  <div x-show="tab==='buscar'" class="card">
+    <h3 style="margin-top:0">Búsqueda Premium</h3>
+    <p style="color:#64748b;margin:0 0 20px">
+      Consultas y análisis ilimitados. Te mostramos las coincidencias completas con
+      titular, clase y nivel de confundibilidad (gráfica, fonética, ideológica).
+    </p>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+      <div>
+        <label>Marca a consultar *</label>
+        <input type="text" x-model="buscar.marca" placeholder="Ej: Acme, MiMarca..."
+               @keydown.enter="ejecutarBusqueda()">
+      </div>
+      <div>
+        <label>Clase Niza</label>
+        <select x-model="buscar.clase">
+          <option value="">Todas (45 clases)</option>
+          <template x-for="n in 45" :key="n">
+            <option :value="n" x-text="n + ' — ' + (NIZA_TITLES[n] || '')"></option>
+          </template>
+        </select>
+      </div>
+    </div>
+
+    <label style="margin-top:12px">Descripción del producto / servicio (opcional)</label>
+    <input type="text" x-model="buscar.descripcion"
+           placeholder="Ayuda al análisis conceptual. Ej: ropa deportiva">
+
+    <button @click="ejecutarBusqueda()" :disabled="buscando" style="margin-top:18px">
+      <span x-show="!buscando">Buscar →</span>
+      <span x-show="buscando" x-cloak>Buscando…</span>
+    </button>
+
+    <div x-show="buscarErr" class="alert-row alto" style="margin-top:14px" x-text="buscarErr"></div>
+
+    <template x-if="buscarResult">
+      <div style="margin-top:24px">
+        <div class="alert-row" :class="{
+          alto: buscarResult.veredicto==='no_disponible',
+          medio: buscarResult.veredicto==='necesita_analisis',
+          bajo: buscarResult.veredicto==='probablemente_disponible'
+        }" style="display:block">
+          <div style="font-size:18px;font-weight:700;margin-bottom:4px"
+               x-text="{
+                 probablemente_disponible:'✓ Buenas señales',
+                 necesita_analisis:'⚠ Necesita análisis',
+                 no_disponible:'✕ Riesgo alto'
+               }[buscarResult.veredicto]"></div>
+          <div x-text="buscarResult.mensaje"></div>
+          <div style="font-size:13px;color:#64748b;margin-top:6px">
+            Total coincidencias: <strong x-text="buscarResult.stats.matches_total"></strong> ·
+            Alto: <strong x-text="buscarResult.stats.matches_alto"></strong> ·
+            Medio: <strong x-text="buscarResult.stats.matches_medio"></strong>
+          </div>
+        </div>
+
+        <div x-show="buscarResult.dominios && buscarResult.dominios.length" style="margin-top:16px">
+          <div style="font-weight:600;margin-bottom:6px">Dominios</div>
+          <template x-for="d in buscarResult.dominios" :key="d.domain">
+            <span class="badge" :class="d.status==='disponible'?'green':(d.status==='tomado'?'red':'gray')"
+                  style="margin-right:6px">
+              <span x-text="d.domain"></span> · <span x-text="d.status"></span>
+            </span>
+          </template>
+        </div>
+
+        <div x-show="buscarResult.matches && buscarResult.matches.length" style="margin-top:20px">
+          <h4 style="margin:0 0 10px">Coincidencias detectadas</h4>
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Marca</th><th>Clase</th><th>Titular</th><th>Estado</th><th>Score</th><th>Nivel</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="m in buscarResult.matches" :key="m.id">
+                <tr>
+                  <td>
+                    <strong x-text="m.denominacion"></strong>
+                    <div style="font-size:12px;color:#64748b" x-show="m.acta">
+                      Acta <span x-text="m.acta"></span>
+                    </div>
+                  </td>
+                  <td x-text="m.clase || '—'"></td>
+                  <td x-text="m.titular || '—'"></td>
+                  <td><span class="badge gray" x-text="m.estado || m.estado_code || '—'"></span></td>
+                  <td><strong x-text="((m.score||0)*100).toFixed(0) + '%'"></strong></td>
+                  <td>
+                    <span class="badge" :class="{
+                      red: m.nivel==='alto', yellow: m.nivel==='medio', gray: m.nivel==='bajo'
+                    }" x-text="m.nivel"></span>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <p x-show="!buscarResult.matches || !buscarResult.matches.length"
+           style="margin-top:16px;color:#16A34A">
+          ✓ No encontramos coincidencias significativas en la base del INPI.
+        </p>
+      </div>
+    </template>
   </div>
 
   <!-- CONSULTAS -->
@@ -281,8 +389,16 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <label>Nombre</label>
     <input type="text" x-model="config.nombre" placeholder="Cómo querés que te llamemos">
 
-    <label>Teléfono (con código de país, ej: +54 9 11 1234-5678)</label>
-    <input type="tel" x-model="config.telefono" placeholder="+5491112345678">
+    <label>Teléfono</label>
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:8px">
+      <select x-model="config.tel_cc">
+        <template x-for="c in COUNTRY_CODES" :key="c.iso">
+          <option :value="c.code" x-text="c.flag + ' ' + c.name + ' (+' + c.code + ')'"></option>
+        </template>
+      </select>
+      <input type="tel" x-model="config.tel_num"
+             :placeholder="config.tel_cc === '54' ? '9 11 1234-5678' : 'Número (sin el código de país)'">
+    </div>
 
     <div style="margin:18px 0;padding:14px;background:#F4F5F9;border-radius:10px">
       <label style="display:flex;gap:10px;align-items:center;cursor:pointer;font-weight:600">
@@ -457,8 +573,28 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 <script>
 function dashboard(){
   return {
-    tab: new URLSearchParams(location.search).get('tab') || 'consultas',
+    tab: new URLSearchParams(location.search).get('tab') || 'buscar',
     user: {email:'', nombre:''},
+    NIZA_TITLES: {
+      1:"Productos químicos",2:"Pinturas y barnices",3:"Cosméticos y limpieza",
+      4:"Aceites y combustibles",5:"Farmacéuticos",6:"Metales comunes",
+      7:"Máquinas y motores",8:"Herramientas de mano",9:"Electrónica y software",
+      10:"Aparatos médicos",11:"Alumbrado y calefacción",12:"Vehículos",
+      13:"Armas de fuego",14:"Joyería y relojes",15:"Instrumentos musicales",
+      16:"Papel e imprenta",17:"Caucho y plásticos",18:"Cuero y bolsos",
+      19:"Materiales de construcción",20:"Muebles",21:"Utensilios domésticos",
+      22:"Cuerdas y fibras",23:"Hilos textiles",24:"Telas y textiles",
+      25:"Ropa y calzado",26:"Encajes y bordados",27:"Alfombras",
+      28:"Juegos y juguetes",29:"Carne y alimentos",30:"Café, té y panadería",
+      31:"Agrícola y animales vivos",32:"Cervezas y bebidas",33:"Bebidas alcohólicas",
+      34:"Tabaco",35:"Publicidad y gestión",36:"Seguros y finanzas",
+      37:"Construcción y reparación",38:"Telecomunicaciones",39:"Transporte",
+      40:"Tratamiento de materiales",41:"Educación y entretenimiento",
+      42:"Servicios tecnológicos",43:"Restauración y alojamiento",
+      44:"Servicios médicos y veterinarios",45:"Servicios jurídicos y seguridad"
+    },
+    buscar: {marca:'', clase:'', descripcion:''},
+    buscando: false, buscarErr: '', buscarResult: null,
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
@@ -469,7 +605,26 @@ function dashboard(){
       fecha_solicitud:'', fecha_publicacion:'', fecha_oposicion:'', fecha_concesion:'',
     },
     modalBulk: false, bulkFile: null, bulkResult: null, bulkLoading: false,
-    config: {nombre:'', telefono:'', alertas_whatsapp:false},
+    COUNTRY_CODES: [
+      {iso:'AR', code:'54', name:'Argentina', flag:'🇦🇷'},
+      {iso:'UY', code:'598', name:'Uruguay', flag:'🇺🇾'},
+      {iso:'CL', code:'56', name:'Chile', flag:'🇨🇱'},
+      {iso:'BR', code:'55', name:'Brasil', flag:'🇧🇷'},
+      {iso:'PY', code:'595', name:'Paraguay', flag:'🇵🇾'},
+      {iso:'BO', code:'591', name:'Bolivia', flag:'🇧🇴'},
+      {iso:'PE', code:'51', name:'Perú', flag:'🇵🇪'},
+      {iso:'CO', code:'57', name:'Colombia', flag:'🇨🇴'},
+      {iso:'VE', code:'58', name:'Venezuela', flag:'🇻🇪'},
+      {iso:'EC', code:'593', name:'Ecuador', flag:'🇪🇨'},
+      {iso:'MX', code:'52', name:'México', flag:'🇲🇽'},
+      {iso:'US', code:'1', name:'Estados Unidos', flag:'🇺🇸'},
+      {iso:'ES', code:'34', name:'España', flag:'🇪🇸'},
+      {iso:'IT', code:'39', name:'Italia', flag:'🇮🇹'},
+      {iso:'FR', code:'33', name:'Francia', flag:'🇫🇷'},
+      {iso:'DE', code:'49', name:'Alemania', flag:'🇩🇪'},
+      {iso:'UK', code:'44', name:'Reino Unido', flag:'🇬🇧'},
+    ],
+    config: {nombre:'', tel_cc:'54', tel_num:'', alertas_whatsapp:false},
     configLoading: false, configMsg: '',
     premium: null, premiumRenew: true,
 
@@ -478,7 +633,21 @@ function dashboard(){
       if(!me.data.authenticated){ location.href='/login'; return; }
       this.user = me.data;
       this.config.nombre = me.data.nombre || '';
-      this.config.telefono = me.data.telefono || '';
+      // Parsear teléfono guardado (formato E.164: +54...) en cc + num
+      const tel = (me.data.telefono || '').trim();
+      if (tel.startsWith('+')) {
+        const match = this.COUNTRY_CODES
+          .slice().sort((a,b) => b.code.length - a.code.length)
+          .find(c => tel.slice(1).startsWith(c.code));
+        if (match) {
+          this.config.tel_cc = match.code;
+          this.config.tel_num = tel.slice(1 + match.code.length);
+        } else {
+          this.config.tel_num = tel;
+        }
+      } else if (tel) {
+        this.config.tel_num = tel;
+      }
       this.config.alertas_whatsapp = !!me.data.alertas_whatsapp;
       await Promise.all([
         this.fetchConsultas(), this.fetchMarcas(),
@@ -504,10 +673,17 @@ function dashboard(){
     async guardarConfig(){
       this.configLoading = true;
       this.configMsg = '';
+      const telefonoFull = this.config.tel_num.trim()
+        ? '+' + this.config.tel_cc + this.config.tel_num.replace(/[^\d]/g,'')
+        : '';
       try {
         const r = await fetch('/api/dashboard/config', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(this.config),
+          body: JSON.stringify({
+            nombre: this.config.nombre,
+            telefono: telefonoFull,
+            alertas_whatsapp: this.config.alertas_whatsapp,
+          }),
         }).then(r=>r.json());
         if(!r.ok){ alert(r.error||'Error guardando'); return; }
         this.configMsg = 'Guardado ✓';
@@ -522,6 +698,37 @@ function dashboard(){
     async fetchAlertas(){   this.alertas   = (await fetch('/api/dashboard/alertas').then(r=>r.json())).data || []; },
     async fetchPagos(){     this.pagos     = (await fetch('/api/dashboard/pagos').then(r=>r.json())).data || []; },
     async fetchPrecios(){   this.precios   = (await fetch('/api/dashboard/precios').then(r=>r.json())).data || this.precios; },
+
+    async ejecutarBusqueda(){
+      if(!this.buscar.marca.trim()){
+        this.buscarErr = 'Ingresá una marca para buscar.';
+        return;
+      }
+      this.buscarErr = '';
+      this.buscarResult = null;
+      this.buscando = true;
+      try {
+        const r = await fetch('/api/marca/check', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            marca: this.buscar.marca,
+            descripcion: this.buscar.descripcion,
+            clases: this.buscar.clase ? [parseInt(this.buscar.clase)] : [],
+          }),
+        });
+        const d = await r.json();
+        if(!d.ok){
+          this.buscarErr = d.error || 'No pudimos procesar la búsqueda.';
+        } else {
+          this.buscarResult = d.data;
+          await this.fetchConsultas();
+        }
+      } catch(e){
+        this.buscarErr = 'Error de red.';
+      } finally {
+        this.buscando = false;
+      }
+    },
 
     fmtDate(d){ return d ? new Date(d).toLocaleDateString('es-AR') : '—'; },
     diagBadge(d){ return ({

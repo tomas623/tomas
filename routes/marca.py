@@ -157,13 +157,16 @@ def nivel_1_check():
         clases = [int(c) for c in (clases or []) if c]
     except (ValueError, TypeError):
         clases = []
-    # La consulta gratuita exige una clase específica. El Nivel 2 (paga) sí
-    # puede pedir "todas las clases".
-    if not clases:
+    # La consulta gratuita exige una clase específica. Premium/admin pueden
+    # consultar las 45 clases sin elegir una.
+    user = current_user()
+    is_premium_or_admin = bool(
+        user and (user.is_admin or _has_unlimited_searches(user))
+    )
+    if not clases and not is_premium_or_admin:
         return _err("Elegí una clase Niza para la búsqueda gratuita.")
 
     # Rate limit: Nivel 1 anónimo limitado por IP en una ventana móvil.
-    user = current_user()
     ip = _client_ip()
     over = _check_rate_limit(user, ip)
     if over is not None:
@@ -188,12 +191,22 @@ def nivel_1_check():
         lead_id = _save_lead(email, marca, descripcion, clases,
                              nombre=nombre, telefono=telefono)
 
-    # Búsqueda liviana: sin IA, top 5
-    matches = search_similar(
-        marca=marca, descripcion=descripcion,
-        clases=clases or None, limit=5, use_ai=False,
-        min_score=0.45,
-    )
+    # Premium/admin reciben búsqueda completa (top 50, sin paywall)
+    from services.auth import has_active_premium
+    is_full_access = bool(user and (user.is_admin or has_active_premium(user)))
+    if is_full_access:
+        matches = search_similar(
+            marca=marca, descripcion=descripcion,
+            clases=clases or None, limit=50, use_ai=False,
+            min_score=0.40,
+        )
+    else:
+        # Búsqueda liviana free: sin IA, top 5
+        matches = search_similar(
+            marca=marca, descripcion=descripcion,
+            clases=clases or None, limit=5, use_ai=False,
+            min_score=0.45,
+        )
 
     altos = [m for m in matches if m.nivel == "alto"]
     medios = [m for m in matches if m.nivel == "medio"]
@@ -216,7 +229,7 @@ def nivel_1_check():
     # Chequeo de dominio rápido (informativo)
     domains = [d.to_dict() for d in check_domains(marca)]
 
-    return _ok({
+    response = {
         "lead_id": lead_id,
         "marca": marca,
         "veredicto": veredicto,
@@ -228,14 +241,22 @@ def nivel_1_check():
             "matches_medio": len(medios),
         },
         "dominios": domains,
-        "siguiente_paso": {
+        "premium": is_full_access,
+    }
+
+    if is_full_access:
+        # Premium: devolvemos la lista completa de matches con detalle
+        response["matches"] = [m.to_dict() for m in matches]
+    else:
+        response["siguiente_paso"] = {
             "tipo": "consulta_completa",
             "precio": PRECIO_NIVEL_2,
             "moneda": "ARS",
             "descripcion": "Informe completo con análisis fonético, conceptual y "
                            "pre-análisis automático de viabilidad de registro.",
-        },
-    })
+        }
+
+    return _ok(response)
 
 
 # ─────────────────────────────────────────────────────────────────────

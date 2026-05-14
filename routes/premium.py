@@ -328,8 +328,15 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     <label for="nombre">Nombre</label>
     <input id="nombre" type="text" x-model="form.nombre" placeholder="Cómo querés que te llamemos">
 
-    <label for="telefono">Teléfono (opcional)</label>
-    <input id="telefono" type="tel" x-model="form.telefono" placeholder="+54 9 11 ...">
+    <label>Teléfono (opcional)</label>
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:8px">
+      <select x-model="form.tel_cc">
+        <template x-for="c in COUNTRY_CODES" :key="c.iso">
+          <option :value="c.code" x-text="c.flag + ' ' + c.name + ' (+' + c.code + ')'"></option>
+        </template>
+      </select>
+      <input type="tel" x-model="form.tel_num" :placeholder="form.tel_cc === '54' ? '9 11 1234-5678' : 'Número'">
+    </div>
 
     <button @click="iniciar()" :disabled="cargando">
       <span x-show="!cargando">
@@ -351,9 +358,30 @@ PREMIUM_PAGE = """<!DOCTYPE html>
 const PRECIO_MES = {{ precio_mes }};
 const PRECIO_ANUAL = {{ precio_anual }};
 
+const COUNTRY_CODES = [
+  {iso:'AR', code:'54', name:'Argentina', flag:'🇦🇷'},
+  {iso:'UY', code:'598', name:'Uruguay', flag:'🇺🇾'},
+  {iso:'CL', code:'56', name:'Chile', flag:'🇨🇱'},
+  {iso:'BR', code:'55', name:'Brasil', flag:'🇧🇷'},
+  {iso:'PY', code:'595', name:'Paraguay', flag:'🇵🇾'},
+  {iso:'BO', code:'591', name:'Bolivia', flag:'🇧🇴'},
+  {iso:'PE', code:'51', name:'Perú', flag:'🇵🇪'},
+  {iso:'CO', code:'57', name:'Colombia', flag:'🇨🇴'},
+  {iso:'VE', code:'58', name:'Venezuela', flag:'🇻🇪'},
+  {iso:'EC', code:'593', name:'Ecuador', flag:'🇪🇨'},
+  {iso:'MX', code:'52', name:'México', flag:'🇲🇽'},
+  {iso:'US', code:'1', name:'Estados Unidos', flag:'🇺🇸'},
+  {iso:'ES', code:'34', name:'España', flag:'🇪🇸'},
+  {iso:'IT', code:'39', name:'Italia', flag:'🇮🇹'},
+  {iso:'FR', code:'33', name:'Francia', flag:'🇫🇷'},
+  {iso:'DE', code:'49', name:'Alemania', flag:'🇩🇪'},
+  {iso:'UK', code:'44', name:'Reino Unido', flag:'🇬🇧'},
+];
+
 function premium(){
   return {
-    form: {email:'', nombre:'', telefono:'', plan_freq:'mensual', auto_renew: true},
+    COUNTRY_CODES,
+    form: {email:'', nombre:'', tel_cc:'54', tel_num:'', plan_freq:'mensual', auto_renew: true},
     cargando: false,
     errorMsg: '',
     precioActual(){
@@ -366,10 +394,19 @@ function premium(){
       }
       this.errorMsg = '';
       this.cargando = true;
+      const telefonoFull = this.form.tel_num.trim()
+        ? '+' + this.form.tel_cc + this.form.tel_num.replace(/[^\d]/g,'')
+        : '';
       try {
         const r = await fetch('/api/premium/iniciar', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(this.form),
+          body: JSON.stringify({
+            email: this.form.email,
+            nombre: this.form.nombre,
+            telefono: telefonoFull,
+            plan_freq: this.form.plan_freq,
+            auto_renew: this.form.auto_renew,
+          }),
         });
         const d = await r.json();
         if(!d.ok){
