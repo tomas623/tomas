@@ -403,6 +403,22 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       <p style="color:#475569;font-size:14px;margin-top:0">
         Subí un .xlsx o .csv con una fila por marca. La primera fila tiene que tener los nombres de las columnas.
       </p>
+
+      <div style="background:#F0F5FF;border:1px solid #DBEAFE;border-radius:10px;
+                  padding:14px;margin:14px 0">
+        <div style="font-weight:600;color:#0D1B4B;margin-bottom:4px">¿No sabés cómo armarlo?</div>
+        <p style="font-size:13px;color:#475569;margin:0 0 10px">
+          Bajate nuestro template con los encabezados y filas de ejemplo. Lo completás
+          en Excel y volvés a subirlo acá.
+        </p>
+        <a href="/api/dashboard/marcas/template" download
+           class="sec" style="display:inline-block;padding:10px 16px;border:1px solid #1B6EF3;
+                              background:#fff;color:#1B6EF3;text-decoration:none;
+                              border-radius:8px;font-weight:600;font-size:14px">
+          ↓ Descargar template .xlsx
+        </a>
+      </div>
+
       <p style="font-size:13px;color:#64748b">
         <strong>Columnas reconocidas:</strong>
         denominacion (obligatoria), clase, acta, titular, estado, es_propia (sí/no),
@@ -716,6 +732,137 @@ def api_marcas_add():
         s.add(m)
         s.commit()
         return _ok({"id": m.id}, 201)
+
+
+@bp.route("/api/dashboard/marcas/template", methods=["GET"])
+@login_required
+def api_marcas_template():
+    """Devuelve un XLSX template con logo, encabezados y filas de ejemplo."""
+    from io import BytesIO
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+    from openpyxl.utils import get_column_letter
+    from flask import send_file
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Mis marcas"
+
+    columns = [
+        ("denominacion", "denominación", "Nombre exacto de la marca", 28),
+        ("clase", "clase", "Clase Niza (1-45)", 8),
+        ("acta", "acta", "Nº de acta INPI (opcional)", 14),
+        ("titular", "titular", "Solo si es marca de tercero", 22),
+        ("estado", "estado", "solicitada / publicada / oposicion / concedida / vencida", 16),
+        ("es_propia", "es_propia", "sí / no", 10),
+        ("fecha_solicitud", "fecha_solicitud", "AAAA-MM-DD", 14),
+        ("fecha_publicacion", "fecha_publicacion", "AAAA-MM-DD", 14),
+        ("fecha_oposicion", "fecha_oposicion", "AAAA-MM-DD", 14),
+        ("fecha_concesion", "fecha_concesion", "AAAA-MM-DD", 14),
+        ("fecha_vencimiento", "fecha_vencimiento", "AAAA-MM-DD (se calcula sola si dejás concesión)", 16),
+        ("notas", "notas", "Texto libre", 30),
+    ]
+
+    NAVY = "0D1B4B"
+    BLUE = "1B6EF3"
+    LIGHT_BLUE = "DBEAFE"
+    GRAY = "64748B"
+    LIGHT_GRAY = "F4F5F9"
+
+    # Logo (si existe el archivo)
+    try:
+        from openpyxl.drawing.image import Image as XLImage
+        logo_path = os.path.join(os.path.dirname(__file__), "..", "static", "logo-color.png")
+        if os.path.exists(logo_path):
+            img = XLImage(logo_path)
+            img.height = 60
+            img.width = 180
+            ws.add_image(img, "A1")
+            ws.row_dimensions[1].height = 50
+            ws.row_dimensions[2].height = 20
+    except Exception as e:
+        logger.warning(f"No pude embedir logo en template: {e}")
+
+    # Fila 3: título grande
+    ws.merge_cells("A3:L3")
+    ws["A3"] = "TEMPLATE — Carga masiva de marcas"
+    ws["A3"].font = Font(name="Arial", size=18, bold=True, color=NAVY)
+    ws["A3"].alignment = Alignment(horizontal="left", vertical="center")
+    ws.row_dimensions[3].height = 30
+
+    # Fila 4: instrucciones
+    ws.merge_cells("A4:L4")
+    ws["A4"] = ("Reemplazá las filas de ejemplo (5-7) por tus marcas. La primera columna "
+                "(denominación) es obligatoria; el resto opcional. Guardá como .xlsx y subilo "
+                "desde el panel de LegalPacers → Mis marcas → Cargar desde Excel.")
+    ws["A4"].font = Font(name="Arial", size=10, color=GRAY, italic=True)
+    ws["A4"].alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    ws.row_dimensions[4].height = 38
+
+    # Fila 5: cabeceras de columnas (key + descripción debajo)
+    header_row = 6
+    desc_row = 7
+    header_fill = PatternFill("solid", fgColor=BLUE)
+    desc_fill = PatternFill("solid", fgColor=LIGHT_BLUE)
+    border = Border(left=Side(style="thin", color="CBD5E1"),
+                    right=Side(style="thin", color="CBD5E1"),
+                    top=Side(style="thin", color="CBD5E1"),
+                    bottom=Side(style="thin", color="CBD5E1"))
+
+    for i, (key, label, hint, width) in enumerate(columns, start=1):
+        col = get_column_letter(i)
+        ws.column_dimensions[col].width = width
+
+        c = ws.cell(row=header_row, column=i, value=key)
+        c.font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
+        c.fill = header_fill
+        c.alignment = Alignment(horizontal="center", vertical="center")
+        c.border = border
+
+        d = ws.cell(row=desc_row, column=i, value=hint)
+        d.font = Font(name="Arial", size=9, italic=True, color=NAVY)
+        d.fill = desc_fill
+        d.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+        d.border = border
+
+    ws.row_dimensions[header_row].height = 22
+    ws.row_dimensions[desc_row].height = 28
+
+    # Filas de ejemplo
+    ejemplos = [
+        ["Mi Marca",       25, "1234567",  None,        "concedida",   "sí", "2024-03-10", "2024-08-15", None,         "2025-02-04", None,         "Mi marca de ropa"],
+        ["Acme",            9, None,       "Acme S.A.", "publicada",   "no", "2025-11-03", "2026-01-10", None,         None,         None,         "Competidor a vigilar"],
+        ["Café Verbum",    30, "7654321",  None,        "solicitada",  "sí", "2026-02-20", None,         None,         None,         None,         ""],
+    ]
+    light = PatternFill("solid", fgColor=LIGHT_GRAY)
+    for ri, fila in enumerate(ejemplos, start=desc_row + 1):
+        for ci, val in enumerate(fila, start=1):
+            c = ws.cell(row=ri, column=ci, value=val)
+            c.font = Font(name="Arial", size=10, color="334155")
+            c.alignment = Alignment(horizontal="left", vertical="center")
+            c.border = border
+            c.fill = light
+
+    # Freeze panes después de las cabeceras
+    ws.freeze_panes = "A8"
+
+    # Marca de agua tipo nota al final
+    nota_row = desc_row + len(ejemplos) + 2
+    ws.merge_cells(start_row=nota_row, start_column=1, end_row=nota_row, end_column=12)
+    nota = ws.cell(row=nota_row, column=1,
+                   value="Este archivo es solo un TEMPLATE de LegalPacers. Borrá las filas de ejemplo antes de subirlo.")
+    nota.font = Font(name="Arial", size=10, italic=True, color=GRAY)
+    nota.alignment = Alignment(horizontal="left", vertical="center")
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return send_file(
+        buf,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="legalpacers-template-marcas.xlsx",
+    )
 
 
 @bp.route("/api/dashboard/marcas/bulk", methods=["POST"])
