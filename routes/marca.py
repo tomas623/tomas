@@ -290,7 +290,8 @@ def nivel_1_check():
 
 @bp.route("/api/marca/consulta/iniciar", methods=["POST"])
 def nivel_2_iniciar():
-    """Crea una Consulta paga y un Pago en estado pending. Devuelve checkout URL."""
+    """Crea una Consulta y devuelve checkout URL.
+    Admin / Premium: auto-aprueba sin cobro y devuelve consulta_id para ver el informe."""
     data = request.get_json(silent=True) or {}
     marca = (data.get("marca") or "").strip()
     descripcion = (data.get("descripcion") or "").strip()
@@ -299,15 +300,23 @@ def nivel_2_iniciar():
 
     if not marca:
         return _err("El nombre de la marca es requerido")
-    if not email or not EMAIL_RE.match(email):
-        return _err("Email inválido")
+
+    user = current_user()
+    from services.auth import has_active_premium
+    is_full_access = bool(user and (user.is_admin or has_active_premium(user)))
+
+    # Para usuarios sin acceso premium, email es obligatorio para pagar/recibir.
+    if not is_full_access:
+        if not email or not EMAIL_RE.match(email):
+            return _err("Email inválido")
+    elif user and not email:
+        email = user.email
 
     try:
         clases = [int(c) for c in clases if c]
     except (ValueError, TypeError):
         clases = []
 
-    user = current_user()
     user_id = user.id if user else None
 
     # Persistir consulta + pago (pending)
@@ -315,10 +324,23 @@ def nivel_2_iniciar():
         consulta = Consulta(
             user_id=user_id, email=email, marca=marca,
             descripcion=descripcion, clases=clases,
-            nivel="completa", paid=False,
+            nivel="completa", paid=is_full_access,  # admin/premium ya entran como paid
         )
         s.add(consulta)
         s.flush()  # obtener consulta.id
+
+        if is_full_access:
+            # Generamos el informe completo al toque, sin pago
+            _generar_informe_completo(consulta)
+            s.commit()
+            return _ok({
+                "consulta_id": consulta.id,
+                "monto": 0.0,
+                "moneda": "ARS",
+                "covered_by_premium": True,
+                "init_point": None,
+                "ya_logueado": True,
+            })
 
         pago = Pago(
             user_id=user_id, email=email,
@@ -366,11 +388,18 @@ def nivel_2_ver_informe(consulta_id: int):
         # Permisos: dueño (por email o user) o admin
         user = current_user()
         is_owner = (user and (user.id == c.user_id or user.email == c.email))
-        is_admin = (user and user.is_admin)
-        if not is_owner and not is_admin:
-            # Permitir ver preview limitado por consulta_id (público con ID conocido).
-            # Ese ID viaja en la URL solo a quien inició la consulta.
-            pass
+        is_admin = bool(user and user.is_admin)
+        from services.auth import has_active_premium
+        is_premium = bool(user and has_active_premium(user))
+        full_access = is_admin or is_premium
+
+        # Si el viewer tiene acceso full y la consulta es propia, asegurar paid=True
+        if full_access and is_owner and not c.paid:
+            c.paid = True
+            if not c.resultados:
+                _generar_informe_completo(c)
+            s.commit()
+            s.refresh(c)
 
         c_data = {
             "id": c.id, "marca": c.marca, "descripcion": c.descripcion,
