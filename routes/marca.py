@@ -191,13 +191,13 @@ def nivel_1_check():
         lead_id = _save_lead(email, marca, descripcion, clases,
                              nombre=nombre, telefono=telefono)
 
-    # Premium/admin reciben búsqueda completa (top 50, sin paywall)
+    # Premium/admin reciben búsqueda completa (top 50, sin paywall) + IA conceptual
     from services.auth import has_active_premium
     is_full_access = bool(user and (user.is_admin or has_active_premium(user)))
     if is_full_access:
         matches = search_similar(
             marca=marca, descripcion=descripcion,
-            clases=clases or None, limit=50, use_ai=False,
+            clases=clases or None, limit=50, use_ai=True,
             min_score=0.40,
         )
     else:

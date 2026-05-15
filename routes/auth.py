@@ -141,6 +141,31 @@ def api_logout():
     return _ok({"ok": True})
 
 
+@bp.route("/api/auth/change-password", methods=["POST"])
+def api_change_password():
+    u = current_user()
+    if not u:
+        return _err("auth_required", 401)
+    data = request.get_json(silent=True) or {}
+    actual = (data.get("actual") or "").strip()
+    nueva = (data.get("nueva") or "").strip()
+    if not actual or not nueva:
+        return _err("Completá ambas contraseñas")
+    if len(nueva) < 8:
+        return _err("La nueva contraseña debe tener al menos 8 caracteres")
+
+    with get_session() as s:
+        user = s.query(User).filter_by(id=u.id).first()
+        if not user:
+            return _err("Usuario no encontrado", 404)
+        # Si el user tiene password seteada, validamos. Si no (magic link), permitimos setearla.
+        if user.password_hash and not verify_password(actual, user.password_hash):
+            return _err("La contraseña actual no es correcta", 403)
+        user.password_hash = hash_password(nueva)
+        s.commit()
+    return _ok({"changed": True})
+
+
 @bp.route("/api/auth/me", methods=["GET"])
 def api_me():
     u = current_user()

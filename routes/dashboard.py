@@ -92,9 +92,47 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 
 <div class="nav">
   <div class="logo">LEGAL<span class="accent">PACERS</span> · Mi panel</div>
-  <div class="user">
-    <span x-text="user.email"></span>
-    <a href="/logout">Cerrar sesión</a>
+  <div class="user" style="position:relative" @click.outside="userMenuOpen=false">
+    <button @click="userMenuOpen=!userMenuOpen"
+            style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;color:#0D1B4B"
+            :style="userMenuOpen ? 'background:#F4F5F9' : ''">
+      <div class="avatar"
+           style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#1B6EF3,#0D1B4B);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px"
+           x-text="userInitials()"></div>
+      <div style="text-align:left;line-height:1.15">
+        <div style="font-size:13px;font-weight:600" x-text="user.nombre || user.email.split('@')[0]"></div>
+        <div style="font-size:11px;color:#64748b" x-text="user.email"></div>
+      </div>
+      <span style="color:#64748b;font-size:10px">▼</span>
+    </button>
+
+    <div x-show="userMenuOpen" x-cloak
+         style="position:absolute;right:0;top:54px;background:#fff;border:1px solid #E2E8F0;
+                border-radius:10px;box-shadow:0 6px 20px rgba(13,27,75,.12);min-width:240px;
+                padding:6px;z-index:30">
+      <div style="padding:10px 12px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:13px;font-weight:600" x-text="user.nombre || user.email.split('@')[0]"></div>
+        <div style="font-size:12px;color:#64748b" x-text="user.email"></div>
+        <span class="badge" :class="user.is_admin ? 'green' : 'gray'" style="margin-top:6px;font-size:10px"
+              x-text="user.is_admin ? 'Admin' : 'Premium'"></span>
+      </div>
+      <a @click="tab='perfil'; userMenuOpen=false" href="#"
+         style="display:block;padding:10px 12px;color:#0D1B4B;text-decoration:none;font-size:14px;border-radius:6px"
+         onmouseover="this.style.background='#F4F5F9'" onmouseout="this.style.background='none'">
+        Mi perfil
+      </a>
+      <a @click="modalPassword=true; userMenuOpen=false" href="#"
+         style="display:block;padding:10px 12px;color:#0D1B4B;text-decoration:none;font-size:14px;border-radius:6px"
+         onmouseover="this.style.background='#F4F5F9'" onmouseout="this.style.background='none'">
+        Cambiar contraseña
+      </a>
+      <hr style="border:none;border-top:1px solid #E2E8F0;margin:4px 0">
+      <a href="/logout"
+         style="display:block;padding:10px 12px;color:#DC2626;text-decoration:none;font-size:14px;border-radius:6px"
+         onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='none'">
+        Cerrar sesión
+      </a>
+    </div>
   </div>
 </div>
 
@@ -260,12 +298,40 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 
           <div style="background:#F4F5F9;padding:12px 14px;border-radius:8px;margin-top:12px;
                       font-size:12px;color:#475569">
-            <strong>Cómo leerlo:</strong>
-            <span style="color:#1B6EF3">●</span> <strong>Léxico</strong>: similitud visual / ortográfica.
-            <span style="color:#7C3AED">●</span> <strong>Fonético</strong>: cómo suenan.
-            <span style="color:#16A34A">●</span> <strong>Conceptual</strong>: mismo significado, sinónimos, traducciones, asociación de ideas.
-            Si dos marcas se aplican a la <strong>misma clase</strong>, el riesgo de confusión aumenta.
-            Las primeras sílabas (raíz) pesan más que las desinencias.
+            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer"
+                 @click="ayudaScores=!ayudaScores">
+              <strong>¿Cómo se calculan los porcentajes?</strong>
+              <span x-text="ayudaScores ? '−' : '+'"
+                    style="font-size:18px;color:#1B6EF3"></span>
+            </div>
+
+            <div x-show="ayudaScores" x-cloak style="margin-top:10px;line-height:1.6">
+              <p style="margin:6px 0">
+                <span style="color:#1B6EF3">●</span> <strong>Léxico (0-100%)</strong> —
+                comparación visual/ortográfica con el algoritmo SequenceMatcher (familia Levenshtein)
+                sobre la denominación normalizada (sin tildes, sin caracteres especiales, minúsculas).
+                Si las marcas son idénticas → 100%; si comparten muchas letras consecutivas, alto.
+              </p>
+              <p style="margin:6px 0">
+                <span style="color:#7C3AED">●</span> <strong>Fonético (0-100%)</strong> —
+                aplicamos reglas fonéticas del español (b↔v, c→k/s según vocal, h muda inicial,
+                colapso de letras dobles, conservar sólo la primera vocal) para generar una "clave
+                fonética". Después comparamos las claves. Detecta "Hasúcar ≈ Azúcar", "Verbum ≈ Berbun".
+              </p>
+              <p style="margin:6px 0">
+                <span style="color:#16A34A">●</span> <strong>Conceptual (0-100%)</strong> —
+                la IA (Claude) evalúa el <em>significado</em>: detecta sinónimos
+                ("Los Criadores" ≈ "Los Ganaderos"), traducciones ("Norte" ≈ "Notte", "L'Etoile" ≈
+                "Stella"), antónimos ("Fiel" ≈ "Infiel") y asociación de ideas.
+                Si el conceptual está en 0%, es que ninguno de tus matches comparte significado.
+              </p>
+              <p style="margin:10px 0 6px;font-size:11px;color:#64748b">
+                <strong>Score final</strong> = el máximo entre las 3 dimensiones + bonus
+                (+10% si comparten clase, +5% si la marca está "vigente" registrada). El
+                <strong>nivel</strong> se asigna según el score combinado:
+                rojo (alto) ≥ 75%, amarillo (medio) 60-75%, gris (bajo) 45-60%.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -663,6 +729,29 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- MODAL cambiar contraseña -->
+  <div class="modal" x-show="modalPassword" x-cloak @click.self="modalPassword=false">
+    <div class="modal-content" style="max-width:420px">
+      <h3 style="margin-top:0">Cambiar contraseña</h3>
+      <label>Contraseña actual</label>
+      <input type="password" x-model="pwForm.actual" autocomplete="current-password">
+      <label>Contraseña nueva</label>
+      <input type="password" x-model="pwForm.nueva" autocomplete="new-password">
+      <p style="font-size:12px;color:#64748b;margin:4px 0 0">Mínimo 8 caracteres.</p>
+      <label>Repetí la nueva</label>
+      <input type="password" x-model="pwForm.repeat" autocomplete="new-password">
+      <p x-show="pwError" x-text="pwError" style="color:#DC2626;font-size:13px;margin-top:8px"></p>
+      <p x-show="pwOk" x-text="pwOk" style="color:#16A34A;font-size:13px;margin-top:8px"></p>
+      <div style="display:flex;gap:8px;margin-top:20px">
+        <button class="sec" @click="modalPassword=false; pwError=''; pwOk=''" style="flex:1">Cerrar</button>
+        <button @click="cambiarPassword()" :disabled="pwLoading" style="flex:1">
+          <span x-show="!pwLoading">Cambiar</span>
+          <span x-show="pwLoading" x-cloak>Cambiando…</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL carga masiva (Excel/CSV) -->
   <div class="modal" x-show="modalBulk" x-cloak @click.self="modalBulk=false">
     <div class="modal-content" style="max-width:520px">
@@ -721,7 +810,11 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 function dashboard(){
   return {
     tab: new URLSearchParams(location.search).get('tab') || 'buscar',
-    user: {email:'', nombre:''},
+    user: {email:'', nombre:'', is_admin:false},
+    userMenuOpen: false,
+    modalPassword: false,
+    pwForm: {actual:'', nueva:'', repeat:''},
+    pwError: '', pwOk: '', pwLoading: false,
     NIZA_TITLES: {
       1:"Productos químicos",2:"Pinturas y barnices",3:"Cosméticos y limpieza",
       4:"Aceites y combustibles",5:"Farmacéuticos",6:"Metales comunes",
@@ -742,6 +835,7 @@ function dashboard(){
     },
     buscar: {marca:'', clase:'', descripcion:''},
     buscando: false, buscarErr: '', buscarResult: null,
+    ayudaScores: false,
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
@@ -873,6 +967,42 @@ function dashboard(){
     async fetchAlertas(){   this.alertas   = (await fetch('/api/dashboard/alertas').then(r=>r.json())).data || []; },
     async fetchPagos(){     this.pagos     = (await fetch('/api/dashboard/pagos').then(r=>r.json())).data || []; },
     async fetchPrecios(){   this.precios   = (await fetch('/api/dashboard/precios').then(r=>r.json())).data || this.precios; },
+
+    userInitials(){
+      const src = (this.user.nombre || this.user.email || 'U').trim();
+      const parts = src.split(/[\s.@_-]+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return src.slice(0, 2).toUpperCase();
+    },
+
+    async cambiarPassword(){
+      this.pwError = ''; this.pwOk = '';
+      if (!this.pwForm.actual || !this.pwForm.nueva) {
+        this.pwError = 'Completá ambas contraseñas.'; return;
+      }
+      if (this.pwForm.nueva.length < 8) {
+        this.pwError = 'La nueva contraseña tiene que tener al menos 8 caracteres.'; return;
+      }
+      if (this.pwForm.nueva !== this.pwForm.repeat) {
+        this.pwError = 'La nueva no coincide con la repetición.'; return;
+      }
+      this.pwLoading = true;
+      try {
+        const r = await fetch('/api/auth/change-password', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({actual: this.pwForm.actual, nueva: this.pwForm.nueva}),
+        }).then(r=>r.json());
+        if (!r.ok) {
+          this.pwError = r.error || 'No pudimos cambiar la contraseña.';
+        } else {
+          this.pwOk = 'Contraseña actualizada ✓';
+          this.pwForm = {actual:'', nueva:'', repeat:''};
+          setTimeout(() => { this.modalPassword = false; this.pwOk = ''; }, 1500);
+        }
+      } finally {
+        this.pwLoading = false;
+      }
+    },
 
     matchTags(m, query, clase){
       const tags = [];
