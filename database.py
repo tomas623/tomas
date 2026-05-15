@@ -212,6 +212,49 @@ class Pago(Base):
     paid_at         = Column(DateTime)
 
 
+class UserProfile(Base):
+    """Perfil extendido del cliente — datos personales, contacto, redes, empresa.
+
+    Futuro: usar 'necesidades' y 'ofrece' para matchear emprendedores entre sí
+    (estilo Tinder de necesidades para startups/pymes).
+    """
+
+    __tablename__ = "user_profiles"
+
+    id            = Column(Integer, primary_key=True, autoincrement=True)
+    user_id       = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False, index=True)
+
+    # Personales
+    dni              = Column(String(20))
+    fecha_nacimiento = Column(Date)
+    direccion        = Column(String(300))
+    localidad        = Column(String(120))
+    provincia        = Column(String(120))
+    pais             = Column(String(80), default="Argentina")
+
+    # Redes y web
+    instagram     = Column(String(120))
+    linkedin      = Column(String(200))
+    twitter       = Column(String(120))
+    facebook      = Column(String(200))
+    tiktok        = Column(String(120))
+    web           = Column(String(200))
+
+    # Empresa
+    empresa_nombre    = Column(String(200))
+    empresa_rol       = Column(String(120))
+    empresa_industria = Column(String(120))
+    empresa_tamano    = Column(String(40))     # 'solo', '2-10', '11-50', '51-200', '200+'
+    empresa_cuit      = Column(String(20))
+
+    # Matching (para futuro feature)
+    bio          = Column(Text)
+    ofrece       = Column(Text)                 # qué ofrece
+    necesidades  = Column(Text)                 # qué busca
+
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class MarcaCliente(Base):
     """Marca propia del cliente (registrada por LegalPacers o ya existente)."""
 

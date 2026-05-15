@@ -15,7 +15,7 @@ from flask import Blueprint, jsonify, render_template_string, request
 
 from database import (
     AlertaVigilancia, Consulta, MarcaCliente, Pago,
-    SuscripcionVigilancia, get_session,
+    SuscripcionVigilancia, UserProfile, get_session,
 )
 from services.auth import current_user, has_active_premium, login_required, premium_required
 
@@ -108,6 +108,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <div class="tab" :class="tab==='vigilancia'&&'active'" @click="tab='vigilancia'">Vigilancia</div>
     <div class="tab" :class="tab==='alertas'&&'active'" @click="tab='alertas'">Alertas</div>
     <div class="tab" :class="tab==='pagos'&&'active'" @click="tab='pagos'">Pagos</div>
+    <div class="tab" :class="tab==='perfil'&&'active'" @click="tab='perfil'">Mi perfil</div>
     <div class="tab" :class="tab==='config'&&'active'" @click="tab='config'">Configuración</div>
   </div>
 
@@ -179,24 +180,72 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
         </div>
 
         <div x-show="buscarResult.matches && buscarResult.matches.length" style="margin-top:20px">
-          <h4 style="margin:0 0 10px">Coincidencias detectadas</h4>
+          <h4 style="margin:0 0 6px">Coincidencias detectadas</h4>
+          <p style="font-size:12px;color:#64748b;margin:0 0 12px">
+            El INPI evalúa <strong>confundibilidad</strong> en 3 dimensiones (igual cómo lo
+            aplica un examinador). Mostramos el score de cada una para que veas qué dispara el match.
+          </p>
           <div style="overflow-x:auto">
           <table>
             <thead><tr>
-              <th>Marca</th><th>Clase</th><th>Titular</th><th>Estado</th><th>Score</th><th>Nivel</th>
+              <th style="min-width:180px">Marca</th>
+              <th>Clase</th>
+              <th>Titular</th>
+              <th>Estado</th>
+              <th style="min-width:260px">Confundibilidad</th>
+              <th>Score</th>
+              <th>Nivel</th>
             </tr></thead>
             <tbody>
               <template x-for="m in buscarResult.matches" :key="m.id">
                 <tr>
                   <td>
                     <strong x-text="m.denominacion"></strong>
-                    <div style="font-size:12px;color:#64748b" x-show="m.acta">
-                      Acta <span x-text="m.acta"></span>
+                    <div style="font-size:11px;color:#64748b;margin-top:2px">
+                      <span x-show="m.acta">Acta <span x-text="m.acta"></span></span>
+                      <template x-for="tag in matchTags(m, buscar.marca, buscar.clase)" :key="tag">
+                        <span class="badge yellow" style="margin-left:4px;font-size:10px"
+                              x-text="tag"></span>
+                      </template>
                     </div>
                   </td>
-                  <td x-text="m.clase || '—'"></td>
+                  <td>
+                    <span x-text="m.clase || '—'"></span>
+                    <span class="badge green" style="margin-left:4px;font-size:10px"
+                          x-show="buscar.clase && parseInt(buscar.clase) === m.clase">misma</span>
+                  </td>
                   <td x-text="m.titular || '—'"></td>
                   <td><span class="badge gray" x-text="m.estado || m.estado_code || '—'"></span></td>
+                  <td>
+                    <div style="font-size:11px;line-height:1.4">
+                      <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                        <span style="min-width:64px;color:#64748b">Léxico</span>
+                        <div style="flex:1;background:#E2E8F0;border-radius:99px;height:6px;overflow:hidden">
+                          <div :style="'width:'+((m.scores?.lexical||0)*100)+'%;height:100%;background:#1B6EF3'"></div>
+                        </div>
+                        <span style="min-width:34px;text-align:right;font-weight:600"
+                              x-text="((m.scores?.lexical||0)*100).toFixed(0)+'%'"></span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                        <span style="min-width:64px;color:#64748b">Fonético</span>
+                        <div style="flex:1;background:#E2E8F0;border-radius:99px;height:6px;overflow:hidden">
+                          <div :style="'width:'+((m.scores?.fonetica||0)*100)+'%;height:100%;background:#7C3AED'"></div>
+                        </div>
+                        <span style="min-width:34px;text-align:right;font-weight:600"
+                              x-text="((m.scores?.fonetica||0)*100).toFixed(0)+'%'"></span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:6px">
+                        <span style="min-width:64px;color:#64748b">Conceptual</span>
+                        <div style="flex:1;background:#E2E8F0;border-radius:99px;height:6px;overflow:hidden">
+                          <div :style="'width:'+((m.scores?.conceptual||0)*100)+'%;height:100%;background:#16A34A'"></div>
+                        </div>
+                        <span style="min-width:34px;text-align:right;font-weight:600"
+                              x-text="((m.scores?.conceptual||0)*100).toFixed(0)+'%'"></span>
+                      </div>
+                      <div x-show="m.razon_conceptual" style="margin-top:4px;color:#475569;font-style:italic"
+                           x-text="m.razon_conceptual"></div>
+                    </div>
+                  </td>
                   <td><strong x-text="((m.score||0)*100).toFixed(0) + '%'"></strong></td>
                   <td>
                     <span class="badge" :class="{
@@ -207,6 +256,16 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
               </template>
             </tbody>
           </table>
+          </div>
+
+          <div style="background:#F4F5F9;padding:12px 14px;border-radius:8px;margin-top:12px;
+                      font-size:12px;color:#475569">
+            <strong>Cómo leerlo:</strong>
+            <span style="color:#1B6EF3">●</span> <strong>Léxico</strong>: similitud visual / ortográfica.
+            <span style="color:#7C3AED">●</span> <strong>Fonético</strong>: cómo suenan.
+            <span style="color:#16A34A">●</span> <strong>Conceptual</strong>: mismo significado, sinónimos, traducciones, asociación de ideas.
+            Si dos marcas se aplican a la <strong>misma clase</strong>, el riesgo de confusión aumenta.
+            Las primeras sílabas (raíz) pesan más que las desinencias.
           </div>
         </div>
 
@@ -380,6 +439,94 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
         </template>
       </tbody>
     </table>
+  </div>
+
+  <!-- MI PERFIL -->
+  <div x-show="tab==='perfil'" class="card">
+    <h3 style="margin-top:0">Mi perfil</h3>
+    <p style="color:#64748b;margin:0 0 24px;font-size:14px">
+      Cargá tus datos personales, redes y de tu empresa. Lo usamos para personalizar
+      el servicio y, próximamente, para conectarte con otros emprendedores y agencias
+      según tus necesidades y lo que ofrecés.
+    </p>
+
+    <h4 style="margin:0 0 12px;font-size:14px;color:#1B6EF3;text-transform:uppercase;letter-spacing:.5px">Datos personales</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>DNI / CUIT</label>
+        <input type="text" x-model="perfil.dni">
+      </div>
+      <div>
+        <label>Fecha de nacimiento</label>
+        <input type="date" x-model="perfil.fecha_nacimiento">
+      </div>
+    </div>
+    <label>Dirección</label>
+    <input type="text" x-model="perfil.direccion" placeholder="Calle y número">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div><label>Localidad</label><input type="text" x-model="perfil.localidad"></div>
+      <div><label>Provincia</label><input type="text" x-model="perfil.provincia"></div>
+      <div><label>País</label><input type="text" x-model="perfil.pais"></div>
+    </div>
+
+    <h4 style="margin:28px 0 12px;font-size:14px;color:#1B6EF3;text-transform:uppercase;letter-spacing:.5px">Redes y web</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label>Sitio web</label><input type="url" x-model="perfil.web" placeholder="https://"></div>
+      <div><label>Instagram</label><input type="text" x-model="perfil.instagram" placeholder="@usuario"></div>
+      <div><label>LinkedIn</label><input type="text" x-model="perfil.linkedin" placeholder="linkedin.com/in/..."></div>
+      <div><label>Twitter / X</label><input type="text" x-model="perfil.twitter" placeholder="@usuario"></div>
+      <div><label>Facebook</label><input type="text" x-model="perfil.facebook"></div>
+      <div><label>TikTok</label><input type="text" x-model="perfil.tiktok" placeholder="@usuario"></div>
+    </div>
+
+    <h4 style="margin:28px 0 12px;font-size:14px;color:#1B6EF3;text-transform:uppercase;letter-spacing:.5px">Empresa</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label>Nombre de la empresa</label><input type="text" x-model="perfil.empresa_nombre"></div>
+      <div><label>Tu rol</label><input type="text" x-model="perfil.empresa_rol" placeholder="Founder, CMO, etc."></div>
+      <div><label>Industria</label><input type="text" x-model="perfil.empresa_industria" placeholder="E-commerce, alimentos..."></div>
+      <div>
+        <label>Tamaño</label>
+        <select x-model="perfil.empresa_tamano">
+          <option value="">—</option>
+          <option value="solo">Solo yo</option>
+          <option value="2-10">2 a 10 personas</option>
+          <option value="11-50">11 a 50 personas</option>
+          <option value="51-200">51 a 200 personas</option>
+          <option value="200+">+200 personas</option>
+        </select>
+      </div>
+      <div><label>CUIT empresa</label><input type="text" x-model="perfil.empresa_cuit"></div>
+    </div>
+
+    <h4 style="margin:28px 0 12px;font-size:14px;color:#1B6EF3;text-transform:uppercase;letter-spacing:.5px">
+      Tu proyecto <span style="color:#64748b;font-weight:400;font-size:12px;text-transform:none">(para futuras conexiones entre usuarios)</span>
+    </h4>
+    <label>Bio corta</label>
+    <textarea x-model="perfil.bio" rows="2"
+              placeholder="En una línea, ¿qué hacés?"
+              style="width:100%;padding:10px;border:1px solid #E2E8F0;border-radius:8px;font-family:inherit;font-size:14px"></textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>Qué ofrezco</label>
+        <textarea x-model="perfil.ofrece" rows="4"
+                  placeholder="Ej: branding y diseño para PyMEs, software a medida, marketing digital..."
+                  style="width:100%;padding:10px;border:1px solid #E2E8F0;border-radius:8px;font-family:inherit;font-size:14px"></textarea>
+      </div>
+      <div>
+        <label>Qué busco</label>
+        <textarea x-model="perfil.necesidades" rows="4"
+                  placeholder="Ej: contador, programador freelance, agencia de marketing, inversor..."
+                  style="width:100%;padding:10px;border:1px solid #E2E8F0;border-radius:8px;font-family:inherit;font-size:14px"></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top:24px">
+      <button @click="guardarPerfil()" :disabled="perfilLoading">
+        <span x-show="!perfilLoading">Guardar mi perfil</span>
+        <span x-show="perfilLoading" x-cloak>Guardando…</span>
+      </button>
+      <span x-show="perfilMsg" x-text="perfilMsg" style="margin-left:12px;color:#16A34A;font-weight:600"></span>
+    </div>
   </div>
 
   <!-- CONFIGURACIÓN -->
@@ -626,6 +773,13 @@ function dashboard(){
     ],
     config: {nombre:'', tel_cc:'54', tel_num:'', alertas_whatsapp:false},
     configLoading: false, configMsg: '',
+    perfil: {
+      dni:'', fecha_nacimiento:'', direccion:'', localidad:'', provincia:'', pais:'Argentina',
+      instagram:'', linkedin:'', twitter:'', facebook:'', tiktok:'', web:'',
+      empresa_nombre:'', empresa_rol:'', empresa_industria:'', empresa_tamano:'', empresa_cuit:'',
+      bio:'', ofrece:'', necesidades:'',
+    },
+    perfilLoading: false, perfilMsg: '',
     premium: null, premiumRenew: true,
 
     async cargar(){
@@ -652,8 +806,29 @@ function dashboard(){
       await Promise.all([
         this.fetchConsultas(), this.fetchMarcas(),
         this.fetchVigilancia(), this.fetchAlertas(), this.fetchPagos(),
-        this.fetchPrecios(), this.fetchPremium(),
+        this.fetchPrecios(), this.fetchPremium(), this.fetchPerfil(),
       ]);
+    },
+    async fetchPerfil(){
+      const r = await fetch('/api/dashboard/perfil').then(r=>r.json());
+      if (r.ok && r.data) {
+        Object.assign(this.perfil, r.data);
+      }
+    },
+    async guardarPerfil(){
+      this.perfilLoading = true;
+      this.perfilMsg = '';
+      try {
+        const r = await fetch('/api/dashboard/perfil', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(this.perfil),
+        }).then(r=>r.json());
+        if (!r.ok) { alert(r.error || 'Error guardando'); return; }
+        this.perfilMsg = 'Perfil guardado ✓';
+        setTimeout(() => this.perfilMsg = '', 3000);
+      } finally {
+        this.perfilLoading = false;
+      }
     },
     async fetchPremium(){
       const r = await fetch('/api/dashboard/premium').then(r=>r.json());
@@ -698,6 +873,20 @@ function dashboard(){
     async fetchAlertas(){   this.alertas   = (await fetch('/api/dashboard/alertas').then(r=>r.json())).data || []; },
     async fetchPagos(){     this.pagos     = (await fetch('/api/dashboard/pagos').then(r=>r.json())).data || []; },
     async fetchPrecios(){   this.precios   = (await fetch('/api/dashboard/precios').then(r=>r.json())).data || this.precios; },
+
+    matchTags(m, query, clase){
+      const tags = [];
+      const normalize = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+      const q = normalize(query);
+      const d = normalize(m.denominacion);
+      if (q && d && q === d) tags.push('idéntica');
+      else if (q && d && (d.startsWith(q) || q.startsWith(d))) tags.push('misma raíz');
+      const scores = m.scores || {};
+      if ((scores.fonetica||0) >= 0.85) tags.push('suena igual');
+      if ((scores.conceptual||0) >= 0.75) tags.push('mismo concepto');
+      if ((m.estado_code||'').toLowerCase() === 'vigente') tags.push('vigente');
+      return tags;
+    },
 
     async ejecutarBusqueda(){
       if(!this.buscar.marca.trim()){
@@ -1528,6 +1717,57 @@ def api_premium_auto_renew():
                 logger.warning(f"No pude cancelar MP preapproval {sub.mp_subscription_id}: {e}")
 
     return _ok({"auto_renew": new_value})
+
+
+PROFILE_FIELDS_STR = [
+    "dni", "direccion", "localidad", "provincia", "pais",
+    "instagram", "linkedin", "twitter", "facebook", "tiktok", "web",
+    "empresa_nombre", "empresa_rol", "empresa_industria", "empresa_tamano", "empresa_cuit",
+    "bio", "ofrece", "necesidades",
+]
+
+
+@bp.route("/api/dashboard/perfil", methods=["GET"])
+@login_required
+def api_perfil_get():
+    user = current_user()
+    with get_session() as s:
+        p = s.query(UserProfile).filter_by(user_id=user.id).first()
+        if not p:
+            return _ok(None)
+        out = {f: getattr(p, f) or "" for f in PROFILE_FIELDS_STR}
+        out["fecha_nacimiento"] = p.fecha_nacimiento.isoformat() if p.fecha_nacimiento else ""
+        return _ok(out)
+
+
+@bp.route("/api/dashboard/perfil", methods=["POST"])
+@login_required
+def api_perfil_save():
+    user = current_user()
+    data = request.get_json(silent=True) or {}
+
+    def _trim(v):
+        return (v or "").strip() if isinstance(v, str) else v
+
+    with get_session() as s:
+        p = s.query(UserProfile).filter_by(user_id=user.id).first()
+        if not p:
+            p = UserProfile(user_id=user.id)
+            s.add(p)
+
+        for f in PROFILE_FIELDS_STR:
+            if f in data:
+                setattr(p, f, _trim(data[f]) or None)
+
+        if "fecha_nacimiento" in data:
+            v = data.get("fecha_nacimiento")
+            try:
+                p.fecha_nacimiento = datetime.fromisoformat(v).date() if v else None
+            except Exception:
+                p.fecha_nacimiento = None
+
+        s.commit()
+    return _ok({"saved": True})
 
 
 @bp.route("/api/dashboard/config", methods=["POST"])
