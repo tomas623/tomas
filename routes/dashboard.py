@@ -93,17 +93,17 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 <div class="nav">
   <div class="logo">LEGAL<span class="accent">PACERS</span> · Mi panel</div>
   <div class="user" style="position:relative" @click.outside="userMenuOpen=false">
-    <button @click="userMenuOpen=!userMenuOpen"
-            style="display:flex;align-items:center;gap:10px;background:none;border:1px solid #E2E8F0;
-                   cursor:pointer;padding:8px 14px;border-radius:10px;color:#0D1B4B;font-family:inherit"
-            :style="userMenuOpen ? 'background:#F4F5F9;border-color:#CBD5E1' : ''">
+    <div @click="userMenuOpen=!userMenuOpen" role="button" tabindex="0"
+         style="display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px solid #E2E8F0;
+                cursor:pointer;padding:8px 14px;border-radius:10px;color:#0D1B4B;font-family:inherit;user-select:none"
+         :style="userMenuOpen ? 'background:#F4F5F9;border-color:#CBD5E1' : 'background:#fff'">
       <div style="text-align:right;line-height:1.2">
         <div style="font-size:13px;font-weight:600;color:#0D1B4B"
              x-text="user.nombre || user.email.split('@')[0]"></div>
         <div style="font-size:11px;color:#64748b" x-text="user.email"></div>
       </div>
       <span style="color:#64748b;font-size:10px;margin-left:2px">▼</span>
-    </button>
+    </div>
 
     <div x-show="userMenuOpen" x-cloak
          style="position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #E2E8F0;
@@ -161,7 +161,9 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
       <div>
         <label>Marca a consultar *</label>
-        <input type="text" x-model="buscar.marca" placeholder="Ej: Acme, MiMarca..."
+        <input type="text" name="marca-search" x-model="buscar.marca"
+               placeholder="Ej: Acme, MiMarca..." autocomplete="off"
+               spellcheck="false" autocorrect="off" autocapitalize="off"
                @keydown.enter="ejecutarBusqueda()">
       </div>
       <div>
@@ -176,8 +178,9 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     </div>
 
     <label style="margin-top:12px">Descripción del producto / servicio (opcional)</label>
-    <input type="text" x-model="buscar.descripcion"
-           placeholder="Ayuda al análisis conceptual. Ej: ropa deportiva">
+    <input type="text" name="marca-descripcion" x-model="buscar.descripcion"
+           placeholder="Ayuda al análisis conceptual. Ej: línea de gaseosas"
+           autocomplete="off" spellcheck="false">
 
     <button @click="ejecutarBusqueda()" :disabled="buscando" style="margin-top:18px">
       <span x-show="!buscando">Buscar →</span>
@@ -215,6 +218,41 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
               <span x-text="d.domain"></span> · <span x-text="d.status"></span>
             </span>
           </template>
+        </div>
+
+        <div x-show="buscarResult.cross_class_matches && buscarResult.cross_class_matches.length"
+             style="margin-top:20px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;
+                    padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#92400E">
+            <span style="font-size:18px">⚠️</span>
+            Marcas similares en otras clases — atención si son notorias
+          </div>
+          <p style="margin:6px 0 12px;font-size:13px;color:#78350F">
+            Aunque no aparezcan en tu clase, el INPI protege marcas notorias (Coca-Cola, Nike, etc.)
+            <strong>también en clases distintas</strong>. Si alguna de estas es notoria, no podrías
+            registrar una marca confusable, incluso en otra clase.
+          </p>
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Marca</th><th>Clase</th><th>Titular</th><th>Score</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="m in buscarResult.cross_class_matches" :key="'cc-'+m.id">
+                <tr>
+                  <td><strong x-text="m.denominacion"></strong></td>
+                  <td>
+                    <span x-text="m.clase"></span> ·
+                    <span style="font-size:11px;color:#64748b"
+                          x-text="NIZA_TITLES[m.clase] || ''"></span>
+                  </td>
+                  <td x-text="m.titular || '—'"></td>
+                  <td><strong x-text="((m.score||0)*100).toFixed(0) + '%'"></strong></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          </div>
         </div>
 
         <div x-show="buscarResult.matches && buscarResult.matches.length" style="margin-top:20px">
@@ -555,8 +593,25 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <label>Dirección</label>
     <input type="text" x-model="perfil.direccion" placeholder="Calle y número">
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-      <div><label>Localidad</label><input type="text" x-model="perfil.localidad"></div>
-      <div><label>Provincia</label><input type="text" x-model="perfil.provincia"></div>
+      <div>
+        <label>Provincia</label>
+        <select x-model="perfil.provincia" @change="perfil.localidad=''">
+          <option value="">—</option>
+          <template x-for="p in Object.keys(PROVINCIAS_AR)" :key="p">
+            <option :value="p" x-text="p"></option>
+          </template>
+        </select>
+      </div>
+      <div>
+        <label>Localidad</label>
+        <input type="text" x-model="perfil.localidad" list="localidades-list"
+               placeholder="Empezá a escribir...">
+        <datalist id="localidades-list">
+          <template x-for="loc in (PROVINCIAS_AR[perfil.provincia] || [])" :key="loc">
+            <option :value="loc"></option>
+          </template>
+        </datalist>
+      </div>
       <div><label>País</label><input type="text" x-model="perfil.pais"></div>
     </div>
 
@@ -840,6 +895,32 @@ function dashboard(){
     modalPassword: false,
     pwForm: {actual:'', nueva:'', repeat:''},
     pwError: '', pwOk: '', pwLoading: false,
+    PROVINCIAS_AR: {
+      "CABA": ["Capital Federal"],
+      "Buenos Aires": ["La Plata","Mar del Plata","Bahía Blanca","Tandil","Quilmes","Lomas de Zamora","San Isidro","Tigre","Pilar","Morón","Tres de Febrero","La Matanza","Avellaneda","Lanús","Berazategui","Florencio Varela","Necochea","Olavarría","Pergamino","Junín","Luján","Campana","Zárate","San Nicolás"],
+      "Catamarca": ["San Fernando del Valle de Catamarca","Belén","Andalgalá","Tinogasta"],
+      "Chaco": ["Resistencia","Presidencia Roque Sáenz Peña","Villa Ángela","Charata"],
+      "Chubut": ["Rawson","Comodoro Rivadavia","Trelew","Puerto Madryn","Esquel"],
+      "Córdoba": ["Córdoba","Río Cuarto","Villa María","San Francisco","Carlos Paz","Alta Gracia","Jesús María","Bell Ville"],
+      "Corrientes": ["Corrientes","Goya","Mercedes","Curuzú Cuatiá","Paso de los Libres"],
+      "Entre Ríos": ["Paraná","Concordia","Gualeguaychú","Concepción del Uruguay","Gualeguay","Victoria"],
+      "Formosa": ["Formosa","Clorinda","Pirané","Las Lomitas"],
+      "Jujuy": ["San Salvador de Jujuy","Palpalá","San Pedro","Libertador General San Martín","La Quiaca"],
+      "La Pampa": ["Santa Rosa","General Pico","Toay","Realicó"],
+      "La Rioja": ["La Rioja","Chilecito","Aimogasta","Chamical"],
+      "Mendoza": ["Mendoza","San Rafael","Godoy Cruz","Maipú","Luján de Cuyo","Las Heras","Tunuyán","General Alvear"],
+      "Misiones": ["Posadas","Oberá","Eldorado","Puerto Iguazú","San Vicente","Apóstoles"],
+      "Neuquén": ["Neuquén","Cutral Có","Plottier","Centenario","Zapala","San Martín de los Andes"],
+      "Río Negro": ["Viedma","San Carlos de Bariloche","General Roca","Cipolletti","Cinco Saltos","Villa Regina"],
+      "Salta": ["Salta","San Ramón de la Nueva Orán","Tartagal","Cafayate","Metán"],
+      "San Juan": ["San Juan","Rivadavia","Caucete","Pocito","Santa Lucía"],
+      "San Luis": ["San Luis","Villa Mercedes","Merlo","La Toma"],
+      "Santa Cruz": ["Río Gallegos","Caleta Olivia","El Calafate","Pico Truncado","Puerto Deseado"],
+      "Santa Fe": ["Santa Fe","Rosario","Rafaela","Reconquista","Venado Tuerto","Esperanza","Villa Constitución"],
+      "Santiago del Estero": ["Santiago del Estero","La Banda","Termas de Río Hondo","Frías"],
+      "Tierra del Fuego": ["Ushuaia","Río Grande","Tolhuin"],
+      "Tucumán": ["San Miguel de Tucumán","Yerba Buena","Tafí Viejo","Concepción","Banda del Río Salí","Aguilares"],
+    },
     NIZA_TITLES: {
       1:"Productos químicos",2:"Pinturas y barnices",3:"Cosméticos y limpieza",
       4:"Aceites y combustibles",5:"Farmacéuticos",6:"Metales comunes",

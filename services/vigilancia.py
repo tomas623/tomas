@@ -442,3 +442,62 @@ def run_subscription_maintenance() -> dict:
         expired_count, annual_sent,
     )
     return {"expired": expired_count, "annual_sent": annual_sent}
+
+
+def run_birthday_greetings() -> int:
+    """Manda saludo de cumpleaños a usuarios Premium activos.
+
+    Idempotente vía un log simple en memoria por fecha (dentro del día no se
+    duplica si se ejecuta varias veces). Cae silenciosamente si el user no
+    tiene fecha de nacimiento cargada.
+    """
+    from database import SuscripcionVigilancia, User, UserProfile
+    from services.auth import has_active_premium
+    from services.email import _wrap
+
+    enviados = 0
+    hoy = datetime.utcnow().date()
+
+    with get_session() as s:
+        # Perfiles con cumpleaños hoy (mismo día/mes)
+        perfiles = (s.query(UserProfile)
+                    .filter(UserProfile.fecha_nacimiento.is_not(None))
+                    .all())
+        for p in perfiles:
+            if not p.fecha_nacimiento:
+                continue
+            if p.fecha_nacimiento.month != hoy.month or p.fecha_nacimiento.day != hoy.day:
+                continue
+            user = s.query(User).filter_by(id=p.user_id).first()
+            if not user or not user.email:
+                continue
+            # Solo a Premium activos (o admin)
+            if not has_active_premium(user):
+                continue
+            nombre = user.nombre or (p.empresa_nombre or "").strip() or "🎂"
+            try:
+                html = _wrap(f"""
+                    <h2 style="color:#1B6EF3;margin:0 0 16px">¡Feliz cumpleaños{', ' + nombre if user.nombre else ''}! 🎉</h2>
+                    <p>Desde el equipo de LegalPacers te deseamos un excelente día.</p>
+                    <p>Gracias por confiar en nosotros para proteger tus marcas.
+                       Que este año esté lleno de proyectos nuevos.</p>
+                    <p style="margin-top:24px;color:#64748b;font-size:13px">
+                       — El equipo de LegalPacers
+                    </p>
+                """, "¡Feliz cumpleaños!")
+                if send_email(user.email, "¡Feliz cumpleaños! 🎂 — LegalPacers", html,
+                              text=f"¡Feliz cumpleaños! Gracias por elegirnos. — LegalPacers"):
+                    enviados += 1
+                    if user.alertas_whatsapp and user.telefono:
+                        try:
+                            from services.whatsapp import send_whatsapp
+                            send_whatsapp(user.telefono,
+                                          f"🎂 ¡Feliz cumpleaños{', ' + nombre if user.nombre else ''}! "
+                                          f"Desde LegalPacers, que tengas un excelente día.")
+                        except Exception:
+                            pass
+            except Exception as e:
+                logger.warning(f"Saludo cumpleaños user {user.id} falló: {e}")
+
+    logger.info(f"Saludos de cumpleaños enviados: {enviados}")
+    return enviados

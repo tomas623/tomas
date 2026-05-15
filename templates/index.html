@@ -256,15 +256,19 @@
             </template>
           </div>
 
-          <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+          <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">
             <button class="btn btn-primary" @click="iniciarConsultaCompleta()"
-                    :disabled="iniciandoPago" style="flex:1;min-width:200px">
+                    :disabled="iniciandoPago"
+                    style="flex:2;min-width:240px;display:inline-flex;align-items:center;justify-content:center">
               <span x-show="!iniciandoPago">
                 Pedir informe completo · $<span x-text="resultado.siguiente_paso.precio.toLocaleString('es-AR')"></span>
               </span>
               <span x-show="iniciandoPago" x-cloak>Generando link…</span>
             </button>
-            <a href="#planes" class="btn btn-outline">Ver todos los planes</a>
+            <a href="#planes" class="btn btn-outline"
+               style="flex:1;min-width:170px;display:inline-flex;align-items:center;justify-content:center;text-align:center">
+              Ver todos los planes
+            </a>
           </div>
         </div>
       </template>

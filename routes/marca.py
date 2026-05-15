@@ -208,17 +208,41 @@ def nivel_1_check():
             min_score=0.45,
         )
 
+    # Cross-class: ¿existe la misma marca registrada en otra clase?
+    # Importante para marcas notorias (Coca-Cola, Nike, etc.) cuya
+    # protección "rompe" la clase. Solo si el usuario eligió una clase puntual.
+    cross_class_matches: list = []
+    if clases and len(clases) == 1:
+        all_class_matches = search_similar(
+            marca=marca, descripcion=descripcion,
+            clases=None, limit=10, use_ai=False, min_score=0.70,
+        )
+        target_clase = clases[0]
+        cross_class_matches = [m for m in all_class_matches
+                                if m.clase and m.clase != target_clase]
+
     altos = [m for m in matches if m.nivel == "alto"]
     medios = [m for m in matches if m.nivel == "medio"]
+    cross_notorios = [m for m in cross_class_matches if (m.score or 0) >= 0.85]
 
     if altos:
         veredicto = "no_disponible"
         mensaje = (f"Encontramos {len(altos)} marca(s) muy similares ya registradas. "
                    "El registro tiene riesgo alto de oposición.")
+    elif cross_notorios:
+        veredicto = "necesita_analisis"
+        nombres = ", ".join(sorted({m.denominacion for m in cross_notorios[:3]}))
+        mensaje = (f"Encontramos marcas casi idénticas ({nombres}) registradas en otras "
+                   f"clases. Si son <strong>marcas notorias</strong>, su protección puede "
+                   "extenderse a la clase que querés. Conviene un análisis legal antes.")
     elif medios:
         veredicto = "necesita_analisis"
         mensaje = (f"Hay {len(medios)} marca(s) con cierta similitud. "
                    "Recomendamos un análisis completo antes de avanzar.")
+    elif cross_class_matches:
+        veredicto = "necesita_analisis"
+        mensaje = ("No hay coincidencias en tu clase, pero detectamos marcas similares "
+                   "en otras clases. Si alguna es notoria, podría limitar tu registro.")
     else:
         veredicto = "probablemente_disponible"
         mensaje = ("No encontramos coincidencias evidentes. Aún recomendamos "
@@ -247,6 +271,7 @@ def nivel_1_check():
     if is_full_access:
         # Premium: devolvemos la lista completa de matches con detalle
         response["matches"] = [m.to_dict() for m in matches]
+        response["cross_class_matches"] = [m.to_dict() for m in cross_class_matches]
     else:
         response["siguiente_paso"] = {
             "tipo": "consulta_completa",

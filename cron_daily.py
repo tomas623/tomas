@@ -11,7 +11,9 @@ Railway Cron Service setup:
 import logging
 import sys
 from database import init_db
-from services.vigilancia import run_avisos_vencimiento, run_subscription_maintenance
+from services.vigilancia import (
+    run_avisos_vencimiento, run_birthday_greetings, run_subscription_maintenance,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,6 +28,7 @@ def main():
         init_db()
         run_avisos_vencimiento()
         run_subscription_maintenance()
+        run_birthday_greetings()
         logger.info("=== Daily maintenance complete ===")
     except Exception as e:
         logger.error(f"Daily maintenance failed: {e}")

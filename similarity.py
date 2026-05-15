@@ -325,81 +325,80 @@ Score 30-59  = relación tangencial.
 Score 0-29   = sin relación conceptual."""
 
 
-def conceptual_scores(
-    marca: str,
-    descripcion: str,
-    candidates: list[CandidateRow],
-    max_candidates: int = 30,
-) -> dict[int, tuple[float, str]]:
-    """Pide a Claude un score conceptual 0-1 por cada candidato.
+def _call_gemini(prompt: str) -> Optional[str]:
+    """Llama a Gemini vía REST. Retorna el texto raw o None si falla.
 
-    Solo se invoca con los top-N candidatos para acotar costo. Devuelve
-    {row_id: (score_0_1, razon)}. Si la API falla, retorna {} y el caller
-    cae al score lexical/fonético.
+    Usa la API de Google AI Studio (Generative Language API). Tier gratis:
+    ~15 RPM y 1500 requests/día con gemini-1.5-flash. Si te quedás sin
+    cuota, retorna None y el caller hace fallback.
     """
-    if not candidates:
-        return {}
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return None
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
+           f"{model}:generateContent?key={api_key}")
+    try:
+        import httpx
+        r = httpx.post(
+            url,
+            json={
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500},
+            },
+            timeout=30.0,
+        )
+        if r.status_code >= 400:
+            logger.warning(f"Gemini HTTP {r.status_code}: {r.text[:300]}")
+            return None
+        data = r.json()
+        candidates = data.get("candidates") or []
+        if not candidates:
+            logger.warning(f"Gemini sin candidates: {str(data)[:300]}")
+            return None
+        parts = candidates[0].get("content", {}).get("parts") or []
+        text = "".join(p.get("text", "") for p in parts).strip()
+        return text or None
+    except Exception as e:
+        logger.warning(f"Gemini call falló: {e}")
+        return None
+
+
+def _call_claude(prompt: str) -> Optional[str]:
+    """Llama a Claude (Anthropic) con cadena de fallback de modelos."""
     if not os.getenv("ANTHROPIC_API_KEY"):
-        logger.info("ANTHROPIC_API_KEY no seteada — saltando scoring conceptual")
-        return {}
-
-    sample = candidates[:max_candidates]
-    lista = "\n".join(
-        f"{i}. {c.denominacion}  (clase {c.clase or '?'})"
-        for i, c in enumerate(sample)
-    )
-
-    # Modelo configurable + fallback. Defaults a Sonnet 4.6.
-    preferred_model = os.getenv("CONCEPTUAL_MODEL", "claude-sonnet-4-6")
-    fallback_models = ["claude-sonnet-4-5-20250929", "claude-3-5-sonnet-latest"]
-    raw_text = None
-    last_error = None
-    for model_name in [preferred_model] + fallback_models:
+        return None
+    preferred = os.getenv("CONCEPTUAL_MODEL", "claude-sonnet-4-6")
+    fallbacks = ["claude-sonnet-4-5-20250929", "claude-3-5-sonnet-latest"]
+    for model_name in [preferred] + fallbacks:
         try:
             client = _get_anthropic()
             msg = client.messages.create(
-                model=model_name,
-                max_tokens=1500,
-                messages=[{
-                    "role": "user",
-                    "content": CONCEPTUAL_PROMPT.format(
-                        marca=marca,
-                        descripcion=descripcion or "(sin descripción)",
-                        lista=lista,
-                    ),
-                }],
+                model=model_name, max_tokens=1500,
+                messages=[{"role": "user", "content": prompt}],
             )
-            raw_text = msg.content[0].text.strip()
-            break
+            return msg.content[0].text.strip()
         except Exception as e:
-            last_error = e
-            err_str = str(e)
-            # Si el modelo no existe, probar el siguiente. Otros errores: cortar.
-            if "model" in err_str.lower() and ("not_found" in err_str.lower()
-                                                or "invalid" in err_str.lower()):
-                logger.warning(f"Modelo {model_name} no disponible, probando fallback: {err_str[:200]}")
+            err = str(e)
+            if "model" in err.lower() and ("not_found" in err.lower() or "invalid" in err.lower()):
+                logger.warning(f"Claude {model_name} no disponible, probando fallback")
                 continue
-            logger.warning(f"Scoring conceptual: llamada a {model_name} falló: {err_str[:300]}")
-            return {}
+            logger.warning(f"Claude {model_name} falló: {err[:300]}")
+            return None
+    return None
 
-    if raw_text is None:
-        logger.warning(f"Scoring conceptual: ningún modelo funcionó. Último error: {last_error}")
-        return {}
 
-    # Limpiar markdown fences si Claude las devuelve
+def _parse_conceptual_response(raw_text: str, sample: list) -> dict[int, tuple[float, str]]:
+    """Extrae el JSON array de la respuesta y mapea a {row_id: (score, razón)}."""
     cleaned = raw_text
     if cleaned.startswith("```"):
-        # Extraer entre la primera y última triple-backtick
         m_fence = re.search(r"```(?:json)?\s*(.*?)```", cleaned, re.DOTALL)
         if m_fence:
             cleaned = m_fence.group(1).strip()
-
     m = re.search(r"\[.*\]", cleaned, re.DOTALL)
     if not m:
-        logger.warning(f"Scoring conceptual: no encontré JSON array en la respuesta. "
-                       f"Respuesta raw (primeros 300 chars): {raw_text[:300]!r}")
+        logger.warning(f"Scoring conceptual: no encontré JSON array. Raw: {raw_text[:300]!r}")
         return {}
-
     try:
         items = json.loads(m.group(0))
     except Exception as e:
@@ -416,9 +415,68 @@ def conceptual_scores(
                 out[sample[i].id] = (score, razon)
         except Exception:
             continue
-
-    logger.info(f"Scoring conceptual OK: {len(out)}/{len(sample)} candidatos puntuados con {model_name}")
     return out
+
+
+def conceptual_scores(
+    marca: str,
+    descripcion: str,
+    candidates: list[CandidateRow],
+    max_candidates: int = 30,
+) -> dict[int, tuple[float, str]]:
+    """Pide score conceptual 0-1 por candidato vía Gemini → Claude → nada.
+
+    Orden de providers (configurable por CONCEPTUAL_PROVIDER en .env):
+      'gemini' (default) → Gemini primero, Claude si falla
+      'claude'           → Claude primero, Gemini si falla
+      'gemini-only'      → solo Gemini
+      'claude-only'      → solo Claude
+    """
+    if not candidates:
+        return {}
+
+    has_gemini = bool(os.getenv("GEMINI_API_KEY"))
+    has_claude = bool(os.getenv("ANTHROPIC_API_KEY"))
+    if not has_gemini and not has_claude:
+        logger.info("Ni GEMINI_API_KEY ni ANTHROPIC_API_KEY seteadas — saltando conceptual")
+        return {}
+
+    sample = candidates[:max_candidates]
+    lista = "\n".join(
+        f"{i}. {c.denominacion}  (clase {c.clase or '?'})"
+        for i, c in enumerate(sample)
+    )
+    prompt = CONCEPTUAL_PROMPT.format(
+        marca=marca,
+        descripcion=descripcion or "(sin descripción)",
+        lista=lista,
+    )
+
+    provider = os.getenv("CONCEPTUAL_PROVIDER", "gemini").lower()
+    if provider == "claude-only":
+        order = ["claude"]
+    elif provider == "gemini-only":
+        order = ["gemini"]
+    elif provider == "claude":
+        order = ["claude", "gemini"]
+    else:
+        order = ["gemini", "claude"]
+
+    for prov in order:
+        raw = None
+        if prov == "gemini" and has_gemini:
+            raw = _call_gemini(prompt)
+        elif prov == "claude" and has_claude:
+            raw = _call_claude(prompt)
+        if not raw:
+            continue
+        out = _parse_conceptual_response(raw, sample)
+        if out:
+            logger.info(f"Scoring conceptual OK con {prov}: {len(out)}/{len(sample)} candidatos")
+            return out
+
+    logger.warning("Scoring conceptual: ningún provider devolvió resultados")
+    return {}
 
 
 # ─────────────────────────────────────────────────────────────────────

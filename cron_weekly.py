@@ -16,7 +16,8 @@ import sys
 from database import init_db
 from bulk_importer import import_new_only
 from services.vigilancia import (
-    run_avisos_vencimiento, run_subscription_maintenance, run_vigilancia,
+    run_avisos_vencimiento, run_birthday_greetings,
+    run_subscription_maintenance, run_vigilancia,
 )
 
 logging.basicConfig(
@@ -34,6 +35,7 @@ def main():
         run_vigilancia()
         run_avisos_vencimiento()
         run_subscription_maintenance()
+        run_birthday_greetings()
         logger.info("=== Weekly job complete ===")
     except Exception as e:
         logger.error(f"Weekly job failed: {e}")
