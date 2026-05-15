@@ -94,42 +94,42 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   <div class="logo">LEGAL<span class="accent">PACERS</span> · Mi panel</div>
   <div class="user" style="position:relative" @click.outside="userMenuOpen=false">
     <button @click="userMenuOpen=!userMenuOpen"
-            style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:8px;color:#0D1B4B"
-            :style="userMenuOpen ? 'background:#F4F5F9' : ''">
-      <div class="avatar"
-           style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#1B6EF3,#0D1B4B);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px"
-           x-text="userInitials()"></div>
-      <div style="text-align:left;line-height:1.15">
-        <div style="font-size:13px;font-weight:600" x-text="user.nombre || user.email.split('@')[0]"></div>
+            style="display:flex;align-items:center;gap:10px;background:none;border:1px solid #E2E8F0;
+                   cursor:pointer;padding:8px 14px;border-radius:10px;color:#0D1B4B;font-family:inherit"
+            :style="userMenuOpen ? 'background:#F4F5F9;border-color:#CBD5E1' : ''">
+      <div style="text-align:right;line-height:1.2">
+        <div style="font-size:13px;font-weight:600;color:#0D1B4B"
+             x-text="user.nombre || user.email.split('@')[0]"></div>
         <div style="font-size:11px;color:#64748b" x-text="user.email"></div>
       </div>
-      <span style="color:#64748b;font-size:10px">▼</span>
+      <span style="color:#64748b;font-size:10px;margin-left:2px">▼</span>
     </button>
 
     <div x-show="userMenuOpen" x-cloak
-         style="position:absolute;right:0;top:54px;background:#fff;border:1px solid #E2E8F0;
+         style="position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid #E2E8F0;
                 border-radius:10px;box-shadow:0 6px 20px rgba(13,27,75,.12);min-width:240px;
                 padding:6px;z-index:30">
       <div style="padding:10px 12px;border-bottom:1px solid #E2E8F0">
-        <div style="font-size:13px;font-weight:600" x-text="user.nombre || user.email.split('@')[0]"></div>
+        <div style="font-size:13px;font-weight:600;color:#0D1B4B"
+             x-text="user.nombre || user.email.split('@')[0]"></div>
         <div style="font-size:12px;color:#64748b" x-text="user.email"></div>
         <span class="badge" :class="user.is_admin ? 'green' : 'gray'" style="margin-top:6px;font-size:10px"
               x-text="user.is_admin ? 'Admin' : 'Premium'"></span>
       </div>
-      <a @click="tab='perfil'; userMenuOpen=false" href="#"
+      <a @click.prevent="tab='perfil'; userMenuOpen=false" href="#"
          style="display:block;padding:10px 12px;color:#0D1B4B;text-decoration:none;font-size:14px;border-radius:6px"
-         onmouseover="this.style.background='#F4F5F9'" onmouseout="this.style.background='none'">
+         onmouseover="this.style.background='#F4F5F9'" onmouseout="this.style.background='transparent'">
         Mi perfil
       </a>
-      <a @click="modalPassword=true; userMenuOpen=false" href="#"
+      <a @click.prevent="modalPassword=true; userMenuOpen=false" href="#"
          style="display:block;padding:10px 12px;color:#0D1B4B;text-decoration:none;font-size:14px;border-radius:6px"
-         onmouseover="this.style.background='#F4F5F9'" onmouseout="this.style.background='none'">
+         onmouseover="this.style.background='#F4F5F9'" onmouseout="this.style.background='transparent'">
         Cambiar contraseña
       </a>
       <hr style="border:none;border-top:1px solid #E2E8F0;margin:4px 0">
       <a href="/logout"
          style="display:block;padding:10px 12px;color:#DC2626;text-decoration:none;font-size:14px;border-radius:6px"
-         onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='none'">
+         onmouseover="this.style.background='#FEE2E2'" onmouseout="this.style.background='transparent'">
         Cerrar sesión
       </a>
     </div>
@@ -516,6 +516,31 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       según tus necesidades y lo que ofrecés.
     </p>
 
+    <div style="display:flex;gap:20px;align-items:center;margin-bottom:24px;padding:16px;
+                background:#F4F5F9;border-radius:12px">
+      <div style="position:relative">
+        <div x-show="!perfil.avatar_data_uri"
+             style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#1B6EF3,#0D1B4B);
+                    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:32px;letter-spacing:1px"
+             x-text="userInitials()"></div>
+        <img x-show="perfil.avatar_data_uri" :src="perfil.avatar_data_uri" x-cloak
+             style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(13,27,75,.15)">
+      </div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:18px" x-text="user.nombre || user.email.split('@')[0]"></div>
+        <div style="font-size:14px;color:#64748b" x-text="user.email"></div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <label class="small sec" style="cursor:pointer;padding:8px 14px;border:1px solid #1B6EF3;background:#fff;color:#1B6EF3;border-radius:8px;font-weight:600;font-size:13px">
+            <span x-text="perfil.avatar_data_uri ? 'Cambiar foto' : 'Subir foto'"></span>
+            <input type="file" accept="image/*" style="display:none" @change="subirAvatar($event)">
+          </label>
+          <button x-show="perfil.avatar_data_uri" class="small danger"
+                  @click="perfil.avatar_data_uri=''" style="padding:8px 14px">Quitar</button>
+        </div>
+        <p style="font-size:11px;color:#64748b;margin:8px 0 0">Recomendado: 200x200 px, máx 1 MB.</p>
+      </div>
+    </div>
+
     <h4 style="margin:0 0 12px;font-size:14px;color:#1B6EF3;text-transform:uppercase;letter-spacing:.5px">Datos personales</h4>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div>
@@ -871,7 +896,7 @@ function dashboard(){
       dni:'', fecha_nacimiento:'', direccion:'', localidad:'', provincia:'', pais:'Argentina',
       instagram:'', linkedin:'', twitter:'', facebook:'', tiktok:'', web:'',
       empresa_nombre:'', empresa_rol:'', empresa_industria:'', empresa_tamano:'', empresa_cuit:'',
-      bio:'', ofrece:'', necesidades:'',
+      bio:'', ofrece:'', necesidades:'', avatar_data_uri:'',
     },
     perfilLoading: false, perfilMsg: '',
     premium: null, premiumRenew: true,
@@ -923,6 +948,32 @@ function dashboard(){
       } finally {
         this.perfilLoading = false;
       }
+    },
+    async subirAvatar(evt){
+      const file = evt.target.files && evt.target.files[0];
+      if (!file) return;
+      if (file.size > 1_500_000) {
+        alert('La foto pesa más de 1.5 MB. Subí una más liviana.');
+        evt.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Redimensionamos en canvas a 240x240 para no guardar imágenes enormes
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 240; canvas.height = 240;
+          const ctx = canvas.getContext('2d');
+          const min = Math.min(img.width, img.height);
+          const sx = (img.width - min)/2, sy = (img.height - min)/2;
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, 240, 240);
+          this.perfil.avatar_data_uri = canvas.toDataURL('image/jpeg', 0.85);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+      evt.target.value = '';
     },
     async fetchPremium(){
       const r = await fetch('/api/dashboard/premium').then(r=>r.json());
@@ -1853,7 +1904,7 @@ PROFILE_FIELDS_STR = [
     "dni", "direccion", "localidad", "provincia", "pais",
     "instagram", "linkedin", "twitter", "facebook", "tiktok", "web",
     "empresa_nombre", "empresa_rol", "empresa_industria", "empresa_tamano", "empresa_cuit",
-    "bio", "ofrece", "necesidades",
+    "bio", "ofrece", "necesidades", "avatar_data_uri",
 ]
 
 
@@ -1878,6 +1929,11 @@ def api_perfil_save():
 
     def _trim(v):
         return (v or "").strip() if isinstance(v, str) else v
+
+    # Validar tamaño del avatar (~ <300KB en base64)
+    avatar = (data.get("avatar_data_uri") or "").strip()
+    if avatar and len(avatar) > 500_000:
+        return _err("La foto es demasiado grande. Probá una más chica.")
 
     with get_session() as s:
         p = s.query(UserProfile).filter_by(user_id=user.id).first()

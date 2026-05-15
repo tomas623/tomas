@@ -252,6 +252,9 @@ class UserProfile(Base):
     ofrece       = Column(Text)                 # qué ofrece
     necesidades  = Column(Text)                 # qué busca
 
+    # Foto de perfil (URL/dataURI) — opcional, base64 inline para evitar storage extra
+    avatar_data_uri = Column(Text)
+
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 

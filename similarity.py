@@ -349,28 +349,61 @@ def conceptual_scores(
         for i, c in enumerate(sample)
     )
 
-    try:
-        client = _get_anthropic()
-        msg = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1500,
-            messages=[{
-                "role": "user",
-                "content": CONCEPTUAL_PROMPT.format(
-                    marca=marca,
-                    descripcion=descripcion or "(sin descripción)",
-                    lista=lista,
-                ),
-            }],
-        )
-        text = msg.content[0].text.strip()
-        # Extraer JSON entre [ ]
-        m = re.search(r"\[.*\]", text, re.DOTALL)
-        if not m:
+    # Modelo configurable + fallback. Defaults a Sonnet 4.6.
+    preferred_model = os.getenv("CONCEPTUAL_MODEL", "claude-sonnet-4-6")
+    fallback_models = ["claude-sonnet-4-5-20250929", "claude-3-5-sonnet-latest"]
+    raw_text = None
+    last_error = None
+    for model_name in [preferred_model] + fallback_models:
+        try:
+            client = _get_anthropic()
+            msg = client.messages.create(
+                model=model_name,
+                max_tokens=1500,
+                messages=[{
+                    "role": "user",
+                    "content": CONCEPTUAL_PROMPT.format(
+                        marca=marca,
+                        descripcion=descripcion or "(sin descripción)",
+                        lista=lista,
+                    ),
+                }],
+            )
+            raw_text = msg.content[0].text.strip()
+            break
+        except Exception as e:
+            last_error = e
+            err_str = str(e)
+            # Si el modelo no existe, probar el siguiente. Otros errores: cortar.
+            if "model" in err_str.lower() and ("not_found" in err_str.lower()
+                                                or "invalid" in err_str.lower()):
+                logger.warning(f"Modelo {model_name} no disponible, probando fallback: {err_str[:200]}")
+                continue
+            logger.warning(f"Scoring conceptual: llamada a {model_name} falló: {err_str[:300]}")
             return {}
+
+    if raw_text is None:
+        logger.warning(f"Scoring conceptual: ningún modelo funcionó. Último error: {last_error}")
+        return {}
+
+    # Limpiar markdown fences si Claude las devuelve
+    cleaned = raw_text
+    if cleaned.startswith("```"):
+        # Extraer entre la primera y última triple-backtick
+        m_fence = re.search(r"```(?:json)?\s*(.*?)```", cleaned, re.DOTALL)
+        if m_fence:
+            cleaned = m_fence.group(1).strip()
+
+    m = re.search(r"\[.*\]", cleaned, re.DOTALL)
+    if not m:
+        logger.warning(f"Scoring conceptual: no encontré JSON array en la respuesta. "
+                       f"Respuesta raw (primeros 300 chars): {raw_text[:300]!r}")
+        return {}
+
+    try:
         items = json.loads(m.group(0))
     except Exception as e:
-        logger.warning(f"Scoring conceptual falló: {e}")
+        logger.warning(f"Scoring conceptual: JSON inválido ({e}). Raw: {m.group(0)[:300]!r}")
         return {}
 
     out: dict[int, tuple[float, str]] = {}
@@ -383,6 +416,8 @@ def conceptual_scores(
                 out[sample[i].id] = (score, razon)
         except Exception:
             continue
+
+    logger.info(f"Scoring conceptual OK: {len(out)}/{len(sample)} candidatos puntuados con {model_name}")
     return out
 
 
