@@ -306,31 +306,95 @@ def _fetch_sqlite_fts(session, term_norm: str, clases, limit: int):
 # Similitud conceptual con Claude (solo Nivel 2 paga)
 # ─────────────────────────────────────────────────────────────────────
 
-CONCEPTUAL_PROMPT = """Sos un experto en marcas de Argentina (INPI). Comparás un término candidato \
-con una lista de marcas existentes y devolvés cuán similar es CONCEPTUALMENTE (mismo significado, \
-traducción, sinónimo, idea protegida) — NO ortográfica ni fonéticamente.
-
-Devolvé ÚNICAMENTE un JSON array, sin texto extra. Cada elemento debe tener:
-  {{"i": <índice numérico>, "score": <0-100>, "razon": "<una línea>"}}
+CONCEPTUAL_PROMPT = """Aplicá el marco de confundibilidad del INPI a este caso.
 
 Marca consultada: "{marca}"
-Descripción: "{descripcion}"
+Descripción del producto/servicio: "{descripcion}"
 
-Marcas a comparar (índice → denominación, clase):
+Marcas a comparar (índice → denominación, clase Niza):
 {lista}
 
-Score 90-100 = misma idea / traducción directa.
-Score 60-89  = idea cercana o sector idéntico.
-Score 30-59  = relación tangencial.
-Score 0-29   = sin relación conceptual."""
+Devolvé el JSON array según las instrucciones del system. Incluí TODAS las marcas
+de la lista (aunque tengan score bajo). La razón debe ser concreta y nombrar el
+criterio aplicado (Mot Vedette, raíz común, marca notoria, traducción, etc.)."""
+
+
+CONFUNDIBILIDAD_SYSTEM = """Sos un experto en derecho marcario argentino (INPI). Tu tarea es
+evaluar la similitud entre una marca consultada y marcas existentes según el marco legal
+de CONFUNDIBILIDAD que aplica el INPI. Devolvés JSON, sin texto extra.
+
+== MARCO DE CONFUNDIBILIDAD ==
+
+TIPOS DE CONFUSIÓN que tenés que considerar:
+- DIRECTA: el consumidor cree que son la misma marca.
+- INDIRECTA: cree que vienen de la misma empresa o línea de productos (raíz común,
+  estilo particular).
+- AMPLIA: cree que existen vínculos económicos / comerciales / jurídicos (franquicia,
+  licencia, etc.).
+
+DIMENSIONES DEL COTEJO (cualquiera basta para impedir un registro):
+1. GRÁFICA — diseño, colores, tipografía, isologo. Nadie monopoliza figuras genéricas,
+   solo la representación particular y estilizada.
+2. FONÉTICA — cómo suenan. Importante porque las marcas se piden de viva voz. Considerar
+   aliteración, ubicación de las vocales (que son el soporte del sonido), secuencias de
+   consonantes. Palabras que se escriben distinto pero suenan igual (ej. "Hasúcar" y
+   "Azúcar") son fuertemente confundibles.
+3. IDEOLÓGICA / CONCEPTUAL — significado. Detectar:
+   - Sinónimos ("Los Criadores" ≈ "Los Ganaderos")
+   - Asociación de ideas ("Tigre" ≈ "Pantera")
+   - Traducciones siempre que el consumidor medio pueda entenderlas
+     ("Norte" ≈ "Notte", "L'Etoile" ≈ "Stella")
+   - Antónimos ("Fiel" ≈ "Infiel" — la antonimia crea asociación de ideas)
+
+REGLAS DE APRECIACIÓN:
+- COTEJO DE CONJUNTO (no fragmentar): comparar por impresión global, no en pedazos.
+  EXCEPCIÓN "Mot Vedette": si hay un elemento dominante que capta toda la atención
+  (palabra protagonista o figura central), comparar centrándose en ese elemento.
+- APRECIACIÓN SUCESIVA Y PRERREFLEXIVA: NO es un "juego de diferencias" lado a lado.
+  Simulá el recuerdo: ver una marca, luego la otra, ¿la segunda evoca espontáneamente
+  el recuerdo de la primera?
+- MAYOR PESO A LAS SEMEJANZAS QUE A LAS DIFERENCIAS: si la similitud general es alta,
+  cambiar una letra rara vez es suficiente para evitar la confusión.
+- SÍLABAS — RAÍZ vs DESINENCIA: las primeras sílabas (raíz) tienen mayor impacto en la
+  memoria auditiva. Si comparten raíz → riesgo altísimo.
+  EXCEPCIÓN marcas débiles: si la raíz es de uso común, genérica o descriptiva
+  ("Rapi-" para velocidad, "-farma" para farmacias, "Eco-" para ecológico, "Bio-" para
+  biológico, "Tele-"), no se puede monopolizar. En esos casos pesar la desinencia.
+- ESPECIALIDAD Y PÚBLICO RELEVANTE: las marcas chocan si se aplican a productos
+  iguales / similares / al mismo público. Consumo masivo o bajo precio = compra
+  desatenta = más riesgo. Medicamentos / alto valor / B2B profesional = atención
+  alta = menos riesgo.
+- MARCAS NOTORIAS: si una marca es notoria (muy famosa) — ejemplos paradigmáticos:
+  Coca-Cola, Pepsi, Nike, Adidas, Apple, Google, Microsoft, Mercedes-Benz, BMW, Disney,
+  McDonald's, Nestlé, Bimbo, Unilever, Procter, IBM, Visa, Amazon — su protección
+  ROMPE la barrera de las clases y se extiende a rubros distintos, para evitar el
+  aprovechamiento parasitario del prestigio.
+
+== TU ENTREGABLE ==
+Devolvés ÚNICAMENTE un JSON array (sin markdown, sin texto extra). Cada elemento:
+{"i": <índice numérico>, "score": <0-100>, "razon": "<una línea, max 200 chars>"}
+
+ESCALA DE SCORE:
+- 95-100: misma marca / traducción literal / fonéticamente indistinguibles.
+- 80-94:  ideológicamente equivalentes o riesgo de confusión claro.
+- 60-79:  similitud relevante (algún criterio dispara), análisis fino necesario.
+- 30-59:  similitud baja, probablemente coexistible.
+- 0-29:   sin similitud significativa.
+
+Tu razón debe nombrar qué criterio se aplicó (ej: "Misma raíz fonética", "Traducción
+italiana", "Marca notoria — protección amplia", "Misma idea de origen").
+"""
 
 
 def _call_gemini(prompt: str) -> Optional[str]:
     """Llama a Gemini vía REST. Retorna el texto raw o None si falla.
 
-    Usa la API de Google AI Studio (Generative Language API). Tier gratis:
-    ~15 RPM y 1500 requests/día con gemini-1.5-flash. Si te quedás sin
-    cuota, retorna None y el caller hace fallback.
+    Usa la API de Google AI Studio (Generative Language API). Carga el marco
+    de confundibilidad como systemInstruction (contexto fijo, no se cuenta
+    en cada llamada para tokens del usuario).
+
+    Modelo configurable via GEMINI_MODEL en .env. Default 'gemini-2.5-flash'.
+    Si tenés cuenta paga conviene 'gemini-2.5-pro' para análisis más rico.
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -340,14 +404,18 @@ def _call_gemini(prompt: str) -> Optional[str]:
            f"{model}:generateContent?key={api_key}")
     try:
         import httpx
-        r = httpx.post(
-            url,
-            json={
-                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 1500},
+        payload = {
+            "systemInstruction": {
+                "parts": [{"text": CONFUNDIBILIDAD_SYSTEM}],
             },
-            timeout=30.0,
-        )
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 2000,
+                "responseMimeType": "application/json",
+            },
+        }
+        r = httpx.post(url, json=payload, timeout=30.0)
         if r.status_code >= 400:
             logger.warning(f"Gemini HTTP {r.status_code}: {r.text[:300]}")
             return None
@@ -374,7 +442,8 @@ def _call_claude(prompt: str) -> Optional[str]:
         try:
             client = _get_anthropic()
             msg = client.messages.create(
-                model=model_name, max_tokens=1500,
+                model=model_name, max_tokens=2000,
+                system=CONFUNDIBILIDAD_SYSTEM,
                 messages=[{"role": "user", "content": prompt}],
             )
             return msg.content[0].text.strip()
