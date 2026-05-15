@@ -33,7 +33,9 @@ from sqlalchemy import func
 from database import Consulta, FreeSearchLog, Lead, Pago, get_session
 from services.auth import current_user
 from services.domains import check_domains
-from similarity import diagnose, search_similar, NIVEL_ALTO, NIVEL_MEDIO
+from similarity import (
+    check_notorious, diagnose, search_similar, NIVEL_ALTO, NIVEL_MEDIO,
+)
 
 logger = logging.getLogger(__name__)
 bp = Blueprint("marca", __name__)
@@ -221,6 +223,11 @@ def nivel_1_check():
         cross_class_matches = [m for m in all_class_matches
                                 if m.clase and m.clase != target_clase]
 
+    # Marcas notorias: chequeo independiente contra lista hardcodeada.
+    # Sirve cuando el FTS5 no encuentra match (ej. "coco cola" vs "Coca-Cola"
+    # con prefijos no matchean) pero la marca es claramente confusable.
+    notorious_warnings = check_notorious(marca)
+
     altos = [m for m in matches if m.nivel == "alto"]
     medios = [m for m in matches if m.nivel == "medio"]
     cross_notorios = [m for m in cross_class_matches if (m.score or 0) >= 0.85]
@@ -229,6 +236,18 @@ def nivel_1_check():
         veredicto = "no_disponible"
         mensaje = (f"Encontramos {len(altos)} marca(s) muy similares ya registradas. "
                    "El registro tiene riesgo alto de oposición.")
+    elif notorious_warnings and notorious_warnings[0]["score"] >= 0.80:
+        veredicto = "no_disponible"
+        top = notorious_warnings[0]["denominacion"]
+        mensaje = (f"Tu búsqueda es muy similar a <strong>{top}</strong>, una marca notoria. "
+                   "Las marcas notorias tienen protección extendida a todas las clases. "
+                   "El registro tiene riesgo muy alto de oposición.")
+    elif notorious_warnings:
+        veredicto = "necesita_analisis"
+        top = notorious_warnings[0]["denominacion"]
+        mensaje = (f"Tu búsqueda se parece a <strong>{top}</strong>, una marca notoria. "
+                   "Conviene revisar bien antes de avanzar — las marcas notorias se protegen "
+                   "más allá de su clase original.")
     elif cross_notorios:
         veredicto = "necesita_analisis"
         nombres = ", ".join(sorted({m.denominacion for m in cross_notorios[:3]}))
@@ -245,8 +264,13 @@ def nivel_1_check():
                    "en otras clases. Si alguna es notoria, podría limitar tu registro.")
     else:
         veredicto = "probablemente_disponible"
-        mensaje = ("No encontramos coincidencias evidentes. Aún recomendamos "
-                   "un análisis fonético y conceptual completo antes del registro.")
+        if is_full_access:
+            mensaje = ("Hicimos el análisis completo de confundibilidad (léxico, fonético, "
+                       "conceptual) y no encontramos coincidencias significativas. La marca "
+                       "parece registrable en esta clase.")
+        else:
+            mensaje = ("No encontramos coincidencias evidentes. Aún recomendamos "
+                       "un análisis fonético y conceptual completo antes del registro.")
 
     diag = diagnose(matches)
 
@@ -266,6 +290,7 @@ def nivel_1_check():
         },
         "dominios": domains,
         "premium": is_full_access,
+        "notorious_warnings": notorious_warnings,
     }
 
     if is_full_access:

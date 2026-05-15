@@ -220,6 +220,37 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
           </template>
         </div>
 
+        <div x-show="buscarResult.notorious_warnings && buscarResult.notorious_warnings.length"
+             style="margin-top:20px;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:10px;
+                    padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:8px;font-weight:700;color:#991B1B">
+            <span style="font-size:18px">🛑</span>
+            Atención: marca notoria detectada
+          </div>
+          <p style="margin:6px 0 12px;font-size:13px;color:#7F1D1D">
+            Tu búsqueda se parece a una marca notoria. Las marcas notorias tienen
+            <strong>protección extendida a todas las clases</strong>: no podés registrarla
+            ni siquiera en otro rubro porque sería aprovechamiento parasitario.
+          </p>
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Marca notoria</th><th>Score lex</th><th>Score fon</th><th>Score final</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="n in buscarResult.notorious_warnings" :key="'not-'+n.denominacion">
+                <tr>
+                  <td><strong x-text="n.denominacion"></strong></td>
+                  <td x-text="((n.scores?.lexical||0)*100).toFixed(0)+'%'"></td>
+                  <td x-text="((n.scores?.fonetica||0)*100).toFixed(0)+'%'"></td>
+                  <td><strong x-text="((n.score||0)*100).toFixed(0)+'%'"></strong></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          </div>
+        </div>
+
         <div x-show="buscarResult.cross_class_matches && buscarResult.cross_class_matches.length"
              style="margin-top:20px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;
                     padding:14px 16px">
@@ -373,7 +404,9 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
           </div>
         </div>
 
-        <p x-show="!buscarResult.matches || !buscarResult.matches.length"
+        <p x-show="(!buscarResult.matches || !buscarResult.matches.length)
+                    && (!buscarResult.cross_class_matches || !buscarResult.cross_class_matches.length)
+                    && (!buscarResult.notorious_warnings || !buscarResult.notorious_warnings.length)"
            style="margin-top:16px;color:#16A34A">
           ✓ No encontramos coincidencias significativas en la base del INPI.
         </p>

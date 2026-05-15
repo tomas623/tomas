@@ -151,6 +151,105 @@ def lexical_score(a: str, b: str) -> float:
 
 
 # ─────────────────────────────────────────────────────────────────────
+# Marcas notorias — lista hardcodeada, override en notorious_brands.txt
+# ─────────────────────────────────────────────────────────────────────
+
+# Las marcas notorias rompen la barrera de clase: aunque no estén en la
+# clase pedida, su protección se extiende. Esta lista no es exhaustiva
+# (faltan ~miles), pero cubre los casos más obvios. Para extender:
+# crear archivo `notorious_brands.txt` con una marca por línea.
+
+DEFAULT_NOTORIOUS = [
+    # Refrescos / bebidas
+    "Coca-Cola", "Coca Cola", "Pepsi", "Pepsi-Cola", "Sprite", "Fanta",
+    "Red Bull", "Gatorade", "Powerade", "7up", "Schweppes",
+    # Alimentos / snacks
+    "Nestlé", "Nestle", "Bimbo", "Unilever", "Kraft", "Heinz",
+    "Mondelez", "Cadbury", "Hershey", "Kellogg", "Oreo",
+    # Indumentaria / deporte
+    "Nike", "Adidas", "Puma", "Reebok", "Under Armour", "Converse",
+    "Levi's", "Levis", "Lacoste", "Gucci", "Louis Vuitton", "Chanel",
+    "Hermès", "Prada", "Versace", "Armani", "Calvin Klein", "Tommy Hilfiger",
+    # Tech / software
+    "Apple", "Google", "Microsoft", "Amazon", "Facebook", "Meta",
+    "Instagram", "WhatsApp", "TikTok", "Twitter", "X.com", "LinkedIn",
+    "YouTube", "Netflix", "Spotify", "Uber", "Airbnb", "PayPal",
+    "MercadoLibre", "Mercado Libre", "MercadoPago", "Mercado Pago",
+    "IBM", "Oracle", "Samsung", "Sony", "LG", "Huawei", "Xiaomi",
+    # Autos
+    "Mercedes-Benz", "Mercedes Benz", "BMW", "Audi", "Ferrari", "Porsche",
+    "Toyota", "Honda", "Ford", "Chevrolet", "Volkswagen", "Tesla",
+    # Entretenimiento
+    "Disney", "Pixar", "Marvel", "Warner", "HBO", "ESPN",
+    # Bancos / pagos
+    "Visa", "Mastercard", "American Express", "Santander", "BBVA",
+    # Comida rápida
+    "McDonald's", "McDonalds", "Burger King", "KFC", "Starbucks",
+    "Subway", "Pizza Hut", "Domino's", "Dominos",
+    # Argentina locales
+    "Quilmes", "Patagonia", "Arcor", "La Serenísima", "La Serenisima",
+    "Havanna", "Bagley", "Mostaza", "Despegar",
+]
+
+
+def _load_notorious() -> list[str]:
+    base = list(DEFAULT_NOTORIOUS)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "notorious_brands.txt")
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                for line in fh:
+                    name = line.strip()
+                    if name and not name.startswith("#"):
+                        base.append(name)
+        except Exception:
+            pass
+    return base
+
+
+_NOTORIOUS_CACHE: Optional[list[str]] = None
+
+
+def get_notorious_brands() -> list[str]:
+    global _NOTORIOUS_CACHE
+    if _NOTORIOUS_CACHE is None:
+        _NOTORIOUS_CACHE = _load_notorious()
+    return _NOTORIOUS_CACHE
+
+
+def check_notorious(term: str, threshold: float = 0.72) -> list[dict]:
+    """Compara el término contra la lista de marcas notorias.
+
+    Devuelve los matches por encima del umbral con score combinado lex+fon.
+    Pensado para detectar 'coco cola' vs 'Coca-Cola' aunque FTS5 falle.
+    """
+    if not term or not term.strip():
+        return []
+    out: list[dict] = []
+    seen_normalized: set = set()
+    for brand in get_notorious_brands():
+        nb = normalize(brand)
+        if nb in seen_normalized:
+            continue
+        seen_normalized.add(nb)
+        lex = lexical_score(term, brand)
+        fon = phonetic_score(term, brand)
+        score = max(lex, fon)
+        if score >= threshold:
+            out.append({
+                "denominacion": brand,
+                "score": round(score, 3),
+                "scores": {
+                    "lexical": round(lex, 3),
+                    "fonetica": round(fon, 3),
+                },
+                "razon": "Marca notoria — protección amplia, rompe la barrera de la clase",
+            })
+    out.sort(key=lambda x: x["score"], reverse=True)
+    return out[:5]
+
+
+# ─────────────────────────────────────────────────────────────────────
 # Búsqueda contra la DB usando pg_trgm (rápida) o ILIKE (fallback SQLite)
 # ─────────────────────────────────────────────────────────────────────
 
