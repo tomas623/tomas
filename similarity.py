@@ -499,8 +499,16 @@ ESCALA DE SCORE:
 - 30-59:  similitud baja, probablemente coexistible.
 - 0-29:   sin similitud significativa.
 
+IMPORTANTE — NO TE DEJES LLEVAR POR LA COINCIDENCIA SUPERFICIAL:
+- Si la marca consultada y la candidata comparten el núcleo de denominación
+  (ej. "Coca Cola" vs "THE COCA-COLA COMPANY" o "Apple" vs "Apple Inc."),
+  el score debe ser MUY ALTO (≥90). Son la misma marca aunque la candidata
+  tenga "S.A.", "Company", "Ltd", etc. agregado.
+- Si la candidata contiene la marca consultada como núcleo (ej. consultás
+  "Verbum" y aparece "Verbum Software"), score alto (75-90).
+
 Tu razón debe nombrar qué criterio se aplicó (ej: "Misma raíz fonética", "Traducción
-italiana", "Marca notoria — protección amplia", "Misma idea de origen").
+italiana", "Marca notoria — protección amplia", "Núcleo de denominación coincide").
 """
 
 
@@ -755,14 +763,15 @@ def search_similar(
         s_fon = phonetic_score(marca, c.denominacion)
         s_con, razon = conceptual.get(c.id, (0.0, ""))
 
-        # Si la marca ortográficamente es idéntica/casi idéntica, la dimensión
-        # conceptual también se considera alta (es literalmente la misma marca).
-        # El modelo a veces puntúa 0 conceptual en esos casos pensando "ya está
-        # cubierto por léxico" — pero el usuario espera ver alto.
-        if s_lex >= 0.85 and s_con < s_lex:
-            s_con = max(s_con, s_lex * 0.9)
+        # Si la marca ortográficamente es similar/idéntica, la dimensión
+        # conceptual también se considera alta: literalmente son la misma marca.
+        # El modelo a veces puntúa 0 pensando "ya está cubierto por léxico" —
+        # pero el usuario espera ver alto. Bumpamos según el grado de coincidencia.
+        if s_lex >= 0.55 and s_con < s_lex:
+            s_con = max(s_con, s_lex * 0.95)
             if not razon:
-                razon = "Marca idéntica o casi idéntica"
+                razon = ("Marca idéntica" if s_lex >= 0.85
+                         else "Núcleo de denominación coincide")
 
         base = max(s_lex, s_fon, s_con)
         bonus = 0.0
