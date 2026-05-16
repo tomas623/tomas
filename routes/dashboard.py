@@ -169,17 +169,34 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       <div>
         <label>Clases Niza
           <span style="font-weight:400;color:#64748b;font-size:11px">
-            (podés elegir varias con Ctrl/Cmd + click)
+            (tildá una o varias; sin tildar = todas)
           </span>
         </label>
-        <select x-model="buscar.clases" multiple size="6"
-                style="height:auto;padding:6px">
+        <div style="border:1px solid #E2E8F0;border-radius:8px;padding:8px;max-height:180px;overflow-y:auto;background:#fff">
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <button class="small sec" type="button" @click.prevent="buscar.clases=[]"
+                    style="padding:4px 10px;font-size:12px">Ninguna</button>
+            <button class="small sec" type="button" @click.prevent="buscar.clases=Array.from({length:45},(_,i)=>String(i+1))"
+                    style="padding:4px 10px;font-size:12px">Todas</button>
+            <input type="text" x-model="buscar.claseFiltro" placeholder="Filtrar..."
+                   style="flex:1;padding:4px 8px;font-size:12px" autocomplete="off">
+          </div>
           <template x-for="n in 45" :key="n">
-            <option :value="n.toString()" x-text="n + ' — ' + (NIZA_TITLES[n] || '')"></option>
+            <label x-show="!buscar.claseFiltro || ('' + n + ' ' + (NIZA_TITLES[n]||'')).toLowerCase().includes(buscar.claseFiltro.toLowerCase())"
+                   style="display:flex;align-items:center;gap:8px;padding:4px 6px;cursor:pointer;font-weight:400;margin:0;border-radius:4px"
+                   onmouseover="this.style.background='#F4F5F9'" onmouseout="this.style.background='transparent'">
+              <input type="checkbox" :value="String(n)" x-model="buscar.clases" style="width:auto;margin:0">
+              <span style="font-size:13px">
+                <strong x-text="n"></strong> · <span x-text="NIZA_TITLES[n] || ''"></span>
+              </span>
+            </label>
           </template>
-        </select>
+        </div>
         <p style="font-size:11px;color:#64748b;margin:4px 0 0">
-          Sin selección = todas las clases. Premium permite multi-clase.
+          <span x-show="buscar.clases.length === 0">Buscaremos en las 45 clases.</span>
+          <span x-show="buscar.clases.length > 0">
+            <strong x-text="buscar.clases.length"></strong> clase(s) seleccionada(s).
+          </span>
         </p>
       </div>
     </div>
@@ -233,25 +250,28 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
           <ul style="margin:0;padding-left:22px;line-height:1.8">
             <li>
               Encontramos <strong x-text="buscarResult.stats.matches_total"></strong>
-              marca(s) similar(es) ya registrada(s)
+              marca(s) similar(es) ya registrada(s) en la base del INPI
               <span x-show="buscarResult.stats.identicas > 0">
-                — <strong style="color:#DC2626" x-text="buscarResult.stats.identicas"></strong> idéntica(s)
+                — <strong style="color:#DC2626" x-text="buscarResult.stats.identicas"></strong> idéntica(s) o casi idéntica(s)
               </span>.
             </li>
             <li>
               <span style="color:#1B6EF3">●</span>
               <strong>Léxicamente</strong> (cómo se escribe):
-              <strong x-text="buscarResult.stats.similares_lex"></strong> marca(s) con similitud ≥ 70%.
+              <strong x-text="buscarResult.stats.similares_lex"></strong> con similitud ≥ 50%,
+              de las cuales <strong x-text="buscarResult.stats.similares_lex_alto || 0"></strong> son muy similares (≥ 70%).
             </li>
             <li>
               <span style="color:#7C3AED">●</span>
-              <strong>Fonéticamente</strong> (cómo se pronuncia):
-              <strong x-text="buscarResult.stats.similares_fon"></strong> marca(s) con similitud ≥ 70%.
+              <strong>Fonéticamente</strong> (cómo suena):
+              <strong x-text="buscarResult.stats.similares_fon"></strong> con similitud ≥ 50%,
+              <strong x-text="buscarResult.stats.similares_fon_alto || 0"></strong> ≥ 70%.
             </li>
             <li>
               <span style="color:#16A34A">●</span>
               <strong>Conceptualmente</strong> (significado, sinónimos, traducciones):
-              <strong x-text="buscarResult.stats.similares_con"></strong> marca(s) con similitud ≥ 70%.
+              <strong x-text="buscarResult.stats.similares_con"></strong> con similitud ≥ 50%,
+              <strong x-text="buscarResult.stats.similares_con_alto || 0"></strong> ≥ 70%.
             </li>
             <li>
               <strong>¿Es marca notoria?</strong>
@@ -261,6 +281,11 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
               <span x-show="!buscarResult.es_notoria" style="color:#16A34A">No detectada.</span>
             </li>
           </ul>
+          <p style="font-size:12px;color:#64748b;margin:12px 0 0">
+            Nota: una marca puede tener nivel "alto" en el score final aunque ninguna
+            dimensión llegue al 70% individual, gracias a los bonus +10% si coincide
+            la clase y +5% si es vigente.
+          </p>
         </div>
 
         <!-- PROBABILIDAD POR CLASE -->
@@ -1130,7 +1155,7 @@ function dashboard(){
       42:"Servicios tecnológicos",43:"Restauración y alojamiento",
       44:"Servicios médicos y veterinarios",45:"Servicios jurídicos y seguridad"
     },
-    buscar: {marca:'', clases:[], descripcion:''},
+    buscar: {marca:'', clases:[], claseFiltro:'', descripcion:''},
     buscando: false, buscarErr: '', buscarResult: null,
     ayudaScores: false,
     modalConsulta: false, consultaDetalle: null, consultaCargando: false,

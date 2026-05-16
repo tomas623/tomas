@@ -277,10 +277,15 @@ def nivel_1_check():
     # Chequeo de dominio rápido (informativo)
     domains = [d.to_dict() for d in check_domains(marca)]
 
-    # Resumen por dimensión: cuántas marcas con score alto en cada eje
-    summary_lex = sum(1 for m in matches if (m.score_lex or 0) >= 0.70)
-    summary_fon = sum(1 for m in matches if (m.score_fon or 0) >= 0.70)
-    summary_con = sum(1 for m in matches if (m.score_con or 0) >= 0.70)
+    # Resumen por dimensión: cuántas marcas con score relevante en cada eje.
+    # Usamos 50% como umbral para 'similar' (capturamos zona gris) y 70% para
+    # 'muy similar'. 95% es 'idéntica'.
+    summary_lex = sum(1 for m in matches if (m.score_lex or 0) >= 0.50)
+    summary_fon = sum(1 for m in matches if (m.score_fon or 0) >= 0.50)
+    summary_con = sum(1 for m in matches if (m.score_con or 0) >= 0.50)
+    summary_lex_alto = sum(1 for m in matches if (m.score_lex or 0) >= 0.70)
+    summary_fon_alto = sum(1 for m in matches if (m.score_fon or 0) >= 0.70)
+    summary_con_alto = sum(1 for m in matches if (m.score_con or 0) >= 0.70)
     summary_iden = sum(1 for m in matches if (m.score_lex or 0) >= 0.95)
 
     es_notoria = bool(notorious_warnings and notorious_warnings[0].get("score", 0) >= 0.75)
@@ -300,6 +305,9 @@ def nivel_1_check():
             "similares_lex": summary_lex,
             "similares_fon": summary_fon,
             "similares_con": summary_con,
+            "similares_lex_alto": summary_lex_alto,
+            "similares_fon_alto": summary_fon_alto,
+            "similares_con_alto": summary_con_alto,
         },
         "dominios": domains,
         "premium": is_full_access,

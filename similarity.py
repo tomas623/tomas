@@ -755,6 +755,15 @@ def search_similar(
         s_fon = phonetic_score(marca, c.denominacion)
         s_con, razon = conceptual.get(c.id, (0.0, ""))
 
+        # Si la marca ortográficamente es idéntica/casi idéntica, la dimensión
+        # conceptual también se considera alta (es literalmente la misma marca).
+        # El modelo a veces puntúa 0 conceptual en esos casos pensando "ya está
+        # cubierto por léxico" — pero el usuario espera ver alto.
+        if s_lex >= 0.85 and s_con < s_lex:
+            s_con = max(s_con, s_lex * 0.9)
+            if not razon:
+                razon = "Marca idéntica o casi idéntica"
+
         base = max(s_lex, s_fon, s_con)
         bonus = 0.0
         if clases and c.clase in clases:
