@@ -277,9 +277,18 @@ def nivel_1_check():
     # Chequeo de dominio rápido (informativo)
     domains = [d.to_dict() for d in check_domains(marca)]
 
+    # Resumen por dimensión: cuántas marcas con score alto en cada eje
+    summary_lex = sum(1 for m in matches if (m.score_lex or 0) >= 0.70)
+    summary_fon = sum(1 for m in matches if (m.score_fon or 0) >= 0.70)
+    summary_con = sum(1 for m in matches if (m.score_con or 0) >= 0.70)
+    summary_iden = sum(1 for m in matches if (m.score_lex or 0) >= 0.95)
+
+    es_notoria = bool(notorious_warnings and notorious_warnings[0].get("score", 0) >= 0.75)
+
     response = {
         "lead_id": lead_id,
         "marca": marca,
+        "clases_consultadas": clases,
         "veredicto": veredicto,
         "diagnostico": diag,
         "mensaje": mensaje,
@@ -287,16 +296,23 @@ def nivel_1_check():
             "matches_total": len(matches),
             "matches_alto": len(altos),
             "matches_medio": len(medios),
+            "identicas": summary_iden,
+            "similares_lex": summary_lex,
+            "similares_fon": summary_fon,
+            "similares_con": summary_con,
         },
         "dominios": domains,
         "premium": is_full_access,
+        "es_notoria": es_notoria,
         "notorious_warnings": notorious_warnings,
     }
 
     if is_full_access:
-        # Premium: devolvemos la lista completa de matches con detalle
         response["matches"] = [m.to_dict() for m in matches]
         response["cross_class_matches"] = [m.to_dict() for m in cross_class_matches]
+        # Probabilidad de registro por clase (premium): hacemos una pasada
+        # adicional sin filtro de clase para contar matches en cada clase 1..45
+        response["por_clase"] = _probabilidad_por_clase(marca, descripcion, clases)
     else:
         response["siguiente_paso"] = {
             "tipo": "consulta_completa",
@@ -483,6 +499,93 @@ def _generar_informe_completo(consulta: Consulta) -> None:
 
     if consulta.viewed_at is None:
         consulta.viewed_at = datetime.utcnow()
+
+
+def _probabilidad_por_clase(marca: str, descripcion: str,
+                              clases_pedidas: list) -> dict:
+    """Calcula probabilidad de registro para CADA clase Niza 1-45.
+
+    Hace una pasada sin filtro de clase + buckets por clase. Cada clase recibe
+    una puntuación 0-100 según cuántos matches altos/medios encontró.
+
+    Returns:
+        {
+          "clases_pedidas": [11, ...],
+          "scores": [
+            {"clase": 1, "titulo": "...", "matches": 0, "probabilidad": 95, "label": "alta"},
+            ...
+          ],
+          "mejores": [{clase, probabilidad, titulo}],   # top 5 más viables
+          "peores": [{clase, probabilidad, titulo}],    # top 5 menos viables
+        }
+    """
+    NIZA_TITULOS = {
+        1:"Productos químicos",2:"Pinturas y barnices",3:"Cosméticos y limpieza",
+        4:"Aceites y combustibles",5:"Farmacéuticos",6:"Metales comunes",
+        7:"Máquinas y motores",8:"Herramientas de mano",9:"Electrónica y software",
+        10:"Aparatos médicos",11:"Alumbrado y calefacción",12:"Vehículos",
+        13:"Armas de fuego",14:"Joyería y relojes",15:"Instrumentos musicales",
+        16:"Papel e imprenta",17:"Caucho y plásticos",18:"Cuero y bolsos",
+        19:"Materiales de construcción",20:"Muebles",21:"Utensilios domésticos",
+        22:"Cuerdas y fibras",23:"Hilos textiles",24:"Telas y textiles",
+        25:"Ropa y calzado",26:"Encajes y bordados",27:"Alfombras",
+        28:"Juegos y juguetes",29:"Carne y alimentos",30:"Café, té y panadería",
+        31:"Agrícola y animales vivos",32:"Cervezas y bebidas",33:"Bebidas alcohólicas",
+        34:"Tabaco",35:"Publicidad y gestión",36:"Seguros y finanzas",
+        37:"Construcción y reparación",38:"Telecomunicaciones",39:"Transporte",
+        40:"Tratamiento de materiales",41:"Educación y entretenimiento",
+        42:"Servicios tecnológicos",43:"Restauración y alojamiento",
+        44:"Servicios médicos y veterinarios",45:"Servicios jurídicos y seguridad",
+    }
+    try:
+        all_matches = search_similar(
+            marca=marca, descripcion=descripcion,
+            clases=None, limit=200, use_ai=False, min_score=0.50,
+        )
+    except Exception as e:
+        logger.warning(f"Probabilidad por clase: search falló: {e}")
+        all_matches = []
+
+    # Bucket por clase
+    by_class = {n: {"alto": 0, "medio": 0, "bajo": 0} for n in range(1, 46)}
+    for m in all_matches:
+        c = m.clase
+        if not c or c not in by_class:
+            continue
+        if m.nivel == "alto":
+            by_class[c]["alto"] += 1
+        elif m.nivel == "medio":
+            by_class[c]["medio"] += 1
+        else:
+            by_class[c]["bajo"] += 1
+
+    # Score por clase: 100 - 25*alto - 10*medio - 3*bajo (clamped 0-100)
+    scores = []
+    for c in range(1, 46):
+        b = by_class[c]
+        prob = max(0, min(100, 100 - 25 * b["alto"] - 10 * b["medio"] - 3 * b["bajo"]))
+        if prob >= 80:
+            label = "alta"
+        elif prob >= 50:
+            label = "media"
+        else:
+            label = "baja"
+        scores.append({
+            "clase": c, "titulo": NIZA_TITULOS.get(c, ""),
+            "matches": b["alto"] + b["medio"] + b["bajo"],
+            "matches_alto": b["alto"], "matches_medio": b["medio"],
+            "probabilidad": prob, "label": label,
+            "es_pedida": c in (clases_pedidas or []),
+        })
+
+    mejores = sorted(scores, key=lambda x: (-x["probabilidad"], x["clase"]))[:5]
+    peores = sorted(scores, key=lambda x: (x["probabilidad"], x["clase"]))[:5]
+    return {
+        "clases_pedidas": clases_pedidas or [],
+        "scores": scores,
+        "mejores": [{"clase": s["clase"], "titulo": s["titulo"], "probabilidad": s["probabilidad"]} for s in mejores],
+        "peores": [{"clase": s["clase"], "titulo": s["titulo"], "probabilidad": s["probabilidad"]} for s in peores],
+    }
 
 
 def _analisis_legal(consulta: Consulta, matches: list) -> str:

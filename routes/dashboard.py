@@ -167,13 +167,20 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
                @keydown.enter="ejecutarBusqueda()">
       </div>
       <div>
-        <label>Clase Niza</label>
-        <select x-model="buscar.clase">
-          <option value="">Todas (45 clases)</option>
+        <label>Clases Niza
+          <span style="font-weight:400;color:#64748b;font-size:11px">
+            (podés elegir varias con Ctrl/Cmd + click)
+          </span>
+        </label>
+        <select x-model="buscar.clases" multiple size="6"
+                style="height:auto;padding:6px">
           <template x-for="n in 45" :key="n">
-            <option :value="n" x-text="n + ' — ' + (NIZA_TITLES[n] || '')"></option>
+            <option :value="n.toString()" x-text="n + ' — ' + (NIZA_TITLES[n] || '')"></option>
           </template>
         </select>
+        <p style="font-size:11px;color:#64748b;margin:4px 0 0">
+          Sin selección = todas las clases. Premium permite multi-clase.
+        </p>
       </div>
     </div>
 
@@ -202,12 +209,107 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
                  necesita_analisis:'⚠ Necesita análisis',
                  no_disponible:'✕ Riesgo alto'
                }[buscarResult.veredicto]"></div>
-          <div x-text="buscarResult.mensaje"></div>
-          <div style="font-size:13px;color:#64748b;margin-top:6px">
-            Total coincidencias: <strong x-text="buscarResult.stats.matches_total"></strong> ·
-            Alto: <strong x-text="buscarResult.stats.matches_alto"></strong> ·
-            Medio: <strong x-text="buscarResult.stats.matches_medio"></strong>
+          <div x-html="buscarResult.mensaje"></div>
+        </div>
+
+        <!-- INFORME RESUMIDO -->
+        <div style="margin-top:18px;padding:18px;background:#fff;border:1px solid #E2E8F0;border-radius:10px">
+          <h4 style="margin:0 0 12px">Informe de búsqueda</h4>
+
+          <p style="margin:0 0 12px;line-height:1.6">
+            Para <strong x-text="'&quot;' + buscarResult.marca + '&quot;'"></strong>
+            <span x-show="buscarResult.clases_consultadas?.length">
+              en
+              <span x-show="buscarResult.clases_consultadas.length === 1">
+                la clase <strong x-text="buscarResult.clases_consultadas[0]"></strong>
+              </span>
+              <span x-show="buscarResult.clases_consultadas.length > 1">
+                las clases <strong x-text="buscarResult.clases_consultadas.join(', ')"></strong>
+              </span>:
+            </span>
+            <span x-show="!buscarResult.clases_consultadas?.length">en las 45 clases:</span>
+          </p>
+
+          <ul style="margin:0;padding-left:22px;line-height:1.8">
+            <li>
+              Encontramos <strong x-text="buscarResult.stats.matches_total"></strong>
+              marca(s) similar(es) ya registrada(s)
+              <span x-show="buscarResult.stats.identicas > 0">
+                — <strong style="color:#DC2626" x-text="buscarResult.stats.identicas"></strong> idéntica(s)
+              </span>.
+            </li>
+            <li>
+              <span style="color:#1B6EF3">●</span>
+              <strong>Léxicamente</strong> (cómo se escribe):
+              <strong x-text="buscarResult.stats.similares_lex"></strong> marca(s) con similitud ≥ 70%.
+            </li>
+            <li>
+              <span style="color:#7C3AED">●</span>
+              <strong>Fonéticamente</strong> (cómo se pronuncia):
+              <strong x-text="buscarResult.stats.similares_fon"></strong> marca(s) con similitud ≥ 70%.
+            </li>
+            <li>
+              <span style="color:#16A34A">●</span>
+              <strong>Conceptualmente</strong> (significado, sinónimos, traducciones):
+              <strong x-text="buscarResult.stats.similares_con"></strong> marca(s) con similitud ≥ 70%.
+            </li>
+            <li>
+              <strong>¿Es marca notoria?</strong>
+              <span x-show="buscarResult.es_notoria" style="color:#DC2626;font-weight:700">
+                Sí — atención, hay alto riesgo (ver alerta roja abajo)
+              </span>
+              <span x-show="!buscarResult.es_notoria" style="color:#16A34A">No detectada.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- PROBABILIDAD POR CLASE -->
+        <div x-show="buscarResult.por_clase" style="margin-top:18px;padding:18px;
+                    background:#fff;border:1px solid #E2E8F0;border-radius:10px">
+          <h4 style="margin:0 0 6px">Probabilidad de registro por clase</h4>
+          <p style="margin:0 0 14px;font-size:13px;color:#64748b">
+            Calculada con un barrido sobre las 45 clases Niza, ponderando coincidencias
+            altas (−25 pts), medias (−10 pts) y bajas (−3 pts).
+          </p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+            <div>
+              <div style="font-weight:600;color:#16A34A;margin-bottom:6px">Mejores clases para registrar</div>
+              <template x-for="m in (buscarResult.por_clase?.mejores || [])" :key="'best-'+m.clase">
+                <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px">
+                  <span><strong x-text="m.clase"></strong> · <span x-text="m.titulo"></span></span>
+                  <strong style="color:#16A34A" x-text="m.probabilidad + '%'"></strong>
+                </div>
+              </template>
+            </div>
+            <div>
+              <div style="font-weight:600;color:#DC2626;margin-bottom:6px">Clases con mayor riesgo</div>
+              <template x-for="p in (buscarResult.por_clase?.peores || [])" :key="'wor-'+p.clase">
+                <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px">
+                  <span><strong x-text="p.clase"></strong> · <span x-text="p.titulo"></span></span>
+                  <strong style="color:#DC2626" x-text="p.probabilidad + '%'"></strong>
+                </div>
+              </template>
+            </div>
           </div>
+
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#1B6EF3;font-weight:600">
+              Ver todas las 45 clases
+            </summary>
+            <div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">
+              <template x-for="s in (buscarResult.por_clase?.scores || [])" :key="'all-'+s.clase">
+                <div :style="(s.es_pedida ? 'background:#DBEAFE;' : 'background:#F8FAFC;') + 'padding:6px 10px;border-radius:6px;font-size:12px'">
+                  <strong x-text="s.clase + '. ' + s.titulo"></strong>
+                  <div style="display:flex;justify-content:space-between;margin-top:2px">
+                    <span style="color:#64748b" x-text="s.matches + ' matches'"></span>
+                    <strong :style="s.label === 'alta' ? 'color:#16A34A' : (s.label === 'media' ? 'color:#D97706' : 'color:#DC2626')"
+                            x-text="s.probabilidad + '%'"></strong>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </details>
         </div>
 
         <div x-show="buscarResult.dominios && buscarResult.dominios.length" style="margin-top:16px">
@@ -429,7 +531,9 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
               <span class="badge" :class="diagBadge(c.diagnostico)" x-text="c.diagnostico||'pendiente'"></span>
             </td>
             <td x-text="fmtDate(c.created_at)"></td>
-            <td><a :href="'/marca/consulta/'+c.id" style="color:#1B6EF3">Ver →</a></td>
+            <td>
+              <button class="small sec" @click="abrirConsultaDetalle(c)">Ver informe →</button>
+            </td>
           </tr>
         </template>
       </tbody>
@@ -842,6 +946,60 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- MODAL detalle de consulta -->
+  <div class="modal" x-show="modalConsulta" x-cloak @click.self="modalConsulta=false">
+    <div class="modal-content" style="max-width:780px;max-height:85vh;overflow-y:auto">
+      <h3 style="margin-top:0" x-text="'Informe — ' + (consultaDetalle?.marca || '')"></h3>
+      <p style="color:#64748b;font-size:13px;margin:0 0 16px">
+        Creada el <span x-text="fmtDate(consultaDetalle?.created_at)"></span>
+        · <span x-text="consultaDetalle?.nivel"></span>
+      </p>
+
+      <div x-show="consultaCargando" class="empty">Cargando informe...</div>
+
+      <div x-show="!consultaCargando && consultaDetalle">
+        <div x-show="consultaDetalle?.diagnostico" style="margin-bottom:16px">
+          <span class="badge" :class="diagBadge(consultaDetalle?.diagnostico)"
+                x-text="consultaDetalle?.diagnostico"></span>
+        </div>
+
+        <div x-show="consultaDetalle?.pre_analisis_ia"
+             style="background:#F4F5F9;border-radius:10px;padding:16px;
+                    font-size:14px;line-height:1.6;white-space:pre-wrap"
+             x-text="consultaDetalle?.pre_analisis_ia"></div>
+
+        <h4 style="margin:18px 0 8px">Coincidencias</h4>
+        <p x-show="!consultaDetalle?.resultados || !consultaDetalle.resultados.length"
+           class="empty" style="padding:20px">
+          No se encontraron coincidencias significativas.
+        </p>
+        <table x-show="consultaDetalle?.resultados && consultaDetalle.resultados.length">
+          <thead><tr>
+            <th>Marca</th><th>Clase</th><th>Titular</th><th>Score</th><th>Nivel</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="r in (consultaDetalle?.resultados || [])" :key="r.id || r.denominacion">
+              <tr>
+                <td><strong x-text="r.denominacion"></strong></td>
+                <td x-text="r.clase || '—'"></td>
+                <td x-text="r.titular || '—'"></td>
+                <td><strong x-text="((r.score||0)*100).toFixed(0)+'%'"></strong></td>
+                <td>
+                  <span class="badge" :class="{red:r.nivel==='alto',yellow:r.nivel==='medio',gray:r.nivel==='bajo'}"
+                        x-text="r.nivel"></span>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:24px">
+        <button class="sec" @click="modalConsulta=false" style="flex:1">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL cambiar contraseña -->
   <div class="modal" x-show="modalPassword" x-cloak @click.self="modalPassword=false">
     <div class="modal-content" style="max-width:420px">
@@ -972,9 +1130,10 @@ function dashboard(){
       42:"Servicios tecnológicos",43:"Restauración y alojamiento",
       44:"Servicios médicos y veterinarios",45:"Servicios jurídicos y seguridad"
     },
-    buscar: {marca:'', clase:'', descripcion:''},
+    buscar: {marca:'', clases:[], descripcion:''},
     buscando: false, buscarErr: '', buscarResult: null,
     ayudaScores: false,
+    modalConsulta: false, consultaDetalle: null, consultaCargando: false,
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
@@ -1169,6 +1328,19 @@ function dashboard(){
       }
     },
 
+    async abrirConsultaDetalle(c){
+      this.modalConsulta = true;
+      this.consultaDetalle = {marca: c.marca, created_at: c.created_at,
+                              nivel: c.nivel, diagnostico: c.diagnostico};
+      this.consultaCargando = true;
+      try {
+        const r = await fetch('/api/marca/consulta/' + c.id).then(r=>r.json());
+        if (r.ok) this.consultaDetalle = r.data;
+      } finally {
+        this.consultaCargando = false;
+      }
+    },
+
     matchTags(m, query, clase){
       const tags = [];
       const normalize = s => (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
@@ -1197,7 +1369,7 @@ function dashboard(){
           body: JSON.stringify({
             marca: this.buscar.marca,
             descripcion: this.buscar.descripcion,
-            clases: this.buscar.clase ? [parseInt(this.buscar.clase)] : [],
+            clases: (this.buscar.clases || []).map(c => parseInt(c)).filter(Boolean),
           }),
         });
         const d = await r.json();

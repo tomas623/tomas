@@ -124,14 +124,25 @@ def phonetic_key_es(s: str) -> str:
 
 
 def phonetic_score(a: str, b: str) -> float:
-    """Score 0-1 por coincidencia fonética."""
+    """Score 0-1 por coincidencia fonética.
+
+    Reglas:
+    - Claves idénticas → 1.0
+    - Substring match → 0.85 SOLO si la clave más corta es >=3 chars Y representa
+      >=60% de la longitud de la más larga. Sin esto, claves cortas como 'nk'
+      (Nike) producen falsos positivos contra cualquier marca con 'nk' adentro.
+    - Resto → SequenceMatcher
+    """
     ka = phonetic_key_es(a)
     kb = phonetic_key_es(b)
     if not ka or not kb:
         return 0.0
     if ka == kb:
         return 1.0
-    if ka in kb or kb in ka:
+    short, long = (ka, kb) if len(ka) <= len(kb) else (kb, ka)
+    if (len(short) >= 3
+            and len(short) / max(1, len(long)) >= 0.6
+            and short in long):
         return 0.85
     return SequenceMatcher(None, ka, kb).ratio()
 
@@ -217,10 +228,12 @@ def get_notorious_brands() -> list[str]:
     return _NOTORIOUS_CACHE
 
 
-def check_notorious(term: str, threshold: float = 0.72) -> list[dict]:
+def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:
     """Compara el término contra la lista de marcas notorias.
 
-    Devuelve los matches por encima del umbral con score combinado lex+fon.
+    Devuelve los matches por encima del umbral. Score combinado = promedio
+    ponderado (lex 0.6, fon 0.4). Esto evita falsos positivos cuando solo
+    una dimensión dispara (ej. fon=0.85 por substring corto pero lex=0.20).
     Pensado para detectar 'coco cola' vs 'Coca-Cola' aunque FTS5 falle.
     """
     if not term or not term.strip():
@@ -234,7 +247,13 @@ def check_notorious(term: str, threshold: float = 0.72) -> list[dict]:
         seen_normalized.add(nb)
         lex = lexical_score(term, brand)
         fon = phonetic_score(term, brand)
-        score = max(lex, fon)
+        # Score combinado ponderado: lex pesa más para evitar matches por
+        # accidente fonético. Si alguna dimensión es muy alta (>=0.90), la usamos
+        # como score directo (caso "Nikee" = "Nike" exacto fonéticamente).
+        if max(lex, fon) >= 0.90:
+            score = max(lex, fon)
+        else:
+            score = lex * 0.6 + fon * 0.4
         if score >= threshold:
             out.append({
                 "denominacion": brand,
