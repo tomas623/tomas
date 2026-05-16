@@ -437,6 +437,40 @@ de la lista (aunque tengan score bajo). La razón debe ser concreta y nombrar el
 criterio aplicado (Mot Vedette, raíz común, marca notoria, traducción, etc.)."""
 
 
+def _load_confundibilidad_cases() -> str:
+    """Carga casos curados desde data/confundibilidad_cases.json y los formatea
+    como ejemplos few-shot para el system prompt.
+
+    El archivo es editable por el usuario: cada vez que agregue un caso, el
+    sistema aprende sin necesidad de fine-tuning."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "data", "confundibilidad_cases.json")
+    if not os.path.exists(path):
+        return ""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            cases = json.load(fh)
+    except Exception as e:
+        logger.warning(f"No pude cargar confundibilidad_cases.json: {e}")
+        return ""
+
+    confundibles = [c for c in cases if c.get("tipo") == "confundibles"]
+    coexistibles = [c for c in cases if c.get("tipo") == "coexistibles"]
+
+    lines = []
+    if confundibles:
+        lines.append("\nCASOS CONFUNDIBLES (referencia):")
+        for c in confundibles[:30]:
+            lines.append(f"- \"{c.get('marca_a')}\" ≈ \"{c.get('marca_b')}\"  "
+                         f"— {c.get('razon', '')}")
+    if coexistibles:
+        lines.append("\nCASOS COEXISTIBLES (referencia):")
+        for c in coexistibles[:20]:
+            lines.append(f"- \"{c.get('marca_a')}\" ✕ \"{c.get('marca_b')}\"  "
+                         f"— {c.get('razon', '')}")
+    return "\n".join(lines)
+
+
 CONFUNDIBILIDAD_SYSTEM = """Sos un experto en derecho marcario argentino (INPI). Tu tarea es
 evaluar la similitud entre una marca consultada y marcas existentes según el marco legal
 de CONFUNDIBILIDAD que aplica el INPI. Devolvés JSON, sin texto extra.
@@ -509,7 +543,7 @@ IMPORTANTE — NO TE DEJES LLEVAR POR LA COINCIDENCIA SUPERFICIAL:
 
 Tu razón debe nombrar qué criterio se aplicó (ej: "Misma raíz fonética", "Traducción
 italiana", "Marca notoria — protección amplia", "Núcleo de denominación coincide").
-"""
+""" + _load_confundibilidad_cases()
 
 
 def _call_gemini(prompt: str) -> Optional[str]:

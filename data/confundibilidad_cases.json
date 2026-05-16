@@ -1,0 +1,152 @@
+[
+  {
+    "tipo": "confundibles",
+    "marca_a": "Norte",
+    "marca_b": "Notte",
+    "razon": "Notte es 'noche' en italiano. Norte y Notte se confunden ortográfica y conceptualmente (al traducir, el público medio puede asociarlas). Caso jurisprudencial INPI."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "L'Etoile",
+    "marca_b": "Stella",
+    "razon": "Etoile es 'estrella' en francés; Stella es 'estrella' en italiano. Misma idea protegida por traducción inversa."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Hasúcar",
+    "marca_b": "Azúcar",
+    "razon": "Aunque ortográficamente difieren, fonéticamente son indistinguibles. La 'h' es muda. Riesgo alto de confusión fonética."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Los Criadores",
+    "marca_b": "Los Ganaderos",
+    "razon": "Sinonimia exacta en el rubro: ambos términos refieren a la misma actividad (cría de animales)."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Fiel",
+    "marca_b": "Infiel",
+    "razon": "Antonimia: aunque el significado es opuesto, la asociación de ideas inmediata produce confusión. El consumidor recuerda la primera al ver la segunda."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Coca Cola",
+    "marca_b": "Coca Light",
+    "razon": "Misma raíz 'Coca' que es marca notoria. La adición de 'Light' no agrega distintividad. Coca-Cola tiene protección amplia."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Apple",
+    "marca_b": "Manzanita Tech",
+    "razon": "Apple es marca notoria. 'Manzanita' es diminutivo de 'manzana' (traducción de Apple). Asociación de ideas + protección de marca notoria."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Nike",
+    "marca_b": "Nyke",
+    "razon": "Confusión ortográfica y fonética casi total. Mismo nombre con cambio mínimo de letra. Marca notoria protegida ampliamente."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Mercedes-Benz",
+    "marca_b": "Mercedez",
+    "razon": "Aprovechamiento parasitario del prestigio de Mercedes-Benz (marca notoria). Cambio de letra no neutraliza la confusión."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Quilmes Cerveza",
+    "marca_b": "Kilmes",
+    "razon": "Quilmes es marca notoria en bebidas. Variación ortográfica 'K' por 'Qu' fonéticamente idéntica."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Adidas",
+    "marca_b": "Adibas",
+    "razon": "Sustitución de una sola letra en marca notoria. Confusión casi inevitable. Aprovechamiento parasitario."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "MercadoLibre",
+    "marca_b": "MercadoVenta",
+    "razon": "Misma raíz 'Mercado' que es identificador principal en marca notoria argentina. Aunque la desinencia cambia, el público asocia."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Verbum",
+    "marca_b": "Verbo",
+    "razon": "Verbum es 'palabra' en latín; Verbo es 'palabra' en español. Traducción directa, mismo concepto."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Pampero",
+    "marca_b": "El Pampa",
+    "razon": "Misma raíz 'Pamp-' con connotación geográfica idéntica (las pampas argentinas). Diferencia de género/sufijo no neutraliza."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Bimbo",
+    "marca_b": "Bimba",
+    "razon": "Bimbo es marca notoria en panificados. Cambio de género no genera distintividad suficiente. Aprovechamiento del prestigio."
+  },
+  {
+    "tipo": "coexistibles",
+    "marca_a": "Sol",
+    "marca_b": "Sun",
+    "razon": "Aunque son traducciones, 'Sun' en español es entendido casi siempre. El público medio NO siempre traduce automáticamente del inglés. Coexistibles en clases distintas, dudoso en la misma."
+  },
+  {
+    "tipo": "coexistibles",
+    "marca_a": "Pampa Energy",
+    "marca_b": "Pampa Bus",
+    "razon": "Comparten raíz geográfica genérica ('Pampa'), pero los desinencias 'Energy' y 'Bus' apuntan a rubros muy distintos. La raíz 'Pampa' es de uso común (marca débil), no se puede monopolizar."
+  },
+  {
+    "tipo": "coexistibles",
+    "marca_a": "Rapidata",
+    "marca_b": "Rapifix",
+    "razon": "Comparten prefijo 'Rapi-' que es de uso común (marca débil: indica rapidez/velocidad). El peso diferenciador va a las desinencias '-data' vs '-fix' que apuntan a productos distintos."
+  },
+  {
+    "tipo": "coexistibles",
+    "marca_a": "Ecofarma",
+    "marca_b": "Biofarma",
+    "razon": "Comparten sufijo '-farma' (de uso común para farmacéuticos) y prefijos descriptivos 'Eco' vs 'Bio'. Ambos elementos son débiles. Las marcas se distinguen por el conjunto."
+  },
+  {
+    "tipo": "coexistibles",
+    "marca_a": "Star Burger",
+    "marca_b": "Star Coffee",
+    "razon": "Comparten 'Star' como prefijo común, pero apuntan a rubros distintos (burger vs coffee) y el público distingue claramente. Solo confundibles si la desinencia es ambigua."
+  },
+  {
+    "tipo": "coexistibles",
+    "marca_a": "Atlantis",
+    "marca_b": "Atlas",
+    "razon": "Comparten raíz mitológica griega 'Atl-' pero el resto difiere significativamente. Conceptos distintos: ciudad sumergida vs titán. Bajo riesgo de confusión."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Burger King",
+    "marca_b": "Burger Queen",
+    "razon": "Burger King es marca notoria. Cambio King/Queen mantiene la misma idea (realeza + hamburguesa). Aprovechamiento parasitario obvio."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Starbucks",
+    "marca_b": "Star Coffee",
+    "razon": "Starbucks es marca notoria en café. 'Star Coffee' captura la raíz 'Star' + el rubro 'Coffee'. Asociación inmediata con la marca notoria."
+  },
+  {
+    "tipo": "coexistibles",
+    "marca_a": "Verde",
+    "marca_b": "Green",
+    "razon": "Aunque son traducciones, ambas palabras son tan genéricas y descriptivas (un color) que ninguna empresa puede monopolizar. Marcas débiles si se usan solas."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "Disney",
+    "marca_b": "Disnei",
+    "razon": "Disney es marca notoria. Cambio mínimo 'y' por 'i' no genera distintividad. Misma pronunciación. Aprovechamiento del prestigio mundial."
+  }
+]
