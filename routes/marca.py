@@ -36,7 +36,8 @@ from services.domains import check_domains
 from services.social import check_handles
 from similarity import (
     add_notorious_brand, check_notorious, diagnose, get_notorious_brands,
-    reload_notorious_cache, search_similar, NIVEL_ALTO, NIVEL_MEDIO,
+    get_notorious_with_source, reload_notorious_cache, remove_notorious_brand,
+    search_similar, NIVEL_ALTO, NIVEL_MEDIO,
 )
 
 logger = logging.getLogger(__name__)
@@ -706,12 +707,33 @@ el especialista lo valide."""
 # Notorias — admin: agregar marca a la lista
 # ─────────────────────────────────────────────────────────────────────
 
-@bp.route("/api/marca/notorias/agregar", methods=["POST"])
-def marca_notoria_agregar():
-    """Solo admin: agrega una marca a notorious_brands.txt."""
+def _require_admin():
+    """Helper: devuelve (None, None) si admin, ('error_response', 403) si no."""
     user = current_user()
     if not user or not user.is_admin:
         return _err("Solo admin", 403)
+    return None
+
+
+@bp.route("/api/marca/notorias", methods=["GET"])
+def marca_notorias_list():
+    """Solo admin: lista todas las marcas notorias con su origen."""
+    err = _require_admin()
+    if err is not None:
+        return err
+    items = get_notorious_with_source()
+    return _ok({
+        "total": len(items),
+        "items": items,
+    })
+
+
+@bp.route("/api/marca/notorias/agregar", methods=["POST"])
+def marca_notoria_agregar():
+    """Solo admin: agrega una marca a notorious_brands.txt."""
+    err = _require_admin()
+    if err is not None:
+        return err
     data = request.get_json(silent=True) or {}
     brand = (data.get("denominacion") or "").strip()
     if not brand:
@@ -721,12 +743,27 @@ def marca_notoria_agregar():
                 "total": len(get_notorious_brands())})
 
 
+@bp.route("/api/marca/notorias/eliminar", methods=["POST"])
+def marca_notoria_eliminar():
+    """Solo admin: quita una marca de la lista de notorias."""
+    err = _require_admin()
+    if err is not None:
+        return err
+    data = request.get_json(silent=True) or {}
+    brand = (data.get("denominacion") or "").strip()
+    if not brand:
+        return _err("Falta denominación")
+    ok = remove_notorious_brand(brand)
+    return _ok({"removed": ok, "denominacion": brand,
+                "total": len(get_notorious_brands())})
+
+
 @bp.route("/api/marca/notorias/recargar", methods=["POST"])
 def marca_notoria_recargar():
     """Solo admin: limpia cache y recarga notorious_brands.txt."""
-    user = current_user()
-    if not user or not user.is_admin:
-        return _err("Solo admin", 403)
+    err = _require_admin()
+    if err is not None:
+        return err
     reload_notorious_cache()
     return _ok({"total": len(get_notorious_brands())})
 

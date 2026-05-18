@@ -246,7 +246,29 @@ def _load_notorious() -> list[str]:
                         base.append(name)
         except Exception:
             pass
-    return base
+    # Aplicar exclusiones (notorious_excluded.txt)
+    excl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "notorious_excluded.txt")
+    excluded: set[str] = set()
+    if os.path.exists(excl_path):
+        try:
+            with open(excl_path, encoding="utf-8") as fh:
+                for line in fh:
+                    name = line.strip()
+                    if name and not name.startswith("#"):
+                        excluded.add(name.lower())
+        except Exception:
+            pass
+    # Dedup preservando orden + filtrar excluidos
+    seen: set = set()
+    out: list[str] = []
+    for b in base:
+        key = b.lower()
+        if key in seen or key in excluded:
+            continue
+        seen.add(key)
+        out.append(b)
+    return out
 
 
 _NOTORIOUS_CACHE: Optional[list[str]] = None
@@ -282,15 +304,101 @@ def add_notorious_brand(brand: str) -> bool:
         except Exception:
             pass
     if brand.lower() in existing:
+        # Si estaba excluido, sacalo del excluded para que vuelva a aparecer
+        _remove_from_excluded(brand)
+        reload_notorious_cache()
         return False
     try:
         with open(path, "a", encoding="utf-8") as fh:
             fh.write(brand + "\n")
+        _remove_from_excluded(brand)
         reload_notorious_cache()
         return True
     except Exception as e:
         logger.warning(f"add_notorious_brand falló: {e}")
         return False
+
+
+def remove_notorious_brand(brand: str) -> bool:
+    """Quita una marca de la lista de notorias.
+
+    Si está en notorious_brands.txt (overrides del usuario), la borra de ahí.
+    Si está sólo en DEFAULT_NOTORIOUS (lista hardcodeada), la agrega a
+    notorious_excluded.txt para ocultarla.
+    """
+    brand = (brand or "").strip()
+    if not brand:
+        return False
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    custom_path = os.path.join(base_dir, "notorious_brands.txt")
+
+    removed_from_custom = False
+    if os.path.exists(custom_path):
+        try:
+            with open(custom_path, encoding="utf-8") as fh:
+                lines = fh.readlines()
+            new_lines = []
+            for line in lines:
+                if line.strip().lower() != brand.lower():
+                    new_lines.append(line)
+                else:
+                    removed_from_custom = True
+            if removed_from_custom:
+                with open(custom_path, "w", encoding="utf-8") as fh:
+                    fh.writelines(new_lines)
+        except Exception as e:
+            logger.warning(f"remove_notorious_brand custom: {e}")
+
+    # Si está en DEFAULT_NOTORIOUS, agregar a excluded
+    if any(b.lower() == brand.lower() for b in DEFAULT_NOTORIOUS):
+        excl_path = os.path.join(base_dir, "notorious_excluded.txt")
+        existing_excl: set[str] = set()
+        if os.path.exists(excl_path):
+            try:
+                with open(excl_path, encoding="utf-8") as fh:
+                    for line in fh:
+                        existing_excl.add(line.strip().lower())
+            except Exception:
+                pass
+        if brand.lower() not in existing_excl:
+            try:
+                with open(excl_path, "a", encoding="utf-8") as fh:
+                    fh.write(brand + "\n")
+            except Exception as e:
+                logger.warning(f"remove_notorious_brand excl: {e}")
+                return False
+
+    reload_notorious_cache()
+    return True
+
+
+def _remove_from_excluded(brand: str) -> None:
+    """Quita una marca del archivo notorious_excluded.txt (si está)."""
+    excl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "notorious_excluded.txt")
+    if not os.path.exists(excl_path):
+        return
+    try:
+        with open(excl_path, encoding="utf-8") as fh:
+            lines = fh.readlines()
+        new_lines = [l for l in lines if l.strip().lower() != brand.lower()]
+        if len(new_lines) != len(lines):
+            with open(excl_path, "w", encoding="utf-8") as fh:
+                fh.writelines(new_lines)
+    except Exception:
+        pass
+
+
+def get_notorious_with_source() -> list[dict]:
+    """Devuelve la lista con marca de origen: 'default' o 'custom'."""
+    defaults = {b.lower() for b in DEFAULT_NOTORIOUS}
+    out = []
+    for b in get_notorious_brands():
+        out.append({
+            "denominacion": b,
+            "source": "default" if b.lower() in defaults else "custom",
+        })
+    return out
 
 
 def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:

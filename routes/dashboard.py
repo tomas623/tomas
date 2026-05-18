@@ -148,6 +148,10 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <div class="tab" :class="tab==='pagos'&&'active'" @click="tab='pagos'">Pagos</div>
     <div class="tab" :class="tab==='perfil'&&'active'" @click="tab='perfil'">Mi perfil</div>
     <div class="tab" :class="tab==='config'&&'active'" @click="tab='config'">Configuración</div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='notorias'&&'active'"
+         @click="tab='notorias'; fetchNotorias()" style="background:#FEF3C7;color:#92400E">
+      ⭐ Notorias <span style="font-size:11px">(admin)</span>
+    </div>
   </div>
 
   <!-- BUSCAR (premium) -->
@@ -921,6 +925,59 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- CONFIGURACIÓN -->
+  <!-- NOTORIAS (admin) -->
+  <div x-show="tab==='notorias' && user.is_admin" class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      <h3 style="margin:0">⭐ Lista de marcas notorias</h3>
+      <div style="font-size:13px;color:#64748b">
+        Total: <strong x-text="notoriasItems.length"></strong>
+        · Default: <strong x-text="notoriasItems.filter(x => x.source === 'default').length"></strong>
+        · Custom: <strong x-text="notoriasItems.filter(x => x.source === 'custom').length"></strong>
+      </div>
+    </div>
+    <p style="color:#64748b;font-size:13px;margin:0 0 18px">
+      Las marcas notorias tienen protección extendida a las 45 clases — el sistema
+      las detecta como riesgo alto aunque el usuario busque en otra clase. Esta lista
+      se aplica a todas las búsquedas del portal. <strong>Solo vos podés editarla</strong>.
+    </p>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <input type="text" x-model="notoriasFiltro" placeholder="🔎 Filtrar..."
+             autocomplete="off" style="flex:1;min-width:200px">
+      <input type="text" x-model="notoriasNueva" @keydown.enter="agregarNotoria()"
+             placeholder="Agregar marca nueva (Enter para sumar)"
+             autocomplete="off" style="flex:2;min-width:200px">
+      <button @click="agregarNotoria()" :disabled="!notoriasNueva.trim()">Agregar</button>
+    </div>
+
+    <div style="max-height:60vh;overflow-y:auto;border:1px solid #E2E8F0;border-radius:8px">
+      <table style="margin:0">
+        <thead><tr>
+          <th>Marca</th><th>Origen</th><th></th>
+        </tr></thead>
+        <tbody>
+          <template x-for="b in notoriasFiltradas()" :key="b.denominacion">
+            <tr>
+              <td><strong x-text="b.denominacion"></strong></td>
+              <td>
+                <span class="badge" :class="b.source === 'default' ? 'gray' : 'green'"
+                      x-text="b.source === 'default' ? 'sistema' : 'agregada'"></span>
+              </td>
+              <td style="text-align:right">
+                <button class="small danger" @click="eliminarNotoria(b.denominacion)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <p x-show="!notoriasFiltradas().length" class="empty" style="padding:30px">
+        Sin resultados — probá con otro filtro.
+      </p>
+    </div>
+  </div>
+
   <div x-show="tab==='config'" class="card">
     <h3 style="margin-top:0">Configuración de cuenta</h3>
 
@@ -1242,6 +1299,7 @@ function dashboard(){
     buscando: false, buscarErr: '', buscarResult: null,
     ayudaScores: false,
     modalConsulta: false, consultaDetalle: null, consultaCargando: false,
+    notoriasItems: [], notoriasFiltro: '', notoriasNueva: '',
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
@@ -1461,6 +1519,37 @@ function dashboard(){
       if ((scores.conceptual||0) >= 0.75) tags.push('mismo concepto');
       if ((m.estado_code||'').toLowerCase() === 'vigente') tags.push('vigente');
       return tags;
+    },
+
+    async fetchNotorias(){
+      const r = await fetch('/api/marca/notorias').then(r=>r.json());
+      if (r.ok) this.notoriasItems = r.data.items || [];
+    },
+    notoriasFiltradas(){
+      const q = (this.notoriasFiltro || '').toLowerCase();
+      if (!q) return this.notoriasItems;
+      return this.notoriasItems.filter(b =>
+        b.denominacion.toLowerCase().includes(q));
+    },
+    async agregarNotoria(){
+      const name = (this.notoriasNueva || '').trim();
+      if (!name) return;
+      const r = await fetch('/api/marca/notorias/agregar', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({denominacion: name}),
+      }).then(r=>r.json());
+      if (!r.ok) { alert(r.error || 'Error'); return; }
+      this.notoriasNueva = '';
+      await this.fetchNotorias();
+    },
+    async eliminarNotoria(name){
+      if (!confirm(`¿Quitar "${name}" de la lista de notorias?`)) return;
+      const r = await fetch('/api/marca/notorias/eliminar', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({denominacion: name}),
+      }).then(r=>r.json());
+      if (!r.ok) { alert(r.error || 'Error'); return; }
+      await this.fetchNotorias();
     },
 
     async marcarTodasComoNotorias(){
