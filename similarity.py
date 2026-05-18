@@ -387,34 +387,58 @@ def fetch_candidates(
 
 
 def _fetch_sqlite_fts(session, term_norm: str, clases, limit: int):
-    """SQLite FTS5 query. Returns Marca rows or None if FTS is unavailable."""
+    """SQLite FTS5 query. Returns Marca rows or None if FTS is unavailable.
+
+    Estrategia de 2 pasos para tolerar typos:
+    1. AND con prefijos exactos: alta precisión. Si trae ≥3 resultados, usamos eso.
+    2. OR con prefijos + relax: cualquiera de los tokens matchea. Mejor recall.
+
+    Esto resuelve casos como 'coco cola' (FTS5 con AND devolvería 0 porque
+    'Coca Cola' no contiene 'coco*', pero con OR sí porque contiene 'cola*').
+    """
     from sqlalchemy import text as sa_text
     from database import Marca
 
-    # FTS5 query syntax: prefix-match each token (e.g. 'nike' → 'nike*')
     tokens = [t for t in term_norm.split() if t]
     if not tokens:
         return None
-    fts_query = " ".join(f'"{t}"*' for t in tokens)
 
-    sql = """
-        SELECT m.id FROM marcas_fts f
-        JOIN marcas m ON m.id = f.rowid
-        WHERE marcas_fts MATCH :q
-    """
-    params = {"q": fts_query, "limit": limit}
-    if clases:
-        placeholders = ",".join(f":c{i}" for i in range(len(clases)))
-        sql += f" AND m.clase IN ({placeholders})"
-        for i, c in enumerate(clases):
-            params[f"c{i}"] = c
-    sql += " ORDER BY rank LIMIT :limit"
+    def _run_query(fts_query: str, lim: int):
+        sql = """
+            SELECT m.id FROM marcas_fts f
+            JOIN marcas m ON m.id = f.rowid
+            WHERE marcas_fts MATCH :q
+        """
+        params = {"q": fts_query, "limit": lim}
+        if clases:
+            placeholders = ",".join(f":c{i}" for i in range(len(clases)))
+            sql += f" AND m.clase IN ({placeholders})"
+            for i, c in enumerate(clases):
+                params[f"c{i}"] = c
+        sql += " ORDER BY rank LIMIT :limit"
+        try:
+            return [r[0] for r in session.execute(sa_text(sql), params).all()]
+        except Exception as e:
+            logger.warning(f"SQLite FTS query failed: {e}")
+            return None
 
-    try:
-        ids = [r[0] for r in session.execute(sa_text(sql), params).all()]
-    except Exception as e:
-        logger.warning(f"SQLite FTS query failed, falling back to ILIKE: {e}")
+    # Paso 1: AND con prefijos
+    and_query = " ".join(f'"{t}"*' for t in tokens)
+    ids = _run_query(and_query, limit)
+    if ids is None:
         return None
+
+    # Paso 2: si AND trajo pocos, ampliar con OR para capturar typos
+    if len(ids) < 10 and len(tokens) > 0:
+        or_query = " OR ".join(f'"{t}"*' for t in tokens)
+        or_ids = _run_query(or_query, limit * 2) or []
+        # Dedup preservando orden (AND primero, después OR no presentes)
+        seen = set(ids)
+        for x in or_ids:
+            if x not in seen:
+                ids.append(x)
+                seen.add(x)
+
     if not ids:
         return []
     return session.query(Marca).filter(Marca.id.in_(ids)).all()

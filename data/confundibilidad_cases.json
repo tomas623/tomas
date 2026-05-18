@@ -1,6 +1,18 @@
 [
   {
     "tipo": "confundibles",
+    "marca_a": "coco cola",
+    "marca_b": "Coca-Cola",
+    "razon": "Typo evidente. La intención del consumidor es claramente la marca notoria Coca-Cola. Score conceptual debe ser muy alto (≥90)."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "kocacola",
+    "marca_b": "Coca-Cola",
+    "razon": "Variación ortográfica sin espacio. Fonéticamente idéntica a Coca-Cola. Marca notoria."
+  },
+  {
+    "tipo": "confundibles",
     "marca_a": "Norte",
     "marca_b": "Notte",
     "razon": "Notte es 'noche' en italiano. Norte y Notte se confunden ortográfica y conceptualmente (al traducir, el público medio puede asociarlas). Caso jurisprudencial INPI."
