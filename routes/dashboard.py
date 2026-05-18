@@ -215,7 +215,22 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 
     <template x-if="buscarResult">
       <div style="margin-top:24px">
-        <div class="alert-row" :class="{
+        <!-- VEREDICTO PRINCIPAL: marca notoria primero, después el resto -->
+        <div x-show="buscarResult.es_notoria"
+             style="background:#FEE2E2;border:2px solid #DC2626;border-radius:12px;
+                    padding:20px;margin-bottom:18px">
+          <div style="font-size:22px;font-weight:800;color:#991B1B;margin-bottom:8px">
+            🛑 MARCA NOTORIA — No registrable
+          </div>
+          <p style="margin:0 0 8px;line-height:1.5;color:#7F1D1D" x-html="buscarResult.mensaje"></p>
+          <p style="margin:0;font-size:14px;color:#7F1D1D">
+            Aunque el análisis técnico completo igual lo hacemos abajo, te adelantamos:
+            <strong>las marcas notorias tienen protección en las 45 clases</strong>. Cualquier
+            registro confusable va a ser rechazado, sin importar el rubro.
+          </p>
+        </div>
+
+        <div x-show="!buscarResult.es_notoria" class="alert-row" :class="{
           alto: buscarResult.veredicto==='no_disponible',
           medio: buscarResult.veredicto==='necesita_analisis',
           bajo: buscarResult.veredicto==='probablemente_disponible'
@@ -250,7 +265,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
           <ul style="margin:0;padding-left:22px;line-height:1.8">
             <li>
               Encontramos <strong x-text="buscarResult.stats.matches_total"></strong>
-              marca(s) similar(es) ya registrada(s) en la base del INPI
+              marca(s) similar(es) ya registrada(s) en Argentina
               <span x-show="buscarResult.stats.identicas > 0">
                 — <strong style="color:#DC2626" x-text="buscarResult.stats.identicas"></strong> idéntica(s) o casi idéntica(s)
               </span>.
@@ -293,11 +308,33 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
                     background:#fff;border:1px solid #E2E8F0;border-radius:10px">
           <h4 style="margin:0 0 6px">Probabilidad de registro por clase</h4>
           <p style="margin:0 0 14px;font-size:13px;color:#64748b">
-            Calculada con un barrido sobre las 45 clases Niza, ponderando coincidencias
-            altas (−25 pts), medias (−10 pts) y bajas (−3 pts).
+            Ponderamos las coincidencias detectadas por clase para estimar la probabilidad
+            de registro: matches altos restan 25 pts, medios 10 pts y bajos 3 pts.
           </p>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <!-- Si el usuario eligió clases puntuales, mostramos sólo esas como foco -->
+          <div x-show="buscarResult.clases_consultadas && buscarResult.clases_consultadas.length > 0
+                       && buscarResult.clases_consultadas.length < 45"
+               style="margin-bottom:14px">
+            <div style="font-weight:600;margin-bottom:6px">Tus clases seleccionadas</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px">
+              <template x-for="s in (buscarResult.por_clase?.scores || []).filter(x => x.es_pedida)" :key="'sel-'+s.clase">
+                <div style="background:#DBEAFE;padding:8px 12px;border-radius:8px">
+                  <strong style="font-size:13px" x-text="s.clase + '. ' + s.titulo"></strong>
+                  <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px">
+                    <span style="color:#64748b" x-text="s.matches + ' coincidencias'"></span>
+                    <strong :style="s.label === 'alta' ? 'color:#16A34A' : (s.label === 'media' ? 'color:#D97706' : 'color:#DC2626')"
+                            x-text="s.probabilidad + '% prob.'"></strong>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Si el usuario seleccionó todas (o ninguna = todas), mostrar mejores/peores -->
+          <div x-show="!buscarResult.clases_consultadas?.length
+                        || buscarResult.clases_consultadas?.length === 45"
+               style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
             <div>
               <div style="font-weight:600;color:#16A34A;margin-bottom:6px">Mejores clases para registrar</div>
               <template x-for="m in (buscarResult.por_clase?.mejores || [])" :key="'best-'+m.clase">
@@ -338,13 +375,29 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
         </div>
 
         <div x-show="buscarResult.dominios && buscarResult.dominios.length" style="margin-top:16px">
-          <div style="font-weight:600;margin-bottom:6px">Dominios</div>
+          <div style="font-weight:600;margin-bottom:6px">Dominios web</div>
           <template x-for="d in buscarResult.dominios" :key="d.domain">
             <span class="badge" :class="d.status==='disponible'?'green':(d.status==='tomado'?'red':'gray')"
-                  style="margin-right:6px">
+                  style="margin-right:6px;margin-bottom:4px;display:inline-block">
               <span x-text="d.domain"></span> · <span x-text="d.status"></span>
             </span>
           </template>
+        </div>
+
+        <div x-show="buscarResult.handles && buscarResult.handles.length" style="margin-top:14px">
+          <div style="font-weight:600;margin-bottom:6px">Usuarios en redes sociales</div>
+          <template x-for="h in buscarResult.handles" :key="h.plataforma + h.handle">
+            <a :href="h.url" target="_blank" rel="noopener"
+               class="badge" :class="h.status==='disponible'?'green':(h.status==='tomado'?'red':'gray')"
+               style="margin-right:6px;margin-bottom:4px;display:inline-block;text-decoration:none">
+              <strong x-text="h.plataforma"></strong>
+              <span x-text="h.handle"></span> ·
+              <span x-text="h.status"></span>
+            </a>
+          </template>
+          <p style="font-size:11px;color:#64748b;margin:6px 0 0">
+            Chequeo informativo. Click para verificar manualmente.
+          </p>
         </div>
 
         <div x-show="buscarResult.notorious_warnings && buscarResult.notorious_warnings.length"
@@ -386,9 +439,9 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
             Marcas similares en otras clases — atención si son notorias
           </div>
           <p style="margin:6px 0 12px;font-size:13px;color:#78350F">
-            Aunque no aparezcan en tu clase, el INPI protege marcas notorias (Coca-Cola, Nike, etc.)
-            <strong>también en clases distintas</strong>. Si alguna de estas es notoria, no podrías
-            registrar una marca confusable, incluso en otra clase.
+            Aunque no aparezcan en tu clase, la ley argentina de marcas protege las marcas notorias
+            (Coca-Cola, Nike, etc.) <strong>también en clases distintas</strong>. Si alguna de estas
+            es notoria, no podrías registrar una marca confusable, incluso en otra clase.
           </p>
           <div style="overflow-x:auto">
           <table>
@@ -414,10 +467,10 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
         </div>
 
         <div x-show="buscarResult.matches && buscarResult.matches.length" style="margin-top:20px">
-          <h4 style="margin:0 0 6px">Coincidencias detectadas</h4>
+          <h4 style="margin:0 0 6px">Marcas similares registradas en Argentina</h4>
           <p style="font-size:12px;color:#64748b;margin:0 0 12px">
-            El INPI evalúa <strong>confundibilidad</strong> en 3 dimensiones (igual cómo lo
-            aplica un examinador). Mostramos el score de cada una para que veas qué dispara el match.
+            En Argentina se evalúa la <strong>confundibilidad</strong> entre marcas en
+            3 dimensiones. Mostramos el score de cada una para que veas qué dispara el match.
           </p>
           <div style="overflow-x:auto">
           <table>
@@ -504,25 +557,26 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
             <div x-show="ayudaScores" x-cloak style="margin-top:10px;line-height:1.6">
               <p style="margin:6px 0">
                 <span style="color:#1B6EF3">●</span> <strong>Léxico (0-100%)</strong> —
-                comparación visual/ortográfica con el algoritmo SequenceMatcher (familia Levenshtein)
-                sobre la denominación normalizada (sin tildes, sin caracteres especiales, minúsculas).
-                Si las marcas son idénticas → 100%; si comparten muchas letras consecutivas, alto.
+                comparamos cómo se escriben las marcas: cuántas letras comparten y en qué orden.
+                Una marca normalizada (sin tildes, sin caracteres especiales) se contrasta contra
+                la otra; si son idénticas, 100%; si comparten núcleos largos, alto.
               </p>
               <p style="margin:6px 0">
                 <span style="color:#7C3AED">●</span> <strong>Fonético (0-100%)</strong> —
-                aplicamos reglas fonéticas del español (b↔v, c→k/s según vocal, h muda inicial,
-                colapso de letras dobles, conservar sólo la primera vocal) para generar una "clave
-                fonética". Después comparamos las claves. Detecta "Hasúcar ≈ Azúcar", "Verbum ≈ Berbun".
+                evaluamos cómo suenan las marcas en español. Aplicamos las reglas fonéticas locales
+                (b↔v, c→k/s según vocal, h muda inicial, vocales internas, dobles letras) para
+                identificar si dos marcas suenan igual aunque se escriban distinto.
+                Ejemplo: "Hasúcar ≈ Azúcar".
               </p>
               <p style="margin:6px 0">
                 <span style="color:#16A34A">●</span> <strong>Conceptual (0-100%)</strong> —
-                la IA (Claude) evalúa el <em>significado</em>: detecta sinónimos
-                ("Los Criadores" ≈ "Los Ganaderos"), traducciones ("Norte" ≈ "Notte", "L'Etoile" ≈
-                "Stella"), antónimos ("Fiel" ≈ "Infiel") y asociación de ideas.
-                Si el conceptual está en 0%, es que ninguno de tus matches comparte significado.
+                a través de sistemas de IA evaluamos el <em>significado</em> de las marcas:
+                detectamos sinónimos ("Los Criadores" ≈ "Los Ganaderos"), traducciones
+                ("Norte" ≈ "Notte", "L'Etoile" ≈ "Stella"), antónimos que asocian ideas
+                ("Fiel" ≈ "Infiel") y asociación de ideas en general.
               </p>
               <p style="margin:10px 0 6px;font-size:11px;color:#64748b">
-                <strong>Score final</strong> = el máximo entre las 3 dimensiones + bonus
+                <strong>Score final</strong> = la mayor de las 3 dimensiones + bonus
                 (+10% si comparten clase, +5% si la marca está "vigente" registrada). El
                 <strong>nivel</strong> se asigna según el score combinado:
                 rojo (alto) ≥ 75%, amarillo (medio) 60-75%, gris (bajo) 45-60%.
@@ -535,7 +589,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
                     && (!buscarResult.cross_class_matches || !buscarResult.cross_class_matches.length)
                     && (!buscarResult.notorious_warnings || !buscarResult.notorious_warnings.length)"
            style="margin-top:16px;color:#16A34A">
-          ✓ No encontramos coincidencias significativas en la base del INPI.
+          ✓ No encontramos coincidencias significativas en las marcas registradas en Argentina.
         </p>
       </div>
     </template>

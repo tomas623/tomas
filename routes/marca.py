@@ -33,6 +33,7 @@ from sqlalchemy import func
 from database import Consulta, FreeSearchLog, Lead, Pago, get_session
 from services.auth import current_user
 from services.domains import check_domains
+from services.social import check_handles
 from similarity import (
     check_notorious, diagnose, search_similar, NIVEL_ALTO, NIVEL_MEDIO,
 )
@@ -274,8 +275,9 @@ def nivel_1_check():
 
     diag = diagnose(matches)
 
-    # Chequeo de dominio rápido (informativo)
+    # Chequeo de dominio + handles en redes (informativo)
     domains = [d.to_dict() for d in check_domains(marca)]
+    handles = [h.to_dict() for h in check_handles(marca)] if is_full_access else []
 
     # Resumen por dimensión: cuántas marcas con score relevante en cada eje.
     # Usamos 50% como umbral para 'similar' (capturamos zona gris) y 70% para
@@ -310,6 +312,7 @@ def nivel_1_check():
             "similares_con_alto": summary_con_alto,
         },
         "dominios": domains,
+        "handles": handles,
         "premium": is_full_access,
         "es_notoria": es_notoria,
         "notorious_warnings": notorious_warnings,
