@@ -1,6 +1,42 @@
 [
   {
     "tipo": "confundibles",
+    "marca_a": "minaos",
+    "marca_b": "Manaos",
+    "razon": "Typo evidente de la marca notoria argentina Manaos (gaseosa). Cambio de una vocal — riesgo casi inevitable. Score conceptual debe ser ≥90."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "manaus",
+    "marca_b": "Manaos",
+    "razon": "Variación ortográfica de Manaos. Aunque 'Manaus' es una ciudad de Brasil, en Argentina el consumidor lo asocia inmediatamente con la gaseosa."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "prity",
+    "marca_b": "Pritty",
+    "razon": "Variación ortográfica de Pritty (gaseosa argentina). Marca notoria local."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "tarague",
+    "marca_b": "Taragüí",
+    "razon": "Variación ortográfica de Taragüí (yerba mate). Marca notoria argentina."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "rosa monte",
+    "marca_b": "Rosamonte",
+    "razon": "Variación con espacio de la marca notoria Rosamonte (yerba mate)."
+  },
+  {
+    "tipo": "confundibles",
+    "marca_a": "branka",
+    "marca_b": "Fernet Branca",
+    "razon": "Variación fonética de Branca (fernet). Marca notoria. K por C no genera distintividad."
+  },
+  {
+    "tipo": "confundibles",
     "marca_a": "coco cola",
     "marca_b": "Coca-Cola",
     "razon": "Typo evidente. La intención del consumidor es claramente la marca notoria Coca-Cola. Score conceptual debe ser muy alto (≥90)."

@@ -200,6 +200,37 @@ DEFAULT_NOTORIOUS = [
     # Argentina locales
     "Quilmes", "Patagonia", "Arcor", "La Serenísima", "La Serenisima",
     "Havanna", "Bagley", "Mostaza", "Despegar",
+    # Argentina — bebidas / gaseosas
+    "Manaos", "Pritty", "Levité", "Levite", "Villavicencio", "Eco de los Andes",
+    "Glaciar", "Cunnington", "Refres-Cool", "Paso de los Toros", "Schweppes Argentina",
+    "Branca", "Fernet Branca", "Cinzano", "Gancia", "Hesperidina",
+    # Argentina — cervezas
+    "Brahma", "Stella Artois Argentina", "Imperial", "Heineken Argentina",
+    # Argentina — lácteos / alimentos
+    "Sancor", "Milkaut", "Ilolay", "Tregar", "Mastellone",
+    "Las Marías", "Las Marias", "Taragüí", "Taragui", "Cruz de Malta",
+    "Playadito", "Rosamonte", "Don Satur", "9 de Oro", "Terrabusi",
+    "Bagley Argentina", "Lía", "Don Satur", "Surcrem", "Patitas",
+    # Argentina — supermercados / retail
+    "Carrefour Argentina", "Coto", "Día", "Disco", "Jumbo",
+    "Vea", "Walmart Argentina", "Easy", "Garbarino", "Frávega", "Fravega",
+    "Falabella Argentina", "Musimundo",
+    # Argentina — bancos
+    "Galicia", "Banco Galicia", "Macro", "Banco Macro", "Provincia", "Banco Provincia",
+    "Nación", "Banco Nación", "Banco Nacion", "Santander Argentina",
+    "Brubank", "Ualá", "Uala", "Naranja X", "Naranja",
+    # Argentina — telcos / servicios
+    "Personal", "Movistar Argentina", "Claro Argentina", "Telecom Argentina",
+    "Cablevisión", "Cablevision", "Flow", "Telecentro",
+    # Argentina — medios
+    "Clarín", "Clarin", "La Nación", "La Nacion", "Página 12", "Pagina 12",
+    "Infobae", "TN", "Todo Noticias", "Canal 13", "Telefe", "C5N",
+    # Argentina — startups / digital
+    "Tiendanube", "Tienda Nube", "Ripio", "Bitso Argentina", "Lemon Cash",
+    "Pedidos Ya", "PedidosYa", "Rappi Argentina",
+    "Globant", "MercadoLibre Argentina", "Mercadolibre",
+    # Argentina — automotriz / combustible
+    "YPF", "Axion", "Axion Energy", "Shell Argentina", "Puma Energy",
 ]
 
 
@@ -232,12 +263,14 @@ def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:
     """Compara el término contra la lista de marcas notorias.
 
     Devuelve los matches por encima del umbral. Score combinado = promedio
-    ponderado (lex 0.6, fon 0.4). Esto evita falsos positivos cuando solo
-    una dimensión dispara (ej. fon=0.85 por substring corto pero lex=0.20).
-    Pensado para detectar 'coco cola' vs 'Coca-Cola' aunque FTS5 falle.
+    ponderado (lex 0.6, fon 0.4). Casos especiales:
+    - lex o fon ≥ 0.90 → score directo (match casi exacto).
+    - Edit distance ≤ 2 chars sobre denominaciones cortas (≤8) → forzar 0.85
+      mínimo. Captura typos como 'minaos' vs 'Manaos' (1 letra diff).
     """
     if not term or not term.strip():
         return []
+    nt = normalize(term)
     out: list[dict] = []
     seen_normalized: set = set()
     for brand in get_notorious_brands():
@@ -247,13 +280,18 @@ def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:
         seen_normalized.add(nb)
         lex = lexical_score(term, brand)
         fon = phonetic_score(term, brand)
-        # Score combinado ponderado: lex pesa más para evitar matches por
-        # accidente fonético. Si alguna dimensión es muy alta (>=0.90), la usamos
-        # como score directo (caso "Nikee" = "Nike" exacto fonéticamente).
+
+        # Edit distance para marcas cortas: 'minaos' vs 'manaos' → distance 1
+        # Si la marca normalizada es corta (≤ 10 chars) y la distancia ≤ 2,
+        # bumpamos el score para no perderlo.
         if max(lex, fon) >= 0.90:
             score = max(lex, fon)
+        elif (len(nb) <= 10 and len(nt) <= 12
+                and _levenshtein(nt, nb) <= 2):
+            score = max(0.85, lex * 0.6 + fon * 0.4)
         else:
             score = lex * 0.6 + fon * 0.4
+
         if score >= threshold:
             out.append({
                 "denominacion": brand,
@@ -266,6 +304,26 @@ def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:
             })
     out.sort(key=lambda x: x["score"], reverse=True)
     return out[:5]
+
+
+def _levenshtein(a: str, b: str) -> int:
+    """Distancia de Levenshtein (edición). Implementación liviana."""
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        curr = [i] + [0] * len(b)
+        for j, cb in enumerate(b, 1):
+            cost = 0 if ca == cb else 1
+            curr[j] = min(curr[j - 1] + 1,      # insert
+                          prev[j] + 1,           # delete
+                          prev[j - 1] + cost)    # substitute
+        prev = curr
+    return prev[-1]
 
 
 # ─────────────────────────────────────────────────────────────────────

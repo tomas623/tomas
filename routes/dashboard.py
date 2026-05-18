@@ -591,6 +591,28 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
            style="margin-top:16px;color:#16A34A">
           ✓ No encontramos coincidencias significativas en las marcas registradas en Argentina.
         </p>
+
+        <!-- CTA registro con descuento -->
+        <div style="margin-top:28px;padding:22px;background:linear-gradient(135deg,#F0F5FF 0%,#fff 100%);
+                    border:2px solid #1B6EF3;border-radius:14px;text-align:center">
+          <div style="font-weight:700;font-size:17px;color:#0D1B4B;margin-bottom:6px">
+            ¿Querés registrar
+            <span x-text="'&quot;' + buscarResult.marca + '&quot;'" style="color:#1B6EF3"></span>?
+          </div>
+          <p style="color:#475569;margin:0 0 16px;font-size:14px">
+            Como cliente Premium tenés
+            <strong style="color:#16A34A">descuento exclusivo en honorarios</strong>
+            de registro. Te contactamos por WhatsApp y armamos el trámite.
+          </p>
+          <a :href="ctaRegistroWa()" target="_blank" rel="noopener"
+             style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;
+                    padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px">
+            💬 Iniciar registro por WhatsApp
+          </a>
+          <p style="margin:12px 0 0;font-size:12px;color:#64748b">
+            Te respondemos en horario hábil (lun-vie 9-18hs ART).
+          </p>
+        </div>
       </div>
     </template>
   </div>
@@ -1432,6 +1454,18 @@ function dashboard(){
       if ((scores.conceptual||0) >= 0.75) tags.push('mismo concepto');
       if ((m.estado_code||'').toLowerCase() === 'vigente') tags.push('vigente');
       return tags;
+    },
+
+    ctaRegistroWa(){
+      const marca = this.buscarResult?.marca || '';
+      const clases = this.buscarResult?.clases_consultadas || [];
+      const clasesTxt = clases.length ? ` en la(s) clase(s) ${clases.join(', ')}` : '';
+      const veredicto = this.buscarResult?.veredicto || '';
+      const verTxt = veredicto === 'no_disponible'
+        ? ' El sistema marcó riesgo alto, pero quiero asesorarme.'
+        : (veredicto === 'necesita_analisis' ? ' Necesito un análisis más profundo.' : '');
+      const msg = `Hola LegalPacers, soy cliente Premium y quiero iniciar el registro de la marca "${marca}"${clasesTxt}.${verTxt} Por favor coordinen el descuento exclusivo.`;
+      return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
     },
 
     async ejecutarBusqueda(){
