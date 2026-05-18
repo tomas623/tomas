@@ -35,7 +35,8 @@ from services.auth import current_user
 from services.domains import check_domains
 from services.social import check_handles
 from similarity import (
-    check_notorious, diagnose, search_similar, NIVEL_ALTO, NIVEL_MEDIO,
+    add_notorious_brand, check_notorious, diagnose, get_notorious_brands,
+    reload_notorious_cache, search_similar, NIVEL_ALTO, NIVEL_MEDIO,
 )
 
 logger = logging.getLogger(__name__)
@@ -699,6 +700,35 @@ el especialista lo valide."""
         messages=[{"role": "user", "content": prompt}],
     )
     return resp.content[0].text.strip()
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Notorias — admin: agregar marca a la lista
+# ─────────────────────────────────────────────────────────────────────
+
+@bp.route("/api/marca/notorias/agregar", methods=["POST"])
+def marca_notoria_agregar():
+    """Solo admin: agrega una marca a notorious_brands.txt."""
+    user = current_user()
+    if not user or not user.is_admin:
+        return _err("Solo admin", 403)
+    data = request.get_json(silent=True) or {}
+    brand = (data.get("denominacion") or "").strip()
+    if not brand:
+        return _err("Falta denominación")
+    ok = add_notorious_brand(brand)
+    return _ok({"added": ok, "denominacion": brand,
+                "total": len(get_notorious_brands())})
+
+
+@bp.route("/api/marca/notorias/recargar", methods=["POST"])
+def marca_notoria_recargar():
+    """Solo admin: limpia cache y recarga notorious_brands.txt."""
+    user = current_user()
+    if not user or not user.is_admin:
+        return _err("Solo admin", 403)
+    reload_notorious_cache()
+    return _ok({"total": len(get_notorious_brands())})
 
 
 # ─────────────────────────────────────────────────────────────────────

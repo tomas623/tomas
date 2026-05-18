@@ -467,7 +467,14 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
         </div>
 
         <div x-show="buscarResult.matches && buscarResult.matches.length" style="margin-top:20px">
-          <h4 style="margin:0 0 6px">Marcas similares registradas en Argentina</h4>
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin:0 0 6px">
+            <h4 style="margin:0">Marcas similares registradas en Argentina</h4>
+            <button x-show="user.is_admin" class="small sec" @click="marcarTodasComoNotorias()"
+                    style="font-size:11px;padding:4px 10px"
+                    title="Admin: marcar las coincidencias 'alto' como notorias">
+              ⭐ Marcar altos como notorios
+            </button>
+          </div>
           <p style="font-size:12px;color:#64748b;margin:0 0 12px">
             En Argentina se evalúa la <strong>confundibilidad</strong> entre marcas en
             3 dimensiones. Mostramos el score de cada una para que veas qué dispara el match.
@@ -1454,6 +1461,23 @@ function dashboard(){
       if ((scores.conceptual||0) >= 0.75) tags.push('mismo concepto');
       if ((m.estado_code||'').toLowerCase() === 'vigente') tags.push('vigente');
       return tags;
+    },
+
+    async marcarTodasComoNotorias(){
+      const altos = (this.buscarResult?.matches || []).filter(m => m.nivel === 'alto');
+      if (!altos.length) { alert('No hay coincidencias nivel alto para marcar.'); return; }
+      if (!confirm(`Marcar ${altos.length} marca(s) como notorias?\n\n` +
+                    altos.slice(0,5).map(m => '• ' + m.denominacion).join('\\n') +
+                    (altos.length > 5 ? `\\n• ... y ${altos.length - 5} más` : ''))) return;
+      let ok = 0;
+      for (const m of altos) {
+        const r = await fetch('/api/marca/notorias/agregar', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({denominacion: m.denominacion}),
+        }).then(r=>r.json());
+        if (r.ok && r.data.added) ok += 1;
+      }
+      alert(`${ok} marca(s) agregada(s) a la lista de notorias.`);
     },
 
     ctaRegistroWa(){

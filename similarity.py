@@ -259,6 +259,40 @@ def get_notorious_brands() -> list[str]:
     return _NOTORIOUS_CACHE
 
 
+def reload_notorious_cache() -> None:
+    """Limpia el cache para que la próxima llamada relea notorious_brands.txt."""
+    global _NOTORIOUS_CACHE
+    _NOTORIOUS_CACHE = None
+
+
+def add_notorious_brand(brand: str) -> bool:
+    """Agrega una marca al archivo de override notorious_brands.txt y refresca cache."""
+    brand = (brand or "").strip()
+    if not brand:
+        return False
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "notorious_brands.txt")
+    existing: set[str] = set()
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if line and not line.startswith("#"):
+                        existing.add(line.lower())
+        except Exception:
+            pass
+    if brand.lower() in existing:
+        return False
+    try:
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(brand + "\n")
+        reload_notorious_cache()
+        return True
+    except Exception as e:
+        logger.warning(f"add_notorious_brand falló: {e}")
+        return False
+
+
 def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:
     """Compara el término contra la lista de marcas notorias.
 
