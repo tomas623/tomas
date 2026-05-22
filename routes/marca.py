@@ -966,6 +966,99 @@ def tarifas_calcular():
     return _ok(calcular_registro(num_clases, incluye_honorarios))
 
 
+@bp.route("/api/admin/alertas/pendientes", methods=["GET"])
+def admin_alertas_pendientes():
+    """Solo admin: lista alertas pendientes de revisión."""
+    err = _require_admin()
+    if err is not None:
+        return err
+    from database import AlertaVigilancia, MarcaCliente, User
+    out = []
+    with get_session() as s:
+        rows = (s.query(AlertaVigilancia)
+                .filter_by(review_status="pending_review")
+                .order_by(AlertaVigilancia.created_at.desc())
+                .limit(200).all())
+        for a in rows:
+            mc = (s.query(MarcaCliente).filter_by(id=a.marca_cliente_id).first()
+                  if a.marca_cliente_id else None)
+            u = s.query(User).filter_by(id=a.user_id).first()
+            out.append({
+                "id": a.id,
+                "marca_propia": mc.denominacion if mc else None,
+                "marca_nueva": a.marca_nueva_denominacion,
+                "clase": a.marca_nueva_clase,
+                "titular": a.marca_nueva_titular,
+                "acta": a.marca_nueva_acta,
+                "boletin_num": a.boletin_num,
+                "score": round(a.score or 0, 3),
+                "nivel": a.nivel,
+                "user_email": u.email if u else None,
+                "created_at": a.created_at.isoformat(),
+            })
+    return _ok({"total": len(out), "items": out})
+
+
+@bp.route("/api/admin/alertas/<int:alerta_id>/aprobar", methods=["POST"])
+def admin_alertas_aprobar(alerta_id: int):
+    """Solo admin: aprueba una alerta y la envía al cliente."""
+    err = _require_admin()
+    if err is not None:
+        return err
+    from database import AlertaVigilancia, MarcaCliente, SuscripcionVigilancia
+    user_admin = current_user()
+    with get_session() as s:
+        a = s.query(AlertaVigilancia).filter_by(id=alerta_id).first()
+        if not a:
+            return _err("Alerta no encontrada", 404)
+        sub = s.query(SuscripcionVigilancia).filter_by(id=a.suscripcion_id).first()
+        mp = (s.query(MarcaCliente).filter_by(id=a.marca_cliente_id).first()
+              if a.marca_cliente_id else None)
+
+        # Reproducir envío
+        sent = False
+        try:
+            class _Cand:  # objeto mínimo para _enviar_email_alerta
+                denominacion = a.marca_nueva_denominacion
+                titular = a.marca_nueva_titular
+                clase = a.marca_nueva_clase
+            from services.vigilancia import _enviar_email_alerta
+            if sub and mp:
+                sent = _enviar_email_alerta(sub, mp, _Cand(), a.score or 0, a.nivel or "medio")
+        except Exception as e:
+            logger.warning(f"Error reenviando alerta {alerta_id}: {e}")
+
+        a.review_status = "approved"
+        a.reviewed_by = user_admin.id
+        a.reviewed_at = datetime.utcnow()
+        if sent:
+            a.email_sent_at = datetime.utcnow()
+        s.commit()
+    return _ok({"approved": True, "sent": sent})
+
+
+@bp.route("/api/admin/alertas/<int:alerta_id>/descartar", methods=["POST"])
+def admin_alertas_descartar(alerta_id: int):
+    """Solo admin: descarta una alerta sin enviarla al cliente."""
+    err = _require_admin()
+    if err is not None:
+        return err
+    from database import AlertaVigilancia
+    user_admin = current_user()
+    data = request.get_json(silent=True) or {}
+    note = (data.get("note") or "").strip() or None
+    with get_session() as s:
+        a = s.query(AlertaVigilancia).filter_by(id=alerta_id).first()
+        if not a:
+            return _err("Alerta no encontrada", 404)
+        a.review_status = "discarded"
+        a.reviewed_by = user_admin.id
+        a.reviewed_at = datetime.utcnow()
+        a.review_note = note
+        s.commit()
+    return _ok({"discarded": True})
+
+
 @bp.route("/api/tarifas", methods=["POST"])
 def tarifas_save():
     """Solo admin: actualiza el JSON de tarifas."""

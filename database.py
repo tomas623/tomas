@@ -322,6 +322,12 @@ class AlertaVigilancia(Base):
     score           = Column(Float)
     nivel           = Column(String(20))            # 'alto' | 'medio' | 'bajo'
     boletin_num     = Column(Integer)
+    # Cola de revisión: 'pending_review' → admin la valida → 'approved' → se manda
+    # 'discarded' → no se manda. 'approved_no_review' → ya mandada sin pasar por review.
+    review_status   = Column(String(30), default="approved_no_review", index=True)
+    reviewed_by     = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_at     = Column(DateTime)
+    review_note     = Column(Text)
     email_sent_at   = Column(DateTime)
     created_at      = Column(DateTime, default=datetime.utcnow, index=True)
 

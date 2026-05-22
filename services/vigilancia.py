@@ -135,6 +135,11 @@ def _vigilar_suscripcion(s, sub: SuscripcionVigilancia,
             if existing:
                 continue
 
+            # Si ALERTAS_REVIEW_MODE=true, las alertas se ponen en cola
+            # 'pending_review' y no se mandan hasta que el admin las aprueba.
+            review_mode = os.getenv("ALERTAS_REVIEW_MODE", "false").lower() == "true"
+            initial_status = "pending_review" if review_mode else "approved_no_review"
+
             alerta = AlertaVigilancia(
                 user_id=sub.user_id,
                 suscripcion_id=sub.id,
@@ -146,11 +151,13 @@ def _vigilar_suscripcion(s, sub: SuscripcionVigilancia,
                 marca_nueva_titular=cand.titular,
                 score=score, nivel=nivel,
                 boletin_num=cand.boletin_num,
+                review_status=initial_status,
             )
             s.add(alerta)
             s.flush()  # para tener alerta.id si lo necesitamos
 
-            if _enviar_email_alerta(sub, mp, cand, score, nivel):
+            # Solo mandamos si no estamos en review_mode
+            if not review_mode and _enviar_email_alerta(sub, mp, cand, score, nivel):
                 alerta.email_sent_at = datetime.utcnow()
             creadas += 1
 

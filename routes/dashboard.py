@@ -158,6 +158,12 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
          @click="tab='tarifas'; fetchTarifas()" style="background:#FEF3C7;color:#92400E">
       💰 Tarifas <span style="font-size:11px">(admin)</span>
     </div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='cola'&&'active'"
+         @click="tab='cola'; fetchColaAlertas()" style="background:#FEF3C7;color:#92400E">
+      📥 Cola <span style="font-size:11px">(admin)</span>
+      <span x-show="colaCount > 0" class="badge red" style="margin-left:6px;font-size:10px"
+            x-text="colaCount"></span>
+    </div>
   </div>
 
   <!-- BUSCAR (premium) -->
@@ -1041,6 +1047,49 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- CONFIGURACIÓN -->
+  <!-- COLA DE REVISIÓN DE ALERTAS (admin) -->
+  <div x-show="tab==='cola' && user.is_admin" class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      <h3 style="margin:0">📥 Cola de revisión de alertas</h3>
+      <div style="font-size:13px;color:#64748b">
+        Pendientes: <strong x-text="colaItems.length"></strong>
+      </div>
+    </div>
+    <p style="color:#64748b;font-size:13px;margin:0 0 18px">
+      Cuando <code>ALERTAS_REVIEW_MODE=true</code> está activo, las alertas generadas
+      por el cron de vigilancia quedan acá antes de enviarse al cliente. Aprobá las
+      relevantes y descartá los falsos positivos.
+    </p>
+
+    <p x-show="!colaItems.length" class="empty">No hay alertas pendientes de revisión.</p>
+    <div x-show="colaItems.length" style="display:flex;flex-direction:column;gap:10px">
+      <template x-for="a in colaItems" :key="'col-'+a.id">
+        <div :class="'alert-row ' + (a.nivel === 'alto' ? 'alto' : a.nivel === 'medio' ? 'medio' : 'bajo')"
+             style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:240px">
+            <strong x-text="a.marca_nueva"></strong>
+            <span class="badge" :class="a.nivel === 'alto' ? 'red' : 'yellow'" x-text="a.nivel" style="margin-left:6px"></span>
+            <div style="font-size:13px;color:#475569;margin-top:4px">
+              Similar a la marca de <strong x-text="a.user_email"></strong>:
+              <em x-text="a.marca_propia || '—'"></em>
+            </div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">
+              Clase <span x-text="a.clase"></span>
+              · Titular: <span x-text="a.titular || '—'"></span>
+              · Acta: <span x-text="a.acta || '—'"></span>
+              · Boletín: <span x-text="a.boletin_num"></span>
+              · Score: <strong x-text="(a.score * 100).toFixed(0) + '%'"></strong>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="small" @click="aprobarAlerta(a.id)">✓ Aprobar y enviar</button>
+            <button class="small danger" @click="descartarAlerta(a.id)">✕ Descartar</button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
   <!-- TARIFAS INPI (admin) -->
   <div x-show="tab==='tarifas' && user.is_admin" class="card">
     <h3 style="margin-top:0">💰 Tarifas INPI + Honorarios LegalPacers</h3>
@@ -1489,6 +1538,7 @@ function dashboard(){
     modalConsulta: false, consultaDetalle: null, consultaCargando: false,
     notoriasItems: [], notoriasFiltro: '', notoriasNueva: '',
     tarifas: null, tarifasLoading: false, tarifasMsg: '',
+    colaItems: [], colaCount: 0,
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
@@ -1708,6 +1758,29 @@ function dashboard(){
       if ((scores.conceptual||0) >= 0.75) tags.push('mismo concepto');
       if ((m.estado_code||'').toLowerCase() === 'vigente') tags.push('vigente');
       return tags;
+    },
+
+    async fetchColaAlertas(){
+      const r = await fetch('/api/admin/alertas/pendientes').then(r=>r.json());
+      if (r.ok) {
+        this.colaItems = r.data.items || [];
+        this.colaCount = r.data.total || 0;
+      }
+    },
+    async aprobarAlerta(id){
+      if (!confirm('Aprobar y enviar esta alerta al cliente?')) return;
+      const r = await fetch(`/api/admin/alertas/${id}/aprobar`, {method:'POST'}).then(r=>r.json());
+      if (!r.ok) { alert(r.error || 'Error'); return; }
+      await this.fetchColaAlertas();
+    },
+    async descartarAlerta(id){
+      const note = prompt('Razón del descarte (opcional, queda en auditoría):') || '';
+      const r = await fetch(`/api/admin/alertas/${id}/descartar`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({note}),
+      }).then(r=>r.json());
+      if (!r.ok) { alert(r.error || 'Error'); return; }
+      await this.fetchColaAlertas();
     },
 
     async fetchTarifas(){
