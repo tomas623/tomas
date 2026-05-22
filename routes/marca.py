@@ -940,6 +940,49 @@ def marca_notoria_recargar():
 
 
 # ─────────────────────────────────────────────────────────────────────
+# Tarifas INPI + calculador
+# ─────────────────────────────────────────────────────────────────────
+
+@bp.route("/api/tarifas", methods=["GET"])
+def tarifas_get():
+    """Retorna las tarifas vigentes (público)."""
+    from services.tarifas import load_tarifas
+    return _ok(load_tarifas())
+
+
+@bp.route("/api/tarifas/calcular", methods=["GET", "POST"])
+def tarifas_calcular():
+    """Calculador de costos de registro. Acepta ?clases=N o {clases:N}."""
+    from services.tarifas import calcular_registro
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        num_clases = int(data.get("clases") or 1)
+        incluye_honorarios = bool(data.get("incluye_honorarios", True))
+    else:
+        num_clases = int(request.args.get("clases") or 1)
+        incluye_honorarios = request.args.get("incluye_honorarios", "true").lower() != "false"
+    if num_clases < 1 or num_clases > 45:
+        return _err("Cantidad de clases debe estar entre 1 y 45")
+    return _ok(calcular_registro(num_clases, incluye_honorarios))
+
+
+@bp.route("/api/tarifas", methods=["POST"])
+def tarifas_save():
+    """Solo admin: actualiza el JSON de tarifas."""
+    err = _require_admin()
+    if err is not None:
+        return err
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return _err("Payload inválido")
+    from services.tarifas import save_tarifas
+    ok = save_tarifas(data)
+    if not ok:
+        return _err("No pudimos guardar las tarifas", 500)
+    return _ok({"saved": True})
+
+
+# ─────────────────────────────────────────────────────────────────────
 # Cotización registro (Nivel 3 — formulario sin pago automático)
 # ─────────────────────────────────────────────────────────────────────
 

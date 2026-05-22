@@ -154,6 +154,10 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
          @click="tab='notorias'; fetchNotorias()" style="background:#FEF3C7;color:#92400E">
       ⭐ Notorias <span style="font-size:11px">(admin)</span>
     </div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='tarifas'&&'active'"
+         @click="tab='tarifas'; fetchTarifas()" style="background:#FEF3C7;color:#92400E">
+      💰 Tarifas <span style="font-size:11px">(admin)</span>
+    </div>
   </div>
 
   <!-- BUSCAR (premium) -->
@@ -1037,6 +1041,78 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- CONFIGURACIÓN -->
+  <!-- TARIFAS INPI (admin) -->
+  <div x-show="tab==='tarifas' && user.is_admin" class="card">
+    <h3 style="margin-top:0">💰 Tarifas INPI + Honorarios LegalPacers</h3>
+    <p style="color:#64748b;font-size:13px;margin:0 0 6px">
+      Editá las tarifas vigentes — el INPI las actualiza periódicamente.
+      Estos valores alimentan el calculador en el portal y los presupuestos automáticos.
+    </p>
+    <p style="font-size:12px;color:#64748b;margin:0 0 18px">
+      Última actualización:
+      <strong x-text="tarifas?._meta?.fecha_actualizacion || '—'"></strong>
+    </p>
+
+    <h4 style="margin:18px 0 8px;color:#1B6EF3;font-size:14px;text-transform:uppercase;letter-spacing:.5px">
+      Tasas oficiales del INPI (ARS)
+    </h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <template x-for="(val, key) in (tarifas?.tasas_inpi || {})" :key="'t-'+key">
+        <div>
+          <label style="font-size:12px" x-text="formatTarifaKey(key)"></label>
+          <input type="number" :value="val" @input="setTarifa('tasas_inpi', key, $event.target.value)"
+                 step="100" min="0">
+        </div>
+      </template>
+    </div>
+
+    <h4 style="margin:24px 0 8px;color:#1B6EF3;font-size:14px;text-transform:uppercase;letter-spacing:.5px">
+      Honorarios LegalPacers (ARS)
+    </h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <template x-for="(val, key) in (tarifas?.honorarios_lp || {})" :key="'h-'+key">
+        <div>
+          <label style="font-size:12px" x-text="formatTarifaKey(key)"></label>
+          <input type="number" :value="val" @input="setTarifa('honorarios_lp', key, $event.target.value)"
+                 step="500" min="0">
+        </div>
+      </template>
+    </div>
+
+    <h4 style="margin:24px 0 8px;color:#1B6EF3;font-size:14px;text-transform:uppercase;letter-spacing:.5px">
+      Notas
+    </h4>
+    <label>Fecha de actualización (texto libre)</label>
+    <input type="text" :value="tarifas?._meta?.fecha_actualizacion || ''"
+           @input="setMetaTarifas('fecha_actualizacion', $event.target.value)">
+    <label>Fuente</label>
+    <input type="text" :value="tarifas?._meta?.fuente || ''"
+           @input="setMetaTarifas('fuente', $event.target.value)">
+
+    <div style="margin-top:24px">
+      <button @click="guardarTarifas()" :disabled="tarifasLoading">
+        <span x-show="!tarifasLoading">Guardar tarifas</span>
+        <span x-show="tarifasLoading" x-cloak>Guardando…</span>
+      </button>
+      <span x-show="tarifasMsg" x-text="tarifasMsg" style="margin-left:12px;color:#16A34A;font-weight:600"></span>
+    </div>
+
+    <h4 style="margin:32px 0 8px;color:#1B6EF3;font-size:14px;text-transform:uppercase;letter-spacing:.5px">
+      Vista previa del calculador
+    </h4>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">
+      <template x-for="n in [1,2,3,5]" :key="'calc-'+n">
+        <div style="background:#F4F5F9;padding:12px;border-radius:8px;font-size:13px">
+          <div style="font-weight:700;color:#0D1B4B"><span x-text="n"></span> clase<span x-show="n>1">s</span></div>
+          <div x-text="'Tasa INPI: $' + ((tarifas?.tasas_inpi?.solicitud_marca_x_clase || 0) * n).toLocaleString('es-AR')"></div>
+          <div x-text="'Honorarios: $' + (((tarifas?.honorarios_lp?.registro_1_clase || 0) + (tarifas?.honorarios_lp?.registro_clase_adicional || 0) * Math.max(0, n-1))).toLocaleString('es-AR')"></div>
+          <div style="font-weight:700;margin-top:4px"
+               x-text="'TOTAL: $' + (((tarifas?.tasas_inpi?.solicitud_marca_x_clase || 0) * n) + ((tarifas?.honorarios_lp?.registro_1_clase || 0) + (tarifas?.honorarios_lp?.registro_clase_adicional || 0) * Math.max(0, n-1))).toLocaleString('es-AR')"></div>
+        </div>
+      </template>
+    </div>
+  </div>
+
   <!-- NOTORIAS (admin) -->
   <div x-show="tab==='notorias' && user.is_admin" class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
@@ -1412,6 +1488,7 @@ function dashboard(){
     ayudaScores: false,
     modalConsulta: false, consultaDetalle: null, consultaCargando: false,
     notoriasItems: [], notoriasFiltro: '', notoriasNueva: '',
+    tarifas: null, tarifasLoading: false, tarifasMsg: '',
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
@@ -1631,6 +1708,40 @@ function dashboard(){
       if ((scores.conceptual||0) >= 0.75) tags.push('mismo concepto');
       if ((m.estado_code||'').toLowerCase() === 'vigente') tags.push('vigente');
       return tags;
+    },
+
+    async fetchTarifas(){
+      const r = await fetch('/api/tarifas').then(r=>r.json());
+      if (r.ok) this.tarifas = r.data;
+    },
+    formatTarifaKey(k){
+      return (k||'').replace(/_/g,' ').replace(/x clase/g,'(× clase)')
+              .replace(/^./,c=>c.toUpperCase());
+    },
+    setTarifa(group, key, value){
+      if (!this.tarifas) return;
+      if (!this.tarifas[group]) this.tarifas[group] = {};
+      this.tarifas[group][key] = Number(value) || 0;
+    },
+    setMetaTarifas(key, value){
+      if (!this.tarifas) return;
+      if (!this.tarifas._meta) this.tarifas._meta = {};
+      this.tarifas._meta[key] = value;
+    },
+    async guardarTarifas(){
+      this.tarifasLoading = true;
+      this.tarifasMsg = '';
+      try {
+        const r = await fetch('/api/tarifas', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(this.tarifas),
+        }).then(r=>r.json());
+        if (!r.ok) { alert(r.error || 'Error guardando tarifas'); return; }
+        this.tarifasMsg = 'Tarifas actualizadas ✓';
+        setTimeout(() => this.tarifasMsg = '', 4000);
+      } finally {
+        this.tarifasLoading = false;
+      }
     },
 
     async fetchNotorias(){

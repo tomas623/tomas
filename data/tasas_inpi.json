@@ -1,0 +1,29 @@
+{
+  "_meta": {
+    "fecha_actualizacion": "2026-05-01",
+    "fuente": "INPI Argentina — https://www.argentina.gob.ar/inpi/marcas/tasas",
+    "nota": "Editar este archivo (o desde el panel admin) cuando el INPI actualice tasas. Los precios están en pesos argentinos (ARS)."
+  },
+  "tasas_inpi": {
+    "solicitud_marca_x_clase": 31480,
+    "renovacion_marca_x_clase": 31480,
+    "presentacion_oposicion": 28100,
+    "modificacion_marca": 14130,
+    "transferencia_marca": 14130,
+    "declaracion_uso_5_anios": 12010
+  },
+  "honorarios_lp": {
+    "registro_1_clase": 75000,
+    "registro_clase_adicional": 25000,
+    "presentacion_oposicion_simple": 95000,
+    "presentacion_oposicion_compleja": 180000,
+    "respuesta_oposicion": 120000,
+    "declaracion_uso": 25000,
+    "renovacion_marca": 35000,
+    "informe_completo_descuento_pct": 0
+  },
+  "descuentos": {
+    "anual_meses_gratis": 2,
+    "pago_unico_dos_o_mas_clases_pct": 10
+  }
+}
