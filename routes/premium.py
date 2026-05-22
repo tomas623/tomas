@@ -48,26 +48,26 @@ PRECIO_PREMIUM_MES = PRECIO_VIGILANCIA_MULTI
 PRECIO_PREMIUM_ANUAL = PRECIO_VIGILANCIA_MULTI * 10
 
 PLAN_TIERS = {
-    "individual": {
-        "nombre": "Individual",
-        "marcas_incluidas": 1,
+    "personal": {
+        "nombre": "Personal",
+        "marcas_incluidas": 3,
         "precio_mes": PRECIO_VIGILANCIA_INDIVIDUAL,
         "precio_anual": PRECIO_VIGILANCIA_INDIVIDUAL * 10,
-        "descripcion": "Para quien tiene 1 marca registrada y quiere dormir tranquilo.",
+        "descripcion": "Persona física o emprendedor con hasta 3 marcas activas.",
     },
-    "multi": {
-        "nombre": "Multi",
-        "marcas_incluidas": 3,
+    "pyme": {
+        "nombre": "PyME",
+        "marcas_incluidas": 10,
         "precio_mes": PRECIO_VIGILANCIA_MULTI,
         "precio_anual": PRECIO_VIGILANCIA_MULTI * 10,
-        "descripcion": "Emprendedores con hasta 3 marcas o sub-marcas activas.",
+        "descripcion": "Empresa con portfolio de marcas y sub-marcas en distintas clases.",
     },
-    "portfolio": {
-        "nombre": "Portfolio",
-        "marcas_incluidas": 10,
+    "agencia": {
+        "nombre": "Agencia / Consultora",
+        "marcas_incluidas": 20,
         "precio_mes": PRECIO_VIGILANCIA_PORTFOLIO,
         "precio_anual": PRECIO_VIGILANCIA_PORTFOLIO * 10,
-        "descripcion": "PyMEs y agencias con portfolio de marcas. Incluye soporte priority.",
+        "descripcion": "Agencias de marketing y consultoras que administran marcas de clientes.",
     },
 }
 
@@ -107,9 +107,9 @@ def iniciar():
     email = (data.get("email") or "").strip().lower()
     nombre = (data.get("nombre") or "").strip() or None
     telefono = (data.get("telefono") or "").strip() or None
-    plan_tier = (data.get("plan_tier") or "multi").strip().lower()
+    plan_tier = (data.get("plan_tier") or "pyme").strip().lower()
     if plan_tier not in PLAN_TIERS:
-        plan_tier = "multi"
+        plan_tier = "pyme"
     plan_freq = (data.get("plan_freq") or "mensual").strip().lower()
     if plan_freq not in ("mensual", "anual"):
         plan_freq = "mensual"
@@ -263,10 +263,10 @@ PREMIUM_PAGE = """<!DOCTYPE html>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:24px 0">
     {% for key, t in tiers.items() %}
     <label style="border:2px solid #E2E8F0;border-radius:14px;padding:20px;cursor:pointer;
-                  transition:.15s;background:#fff{% if key == 'multi' %};position:relative{% endif %}"
+                  transition:.15s;background:#fff{% if key == 'pyme' %};position:relative{% endif %}"
            :style="form.plan_tier==='{{ key }}' ? 'border-color:#1B6EF3;background:#F0F5FF' : ''">
       <input type="radio" value="{{ key }}" x-model="form.plan_tier" style="display:none">
-      {% if key == 'multi' %}
+      {% if key == 'pyme' %}
       <div style="position:absolute;top:-10px;right:12px;background:#16A34A;color:#fff;
                   font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px">
         Más elegido
@@ -317,32 +317,24 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Vigilancia semanal del boletín INPI</strong>
-        <span>Cada miércoles que el INPI publica boletín nuevo, lo escaneamos contra tus marcas.</span>
+        <strong>Aviso quincenal de similitudes en INPI</strong>
+        <span>Cada 15 días escaneamos los boletines nuevos contra tus marcas y te avisamos si aparece algo parecido.</span>
       </div>
     </div>
 
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Alertas por email + WhatsApp</strong>
-        <span>Te avisamos en menos de 7 días desde la publicación, con el detalle de la marca similar y el plazo para oponerte.</span>
+        <strong>Alertas por email y WhatsApp opcional</strong>
+        <span>Te avisamos con el detalle de la marca similar, el titular y el plazo para presentar oposición.</span>
       </div>
     </div>
 
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Panel con tus marcas</strong>
-        <span>Cargás tus marcas (manualmente o con Excel) y seguís DJU (5 años), vencimiento (10 años) y oposiciones en un solo lugar.</span>
-      </div>
-    </div>
-
-    <div class="feat">
-      <div class="check">✓</div>
-      <div class="feat-text">
-        <strong>Búsquedas e informes completos sin pagar por separado</strong>
-        <span>Como suscriptor, podés hacer todos los informes completos que quieras dentro del panel.</span>
+        <strong>Hasta tu cap de marcas vigiladas según el plan</strong>
+        <span>3 marcas (Personal), 10 marcas (PyME) o 20 marcas (Agencia). Las cargás por email a tu ejecutivo de cuenta.</span>
       </div>
     </div>
 
@@ -355,7 +347,7 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     </div>
 
     <div style="border-top:1px solid #E2E8F0;margin:18px 0 0;padding-top:14px;font-size:13px;color:#64748b">
-      <strong>Importante:</strong> la suscripción cubre vigilancia + alertas + panel. La
+      <strong>Importante:</strong> la suscripción cubre vigilancia + alertas. La
       <strong>presentación de oposiciones</strong> es un servicio aparte que se cotiza por caso
       (es trabajo de abogado y depende de la complejidad). Cuando llega una alerta relevante,
       te pasamos la cotización antes de avanzar.
@@ -438,12 +430,12 @@ function premium(){
     COUNTRY_CODES,
     TIERS,
     form: {email:'', nombre:'', tel_cc:'54', tel_num:'',
-            plan_tier:'multi', plan_freq:'mensual', auto_renew: true},
+            plan_tier:'pyme', plan_freq:'mensual', auto_renew: true},
     anualToggle: false,
     cargando: false,
     errorMsg: '',
     precioActual(){
-      const tier = TIERS[this.form.plan_tier] || TIERS.multi;
+      const tier = TIERS[this.form.plan_tier] || TIERS.pyme;
       return this.form.plan_freq === 'anual' ? tier.precio_anual : tier.precio_mes;
     },
     async iniciar(){

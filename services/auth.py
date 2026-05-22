@@ -146,12 +146,15 @@ def login_required(view: Callable) -> Callable:
 
 
 VIGILANCIA_TIPOS = (
-    "premium",                  # legacy
-    "vigilancia_individual",
-    "vigilancia_multi",
-    "vigilancia_portfolio",
-    "portfolio",                # legacy
-    "marca",                    # vigilancia por marca individual desde dashboard
+    "premium",                       # legacy
+    "vigilancia_individual",         # legacy
+    "vigilancia_multi",              # legacy
+    "vigilancia_portfolio",          # legacy
+    "vigilancia_personal",           # nuevo: 3 marcas
+    "vigilancia_pyme",               # nuevo: 10 marcas
+    "vigilancia_agencia",            # nuevo: 20 marcas
+    "portfolio",                     # legacy
+    "marca",                         # vigilancia por marca individual desde dashboard
 )
 
 

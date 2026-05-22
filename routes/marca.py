@@ -171,7 +171,9 @@ def nivel_1_check():
         user and (user.is_admin or _has_unlimited_searches(user))
     )
     if not clases and not is_premium_or_admin:
-        return _err("Elegí una clase Niza para la búsqueda gratuita.")
+        return _err("Elegí al menos una clase Niza para la búsqueda gratuita.")
+    if not is_premium_or_admin and len(clases) > 3:
+        return _err("La búsqueda gratuita permite hasta 3 clases. Suscribite para buscar en las 45.")
 
     # Rate limit: Nivel 1 anónimo limitado por IP en una ventana móvil.
     ip = _client_ip()
@@ -237,45 +239,83 @@ def nivel_1_check():
     medios = [m for m in matches if m.nivel == "medio"]
     cross_notorios = [m for m in cross_class_matches if (m.score or 0) >= 0.85]
 
+    # Razones específicas (lista para mostrar como bullets explícitos en UI)
+    razones: list[dict] = []
     if altos:
-        veredicto = "no_disponible"
-        mensaje = (f"Encontramos {len(altos)} marca(s) muy similares ya registradas. "
-                   "El registro tiene riesgo alto de oposición.")
-    elif notorious_warnings and notorious_warnings[0]["score"] >= 0.80:
-        veredicto = "no_disponible"
-        top = notorious_warnings[0]["denominacion"]
-        mensaje = (f"Tu búsqueda es muy similar a <strong>{top}</strong>, una marca notoria. "
-                   "Las marcas notorias tienen protección extendida a todas las clases. "
-                   "El registro tiene riesgo muy alto de oposición.")
-    elif notorious_warnings:
-        veredicto = "necesita_analisis"
-        top = notorious_warnings[0]["denominacion"]
-        mensaje = (f"Tu búsqueda se parece a <strong>{top}</strong>, una marca notoria. "
-                   "Conviene revisar bien antes de avanzar — las marcas notorias se protegen "
-                   "más allá de su clase original.")
-    elif cross_notorios:
-        veredicto = "necesita_analisis"
-        nombres = ", ".join(sorted({m.denominacion for m in cross_notorios[:3]}))
-        mensaje = (f"Encontramos marcas casi idénticas ({nombres}) registradas en otras "
-                   f"clases. Si son <strong>marcas notorias</strong>, su protección puede "
-                   "extenderse a la clase que querés. Conviene un análisis legal antes.")
+        razones.append({
+            "tipo": "similares_clase",
+            "ok": False,
+            "texto": f"Hay {len(altos)} marca(s) muy similares registradas en las clases que elegiste.",
+        })
     elif medios:
+        razones.append({
+            "tipo": "similares_clase",
+            "ok": False,
+            "texto": f"Hay {len(medios)} marca(s) con cierta similitud en tus clases.",
+        })
+    else:
+        razones.append({
+            "tipo": "similares_clase",
+            "ok": True,
+            "texto": "No detectamos marcas similares en las clases que elegiste.",
+        })
+    if cross_class_matches:
+        n_other = len(cross_class_matches)
+        razones.append({
+            "tipo": "cross_class",
+            "ok": False,
+            "texto": f"Hay {n_other} marca(s) similares registradas en otras clases.",
+        })
+    else:
+        razones.append({
+            "tipo": "cross_class",
+            "ok": True,
+            "texto": "No hay marcas similares en otras clases.",
+        })
+    if notorious_warnings:
+        top = notorious_warnings[0]["denominacion"]
+        razones.append({
+            "tipo": "notoria",
+            "ok": False,
+            "texto": f"Tu búsqueda se parece a {top}, una marca notoria — protección extendida a todas las clases.",
+        })
+    else:
+        razones.append({
+            "tipo": "notoria",
+            "ok": True,
+            "texto": "No detectamos similitud con marcas notorias conocidas.",
+        })
+
+    # Probabilidad de RECHAZO (más directo): baja / media / alta
+    if altos or (notorious_warnings and notorious_warnings[0]["score"] >= 0.80):
+        veredicto = "no_disponible"
+        probabilidad_rechazo = "alta"
+    elif notorious_warnings or cross_notorios or medios or cross_class_matches:
         veredicto = "necesita_analisis"
-        mensaje = (f"Hay {len(medios)} marca(s) con cierta similitud. "
-                   "Recomendamos un análisis completo antes de avanzar.")
-    elif cross_class_matches:
-        veredicto = "necesita_analisis"
-        mensaje = ("No hay coincidencias en tu clase, pero detectamos marcas similares "
-                   "en otras clases. Si alguna es notoria, podría limitar tu registro.")
+        probabilidad_rechazo = "media"
     else:
         veredicto = "probablemente_disponible"
-        if is_full_access:
-            mensaje = ("Hicimos el análisis completo de confundibilidad (léxico, fonético, "
-                       "conceptual) y no encontramos coincidencias significativas. La marca "
-                       "parece registrable en esta clase.")
+        probabilidad_rechazo = "baja"
+
+    # Mensaje principal (compacto) — la explicación detallada va en razones[]
+    if probabilidad_rechazo == "alta":
+        if altos:
+            mensaje = (f"Encontramos {len(altos)} marca(s) muy similares ya registradas. "
+                       "El registro tiene riesgo alto de oposición.")
         else:
-            mensaje = ("No encontramos coincidencias evidentes. Aún recomendamos "
-                       "un análisis fonético y conceptual completo antes del registro.")
+            top = notorious_warnings[0]["denominacion"]
+            mensaje = (f"Tu búsqueda es muy similar a <strong>{top}</strong>, una marca notoria. "
+                       "Las marcas notorias tienen protección en todas las clases.")
+    elif probabilidad_rechazo == "media":
+        mensaje = ("Hay señales que conviene revisar antes de invertir en el registro. "
+                   "El informe completo te dice qué marcas dispararon la alerta y por qué.")
+    else:
+        if is_full_access:
+            mensaje = ("Hicimos el análisis completo de confundibilidad y no encontramos "
+                       "coincidencias significativas. La marca parece registrable.")
+        else:
+            mensaje = ("No encontramos coincidencias evidentes. El informe completo confirma "
+                       "el análisis con todas las dimensiones (léxico, fonético, conceptual).")
 
     diag = diagnose(matches)
 
@@ -302,6 +342,8 @@ def nivel_1_check():
         "marca": marca,
         "clases_consultadas": clases,
         "veredicto": veredicto,
+        "probabilidad_rechazo": probabilidad_rechazo,
+        "razones": razones,
         "diagnostico": diag,
         "mensaje": mensaje,
         "stats": {
@@ -311,7 +353,7 @@ def nivel_1_check():
             "identicas": summary_iden,
         },
         "dominios": domains,
-        "handles": handles,           # incluido también en free
+        "handles": handles,           # solo para premium/admin (paywall)
         "premium": is_full_access,
         "es_notoria": es_notoria,
         # En free mostramos la notoria si dispara (es la prueba del valor),

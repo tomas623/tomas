@@ -236,13 +236,40 @@
                  @keydown.enter="buscar()" autocomplete="off">
         </div>
         <div class="input-group">
-          <label for="clase">Clase Niza</label>
-          <select id="clase" x-model="form.clase" required>
-            <option value="" disabled>Elegí una clase</option>
-            <template x-for="n in 45" :key="n">
-              <option :value="n" x-text="n + ' — ' + NIZA_TITLES[n]"></option>
-            </template>
-          </select>
+          <label>Clases Niza
+            <span style="font-weight:400;color:#64748b;font-size:11px">
+              (elegí hasta 3)
+            </span>
+          </label>
+          <button type="button" @click="showClasePicker=!showClasePicker"
+                  style="width:100%;text-align:left;padding:10px;background:#fff;
+                         border:1px solid #E2E8F0;border-radius:8px;cursor:pointer;
+                         color:#0D1B4B;font-size:14px;font-family:inherit">
+            <span x-show="!form.clases.length" style="color:#94a3b8">Elegí una o más clases…</span>
+            <span x-show="form.clases.length"
+                  x-text="form.clases.length + ' clase(s) elegida(s)'"></span>
+            <span style="float:right;color:#64748b">▾</span>
+          </button>
+          <div x-show="showClasePicker" x-cloak @click.outside="showClasePicker=false"
+               style="position:relative;margin-top:4px">
+            <div style="background:#fff;border:1px solid #E2E8F0;border-radius:8px;
+                        max-height:240px;overflow-y:auto;padding:6px">
+              <input type="text" x-model="claseFiltro" placeholder="🔎 Filtrar..."
+                     autocomplete="off"
+                     style="width:100%;padding:6px 8px;border:1px solid #E2E8F0;
+                            border-radius:6px;font-size:12px;margin-bottom:6px">
+              <template x-for="n in 45" :key="n">
+                <label x-show="!claseFiltro || ('' + n + ' ' + (NIZA_TITLES[n]||'')).toLowerCase().includes(claseFiltro.toLowerCase())"
+                       style="display:flex;align-items:center;gap:8px;padding:4px 6px;cursor:pointer;font-weight:400;margin:0;font-size:13px"
+                       :style="form.clases.includes(n) ? 'background:#F0F5FF' : ''">
+                  <input type="checkbox" :value="n" x-model="form.clases"
+                         :disabled="!form.clases.includes(n) && form.clases.length >= 3"
+                         style="width:auto;margin:0">
+                  <span><strong x-text="n"></strong> · <span x-text="NIZA_TITLES[n] || ''"></span></span>
+                </label>
+              </template>
+            </div>
+          </div>
         </div>
       </div>
       <div class="input-group" style="margin-top:14px">
@@ -262,14 +289,29 @@
           bad: resultado.veredicto==='no_disponible'
         }">
           <div class="verdict-icon" x-text="{
-            probablemente_disponible:'✓', necesita_analisis:'⚠', no_disponible:'✕'
-          }[resultado.veredicto]"></div>
+            baja:'🟢', media:'🟡', alta:'🔴'
+          }[resultado.probabilidad_rechazo || 'media']"></div>
           <div class="verdict-title" x-text="{
-            probablemente_disponible:'Buenas señales',
-            necesita_analisis:'Necesita un análisis más profundo',
-            no_disponible:'Hay marcas similares ya registradas'
-          }[resultado.veredicto]"></div>
-          <div class="verdict-msg" x-text="resultado.mensaje"></div>
+            baja:'BAJA probabilidad de rechazo',
+            media:'MEDIA probabilidad de rechazo',
+            alta:'ALTA probabilidad de rechazo'
+          }[resultado.probabilidad_rechazo || 'media']"></div>
+          <div class="verdict-msg" x-html="resultado.mensaje"></div>
+
+          <div x-show="resultado.razones && resultado.razones.length"
+               style="margin-top:20px;text-align:left;background:#F8FAFC;
+                      padding:14px 18px;border-radius:10px">
+            <div style="font-weight:600;color:#0D1B4B;margin-bottom:10px;font-size:14px">Por qué te lo decimos:</div>
+            <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
+              <template x-for="r in (resultado.razones || [])" :key="r.tipo">
+                <li style="display:flex;gap:10px;align-items:flex-start;font-size:14px">
+                  <span :style="r.ok ? 'color:#16A34A;font-weight:700' : 'color:#DC2626;font-weight:700'"
+                        x-text="r.ok ? '✓' : '✕'"></span>
+                  <span style="color:#475569" x-text="r.texto"></span>
+                </li>
+              </template>
+            </ul>
+          </div>
 
           <div class="domains-row" x-show="resultado.dominios && resultado.dominios.length">
             <template x-for="d in resultado.dominios" :key="d.domain">
@@ -295,7 +337,7 @@
           </div>
 
           <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">
-            <button class="btn btn-primary" @click="iniciarConsultaCompleta()"
+            <button class="btn btn-primary" @click="modalInforme=true"
                     :disabled="iniciandoPago"
                     style="flex:2;min-width:240px;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;line-height:1.2;padding:14px 24px">
               <span x-show="!iniciandoPago">
@@ -476,12 +518,13 @@
         <div class="plan-tag">Free</div>
         <h3>Búsqueda gratuita</h3>
         <div class="plan-price">$0<small>sin tarjeta, sin registro</small></div>
-        <p class="plan-desc">Veredicto rápido en una clase específica.</p>
+        <p class="plan-desc">Veredicto rápido para 1 marca en hasta 3 clases.</p>
         <ul>
-          <li>Veredicto verde / amarillo / rojo</li>
+          <li>Veredicto BAJA / MEDIA / ALTA probabilidad de rechazo</li>
+          <li>Hasta <strong>3 clases Niza</strong> en la misma búsqueda</li>
           <li>Cantidad de marcas similares detectadas</li>
           <li>Detección de <strong>marcas notorias</strong></li>
-          <li>Chequeo de dominios y redes sociales</li>
+          <li>Chequeo de dominios .com / .com.ar / .ar</li>
         </ul>
         <a onclick="document.getElementById('marca').focus()" class="btn btn-outline" style="cursor:pointer">Buscar gratis</a>
       </div>
@@ -490,29 +533,31 @@
         <div class="plan-tag">Más elegido</div>
         <h3>Informe completo</h3>
         <div class="plan-price">$9.900<small>pago único por marca</small></div>
-        <p class="plan-desc">El análisis profundo para decidir si registrar o no.</p>
+        <p class="plan-desc">El análisis profundo + 2 bonus si decidís registrar.</p>
         <ul>
           <li>Lista completa de coincidencias con titular, fecha y estado</li>
           <li>Análisis fonético, léxico y conceptual con IA</li>
-          <li>Análisis de confundibilidad caso por caso</li>
           <li>Probabilidad de registro en las 45 clases Niza</li>
-          <li>Análisis de marca fuerte / débil y marcas vencidas</li>
+          <li>Análisis de marca fuerte/débil + marcas vencidas</li>
+          <li>Chequeo de usuario en Instagram y TikTok</li>
           <li>PDF descargable con cotización de registro</li>
+          <li style="color:#16A34A;font-weight:600">+ $5.000 OFF en honorarios si registrás con nosotros</li>
+          <li style="color:#16A34A;font-weight:600">+ 3 meses de vigilancia gratis desde el inicio del trámite</li>
         </ul>
         <a onclick="document.getElementById('marca').focus()" class="btn btn-primary" style="cursor:pointer">Pedir informe</a>
       </div>
 
       <div class="plan">
         <div class="plan-tag">Vigilancia</div>
-        <h3>Suscripción mensual</h3>
+        <h3>Vigilancia</h3>
         <div class="plan-price">desde $4.900<small>por mes</small></div>
-        <p class="plan-desc">Para que nadie registre algo parecido a tu marca sin que te enteres.</p>
+        <p class="plan-desc">Que nadie registre algo parecido sin que te enteres.</p>
         <ul>
-          <li>Alerta cada vez que el INPI publica algo similar</li>
-          <li>Email + WhatsApp opcional</li>
-          <li>Panel con DJU (5a) y vencimiento (10a)</li>
-          <li>3 planes: 1, 3 o 10 marcas</li>
-          <li>Cancelás cuando quieras</li>
+          <li>Aviso <strong>quincenal</strong> de similitudes nuevas en INPI</li>
+          <li>Alertas por email y WhatsApp opcional</li>
+          <li>3 planes: <strong>Personal</strong> (3), <strong>PyME</strong> (10), <strong>Agencia</strong> (20)</li>
+          <li>Cancelás cuando quieras, sin permanencia</li>
+          <li style="color:#64748b;font-size:13px">Defensa ante oposiciones se cotiza aparte</li>
         </ul>
         <a href="/premium" class="btn btn-outline">Ver planes</a>
       </div>
@@ -526,7 +571,7 @@
           <li>Clasificación profesional (clases Niza)</li>
           <li>Presentación del expediente</li>
           <li>Seguimiento del trámite</li>
-          <li>Defensa ante oposiciones (opcional)</li>
+          <li>Defensa ante oposiciones (opcional, aparte)</li>
         </ul>
         <button class="btn btn-outline" @click="modalCotizar=true">Solicitar cotización</button>
       </div>
@@ -699,6 +744,94 @@
   <span>Hablar con un abogado</span>
 </a>
 
+<!-- MODAL Detalle del informe (paywall friendly) -->
+<div x-show="modalInforme" x-cloak @click.self="modalInforme=false"
+     style="position:fixed;inset:0;background:rgba(13,27,75,.5);z-index:60;
+            display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:#fff;border-radius:14px;padding:28px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+      <div>
+        <div style="font-size:11px;color:#1B6EF3;text-transform:uppercase;letter-spacing:1px;font-weight:700">Informe completo</div>
+        <h2 style="margin:4px 0 0;font-size:24px;color:#0D1B4B">Todo lo que vas a recibir</h2>
+      </div>
+      <button @click="modalInforme=false" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94a3b8">×</button>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#1B6EF3,#0D1B4B);color:#fff;padding:18px;border-radius:12px;margin:18px 0;text-align:center">
+      <div style="font-size:32px;font-weight:800">
+        $<span x-text="(precioInforme?.precio || resultado?.siguiente_paso?.precio || 9900).toLocaleString('es-AR')"></span>
+        <span x-show="precioInforme && precioInforme.descuento_pct > 0" x-cloak
+              style="text-decoration:line-through;opacity:.6;font-weight:400;font-size:18px;margin-left:8px">
+          $<span x-text="(precioInforme?.precio_original || 9900).toLocaleString('es-AR')"></span>
+        </span>
+      </div>
+      <div style="font-size:13px;opacity:.85">Pago único · sin renovación · PDF descargable</div>
+    </div>
+
+    <div style="background:#F0F5FF;padding:14px 16px;border-radius:10px;margin-bottom:18px">
+      <div style="font-weight:700;color:#1B6EF3;font-size:13px;margin-bottom:6px">+ Bonus por pedir el informe</div>
+      <ul style="margin:0;padding-left:22px;font-size:13px;color:#475569;line-height:1.7">
+        <li><strong>$5.000 OFF</strong> en honorarios si decidís registrar la marca con LegalPacers</li>
+        <li><strong>3 meses de vigilancia gratis</strong> desde el inicio del trámite</li>
+      </ul>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">1</div>
+        <div><strong>Lista completa de marcas similares</strong>
+        <div style="font-size:13px;color:#64748b">Titular, fecha, acta, estado — todas las coincidencias detalladas.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">2</div>
+        <div><strong>Análisis fonético, léxico y conceptual con IA</strong>
+        <div style="font-size:13px;color:#64748b">Score por dimensión, marca por marca, con la razón concreta de cada match.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">3</div>
+        <div><strong>Probabilidad de registro en las 45 clases</strong>
+        <div style="font-size:13px;color:#64748b">Para ver dónde sí conviene registrar y dónde no.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">4</div>
+        <div><strong>Marca fuerte / débil + Mot Vedette</strong>
+        <div style="font-size:13px;color:#64748b">Distintividad legal según jurisprudencia INPI.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">5</div>
+        <div><strong>Marcas vencidas similares</strong>
+        <div style="font-size:13px;color:#64748b">Que parecían bloquear pero ya están en dominio público.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">6</div>
+        <div><strong>Análisis de marcas notorias</strong>
+        <div style="font-size:13px;color:#64748b">Con explicación legal del riesgo si tu marca se parece a una conocida.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">7</div>
+        <div><strong>Chequeo de usuario en Instagram y TikTok</strong>
+        <div style="font-size:13px;color:#64748b">Para asegurar coherencia digital con tu marca.</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:start">
+        <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;flex:0 0 28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">8</div>
+        <div><strong>PDF descargable + cotización de registro</strong>
+        <div style="font-size:13px;color:#64748b">Con tasas INPI vigentes y nuestros honorarios.</div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap">
+      <button class="btn btn-outline" @click="modalInforme=false" style="flex:1;min-width:120px">Cancelar</button>
+      <button class="btn btn-primary" @click="modalInforme=false; iniciarConsultaCompleta()"
+              :disabled="iniciandoPago" style="flex:2;min-width:180px">
+        <span x-show="!iniciandoPago">
+          Pagar y desbloquear · $<span x-text="(precioInforme?.precio || 9900).toLocaleString('es-AR')"></span>
+        </span>
+        <span x-show="iniciandoPago" x-cloak>Generando link…</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL Cotizar registro (Nivel 3) -->
 <div x-show="modalCotizar" x-cloak @click.self="modalCotizar=false"
      style="position:fixed;inset:0;background:rgba(13,27,75,.5);z-index:60;
@@ -767,7 +900,9 @@ function landing() {
   const _params = new URLSearchParams(location.search);
   return {
     NIZA_TITLES,
-    form: {marca: _params.get('marca') || '', clase:'', email:''},
+    form: {marca: _params.get('marca') || '', clases: [], email:''},
+    showClasePicker: false,
+    claseFiltro: '',
     promoCode: _params.get('promo') || '',
     precioInforme: null,   // {precio, precio_original, descuento_pct, promo_valido, promo_code}
     resultado: null,
@@ -787,6 +922,7 @@ function landing() {
     })(),
     faqAbierto: 0,
     modalCotizar: false,
+    modalInforme: false,
     cotForm: {marca:'', descripcion:'', nombre:'', email:'', telefono:''},
     enviandoCot: false,
     cotMsg: '',
@@ -839,19 +975,24 @@ function landing() {
         this.errorMsg = 'Ingresá una marca para buscar.';
         return;
       }
-      if (!this.form.clase) {
-        this.errorMsg = 'Elegí una clase Niza para la búsqueda gratuita.';
+      if (!this.form.clases || !this.form.clases.length) {
+        this.errorMsg = 'Elegí al menos una clase Niza.';
+        return;
+      }
+      if (this.form.clases.length > 3) {
+        this.errorMsg = 'La búsqueda gratuita permite hasta 3 clases.';
         return;
       }
       this.cargando = true;
       this.errorMsg = '';
       this.resultado = null;
+      this.showClasePicker = false;
       try {
         const r = await fetch('/api/marca/check', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             marca: this.form.marca, email: this.form.email,
-            clases: this.form.clase ? [parseInt(this.form.clase)] : [],
+            clases: this.form.clases.map(c => parseInt(c)),
             fingerprint: this.fingerprint || '',
           })
         });
@@ -881,7 +1022,7 @@ function landing() {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             marca: this.form.marca, email: this.form.email,
-            clases: this.form.clase ? [parseInt(this.form.clase)] : [],
+            clases: (this.form.clases || []).map(c => parseInt(c)),
             promo_code: promoCode,
           })
         });
