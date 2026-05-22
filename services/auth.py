@@ -145,8 +145,23 @@ def login_required(view: Callable) -> Callable:
     return wrapper
 
 
+VIGILANCIA_TIPOS = (
+    "premium",                  # legacy
+    "vigilancia_individual",
+    "vigilancia_multi",
+    "vigilancia_portfolio",
+    "portfolio",                # legacy
+    "marca",                    # vigilancia por marca individual desde dashboard
+)
+
+
 def has_active_premium(user: Optional[User]) -> bool:
-    """True si el user tiene una suscripción premium activa o es admin."""
+    """True si el user tiene cualquier suscripción de vigilancia activa o es admin.
+
+    El nuevo modelo: la suscripción se llama 'vigilancia' (no 'premium'), pero
+    todos los suscriptores tienen los mismos perks de búsqueda full (porque
+    nos pagan mensualmente). Admin siempre True.
+    """
     if not user:
         return False
     if getattr(user, "is_admin", False):
@@ -155,7 +170,8 @@ def has_active_premium(user: Optional[User]) -> bool:
         from database import SuscripcionVigilancia
         with get_session() as s:
             sub = (s.query(SuscripcionVigilancia)
-                   .filter_by(user_id=user.id, tipo="premium", status="active")
+                   .filter_by(user_id=user.id, status="active")
+                   .filter(SuscripcionVigilancia.tipo.in_(VIGILANCIA_TIPOS))
                    .first())
             return sub is not None
     except Exception:

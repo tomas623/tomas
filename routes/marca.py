@@ -44,8 +44,10 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("marca", __name__)
 
 
-PRECIO_NIVEL_2 = float(os.getenv("PRECIO_CONSULTA_COMPLETA", "15000"))
-PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "1500"))
+PRECIO_NIVEL_2 = float(os.getenv("PRECIO_INFORME_COMPLETO",
+                                  os.getenv("PRECIO_CONSULTA_COMPLETA", "9900")))
+PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_INDIVIDUAL",
+                                           os.getenv("PRECIO_VIGILANCIA_MARCA", "4900")))
 
 # Rate limit Nivel 1 por IP. Suscriptores premium y usuarios autenticados
 # pueden saltearlo (lo manejamos en _check_rate_limit).
@@ -294,6 +296,7 @@ def nivel_1_check():
 
     es_notoria = bool(notorious_warnings and notorious_warnings[0].get("score", 0) >= 0.75)
 
+    # Veredicto siempre. Para free, el stats es agregado (sin matches detallados).
     response = {
         "lead_id": lead_id,
         "marca": marca,
@@ -306,33 +309,56 @@ def nivel_1_check():
             "matches_alto": len(altos),
             "matches_medio": len(medios),
             "identicas": summary_iden,
+        },
+        "dominios": domains,
+        "handles": handles,           # incluido también en free
+        "premium": is_full_access,
+        "es_notoria": es_notoria,
+        # En free mostramos la notoria si dispara (es la prueba del valor),
+        # pero solo la denominación (sin scores).
+        "notorious_warnings": (
+            [{"denominacion": n["denominacion"]} for n in notorious_warnings[:1]]
+            if not is_full_access else notorious_warnings
+        ),
+    }
+
+    if is_full_access:
+        # FULL: detalles por dimensión + matches + cross-class + probabilidad por clase
+        response["stats"].update({
             "similares_lex": summary_lex,
             "similares_fon": summary_fon,
             "similares_con": summary_con,
             "similares_lex_alto": summary_lex_alto,
             "similares_fon_alto": summary_fon_alto,
             "similares_con_alto": summary_con_alto,
-        },
-        "dominios": domains,
-        "handles": handles,
-        "premium": is_full_access,
-        "es_notoria": es_notoria,
-        "notorious_warnings": notorious_warnings,
-    }
-
-    if is_full_access:
+        })
         response["matches"] = [m.to_dict() for m in matches]
         response["cross_class_matches"] = [m.to_dict() for m in cross_class_matches]
-        # Probabilidad de registro por clase (premium): hacemos una pasada
-        # adicional sin filtro de clase para contar matches en cada clase 1..45
         response["por_clase"] = _probabilidad_por_clase(marca, descripcion, clases)
     else:
+        # FREE: tease del informe + paywall claro
+        clases_con_match = len({m.clase for m in matches if m.clase})
+        response["tease"] = {
+            "marcas_similares": len(matches),
+            "clases_con_riesgo": clases_con_match,
+            "alto_riesgo": len(altos),
+            "tiene_notoria": es_notoria,
+        }
         response["siguiente_paso"] = {
-            "tipo": "consulta_completa",
+            "tipo": "informe_completo",
             "precio": PRECIO_NIVEL_2,
             "moneda": "ARS",
-            "descripcion": "Informe completo con análisis fonético, conceptual y "
-                           "pre-análisis automático de viabilidad de registro.",
+            "titulo": "Desbloqueá el informe completo",
+            "incluye": [
+                "Lista completa de marcas similares con titular y fecha",
+                "Score detallado: léxico + fonético + conceptual con IA",
+                "Análisis de marcas notorias con explicación legal",
+                "Probabilidad de registro en las 45 clases Niza",
+                "Análisis de marca fuerte / débil y elementos predominantes",
+                "Detección de marcas vencidas (que volvieron al dominio público)",
+                "PDF descargable con sello LegalPacers",
+                "Cotización de registro incluida",
+            ],
         }
 
     return _ok(response)

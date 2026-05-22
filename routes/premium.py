@@ -37,8 +37,39 @@ logger = logging.getLogger(__name__)
 bp = Blueprint("premium", __name__)
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-PRECIO_PREMIUM_MES = float(os.getenv("PRECIO_PREMIUM_MES", "30000"))
-PRECIO_PREMIUM_ANUAL = float(os.getenv("PRECIO_PREMIUM_ANUAL", "300000"))
+
+# 3 tiers de vigilancia (mensual). Anual = 10 meses (2 gratis).
+PRECIO_VIGILANCIA_INDIVIDUAL = float(os.getenv("PRECIO_VIGILANCIA_INDIVIDUAL", "4900"))
+PRECIO_VIGILANCIA_MULTI = float(os.getenv("PRECIO_VIGILANCIA_MULTI", "9900"))
+PRECIO_VIGILANCIA_PORTFOLIO = float(os.getenv("PRECIO_VIGILANCIA_PORTFOLIO", "20000"))
+
+# Legacy (mantengo para compat con código viejo)
+PRECIO_PREMIUM_MES = PRECIO_VIGILANCIA_MULTI
+PRECIO_PREMIUM_ANUAL = PRECIO_VIGILANCIA_MULTI * 10
+
+PLAN_TIERS = {
+    "individual": {
+        "nombre": "Individual",
+        "marcas_incluidas": 1,
+        "precio_mes": PRECIO_VIGILANCIA_INDIVIDUAL,
+        "precio_anual": PRECIO_VIGILANCIA_INDIVIDUAL * 10,
+        "descripcion": "Para quien tiene 1 marca registrada y quiere dormir tranquilo.",
+    },
+    "multi": {
+        "nombre": "Multi",
+        "marcas_incluidas": 3,
+        "precio_mes": PRECIO_VIGILANCIA_MULTI,
+        "precio_anual": PRECIO_VIGILANCIA_MULTI * 10,
+        "descripcion": "Emprendedores con hasta 3 marcas o sub-marcas activas.",
+    },
+    "portfolio": {
+        "nombre": "Portfolio",
+        "marcas_incluidas": 10,
+        "precio_mes": PRECIO_VIGILANCIA_PORTFOLIO,
+        "precio_anual": PRECIO_VIGILANCIA_PORTFOLIO * 10,
+        "descripcion": "PyMEs y agencias con portfolio de marcas. Incluye soporte priority.",
+    },
+}
 
 
 def _ok(data, status=200):
@@ -61,14 +92,11 @@ def premium_page():
     reason = request.args.get("reason", "")
     aviso = ""
     if reason == "needs_subscription":
-        aviso = ("Para acceder al panel necesitás una suscripción Premium activa. "
-                 "Suscribite acá abajo y te mandamos las credenciales por email.")
+        aviso = ("Para acceder al panel de marcas necesitás una suscripción de vigilancia activa. "
+                 "Elegí el plan que mejor se ajuste y te mandamos las credenciales por email.")
     return render_template_string(
         PREMIUM_PAGE,
-        precio_mes=int(PRECIO_PREMIUM_MES),
-        precio_anual=int(PRECIO_PREMIUM_ANUAL),
-        precio_anual_equiv=int(PRECIO_PREMIUM_ANUAL / 12),
-        descuento_pct=int((1 - PRECIO_PREMIUM_ANUAL / (PRECIO_PREMIUM_MES * 12)) * 100),
+        tiers=PLAN_TIERS,
         aviso=aviso,
     )
 
@@ -79,11 +107,16 @@ def iniciar():
     email = (data.get("email") or "").strip().lower()
     nombre = (data.get("nombre") or "").strip() or None
     telefono = (data.get("telefono") or "").strip() or None
+    plan_tier = (data.get("plan_tier") or "multi").strip().lower()
+    if plan_tier not in PLAN_TIERS:
+        plan_tier = "multi"
     plan_freq = (data.get("plan_freq") or "mensual").strip().lower()
     if plan_freq not in ("mensual", "anual"):
         plan_freq = "mensual"
     auto_renew = bool(data.get("auto_renew", True))
-    monto = PRECIO_PREMIUM_ANUAL if plan_freq == "anual" else PRECIO_PREMIUM_MES
+
+    tier_data = PLAN_TIERS[plan_tier]
+    monto = tier_data["precio_anual"] if plan_freq == "anual" else tier_data["precio_mes"]
 
     if not EMAIL_RE.match(email):
         return _err("Email inválido")
@@ -110,19 +143,23 @@ def iniciar():
             if telefono and not user.telefono:
                 user.telefono = telefono
 
-        # Si ya tiene una premium activa, no duplicamos
+        # Si ya tiene una suscripción de vigilancia activa, no duplicamos
         existing = (s.query(SuscripcionVigilancia)
-                    .filter_by(user_id=user.id, tipo="premium")
+                    .filter_by(user_id=user.id)
+                    .filter(SuscripcionVigilancia.tipo.in_(["premium", "vigilancia_individual",
+                                                              "vigilancia_multi", "vigilancia_portfolio"]))
                     .filter(SuscripcionVigilancia.status.in_(["active", "pending"]))
                     .first())
         if existing and existing.status == "active":
-            return _err("Ya tenés una suscripción premium activa. Iniciá sesión.", 409)
+            return _err("Ya tenés una suscripción activa. Iniciá sesión.", 409)
 
+        nuevo_tipo = f"vigilancia_{plan_tier}"
         sub = existing or SuscripcionVigilancia(
-            user_id=user.id, tipo="premium", status="pending",
+            user_id=user.id, tipo=nuevo_tipo, status="pending",
             monto=monto, plan_freq=plan_freq, auto_renew=auto_renew,
         )
         if existing:
+            sub.tipo = nuevo_tipo
             sub.monto = monto
             sub.plan_freq = plan_freq
             sub.auto_renew = auto_renew
@@ -208,11 +245,11 @@ PREMIUM_PAGE = """<!DOCTYPE html>
 <nav class="nav"><a href="/">← Volver a la home</a></nav>
 
 <main>
-  <span class="badge">Plan Premium</span>
-  <h1>Consultas ilimitadas + vigilancia automática</h1>
+  <span class="badge">Vigilancia de marcas</span>
+  <h1>Que nadie registre algo parecido a tu marca sin que te enteres</h1>
   <p style="color:#475569;font-size:17px">
-    Para quienes manejan varias marcas y necesitan validar nombres seguido sin
-    pagar consulta por consulta.
+    Vigilamos el boletín del INPI todas las semanas. Si aparece una marca similar
+    a las tuyas, te avisamos por email y WhatsApp para que puedas presentar oposición a tiempo.
   </p>
 
   {% if aviso %}
@@ -222,49 +259,57 @@ PREMIUM_PAGE = """<!DOCTYPE html>
   </div>
   {% endif %}
 
-  <div class="card" style="padding:18px">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <label style="border:2px solid #E2E8F0;border-radius:12px;padding:18px;cursor:pointer;
-                    transition:.15s" :style="form.plan_freq==='mensual' ? 'border-color:#1B6EF3;background:#F0F5FF' : ''">
-        <input type="radio" value="mensual" x-model="form.plan_freq" style="display:none">
-        <div style="font-weight:700;font-size:16px;color:#0D1B4B">Mensual</div>
-        <div style="font-size:28px;font-weight:800;color:#1B6EF3;margin:6px 0 2px">
-          ${{ "{:,}".format(precio_mes).replace(",", ".") }}
-        </div>
-        <div style="font-size:13px;color:#64748b">por mes</div>
-      </label>
-
-      <label style="border:2px solid #E2E8F0;border-radius:12px;padding:18px;cursor:pointer;
-                    transition:.15s;position:relative" :style="form.plan_freq==='anual' ? 'border-color:#1B6EF3;background:#F0F5FF' : ''">
-        <input type="radio" value="anual" x-model="form.plan_freq" style="display:none">
-        <div style="position:absolute;top:-10px;right:12px;background:#16A34A;color:#fff;
-                    font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px">
-          {{ descuento_pct }}% OFF
-        </div>
-        <div style="font-weight:700;font-size:16px;color:#0D1B4B">Anual</div>
-        <div style="font-size:28px;font-weight:800;color:#1B6EF3;margin:6px 0 2px">
-          ${{ "{:,}".format(precio_anual).replace(",", ".") }}
-        </div>
-        <div style="font-size:13px;color:#64748b">
-          por año (equiv. ${{ "{:,}".format(precio_anual_equiv).replace(",", ".") }}/mes)
-        </div>
-      </label>
-    </div>
-
-    <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;
-                  margin-top:18px;padding:12px;background:#F4F5F9;border-radius:8px">
-      <input type="checkbox" x-model="form.auto_renew" style="margin-top:3px">
-      <div>
-        <div style="font-weight:600">Renovación automática</div>
-        <div style="font-size:13px;color:#64748b">
-          Activado por defecto: te cobramos cada
-          <span x-text="form.plan_freq==='anual' ? 'año' : 'mes'"></span>
-          y mantenés acceso sin interrupciones. Si lo desactivás, te avisamos antes del
-          vencimiento para que renueves manualmente.
-        </div>
+  <!-- TIER PICKER (3 columnas) -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:24px 0">
+    {% for key, t in tiers.items() %}
+    <label style="border:2px solid #E2E8F0;border-radius:14px;padding:20px;cursor:pointer;
+                  transition:.15s;background:#fff{% if key == 'multi' %};position:relative{% endif %}"
+           :style="form.plan_tier==='{{ key }}' ? 'border-color:#1B6EF3;background:#F0F5FF' : ''">
+      <input type="radio" value="{{ key }}" x-model="form.plan_tier" style="display:none">
+      {% if key == 'multi' %}
+      <div style="position:absolute;top:-10px;right:12px;background:#16A34A;color:#fff;
+                  font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px">
+        Más elegido
       </div>
+      {% endif %}
+      <div style="font-weight:700;font-size:18px;color:#0D1B4B">{{ t.nombre }}</div>
+      <div style="font-size:32px;font-weight:800;color:#1B6EF3;margin:6px 0 0">
+        $<span x-text="(form.plan_freq==='anual' ? {{ t.precio_anual|int }} : {{ t.precio_mes|int }}).toLocaleString('es-AR')"></span>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:10px">
+        <span x-text="form.plan_freq==='anual' ? '/ año (10 cuotas)' : '/ mes'"></span>
+      </div>
+      <div style="font-size:14px;color:#0D1B4B;line-height:1.5">
+        Hasta <strong>{{ t.marcas_incluidas }}</strong> marca{% if t.marcas_incluidas > 1 %}s{% endif %} vigilada{% if t.marcas_incluidas > 1 %}s{% endif %}
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-top:6px">{{ t.descripcion }}</div>
     </label>
+    {% endfor %}
   </div>
+
+  <!-- BILLING TOGGLE -->
+  <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin:14px 0">
+    <span style="font-size:13px;color:#64748b">Mensual</span>
+    <label style="position:relative;display:inline-block;width:48px;height:24px;cursor:pointer">
+      <input type="checkbox" x-model="anualToggle" @change="form.plan_freq = anualToggle ? 'anual' : 'mensual'"
+             style="opacity:0;width:0;height:0">
+      <span :style="(anualToggle ? 'background:#1B6EF3' : 'background:#CBD5E1') + ';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:24px;transition:.15s'"></span>
+      <span :style="'transform:translateX(' + (anualToggle ? '24px' : '2px') + ');position:absolute;top:2px;left:0;width:20px;height:20px;background:#fff;border-radius:50%;transition:.15s'"></span>
+    </label>
+    <span style="font-size:13px;color:#0D1B4B;font-weight:600">Anual <span style="background:#DCFCE7;color:#16A34A;font-size:10px;padding:2px 6px;border-radius:99px;margin-left:4px">2 meses GRATIS</span></span>
+  </div>
+
+  <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;
+                margin:18px 0;padding:12px;background:#F4F5F9;border-radius:8px">
+    <input type="checkbox" x-model="form.auto_renew" style="margin-top:3px">
+    <div>
+      <div style="font-weight:600">Renovación automática</div>
+      <div style="font-size:13px;color:#64748b">
+        Activado por defecto. Si lo desactivás, te avisamos antes del vencimiento
+        para que renueves manualmente.
+      </div>
+    </div>
+  </label>
 
   <div class="card">
     <h2>¿Qué incluye?</h2>
@@ -272,41 +317,48 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Consultas y análisis completos ilimitados</strong>
-        <span>Sin el límite de 3 búsquedas por semana. Acceso al análisis de confundibilidad en las 45 clases para cada marca.</span>
+        <strong>Vigilancia semanal del boletín INPI</strong>
+        <span>Cada miércoles que el INPI publica boletín nuevo, lo escaneamos contra tus marcas.</span>
       </div>
     </div>
 
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Vigilancia automática de hasta 10 marcas</strong>
-        <span>Cada semana revisamos el boletín del INPI y te avisamos si aparece alguna marca similar a las tuyas.</span>
+        <strong>Alertas por email + WhatsApp</strong>
+        <span>Te avisamos en menos de 7 días desde la publicación, con el detalle de la marca similar y el plazo para oponerte.</span>
       </div>
     </div>
 
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Aviso de declaración de uso (5 años) y vencimiento (10 años)</strong>
-        <span>No te olvidás de los hitos legales que mantienen tus marcas vigentes.</span>
+        <strong>Panel con tus marcas</strong>
+        <span>Cargás tus marcas (manualmente o con Excel) y seguís DJU (5 años), vencimiento (10 años) y oposiciones en un solo lugar.</span>
       </div>
     </div>
 
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Panel de marcas</strong>
-        <span>Cargás todas tus marcas (registradas o en trámite) y seguís fechas y estados en un solo lugar.</span>
+        <strong>Búsquedas e informes completos sin pagar por separado</strong>
+        <span>Como suscriptor, podés hacer todos los informes completos que quieras dentro del panel.</span>
       </div>
     </div>
 
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Sin permanencia</strong>
-        <span>Cancelás desde tu panel cuando quieras, sin penalidad.</span>
+        <strong>Sin permanencia · cancelás cuando quieras</strong>
+        <span>Si decidís cancelar, mantenés el acceso hasta el fin del período pagado.</span>
       </div>
+    </div>
+
+    <div style="border-top:1px solid #E2E8F0;margin:18px 0 0;padding-top:14px;font-size:13px;color:#64748b">
+      <strong>Importante:</strong> la suscripción cubre vigilancia + alertas + panel. La
+      <strong>presentación de oposiciones</strong> es un servicio aparte que se cotiza por caso
+      (es trabajo de abogado y depende de la complejidad). Cuando llega una alerta relevante,
+      te pasamos la cotización antes de avanzar.
     </div>
   </div>
 
@@ -355,8 +407,11 @@ PREMIUM_PAGE = """<!DOCTYPE html>
 </main>
 
 <script>
-const PRECIO_MES = {{ precio_mes }};
-const PRECIO_ANUAL = {{ precio_anual }};
+const TIERS = {
+{% for key, t in tiers.items() %}
+  "{{ key }}": {nombre:"{{ t.nombre }}", marcas:{{ t.marcas_incluidas }}, precio_mes:{{ t.precio_mes|int }}, precio_anual:{{ t.precio_anual|int }}},
+{% endfor %}
+};
 
 const COUNTRY_CODES = [
   {iso:'AR', code:'54', name:'Argentina', flag:'🇦🇷'},
@@ -381,11 +436,15 @@ const COUNTRY_CODES = [
 function premium(){
   return {
     COUNTRY_CODES,
-    form: {email:'', nombre:'', tel_cc:'54', tel_num:'', plan_freq:'mensual', auto_renew: true},
+    TIERS,
+    form: {email:'', nombre:'', tel_cc:'54', tel_num:'',
+            plan_tier:'multi', plan_freq:'mensual', auto_renew: true},
+    anualToggle: false,
     cargando: false,
     errorMsg: '',
     precioActual(){
-      return this.form.plan_freq === 'anual' ? PRECIO_ANUAL : PRECIO_MES;
+      const tier = TIERS[this.form.plan_tier] || TIERS.multi;
+      return this.form.plan_freq === 'anual' ? tier.precio_anual : tier.precio_mes;
     },
     async iniciar(){
       if(!this.form.email.trim()){
@@ -404,6 +463,7 @@ function premium(){
             email: this.form.email,
             nombre: this.form.nombre,
             telefono: telefonoFull,
+            plan_tier: this.form.plan_tier,
             plan_freq: this.form.plan_freq,
             auto_renew: this.form.auto_renew,
           }),

@@ -22,8 +22,10 @@ from services.auth import current_user, has_active_premium, login_required, prem
 logger = logging.getLogger(__name__)
 bp = Blueprint("dashboard", __name__)
 
-PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_MARCA", "1500"))
-PRECIO_VIGILANCIA_PORTFOLIO = float(os.getenv("PRECIO_VIGILANCIA_PORTFOLIO", "50000"))
+PRECIO_VIGILANCIA_MARCA = float(os.getenv("PRECIO_VIGILANCIA_INDIVIDUAL",
+                                           os.getenv("PRECIO_VIGILANCIA_MARCA", "4900")))
+PRECIO_VIGILANCIA_MULTI = float(os.getenv("PRECIO_VIGILANCIA_MULTI", "9900"))
+PRECIO_VIGILANCIA_PORTFOLIO = float(os.getenv("PRECIO_VIGILANCIA_PORTFOLIO", "20000"))
 
 
 def _ok(data, status=200):
@@ -1738,6 +1740,7 @@ def dashboard_page():
 def api_precios():
     return _ok({
         "vigilancia_marca": PRECIO_VIGILANCIA_MARCA,
+        "vigilancia_multi": PRECIO_VIGILANCIA_MULTI,
         "vigilancia_portfolio": PRECIO_VIGILANCIA_PORTFOLIO,
         "vigilancia_cap": PREMIUM_VIGILANCIA_CAP,
         "consulta_completa": float(os.getenv("PRECIO_CONSULTA_COMPLETA", "15000")),
