@@ -179,7 +179,7 @@
     [x-cloak]{display:none!important}
   </style>
 </head>
-<body x-data="landing()">
+<body x-data="landing()" x-init="fetchPrecioInforme()">
 
 <!-- HEADER -->
 <header>
@@ -197,12 +197,31 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <div x-show="promoCode"
-         style="background:#FEF3C7;border:2px dashed #D97706;color:#92400E;
-                padding:14px 20px;border-radius:10px;margin-bottom:20px;font-weight:600">
-      🎁 Tenés un código de descuento activo:
-      <strong x-text="promoCode" style="font-family:monospace;letter-spacing:1px"></strong>
-      — se aplica automáticamente al pedir el informe completo.
+    <div x-show="precioInforme && precioInforme.descuento_pct > 0"
+         x-cloak
+         style="background:linear-gradient(135deg,#FEF3C7,#FFF7E0);border:2px dashed #D97706;
+                color:#92400E;padding:14px 20px;border-radius:10px;margin-bottom:20px;
+                display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="font-weight:600;text-align:left">
+        🎁 Tenés <strong><span x-text="precioInforme?.descuento_pct"></span>% off</strong> activo en el informe completo
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-family:monospace;background:#92400E;color:#fff;padding:4px 10px;border-radius:6px;letter-spacing:1px"
+              x-text="precioInforme?.promo_code || promoCode"></span>
+        <span style="font-size:13px">
+          $<strong x-text="(precioInforme?.precio || 0).toLocaleString('es-AR')"></strong>
+          <span style="text-decoration:line-through;opacity:.7;margin-left:6px">
+            $<span x-text="(precioInforme?.precio_original || 0).toLocaleString('es-AR')"></span>
+          </span>
+        </span>
+      </div>
+    </div>
+    <div x-show="promoCode && precioInforme && !precioInforme.descuento_pct"
+         x-cloak
+         style="background:#FEE2E2;border:1px solid #FCA5A5;color:#991B1B;
+                padding:12px 16px;border-radius:10px;margin-bottom:20px;font-size:14px">
+      El código <strong x-text="promoCode"></strong> no es válido o ya expiró.
+      Igualmente podés pedir el informe completo al precio regular.
     </div>
     <span class="eyebrow">Búsqueda de marcas</span>
     <h1>¿Tu marca está <span>disponible</span>?</h1>
@@ -263,12 +282,33 @@
             </template>
           </div>
 
+          <div x-show="precioInforme && precioInforme.descuento_pct > 0"
+               style="margin-top:18px;background:linear-gradient(135deg,#FEF3C7,#FFF7E0);
+                      border:2px dashed #D97706;color:#92400E;padding:12px 16px;border-radius:10px;
+                      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="font-size:14px;font-weight:600">
+              🎁 Tu descuento del <span x-text="precioInforme?.descuento_pct"></span>% se aplica al pagar
+            </div>
+            <div style="font-size:12px;font-family:monospace;background:#92400E;color:#fff;padding:4px 10px;border-radius:6px">
+              <span x-text="precioInforme?.promo_code || 'VOLVER10'"></span>
+            </div>
+          </div>
+
           <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">
             <button class="btn btn-primary" @click="iniciarConsultaCompleta()"
                     :disabled="iniciandoPago"
-                    style="flex:2;min-width:240px;display:inline-flex;align-items:center;justify-content:center">
+                    style="flex:2;min-width:240px;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;line-height:1.2;padding:14px 24px">
               <span x-show="!iniciandoPago">
-                Pedir informe completo · $<span x-text="resultado.siguiente_paso.precio.toLocaleString('es-AR')"></span>
+                <span style="font-weight:700">Pedir informe completo</span>
+                <span x-show="precioInforme && precioInforme.descuento_pct > 0" x-cloak style="display:block;margin-top:4px;font-size:15px;font-weight:700">
+                  $<span x-text="(precioInforme?.precio || resultado.siguiente_paso.precio).toLocaleString('es-AR')"></span>
+                  <span style="text-decoration:line-through;opacity:.7;font-weight:400;font-size:13px;margin-left:6px">
+                    $<span x-text="(precioInforme?.precio_original || resultado.siguiente_paso.precio).toLocaleString('es-AR')"></span>
+                  </span>
+                </span>
+                <span x-show="!precioInforme || precioInforme.descuento_pct == 0" style="display:block;margin-top:4px;font-size:15px;font-weight:700">
+                  $<span x-text="resultado.siguiente_paso.precio.toLocaleString('es-AR')"></span>
+                </span>
               </span>
               <span x-show="iniciandoPago" x-cloak>Generando link…</span>
             </button>
@@ -729,6 +769,7 @@ function landing() {
     NIZA_TITLES,
     form: {marca: _params.get('marca') || '', clase:'', email:''},
     promoCode: _params.get('promo') || '',
+    precioInforme: null,   // {precio, precio_original, descuento_pct, promo_valido, promo_code}
     resultado: null,
     cargando: false,
     iniciandoPago: false,
@@ -781,6 +822,17 @@ function landing() {
       {q: "¿Puedo cancelar la suscripción?",
        a: "Cuando quieras, desde tu panel. No hay permanencia ni penalidades. Si cancelás a mitad de mes, te dejamos terminar el ciclo pago."},
     ],
+
+    async fetchPrecioInforme() {
+      try {
+        const url = this.promoCode ? `/api/marca/precio-informe?promo=${encodeURIComponent(this.promoCode)}` : '/api/marca/precio-informe';
+        const r = await fetch(url);
+        const d = await r.json();
+        if (d.ok) this.precioInforme = d.data;
+      } catch(e) {
+        // silencioso, fallback al precio del backend en siguiente_paso
+      }
+    },
 
     async buscar() {
       if (!this.form.marca.trim()) {

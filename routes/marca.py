@@ -966,6 +966,28 @@ def tarifas_calcular():
     return _ok(calcular_registro(num_clases, incluye_honorarios))
 
 
+@bp.route("/api/marca/precio-informe", methods=["GET"])
+def precio_informe():
+    """Devuelve el precio del informe completo + descuento si aplica el promo_code.
+
+    Permite que la landing muestre el 'antes/después' sin tener que crear
+    la consulta. Acepta ?promo=CODE.
+    """
+    promo = (request.args.get("promo") or "").strip().upper()
+    valid_code = os.getenv("INFORME_PROMO_CODE", "VOLVER10")
+    promo_valido = bool(promo) and promo == valid_code
+    pct = int(os.getenv("INFORME_RECORDATORIO_DESCUENTO_PCT", "10")) if promo_valido else 0
+    precio_final = round(PRECIO_NIVEL_2 * (1 - pct / 100.0))
+    return _ok({
+        "precio": precio_final,
+        "precio_original": PRECIO_NIVEL_2,
+        "descuento_pct": pct,
+        "promo_valido": promo_valido,
+        "promo_code": promo if promo_valido else None,
+        "moneda": "ARS",
+    })
+
+
 @bp.route("/api/admin/stats", methods=["GET"])
 def admin_stats():
     """Solo admin: dashboard de estadísticas del negocio."""
