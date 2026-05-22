@@ -251,7 +251,9 @@ def template_vencimiento_marca(
     return subject, html, text
 
 
-def template_lead_nurturing(step: int, marca: str, search_url: str) -> tuple[str, str, str]:
+def template_lead_nurturing(step: int, marca: str, search_url: str,
+                              promo_code: Optional[str] = None,
+                              promo_pct: Optional[int] = None) -> tuple[str, str, str]:
     """Secuencia de 3 emails post consulta gratuita."""
     if step == 1:
         # Día 1 — refuerzo del valor de registrar
@@ -289,16 +291,39 @@ def template_lead_nurturing(step: int, marca: str, search_url: str) -> tuple[str
             </p>
         """
     else:
-        # Día 10 — última nudge con beneficio + WhatsApp
-        subject = f"Tu marca \"{marca}\" puede estar en riesgo"
+        # Día 15 — recordatorio con descuento del informe completo
+        pct = promo_pct or 10
+        code = promo_code or "VOLVER10"
+        subject = f"Te dejamos {pct}% off el informe completo de \"{marca}\""
         body = f"""
-            <h2 style="color:{BRAND_COLOR};margin:0 0 16px">Cada semana se publican marcas nuevas</h2>
-            <p>El INPI publica un boletín nuevo cada miércoles. Si alguien registra
-               <strong>"{marca}"</strong> antes que vos, tu derecho posterior se debilita.</p>
-            <p>Charlar con un abogado de LegalPacers no tiene costo:</p>
+            <h2 style="color:{BRAND_COLOR};margin:0 0 16px">Tu informe sigue esperando</h2>
+            <p>Hace unas semanas buscaste <strong>"{marca}"</strong> y viste el veredicto inicial.
+               Te dejamos un descuento del <strong>{pct}%</strong> para que termines el análisis y
+               sepas con certeza si podés registrarla.</p>
+            <div style="background:#FEF9C3;border:2px dashed #D97706;border-radius:10px;
+                        padding:18px;margin:18px 0;text-align:center">
+              <div style="font-size:13px;color:#92400E;font-weight:600">Código de descuento</div>
+              <div style="font-size:28px;font-weight:800;color:#92400E;letter-spacing:2px;
+                          margin:4px 0">{code}</div>
+              <div style="font-size:12px;color:#92400E">{pct}% off al pedir el informe completo</div>
+            </div>
+            <p>Con el informe completo accedés a:</p>
+            <ul style="margin:0 0 18px;padding-left:22px;line-height:1.7">
+              <li>Lista completa de marcas similares con titular y fecha</li>
+              <li>Análisis fonético, léxico y conceptual con IA</li>
+              <li>Probabilidad de registro en las 45 clases Niza</li>
+              <li>Análisis de marca fuerte/débil y marcas vencidas</li>
+              <li>PDF descargable con cotización de registro</li>
+            </ul>
             <p style="margin:28px 0">
-              <a href="https://wa.me/5491128774200?text=Hola%2C%20quiero%20avanzar%20con%20el%20registro%20de%20%22{marca}%22" style="background:#25D366;color:#fff;text-decoration:none;
-                 padding:14px 28px;border-radius:8px;font-weight:600;display:inline-block">Hablar por WhatsApp</a>
+              <a href="{search_url}" style="background:{ACCENT_COLOR};color:#fff;text-decoration:none;
+                 padding:14px 28px;border-radius:8px;font-weight:600;display:inline-block">
+                Aplicar {pct}% off →
+              </a>
+            </p>
+            <p style="font-size:12px;color:#94a3b8;margin-top:24px">
+              El código vence en 7 días. Cuando hagas la búsqueda de nuevo, ingresá el código
+              al pagar.
             </p>
         """
     html = _wrap(body, subject)

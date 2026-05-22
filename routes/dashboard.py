@@ -309,6 +309,116 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
           </p>
         </div>
 
+        <!-- MARCA FUERTE / DÉBIL -->
+        <div x-show="buscarResult.marca_strength" style="margin-top:18px;padding:18px;
+                    background:#fff;border:1px solid #E2E8F0;border-radius:10px">
+          <h4 style="margin:0 0 6px">¿Tu marca es fuerte o débil?</h4>
+          <p style="margin:0 0 10px;font-size:13px;color:#64748b">
+            Una marca <strong>fuerte</strong> es distintiva (inventada o sin elementos comunes del rubro)
+            y tiene amplia protección legal. Una marca <strong>débil</strong> contiene prefijos / sufijos
+            de uso común (Rapi-, Eco-, -farma) o palabras genéricas, y tiene protección acotada.
+          </p>
+          <div style="display:flex;gap:14px;align-items:center;margin:12px 0">
+            <div :style="(buscarResult.marca_strength?.clasificacion === 'fuerte' ? 'background:#DCFCE7;color:#16A34A' : (buscarResult.marca_strength?.clasificacion === 'debil' ? 'background:#FEE2E2;color:#DC2626' : 'background:#FEF3C7;color:#92400E')) + ';padding:14px 22px;border-radius:10px;font-weight:700;font-size:16px;text-transform:uppercase'"
+                 x-text="buscarResult.marca_strength?.clasificacion"></div>
+            <div style="flex:1">
+              <div style="font-size:14px;color:#64748b">Puntaje de distintividad</div>
+              <div style="height:10px;background:#E2E8F0;border-radius:99px;overflow:hidden;margin-top:4px">
+                <div :style="'width:' + (buscarResult.marca_strength?.puntaje || 0) + '%; height:100%; background:' + (buscarResult.marca_strength?.puntaje >= 75 ? '#16A34A' : (buscarResult.marca_strength?.puntaje >= 45 ? '#D97706' : '#DC2626'))"></div>
+              </div>
+              <div style="font-size:13px;font-weight:600;margin-top:4px"
+                   x-text="(buscarResult.marca_strength?.puntaje || 0) + ' / 100'"></div>
+            </div>
+          </div>
+          <ul style="margin:8px 0 0;padding-left:22px;line-height:1.7;font-size:13px;color:#475569">
+            <template x-for="r in (buscarResult.marca_strength?.razones || [])" :key="r">
+              <li x-text="r"></li>
+            </template>
+          </ul>
+          <p x-show="buscarResult.mot_vedette" style="font-size:13px;color:#64748b;margin-top:12px;
+                    padding:8px 12px;background:#F4F5F9;border-radius:6px">
+            <strong>Elemento predominante (Mot Vedette):</strong>
+            <span x-text="buscarResult.mot_vedette" style="font-weight:600;color:#1B6EF3"></span>
+            — Es la palabra que más capta atención. El INPI lo usa para comparar marcas con varios términos.
+          </p>
+        </div>
+
+        <!-- MARCAS VENCIDAS -->
+        <div x-show="buscarResult.marcas_vencidas && buscarResult.marcas_vencidas.length"
+             style="margin-top:18px;padding:18px;background:#fff;border:1px solid #E2E8F0;border-radius:10px">
+          <h4 style="margin:0 0 6px">Marcas vencidas o no vigentes</h4>
+          <p style="margin:0 0 10px;font-size:13px;color:#64748b">
+            Estas marcas similares <strong>ya no están activas</strong> (vencieron o cayeron en abandono).
+            Volvieron al dominio público y podrían reusarse — aunque siempre conviene confirmar el estado actual.
+          </p>
+          <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th>Marca</th><th>Clase</th><th>Titular original</th><th>Estado</th><th>Vencimiento</th>
+            </tr></thead>
+            <tbody>
+              <template x-for="v in buscarResult.marcas_vencidas" :key="'venc-'+v.denominacion+v.clase">
+                <tr>
+                  <td><strong x-text="v.denominacion"></strong></td>
+                  <td x-text="v.clase || '—'"></td>
+                  <td x-text="v.titular || '—'"></td>
+                  <td><span class="badge gray" x-text="v.estado"></span></td>
+                  <td x-text="fmtDate(v.fecha_vencimiento) || '—'"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          </div>
+        </div>
+
+        <!-- ANÁLISIS TEMPORAL -->
+        <div x-show="buscarResult.temporal && buscarResult.temporal.por_anio && buscarResult.temporal.por_anio.length"
+             style="margin-top:18px;padding:18px;background:#fff;border:1px solid #E2E8F0;border-radius:10px">
+          <h4 style="margin:0 0 6px">Actividad reciente en tu clase</h4>
+          <p style="margin:0 0 10px;font-size:13px;color:#64748b">
+            Cuántas marcas se registraron por año en las clases consultadas — para saber si tu rubro
+            está saturado o despejado de marcas nuevas.
+          </p>
+          <div style="display:flex;align-items:end;gap:6px;height:120px;padding:10px 0">
+            <template x-for="t in (buscarResult.temporal?.por_anio || [])" :key="'tmp-'+t.anio">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="font-size:11px;color:#64748b" x-text="t.registros"></div>
+                <div :style="'width:80%;background:#1B6EF3;height:' + Math.max(4, Math.min(100, t.registros * 100 / (buscarResult.temporal?.promedio_anual * 2 || 100))) + 'px;border-radius:4px 4px 0 0'"></div>
+                <div style="font-size:11px;font-weight:600" x-text="t.anio"></div>
+              </div>
+            </template>
+          </div>
+          <div style="font-size:13px;color:#64748b;text-align:center;margin-top:6px">
+            Promedio: <strong x-text="buscarResult.temporal?.promedio_anual + ' marcas/año'"></strong>
+            · Total últimos 5 años:
+            <strong x-text="buscarResult.temporal?.total_5_anios"></strong>
+          </div>
+        </div>
+
+        <!-- CLASES SUGERIDAS -->
+        <div x-show="buscarResult.clases_sugeridas && buscarResult.clases_sugeridas.length"
+             style="margin-top:18px;padding:18px;background:#fff;border:1px solid #E2E8F0;border-radius:10px">
+          <h4 style="margin:0 0 6px">Clases adicionales que conviene considerar</h4>
+          <p style="margin:0 0 10px;font-size:13px;color:#64748b">
+            Según tu descripción, estas clases también podrían serte útiles. Registrar en varias
+            clases protege mejor tu marca contra usos no autorizados.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <template x-for="c in buscarResult.clases_sugeridas" :key="'sug-'+c.clase">
+              <div style="padding:10px 14px;background:#F0F5FF;border-radius:8px;
+                          display:flex;justify-content:space-between;align-items:center;gap:14px">
+                <div style="flex:1">
+                  <strong>Clase <span x-text="c.clase"></span></strong>
+                  <span style="color:#64748b;font-size:13px"
+                        x-text="' — ' + (NIZA_TITLES[c.clase] || '')"></span>
+                  <div style="font-size:12px;color:#475569;margin-top:2px"
+                       x-text="c.razon"></div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
         <!-- PROBABILIDAD POR CLASE -->
         <div x-show="buscarResult.por_clase" style="margin-top:18px;padding:18px;
                     background:#fff;border:1px solid #E2E8F0;border-radius:10px">

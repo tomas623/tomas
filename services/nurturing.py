@@ -28,10 +28,13 @@ logger = logging.getLogger(__name__)
 
 
 SECUENCIA = [
-    (1, 1),    # step 1: enviar a partir de D+1
-    (2, 4),    # step 2: enviar a partir de D+4
-    (3, 10),   # step 3: enviar a partir de D+10
+    (1, 1),    # step 1: enviar a partir de D+1 — bienvenida + valor
+    (2, 4),    # step 2: enviar a partir de D+4 — plazos y costos
+    (3, 15),   # step 3: enviar a partir de D+15 — RECORDATORIO con 10% OFF
 ]
+
+INFORME_PROMO_CODE = os.getenv("INFORME_PROMO_CODE", "VOLVER10")
+INFORME_PROMO_PCT = int(os.getenv("INFORME_RECORDATORIO_DESCUENTO_PCT", "10"))
 
 
 def run_lead_nurturing() -> int:
@@ -56,11 +59,19 @@ def run_lead_nurturing() -> int:
             if cuando is None or edad < cuando:
                 continue
 
-            search_url = f"{base}/?marca={lead.marca}" if lead.marca else base or "/"
+            # Step 3 incluye código de descuento en la URL
+            params = []
+            if lead.marca:
+                params.append(f"marca={lead.marca}")
+            if siguiente_step == 3:
+                params.append(f"promo={INFORME_PROMO_CODE}")
+            search_url = (base + "/?" + "&".join(params)) if params else (base or "/")
             subject, html, text = template_lead_nurturing(
                 step=siguiente_step,
                 marca=lead.marca or "tu marca",
                 search_url=search_url,
+                promo_code=(INFORME_PROMO_CODE if siguiente_step == 3 else None),
+                promo_pct=(INFORME_PROMO_PCT if siguiente_step == 3 else None),
             )
             if send_email(lead.email, subject, html, text=text):
                 lead.nurtured_step = siguiente_step

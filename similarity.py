@@ -1075,3 +1075,128 @@ def diagnose(matches: Iterable[ScoredMatch]) -> str:
     if medios >= 2:
         return "viable_con_ajustes"
     return "viable"
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Análisis avanzado: marca fuerte/débil, Mot Vedette
+# ─────────────────────────────────────────────────────────────────────
+
+# Prefijos y sufijos de "uso común" — marcas que los contienen son débiles.
+# Lista construida a partir de jurisprudencia INPI y criterios doctrinarios.
+WEAK_PREFIXES = [
+    "rapi", "eco", "bio", "tele", "info", "tecno", "ciber", "agro", "auto",
+    "multi", "super", "ultra", "mega", "neo", "pro", "max", "mini", "geo",
+    "vita", "salud", "farma", "med", "san", "premium", "smart", "easy",
+    "fast", "quick", "happy", "natural", "express", "global",
+]
+WEAK_SUFFIXES = [
+    "farma", "tech", "lab", "labs", "shop", "store", "market", "land",
+    "world", "city", "net", "online", "digital", "club", "express",
+    "service", "services", "argentina", "company", "group", "team",
+]
+# Palabras genéricas comunes en marcas (descriptivas)
+WEAK_WORDS = {
+    "del", "de la", "y", "el", "la", "los", "las", "centro", "casa",
+    "natural", "premium", "deluxe", "original", "puro", "fresco",
+    "argentino", "argentina", "buenos aires", "ba",
+}
+
+
+def analyze_marca_strength(marca: str) -> dict:
+    """Evalúa si la marca es fuerte o débil para fines de protección legal.
+
+    Una marca fuerte es distintiva (palabra inventada o sin asociación obvia con
+    el producto/servicio). Una marca débil contiene prefijos/sufijos genéricos
+    (Rapi-, Eco-, -farma) o términos descriptivos del rubro — tiene poca
+    protección porque otros pueden usar los mismos elementos.
+    """
+    if not marca or not marca.strip():
+        return {"clasificacion": "neutra", "puntaje": 50, "razones": [],
+                "elementos_debiles": []}
+    nm = normalize(marca)
+    if not nm:
+        return {"clasificacion": "neutra", "puntaje": 50, "razones": [],
+                "elementos_debiles": []}
+
+    debiles = []
+    razones = []
+    puntaje = 100  # arranco fuerte, bajo según señales
+
+    # Prefijo débil
+    for p in WEAK_PREFIXES:
+        if nm.startswith(p) and len(nm) > len(p) + 1:
+            debiles.append(f"prefijo '{p}-'")
+            puntaje -= 25
+            razones.append(f"Prefijo '{p}-' es de uso común en marcas; debilita la distintividad.")
+            break
+
+    # Sufijo débil
+    for s in WEAK_SUFFIXES:
+        if nm.endswith(s) and len(nm) > len(s) + 1:
+            debiles.append(f"sufijo '-{s}'")
+            puntaje -= 20
+            razones.append(f"Sufijo '-{s}' es genérico del rubro; reduce protección legal.")
+            break
+
+    # Palabras genéricas
+    palabras = nm.split()
+    if len(palabras) > 1:
+        for w in palabras:
+            if w in WEAK_WORDS:
+                debiles.append(f"palabra genérica '{w}'")
+                puntaje -= 10
+                razones.append(f"La palabra '{w}' es de uso común y no se monopoliza.")
+
+    # Marcas muy cortas (≤ 3) son débiles
+    if len(nm.replace(" ", "")) <= 3:
+        puntaje -= 30
+        razones.append("Las denominaciones muy cortas (≤3 caracteres) tienen baja distintividad.")
+        debiles.append("denominación muy corta")
+
+    # Marcas inventadas / sin componentes débiles → mantiene 100
+    if not razones:
+        razones.append("La denominación no contiene prefijos, sufijos ni palabras de uso común "
+                       "típicos del rubro. Tiene buena distintividad legal.")
+
+    puntaje = max(0, min(100, puntaje))
+    if puntaje >= 75:
+        clasificacion = "fuerte"
+    elif puntaje >= 45:
+        clasificacion = "neutra"
+    else:
+        clasificacion = "debil"
+
+    return {
+        "clasificacion": clasificacion,
+        "puntaje": puntaje,
+        "razones": razones,
+        "elementos_debiles": debiles,
+    }
+
+
+def detect_mot_vedette(marca: str) -> Optional[str]:
+    """Identifica el elemento dominante (palabra protagonista) de una marca.
+
+    Para denominaciones compuestas tipo 'Coca-Cola Light', el INPI analiza si
+    hay una palabra que capta toda la atención (Mot Vedette). Esta heurística
+    devuelve la palabra más larga / única, ignorando términos de uso común.
+    """
+    if not marca or not marca.strip():
+        return None
+    nm = normalize(marca)
+    palabras = [w for w in re.split(r"[\s\-]+", nm) if w]
+    if not palabras:
+        return None
+    if len(palabras) == 1:
+        # Si es una sola palabra, mot vedette es la marca misma (si no es muy común)
+        if palabras[0] in WEAK_WORDS or palabras[0] in WEAK_PREFIXES:
+            return None
+        return palabras[0]
+    # Filtrar palabras débiles
+    candidatas = [p for p in palabras if p not in WEAK_WORDS
+                  and p not in WEAK_PREFIXES and p not in WEAK_SUFFIXES
+                  and len(p) >= 3]
+    if not candidatas:
+        return None
+    # La más larga gana (heurística simple — el LLM lo podría mejorar)
+    return max(candidatas, key=len)

@@ -197,6 +197,13 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
+    <div x-show="promoCode"
+         style="background:#FEF3C7;border:2px dashed #D97706;color:#92400E;
+                padding:14px 20px;border-radius:10px;margin-bottom:20px;font-weight:600">
+      🎁 Tenés un código de descuento activo:
+      <strong x-text="promoCode" style="font-family:monospace;letter-spacing:1px"></strong>
+      — se aplica automáticamente al pedir el informe completo.
+    </div>
     <span class="eyebrow">Búsqueda de marcas</span>
     <h1>¿Tu marca está <span>disponible</span>?</h1>
     <p class="lead">Verificá hasta 3 denominaciones en una misma Clase antes de invertir
@@ -594,9 +601,11 @@ const NIZA_TITLES = {
 };
 
 function landing() {
+  const _params = new URLSearchParams(location.search);
   return {
     NIZA_TITLES,
-    form: {marca:'', clase:'', email:''},
+    form: {marca: _params.get('marca') || '', clase:'', email:''},
+    promoCode: _params.get('promo') || '',
     resultado: null,
     cargando: false,
     iniciandoPago: false,
@@ -691,12 +700,14 @@ function landing() {
 
     async iniciarConsultaCompleta() {
       this.iniciandoPago = true;
+      const promoCode = new URLSearchParams(location.search).get('promo') || '';
       try {
         const r = await fetch('/api/marca/consulta/iniciar', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             marca: this.form.marca, email: this.form.email,
             clases: this.form.clase ? [parseInt(this.form.clase)] : [],
+            promo_code: promoCode,
           })
         });
         const d = await r.json();

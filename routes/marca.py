@@ -335,6 +335,15 @@ def nivel_1_check():
         response["matches"] = [m.to_dict() for m in matches]
         response["cross_class_matches"] = [m.to_dict() for m in cross_class_matches]
         response["por_clase"] = _probabilidad_por_clase(marca, descripcion, clases)
+
+        # Nuevos bloques del informe completo
+        from similarity import analyze_marca_strength, detect_mot_vedette
+        response["marca_strength"] = analyze_marca_strength(marca)
+        response["mot_vedette"] = detect_mot_vedette(marca)
+        response["marcas_vencidas"] = _marcas_vencidas_similares(marca, clases)
+        response["temporal"] = _analisis_temporal(marca, clases)
+        response["clases_sugeridas"] = (_sugerir_clases_adicionales(marca, descripcion, clases)
+                                        if descripcion else [])
     else:
         # FREE: tease del informe + paywall claro
         clases_con_match = len({m.clase for m in matches if m.clase})
@@ -397,6 +406,12 @@ def nivel_2_iniciar():
     except (ValueError, TypeError):
         clases = []
 
+    # Código promo del nurturing (D+15) — 10% off el informe completo
+    promo_code = (data.get("promo_code") or "").strip().upper()
+    promo_valido = (promo_code == os.getenv("INFORME_PROMO_CODE", "VOLVER10"))
+    descuento_pct = int(os.getenv("INFORME_RECORDATORIO_DESCUENTO_PCT", "10")) if promo_valido else 0
+    monto_final = round(PRECIO_NIVEL_2 * (1 - descuento_pct / 100.0))
+
     user_id = user.id if user else None
 
     # Persistir consulta + pago (pending)
@@ -422,11 +437,15 @@ def nivel_2_iniciar():
                 "ya_logueado": True,
             })
 
+        pago_meta = {"consulta_id": consulta.id, "marca": marca}
+        if promo_valido:
+            pago_meta["promo_code"] = promo_code
+            pago_meta["descuento_pct"] = descuento_pct
         pago = Pago(
             user_id=user_id, email=email,
-            tipo="consulta_completa", monto=PRECIO_NIVEL_2,
+            tipo="consulta_completa", monto=monto_final,
             moneda="ARS", status="pending",
-            metadata_json={"consulta_id": consulta.id, "marca": marca},
+            metadata_json=pago_meta,
         )
         s.add(pago)
         s.flush()
@@ -440,7 +459,7 @@ def nivel_2_iniciar():
         from services.mercadopago import create_consulta_preference
         pref = create_consulta_preference(
             pago_id=pago_id, consulta_id=consulta_id,
-            email=email, marca=marca, monto=PRECIO_NIVEL_2,
+            email=email, marca=marca, monto=monto_final,
         )
     except Exception as e:
         logger.exception(f"Error creando preferencia MP: {e}")
@@ -449,7 +468,9 @@ def nivel_2_iniciar():
     return _ok({
         "consulta_id": consulta_id,
         "pago_id": pago_id,
-        "monto": PRECIO_NIVEL_2,
+        "monto": monto_final,
+        "monto_original": PRECIO_NIVEL_2,
+        "descuento_pct": descuento_pct,
         "moneda": "ARS",
         "init_point": pref.get("init_point") if pref else None,
         "preference_id": pref.get("id") if pref else None,
@@ -625,6 +646,130 @@ def _probabilidad_por_clase(marca: str, descripcion: str,
         "mejores": [{"clase": s["clase"], "titulo": s["titulo"], "probabilidad": s["probabilidad"]} for s in mejores],
         "peores": [{"clase": s["clase"], "titulo": s["titulo"], "probabilidad": s["probabilidad"]} for s in peores],
     }
+
+
+def _marcas_vencidas_similares(marca: str, clases: list, limit: int = 10) -> list[dict]:
+    """Encuentra marcas similares cuyo estado NO sea vigente o cuya fecha de
+    vencimiento ya pasó. Estas marcas volvieron al dominio público y podrían
+    reusarse — info valiosa para el cliente.
+    """
+    from datetime import date
+    from database import Marca, get_session
+
+    matches = search_similar(
+        marca=marca, descripcion="",
+        clases=clases or None, limit=80, use_ai=False, min_score=0.50,
+    )
+    if not matches:
+        return []
+
+    hoy = date.today()
+    ids = [m.id for m in matches[:80]]
+    out: list[dict] = []
+    with get_session() as s:
+        rows = s.query(Marca).filter(Marca.id.in_(ids)).all()
+        by_id = {r.id: r for r in rows}
+        for m in matches:
+            r = by_id.get(m.id)
+            if not r:
+                continue
+            estado = (r.estado_code or "").lower()
+            venc = r.fecha_vencimiento
+            es_vencida = (estado not in ("vigente", "registrada")) or (venc and venc < hoy)
+            if not es_vencida:
+                continue
+            out.append({
+                "denominacion": r.denominacion,
+                "clase": r.clase,
+                "titular": r.titular,
+                "estado": r.estado or r.estado_code,
+                "fecha_vencimiento": venc.isoformat() if venc else None,
+                "score": round(m.score, 3),
+            })
+            if len(out) >= limit:
+                break
+    return out
+
+
+def _analisis_temporal(marca: str, clases: list) -> dict:
+    """Cuenta marcas registradas por año en la clase del usuario, último 5 años.
+
+    Insight: '¿tu rubro está saturado de marcas nuevas o no?'
+    """
+    from datetime import date
+    from sqlalchemy import func as _func, extract
+    from database import Marca, get_session
+
+    if not clases:
+        return {"clases": [], "por_anio": []}
+    hoy = date.today()
+    anio_min = hoy.year - 4
+
+    with get_session() as s:
+        rows = (s.query(extract("year", Marca.fecha_solicitud).label("anio"),
+                        _func.count(Marca.id).label("n"))
+                 .filter(Marca.clase.in_(clases),
+                         Marca.fecha_solicitud.is_not(None),
+                         extract("year", Marca.fecha_solicitud) >= anio_min)
+                 .group_by("anio").order_by("anio").all())
+
+    por_anio = [{"anio": int(r.anio), "registros": int(r.n)} for r in rows]
+    total = sum(r["registros"] for r in por_anio)
+    promedio = (total / len(por_anio)) if por_anio else 0
+    return {
+        "clases": clases,
+        "por_anio": por_anio,
+        "total_5_anios": total,
+        "promedio_anual": round(promedio, 1),
+    }
+
+
+def _sugerir_clases_adicionales(marca: str, descripcion: str,
+                                 clases_actuales: list) -> list[dict]:
+    """Usa IA para sugerir clases Niza adicionales según la descripción del
+    producto/servicio. Output: lista de clases con razón.
+    """
+    if not descripcion or not descripcion.strip():
+        return []
+    from similarity import _call_gemini, _call_claude
+    actuales = ", ".join(str(c) for c in (clases_actuales or [])) or "ninguna"
+    prompt = f"""Sos asistente experto en clasificación Niza (1-45) de marcas para el INPI Argentina.
+Dado un producto/servicio descrito por el usuario, sugerí hasta 5 clases Niza ADICIONALES
+que NO estén en la lista actual y que serían razonables registrar también.
+
+Marca: "{marca}"
+Descripción del producto/servicio: "{descripcion}"
+Clases ya seleccionadas: {actuales}
+
+Devolvés ÚNICAMENTE un JSON array, sin texto extra. Máximo 5 elementos:
+[{{"clase": <int 1-45>, "razon": "<una línea>"}}]
+
+Ejemplo: si vende ropa (clase 25), sugerí clase 35 (publicidad/retail) y 18 (cuero).
+Si no podés sugerir nada útil, devolvé [].
+"""
+    raw = _call_gemini(prompt) or _call_claude(prompt)
+    if not raw:
+        return []
+    import re as _re
+    m = _re.search(r"\[.*\]", raw, _re.DOTALL)
+    if not m:
+        return []
+    try:
+        items = json.loads(m.group(0))
+    except Exception:
+        return []
+    out: list[dict] = []
+    seen: set = set()
+    for it in items:
+        try:
+            c = int(it["clase"])
+            if c < 1 or c > 45 or c in (clases_actuales or []) or c in seen:
+                continue
+            seen.add(c)
+            out.append({"clase": c, "razon": (it.get("razon") or "").strip()[:200]})
+        except Exception:
+            continue
+    return out[:5]
 
 
 def _analisis_legal(consulta: Consulta, matches: list) -> str:
