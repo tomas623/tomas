@@ -966,6 +966,171 @@ def tarifas_calcular():
     return _ok(calcular_registro(num_clases, incluye_honorarios))
 
 
+@bp.route("/api/admin/stats", methods=["GET"])
+def admin_stats():
+    """Solo admin: dashboard de estadísticas del negocio."""
+    err = _require_admin()
+    if err is not None:
+        return err
+    from datetime import datetime, timedelta
+    from sqlalchemy import func as _func
+    from database import (
+        AlertaVigilancia, Consulta, FreeSearchLog, Lead,
+        MarcaCliente, Pago, SuscripcionVigilancia, User,
+    )
+
+    hoy = datetime.utcnow()
+    hace_30 = hoy - timedelta(days=30)
+    hace_7 = hoy - timedelta(days=7)
+
+    with get_session() as s:
+        # Usuarios
+        total_users = s.query(_func.count(User.id)).scalar() or 0
+        users_30 = s.query(_func.count(User.id)).filter(User.created_at >= hace_30).scalar() or 0
+        users_admin = s.query(_func.count(User.id)).filter(User.is_admin.is_(True)).scalar() or 0
+
+        # Suscripciones activas
+        subs_activas = (s.query(_func.count(SuscripcionVigilancia.id))
+                        .filter(SuscripcionVigilancia.status == "active")
+                        .filter(SuscripcionVigilancia.tipo.in_(
+                            ["vigilancia_individual", "vigilancia_multi",
+                             "vigilancia_portfolio", "premium"]))
+                        .scalar() or 0)
+        # MRR estimado
+        mrr = (s.query(_func.coalesce(_func.sum(SuscripcionVigilancia.monto), 0))
+               .filter(SuscripcionVigilancia.status == "active",
+                       SuscripcionVigilancia.plan_freq == "mensual")
+               .scalar() or 0)
+        arr_anual = (s.query(_func.coalesce(_func.sum(SuscripcionVigilancia.monto), 0))
+                     .filter(SuscripcionVigilancia.status == "active",
+                             SuscripcionVigilancia.plan_freq == "anual")
+                     .scalar() or 0)
+        mrr_total = float(mrr) + float(arr_anual) / 12.0
+
+        # Suscripciones por tier
+        subs_por_tier_rows = (s.query(SuscripcionVigilancia.tipo,
+                                       _func.count(SuscripcionVigilancia.id))
+                               .filter(SuscripcionVigilancia.status == "active")
+                               .group_by(SuscripcionVigilancia.tipo).all())
+        subs_por_tier = {t: c for t, c in subs_por_tier_rows}
+
+        # Búsquedas free
+        free_searches_30 = (s.query(_func.count(FreeSearchLog.id))
+                            .filter(FreeSearchLog.created_at >= hace_30).scalar() or 0)
+        free_searches_7 = (s.query(_func.count(FreeSearchLog.id))
+                           .filter(FreeSearchLog.created_at >= hace_7).scalar() or 0)
+
+        # Consultas (Nivel 2) - pagos / no pagos
+        consultas_total = s.query(_func.count(Consulta.id)).scalar() or 0
+        consultas_pagas = (s.query(_func.count(Consulta.id))
+                           .filter(Consulta.paid.is_(True)).scalar() or 0)
+        consultas_30 = (s.query(_func.count(Consulta.id))
+                        .filter(Consulta.created_at >= hace_30).scalar() or 0)
+        consultas_pagas_30 = (s.query(_func.count(Consulta.id))
+                              .filter(Consulta.paid.is_(True),
+                                      Consulta.created_at >= hace_30).scalar() or 0)
+
+        # Pagos / revenue
+        revenue_30 = (s.query(_func.coalesce(_func.sum(Pago.monto), 0))
+                      .filter(Pago.status == "approved",
+                              Pago.paid_at >= hace_30).scalar() or 0)
+        revenue_total = (s.query(_func.coalesce(_func.sum(Pago.monto), 0))
+                         .filter(Pago.status == "approved").scalar() or 0)
+        pagos_aprobados_30 = (s.query(_func.count(Pago.id))
+                              .filter(Pago.status == "approved",
+                                      Pago.paid_at >= hace_30).scalar() or 0)
+
+        # Leads
+        total_leads = s.query(_func.count(Lead.id)).scalar() or 0
+        leads_30 = s.query(_func.count(Lead.id)).filter(Lead.created_at >= hace_30).scalar() or 0
+        leads_por_fuente_rows = (s.query(Lead.fuente, _func.count(Lead.id))
+                                  .group_by(Lead.fuente).all())
+        leads_por_fuente = {f or "(sin)": c for f, c in leads_por_fuente_rows}
+
+        # Marcas tracked + alertas
+        marcas_tracked = s.query(_func.count(MarcaCliente.id)).scalar() or 0
+        alertas_30 = (s.query(_func.count(AlertaVigilancia.id))
+                      .filter(AlertaVigilancia.created_at >= hace_30).scalar() or 0)
+        alertas_pendientes = (s.query(_func.count(AlertaVigilancia.id))
+                              .filter(AlertaVigilancia.review_status == "pending_review")
+                              .scalar() or 0)
+
+        # Top marcas buscadas (free) último mes
+        top_marcas_rows = (s.query(FreeSearchLog.marca, _func.count(FreeSearchLog.id).label("n"))
+                           .filter(FreeSearchLog.created_at >= hace_30,
+                                   FreeSearchLog.marca.is_not(None))
+                           .group_by(FreeSearchLog.marca)
+                           .order_by(_func.count(FreeSearchLog.id).desc())
+                           .limit(15).all())
+        top_marcas = [{"marca": m, "veces": int(n)} for m, n in top_marcas_rows]
+
+        # Búsquedas por día últimos 30
+        from sqlalchemy import cast, Date
+        try:
+            por_dia_rows = (s.query(cast(FreeSearchLog.created_at, Date).label("d"),
+                                     _func.count(FreeSearchLog.id))
+                            .filter(FreeSearchLog.created_at >= hace_30)
+                            .group_by("d").order_by("d").all())
+            por_dia = [{"fecha": str(d), "n": int(n)} for d, n in por_dia_rows]
+        except Exception:
+            por_dia = []
+
+        # Últimos leads (lista accionable)
+        leads_recientes_rows = (s.query(Lead)
+                                 .order_by(Lead.created_at.desc())
+                                 .limit(20).all())
+        leads_recientes = [{
+            "id": l.id, "email": l.email, "marca": l.marca, "fuente": l.fuente,
+            "nombre": l.nombre, "telefono": l.telefono,
+            "nurtured_step": l.nurtured_step,
+            "created_at": l.created_at.isoformat() if l.created_at else None,
+        } for l in leads_recientes_rows]
+
+    return _ok({
+        "fecha": hoy.isoformat(),
+        "usuarios": {
+            "total": total_users,
+            "ultimos_30_dias": users_30,
+            "admins": users_admin,
+        },
+        "suscripciones": {
+            "activas": int(subs_activas),
+            "mrr_estimado": round(mrr_total, 2),
+            "arr_anual": float(arr_anual),
+            "por_tier": subs_por_tier,
+        },
+        "busquedas_free": {
+            "ultimos_7": int(free_searches_7),
+            "ultimos_30": int(free_searches_30),
+            "por_dia": por_dia,
+            "top_marcas": top_marcas,
+        },
+        "consultas": {
+            "total": int(consultas_total),
+            "pagas": int(consultas_pagas),
+            "conversion_pct": round(100 * consultas_pagas / consultas_total, 1) if consultas_total else 0,
+            "ultimos_30_dias": int(consultas_30),
+            "pagas_ultimos_30": int(consultas_pagas_30),
+        },
+        "revenue": {
+            "ultimos_30_dias": float(revenue_30),
+            "historico_total": float(revenue_total),
+            "transacciones_ult_30": int(pagos_aprobados_30),
+        },
+        "leads": {
+            "total": int(total_leads),
+            "ultimos_30_dias": int(leads_30),
+            "por_fuente": leads_por_fuente,
+            "recientes": leads_recientes,
+        },
+        "marcas": {
+            "tracked_por_usuarios": int(marcas_tracked),
+            "alertas_ultimos_30": int(alertas_30),
+            "alertas_pendientes_review": int(alertas_pendientes),
+        },
+    })
+
+
 @bp.route("/api/admin/alertas/pendientes", methods=["GET"])
 def admin_alertas_pendientes():
     """Solo admin: lista alertas pendientes de revisión."""

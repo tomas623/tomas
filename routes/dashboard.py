@@ -164,6 +164,10 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       <span x-show="colaCount > 0" class="badge red" style="margin-left:6px;font-size:10px"
             x-text="colaCount"></span>
     </div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='stats'&&'active'"
+         @click="tab='stats'; fetchStats()" style="background:#FEF3C7;color:#92400E">
+      📊 Stats <span style="font-size:11px">(admin)</span>
+    </div>
   </div>
 
   <!-- BUSCAR (premium) -->
@@ -1047,6 +1051,150 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   </div>
 
   <!-- CONFIGURACIÓN -->
+  <!-- STATS (admin) -->
+  <div x-show="tab==='stats' && user.is_admin" class="card" x-cloak>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">📊 Stats del negocio</h3>
+      <button class="small sec" @click="fetchStats()">Refrescar</button>
+    </div>
+
+    <div x-show="!stats" class="empty">Cargando estadísticas...</div>
+
+    <div x-show="stats" x-cloak>
+      <!-- KPIs principales -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px">
+        <div style="background:linear-gradient(135deg,#1B6EF3,#0D1B4B);color:#fff;padding:18px;border-radius:10px">
+          <div style="font-size:12px;opacity:.8;text-transform:uppercase;letter-spacing:.5px">MRR estimado</div>
+          <div style="font-size:28px;font-weight:800;margin-top:4px">
+            $<span x-text="(stats?.suscripciones?.mrr_estimado || 0).toLocaleString('es-AR')"></span>
+          </div>
+          <div style="font-size:11px;opacity:.7;margin-top:2px">por mes recurrente</div>
+        </div>
+        <div style="background:#16A34A;color:#fff;padding:18px;border-radius:10px">
+          <div style="font-size:12px;opacity:.9;text-transform:uppercase;letter-spacing:.5px">Revenue últimos 30d</div>
+          <div style="font-size:28px;font-weight:800;margin-top:4px">
+            $<span x-text="(stats?.revenue?.ultimos_30_dias || 0).toLocaleString('es-AR')"></span>
+          </div>
+          <div style="font-size:11px;opacity:.7;margin-top:2px"
+               x-text="(stats?.revenue?.transacciones_ult_30 || 0) + ' transacciones'"></div>
+        </div>
+        <div style="background:#7C3AED;color:#fff;padding:18px;border-radius:10px">
+          <div style="font-size:12px;opacity:.9;text-transform:uppercase;letter-spacing:.5px">Suscripciones activas</div>
+          <div style="font-size:28px;font-weight:800;margin-top:4px"
+               x-text="stats?.suscripciones?.activas || 0"></div>
+        </div>
+        <div style="background:#D97706;color:#fff;padding:18px;border-radius:10px">
+          <div style="font-size:12px;opacity:.9;text-transform:uppercase;letter-spacing:.5px">Búsquedas free 7d</div>
+          <div style="font-size:28px;font-weight:800;margin-top:4px"
+               x-text="stats?.busquedas_free?.ultimos_7 || 0"></div>
+          <div style="font-size:11px;opacity:.7;margin-top:2px"
+               x-text="(stats?.busquedas_free?.ultimos_30 || 0) + ' en 30d'"></div>
+        </div>
+      </div>
+
+      <!-- Conversion + Usuarios -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px">
+        <div style="background:#F4F5F9;padding:16px;border-radius:10px">
+          <div style="font-weight:700;color:#0D1B4B;margin-bottom:10px">Conversión a pago</div>
+          <div style="font-size:13px;color:#475569">
+            Consultas totales: <strong x-text="stats?.consultas?.total || 0"></strong><br>
+            Pagas: <strong style="color:#16A34A" x-text="stats?.consultas?.pagas || 0"></strong><br>
+            <strong style="font-size:18px;color:#1B6EF3"
+                    x-text="(stats?.consultas?.conversion_pct || 0) + '%'"></strong> tasa de conversión
+          </div>
+        </div>
+        <div style="background:#F4F5F9;padding:16px;border-radius:10px">
+          <div style="font-weight:700;color:#0D1B4B;margin-bottom:10px">Usuarios</div>
+          <div style="font-size:13px;color:#475569">
+            Total: <strong x-text="stats?.usuarios?.total || 0"></strong> ·
+            últimos 30d: <strong x-text="stats?.usuarios?.ultimos_30_dias || 0"></strong><br>
+            Admins: <strong x-text="stats?.usuarios?.admins || 0"></strong><br>
+            Marcas trackeadas: <strong x-text="stats?.marcas?.tracked_por_usuarios || 0"></strong><br>
+            Alertas (30d): <strong x-text="stats?.marcas?.alertas_ultimos_30 || 0"></strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suscripciones por tier -->
+      <div style="background:#fff;border:1px solid #E2E8F0;padding:16px;border-radius:10px;margin-bottom:24px">
+        <h4 style="margin:0 0 10px">Suscripciones por tier</h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <template x-for="(n, tier) in (stats?.suscripciones?.por_tier || {})" :key="'tier-'+tier">
+            <div style="background:#F0F5FF;padding:8px 14px;border-radius:8px;font-size:13px">
+              <strong x-text="tier"></strong>: <span x-text="n"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Top marcas buscadas -->
+      <div style="background:#fff;border:1px solid #E2E8F0;padding:16px;border-radius:10px;margin-bottom:24px">
+        <h4 style="margin:0 0 10px">Top marcas buscadas (últimos 30 días)</h4>
+        <p x-show="!stats?.busquedas_free?.top_marcas?.length" class="empty">Sin búsquedas en el período.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <template x-for="m in (stats?.busquedas_free?.top_marcas || [])" :key="'top-'+m.marca">
+            <span class="badge gray" style="font-size:12px">
+              <strong x-text="m.marca"></strong> · <span x-text="m.veces + '×'"></span>
+            </span>
+          </template>
+        </div>
+      </div>
+
+      <!-- Búsquedas por día -->
+      <div x-show="(stats?.busquedas_free?.por_dia || []).length"
+           style="background:#fff;border:1px solid #E2E8F0;padding:16px;border-radius:10px;margin-bottom:24px">
+        <h4 style="margin:0 0 10px">Búsquedas por día</h4>
+        <div style="display:flex;align-items:end;gap:3px;height:120px;padding:10px 0">
+          <template x-for="d in (stats?.busquedas_free?.por_dia || [])" :key="'day-'+d.fecha">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"
+                 :title="d.fecha + ': ' + d.n">
+              <div :style="'width:100%;background:#1B6EF3;height:' + Math.max(2, Math.min(100, d.n * 4)) + 'px;border-radius:2px 2px 0 0'"></div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Leads por fuente -->
+      <div style="background:#fff;border:1px solid #E2E8F0;padding:16px;border-radius:10px;margin-bottom:24px">
+        <h4 style="margin:0 0 10px">Leads — total <span x-text="stats?.leads?.total || 0"></span>, últimos 30d <span x-text="stats?.leads?.ultimos_30_dias || 0"></span></h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <template x-for="(n, fuente) in (stats?.leads?.por_fuente || {})" :key="'fuente-'+fuente">
+            <div style="background:#F0F5FF;padding:8px 14px;border-radius:8px;font-size:13px">
+              <strong x-text="fuente"></strong>: <span x-text="n"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Leads recientes -->
+      <div style="background:#fff;border:1px solid #E2E8F0;padding:16px;border-radius:10px">
+        <h4 style="margin:0 0 10px">Últimos 20 leads</h4>
+        <p x-show="!stats?.leads?.recientes?.length" class="empty">Sin leads aún.</p>
+        <div x-show="stats?.leads?.recientes?.length" style="overflow-x:auto">
+        <table style="font-size:13px">
+          <thead><tr>
+            <th>Fecha</th><th>Email</th><th>Marca</th><th>Fuente</th><th>Nurturing</th>
+          </tr></thead>
+          <tbody>
+            <template x-for="l in (stats?.leads?.recientes || [])" :key="'lr-'+l.id">
+              <tr>
+                <td x-text="fmtDate(l.created_at)"></td>
+                <td>
+                  <a :href="'mailto:' + l.email" x-text="l.email" style="color:#1B6EF3"></a>
+                </td>
+                <td><strong x-text="l.marca || '—'"></strong></td>
+                <td><span class="badge gray" x-text="l.fuente || '—'"></span></td>
+                <td><span class="badge" :class="l.nurtured_step >= 3 ? 'green' : (l.nurtured_step > 0 ? 'yellow' : 'gray')"
+                          x-text="'step ' + (l.nurtured_step || 0) + '/3'"></span></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- COLA DE REVISIÓN DE ALERTAS (admin) -->
   <div x-show="tab==='cola' && user.is_admin" class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
@@ -1539,6 +1687,7 @@ function dashboard(){
     notoriasItems: [], notoriasFiltro: '', notoriasNueva: '',
     tarifas: null, tarifasLoading: false, tarifasMsg: '',
     colaItems: [], colaCount: 0,
+    stats: null,
     consultas: [], marcas: [], vigilancia: [], alertas: [], pagos: [],
     precios: {vigilancia_marca: 1500, vigilancia_portfolio: 50000, vigilancia_cap: 10},
     modalMarca: false,
@@ -1758,6 +1907,12 @@ function dashboard(){
       if ((scores.conceptual||0) >= 0.75) tags.push('mismo concepto');
       if ((m.estado_code||'').toLowerCase() === 'vigente') tags.push('vigente');
       return tags;
+    },
+
+    async fetchStats(){
+      this.stats = null;
+      const r = await fetch('/api/admin/stats').then(r=>r.json());
+      if (r.ok) this.stats = r.data;
     },
 
     async fetchColaAlertas(){
