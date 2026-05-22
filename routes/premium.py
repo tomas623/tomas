@@ -334,7 +334,15 @@ PREMIUM_PAGE = """<!DOCTYPE html>
       <div class="check">✓</div>
       <div class="feat-text">
         <strong>Hasta tu cap de marcas vigiladas según el plan</strong>
-        <span>3 marcas (Personal), 10 marcas (PyME) o 20 marcas (Agencia). Las cargás por email a tu ejecutivo de cuenta.</span>
+        <span>3 marcas (Personal), 10 marcas (PyME) o 20 marcas (Agencia). Las cargás directamente desde tu cuenta o por Excel.</span>
+      </div>
+    </div>
+
+    <div class="feat">
+      <div class="check">✓</div>
+      <div class="feat-text">
+        <strong>Cuenta privada con tus marcas y alertas</strong>
+        <span>Accedés a tu cuenta para ver el historial de alertas recibidas y administrar el portfolio que vigilamos por vos.</span>
       </div>
     </div>
 

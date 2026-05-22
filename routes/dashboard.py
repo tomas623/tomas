@@ -142,14 +142,17 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   <h1>Hola<span x-show="user.nombre" x-text="', ' + user.nombre"></span> 👋</h1>
 
   <div class="tabs">
-    <div class="tab" :class="tab==='buscar'&&'active'" @click="tab='buscar'">Buscar marca</div>
-    <div class="tab" :class="tab==='consultas'&&'active'" @click="tab='consultas'">Consultas</div>
+    <!-- Tabs visibles para todos los suscriptores: Mis marcas, Alertas, Mi suscripción -->
     <div class="tab" :class="tab==='marcas'&&'active'" @click="tab='marcas'">Mis marcas</div>
-    <div class="tab" :class="tab==='vigilancia'&&'active'" @click="tab='vigilancia'">Vigilancia</div>
     <div class="tab" :class="tab==='alertas'&&'active'" @click="tab='alertas'">Alertas</div>
-    <div class="tab" :class="tab==='pagos'&&'active'" @click="tab='pagos'">Pagos</div>
-    <div class="tab" :class="tab==='perfil'&&'active'" @click="tab='perfil'">Mi perfil</div>
-    <div class="tab" :class="tab==='config'&&'active'" @click="tab='config'">Configuración</div>
+    <div class="tab" :class="tab==='config'&&'active'" @click="tab='config'">Mi suscripción</div>
+
+    <!-- Tabs solo admin: el resto del flujo completo -->
+    <div x-show="user.is_admin" class="tab" :class="tab==='buscar'&&'active'" @click="tab='buscar'">Buscar marca</div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='consultas'&&'active'" @click="tab='consultas'">Consultas</div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='vigilancia'&&'active'" @click="tab='vigilancia'">Vigilancia</div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='pagos'&&'active'" @click="tab='pagos'">Pagos</div>
+    <div x-show="user.is_admin" class="tab" :class="tab==='perfil'&&'active'" @click="tab='perfil'">Perfil</div>
     <div x-show="user.is_admin" class="tab" :class="tab==='notorias'&&'active'"
          @click="tab='notorias'; fetchNotorias()" style="background:#FEF3C7;color:#92400E">
       ⭐ Notorias <span style="font-size:11px">(admin)</span>
@@ -1364,7 +1367,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   </div>
 
   <div x-show="tab==='config'" class="card">
-    <h3 style="margin-top:0">Configuración de cuenta</h3>
+    <h3 style="margin-top:0" x-text="user.is_admin ? 'Configuración de cuenta' : 'Mi suscripción y datos'"></h3>
 
     <label>Nombre</label>
     <input type="text" x-model="config.nombre" placeholder="Cómo querés que te llamemos">
@@ -1630,7 +1633,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 <script>
 function dashboard(){
   return {
-    tab: new URLSearchParams(location.search).get('tab') || 'buscar',
+    tab: new URLSearchParams(location.search).get('tab') || 'marcas',
     user: {email:'', nombre:'', is_admin:false},
     userMenuOpen: false,
     modalPassword: false,
