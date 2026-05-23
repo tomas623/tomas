@@ -186,7 +186,8 @@ def dev_checkout_resolve():
                                 _generar_informe_completo(consulta)
                             except Exception as e:
                                 logger.warning(f"No se pudo pre-generar informe {consulta.id}: {e}")
-                        redirect_url = f"/marca/consulta/{consulta.id}?status=success"
+                        tok = f"&t={consulta.access_token}" if consulta.access_token else ""
+                        redirect_url = f"/marca/consulta/{consulta.id}?status=success{tok}"
                     else:
                         redirect_url = "/dashboard"
                 else:

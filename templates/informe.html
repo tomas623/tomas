@@ -273,7 +273,19 @@
   </div>
 
   <!-- INFORME COMPLETO (cuando pagó) -->
-  <template x-if="data && data.paid">
+  <!-- Informe pago abierto por alguien sin autorización (id adivinado) -->
+  <div class="panel" x-show="data && data.paid && data.authorized === false" x-cloak
+       style="text-align:center;padding:40px">
+    <div style="font-size:40px;margin-bottom:8px">🔒</div>
+    <h2 style="display:block;margin-bottom:4px">Informe privado</h2>
+    <p style="color:var(--gray)">Este informe pertenece a otra cuenta. Si vos lo compraste,
+       abrilo desde el link que te enviamos por email o ingresá a tu panel.</p>
+    <div class="actions" style="justify-content:center;margin-top:16px">
+      <a href="/login" class="btn btn-outline">Ingresar a mi cuenta</a>
+    </div>
+  </div>
+
+  <template x-if="data && data.paid && data.authorized !== false">
     <div>
       <!-- 1. Diagnóstico -->
       <div class="panel">
@@ -366,7 +378,7 @@
           Un abogado especialista te prepara la cotización personalizada en 24 hs.
         </p>
         <div class="actions" style="justify-content:center">
-          <a :href="`/api/marca/consulta/${consultaId}/pdf`" class="btn btn-primary">⬇ Descargar informe en PDF</a>
+          <a :href="`/api/marca/consulta/${consultaId}/pdf` + (accessToken ? `?t=${encodeURIComponent(accessToken)}` : '')" class="btn btn-primary">⬇ Descargar informe en PDF</a>
           <a href="/#planes" class="btn btn-outline">Solicitar cotización de registro</a>
           <a href="/dashboard" class="btn btn-outline">Volver al panel</a>
         </div>
@@ -390,6 +402,7 @@ function informe(consultaId) {
     error: '',
     data: null,
     statusFromMP: new URLSearchParams(location.search).get('status') || '',
+    accessToken: new URLSearchParams(location.search).get('t') || '',
     reintentando: false,
     pollTimer: null,
     payEmail: '',
@@ -403,10 +416,15 @@ function informe(consultaId) {
       return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
     },
 
+    apiUrl() {
+      const q = this.accessToken ? `?t=${encodeURIComponent(this.accessToken)}` : '';
+      return `/api/marca/consulta/${this.consultaId}${q}`;
+    },
+
     async cargar() {
       this.cargando = true;
       try {
-        const r = await fetch(`/api/marca/consulta/${this.consultaId}`);
+        const r = await fetch(this.apiUrl());
         const d = await r.json();
         if (!d.ok) {
           this.error = d.error || 'Informe no encontrado';
@@ -429,7 +447,7 @@ function informe(consultaId) {
       let intentos = 0;
       this.pollTimer = setInterval(async () => {
         intentos++;
-        const r = await fetch(`/api/marca/consulta/${this.consultaId}`);
+        const r = await fetch(this.apiUrl());
         const d = await r.json();
         if (d.ok && d.data.paid) {
           this.data = d.data;

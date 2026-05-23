@@ -24,6 +24,7 @@ import json
 import logging
 import os
 import re
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -520,6 +521,7 @@ def nivel_2_iniciar():
         consulta = Consulta(
             user_id=user_id, email=email, marca=marca,
             descripcion=descripcion, clases=clases,
+            access_token=secrets.token_urlsafe(24),
             nivel="completa", paid=is_full_access,  # admin/premium ya entran como paid
         )
         s.add(consulta)
@@ -554,6 +556,7 @@ def nivel_2_iniciar():
         s.commit()
         consulta_id = consulta.id
         pago_id = pago.id
+        access_token = consulta.access_token
 
     # Generar preferencia de MercadoPago (lazy import)
     try:
@@ -561,6 +564,7 @@ def nivel_2_iniciar():
         pref = create_consulta_preference(
             pago_id=pago_id, consulta_id=consulta_id,
             email=email, marca=marca, monto=monto_final,
+            access_token=access_token,
         )
     except Exception as e:
         logger.exception(f"Error creando preferencia MP: {e}")
@@ -587,12 +591,17 @@ def nivel_2_ver_informe(consulta_id: int):
         if not c:
             return _err("Consulta no encontrada", 404)
 
-        # Permisos: dueño (por email o user) o admin
+        # Permisos: dueño (por email o user), admin, premium, o token de acceso.
+        # El comprador anónimo accede con el token que viaja en el link del email.
         user = current_user()
         is_owner = (user and (user.id == c.user_id or user.email == c.email))
         is_admin = bool(user and user.is_admin)
         from services.auth import has_active_premium
         is_premium = bool(user and has_active_premium(user))
+        token = request.args.get("t", "")
+        token_ok = bool(c.access_token and token
+                        and secrets.compare_digest(token, c.access_token))
+        authorized = bool(is_owner or is_admin or is_premium or token_ok)
         full_access = is_admin or is_premium
 
         # Si el viewer tiene acceso full y la consulta es propia, asegurar paid=True
@@ -609,7 +618,9 @@ def nivel_2_ver_informe(consulta_id: int):
             "diagnostico": c.diagnostico, "created_at": c.created_at.isoformat(),
         }
 
-        if not c.paid:
+        # El informe completo SOLO se sirve a quien está autorizado. Cualquier otro
+        # (incluido un visitante que adivine el id de una consulta paga) ve el preview.
+        if not (c.paid and authorized):
             # Preview: top 3 sin nombres ni titulares
             preview = []
             if c.resultados:
@@ -622,6 +633,7 @@ def nivel_2_ver_informe(consulta_id: int):
                     })
             return _ok({
                 **c_data,
+                "authorized": authorized,
                 "preview": preview,
                 "mensaje": "Aboná la consulta completa para desbloquear el informe.",
                 "monto_pendiente": PRECIO_NIVEL_2,
@@ -635,6 +647,7 @@ def nivel_2_ver_informe(consulta_id: int):
 
         return _ok({
             **c_data,
+            "authorized": True,
             "resultados": c.resultados or [],
             "pre_analisis_ia": c.pre_analisis_ia,
             "diagnostico": c.diagnostico,
@@ -653,7 +666,13 @@ def nivel_2_descargar_pdf(consulta_id: int):
         from services.auth import has_active_premium
         full_access = bool(user and (user.is_admin or has_active_premium(user)))
         is_owner = bool(user and (user.id == c.user_id or user.email == c.email))
+        token = request.args.get("t", "")
+        token_ok = bool(c.access_token and token
+                        and secrets.compare_digest(token, c.access_token))
+        authorized = bool(is_owner or full_access or token_ok)
 
+        if not authorized:
+            return _err("Informe privado. Abrilo desde el link que te enviamos por email.", 403)
         if not (c.paid or (full_access and is_owner)):
             return _err("El informe todavía no está disponible (pago pendiente).", 402)
 

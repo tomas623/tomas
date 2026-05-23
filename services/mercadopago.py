@@ -65,13 +65,14 @@ def _is_dev_mode() -> bool:
 
 def create_consulta_preference(
     pago_id: int, consulta_id: int, email: str, marca: str, monto: float,
-    request_host: Optional[str] = None,
+    request_host: Optional[str] = None, access_token: Optional[str] = None,
 ) -> dict:
     """Crea una preferencia para Checkout Pro y retorna {id, init_point}."""
     base = _base_url(request_host)
-    success_url = f"{base}/marca/consulta/{consulta_id}?status=success"
-    failure_url = f"{base}/marca/consulta/{consulta_id}?status=failure"
-    pending_url = f"{base}/marca/consulta/{consulta_id}?status=pending"
+    tok = f"&t={access_token}" if access_token else ""
+    success_url = f"{base}/marca/consulta/{consulta_id}?status=success{tok}"
+    failure_url = f"{base}/marca/consulta/{consulta_id}?status=failure{tok}"
+    pending_url = f"{base}/marca/consulta/{consulta_id}?status=pending{tok}"
     webhook_url = f"{base}/api/pagos/webhook"
 
     if _is_dev_mode():
@@ -322,7 +323,8 @@ def _process_payment_update(sdk, payment_id: str) -> dict:
                     # Email de confirmación con link al informe
                     try:
                         base = os.getenv("APP_BASE_URL", "")
-                        url = f"{base}/marca/consulta/{consulta.id}"
+                        tok = f"?t={consulta.access_token}" if consulta.access_token else ""
+                        url = f"{base}/marca/consulta/{consulta.id}{tok}"
                         subject, html, text = template_pago_confirmado(
                             consulta.marca, pago.monto, url,
                         )

@@ -186,6 +186,10 @@ class Consulta(Base):
     resultados      = Column(JSON)               # lista completa de coincidencias con score
     pago_id         = Column(Integer, ForeignKey("pagos.id"), nullable=True)
     paid            = Column(Boolean, default=False)
+    # Token secreto para que el comprador anónimo (sin login) acceda a su informe
+    # vía el link del email/redirect. Sin este token (ni ser dueño/admin) solo se
+    # ve el preview, nunca el informe completo.
+    access_token    = Column(String(64))
     created_at      = Column(DateTime, default=datetime.utcnow, index=True)
     viewed_at       = Column(DateTime)
 
@@ -421,6 +425,7 @@ def init_db():
             "ALTER TABLE marcas_cliente ADD COLUMN IF NOT EXISTS aviso_venc_90_at TIMESTAMP",
             "ALTER TABLE marcas_cliente ADD COLUMN IF NOT EXISTS aviso_venc_30_at TIMESTAMP",
             "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS birthday_greeted_year INTEGER",
+            "ALTER TABLE consultas ADD COLUMN IF NOT EXISTS access_token VARCHAR(64)",
             """DO $$ BEGIN
               -- Remove duplicate (acta, clase) pairs keeping the highest id
               DELETE FROM marcas a
