@@ -74,6 +74,16 @@
               border-radius:10px;cursor:pointer;font-family:inherit;color:var(--navy);
               transition:border-color .15s,background .15s}
     .ruta-opt:hover{border-color:var(--blue);background:#F8FAFF}
+    .term{border-bottom:1px dotted var(--blue);cursor:help;position:relative;font-weight:600;color:var(--blue)}
+    .term:hover::after,.term:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:135%;
+      background:var(--navy);color:#fff;padding:9px 11px;border-radius:8px;font-size:12px;font-weight:400;
+      white-space:normal;width:250px;z-index:60;line-height:1.45;box-shadow:0 6px 18px rgba(0,0,0,.22);text-align:left}
+    /* MOBILE: foco en buscar + resultado */
+    @media(max-width:520px){
+      .result-cta{flex-direction:column}
+      .result-cta .btn{flex:1 1 100% !important;min-width:0 !important;width:100%}
+      .term:hover::after,.term:focus::after{width:min(250px,80vw);left:auto;right:0}
+    }
     .verdict-icon{font-size:32px;margin-bottom:8px}
     .verdict-title{font-size:20px;font-weight:700;margin-bottom:6px}
     .verdict-msg{color:var(--gray);font-size:15px}
@@ -375,7 +385,7 @@
             </div>
           </div>
 
-          <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">
+          <div class="result-cta" style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">
             <button class="btn btn-primary" @click="modalInforme=true"
                     :disabled="iniciandoPago"
                     style="flex:2;min-width:240px;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;line-height:1.2;padding:14px 24px">
@@ -446,7 +456,7 @@
           <div style="font-weight:700;color:#0D1B4B;margin-bottom:6px">Cuidá lo que ya construiste</div>
           <div style="font-size:14px;color:#334155;margin-bottom:14px">
             Con la <strong>vigilancia mensual</strong> revisamos el boletín del INPI y te avisamos por email
-            y WhatsApp si alguien intenta registrar algo parecido a tus marcas. Tenés 30 días para oponerte: nosotros te avisamos a tiempo.
+            y WhatsApp si alguien intenta registrar algo parecido a tus marcas. Tenés 90 días para oponerte: nosotros te avisamos a tiempo.
           </div>
           <a href="/premium" class="btn btn-primary">Ver planes de vigilancia</a>
         </div>
@@ -483,7 +493,8 @@
         <div class="step-num">1</div>
         <h3>Verificá disponibilidad</h3>
         <p>Buscamos en las marcas registradas de Argentina y hacemos análisis
-           de <strong>confundibilidad</strong> en tres dimensiones: gráfica, fonética e
+           de <span class="term" tabindex="0" data-tip="Riesgo de que tu marca se confunda con otra ya registrada. El INPI lo evalúa en tres planos: cómo se ve (gráfica), cómo suena (fonética) y qué significa (ideológica). Si hay confundibilidad, te pueden rechazar el registro.">confundibilidad</span>
+           en tres dimensiones: gráfica, fonética e
            ideológica. Aplicamos las reglas que usa el INPI para decidir si una marca puede
            confundirse con otra.</p>
       </div>

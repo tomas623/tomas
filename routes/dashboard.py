@@ -82,6 +82,23 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
                width:100%;font-family:inherit}
   label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px;color:#0D1B4B}
   .empty{text-align:center;padding:40px;color:#64748b}
+  .empty .empty-icon{font-size:38px;display:block;margin-bottom:10px;opacity:.7}
+  .empty .empty-title{font-weight:700;color:#0D1B4B;font-size:16px;margin-bottom:6px}
+  .empty .empty-sub{font-size:14px;max-width:440px;margin:0 auto 16px}
+  .onboard{position:relative;background:linear-gradient(135deg,#F0F5FF,#FFFFFF);
+           border:1px solid #BFD4FF;border-radius:12px;padding:18px 20px;margin-bottom:20px}
+  .onboard-x{position:absolute;top:8px;right:12px;background:none;border:none;font-size:22px;
+             line-height:1;color:#94a3b8;cursor:pointer;padding:0;width:auto}
+  .onboard-title{font-weight:700;color:#0D1B4B;margin-bottom:14px;padding-right:24px}
+  .onboard-steps{display:flex;flex-direction:column;gap:8px}
+  .onboard-step{display:flex;align-items:center;gap:10px;font-size:14px;color:#334155}
+  .onboard-step.done{color:#16A34A}
+  .onboard-step .onboard-check{font-size:16px}
+  .onboard-step button{margin-left:auto}
+  .term{border-bottom:1px dotted #1B6EF3;cursor:help;position:relative;font-weight:600;color:#1B6EF3}
+  .term:hover::after,.term:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:135%;
+    background:#0D1B4B;color:#fff;padding:9px 11px;border-radius:8px;font-size:12px;font-weight:400;
+    white-space:normal;width:250px;z-index:60;line-height:1.45;box-shadow:0 6px 18px rgba(0,0,0,.22)}
   .alert-row{padding:14px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
   .alert-row.alto{background:#FEE2E2}
   .alert-row.medio{background:#FEF9C3}
@@ -140,6 +157,28 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
 
 <main>
   <h1>Hola<span x-show="user.nombre" x-text="', ' + user.nombre"></span> 👋</h1>
+
+  <!-- ONBOARDING: primeros pasos (solo suscriptores, hasta completarlo) -->
+  <div x-show="!user.is_admin && showOnboarding()" x-cloak class="onboard">
+    <button class="onboard-x" @click="dismissOnboarding()" title="Ocultar">×</button>
+    <div class="onboard-title">Bienvenido a tu cuenta. Te faltan un par de pasos para empezar a protegerte:</div>
+    <div class="onboard-steps">
+      <div class="onboard-step done">
+        <span class="onboard-check">✅</span>
+        <span>Suscripción activa</span>
+      </div>
+      <div class="onboard-step" :class="marcas.length && 'done'">
+        <span class="onboard-check" x-text="marcas.length ? '✅' : '⬜'"></span>
+        <span>Cargá tu primera marca</span>
+        <button x-show="!marcas.length" class="small" @click="tab='marcas'; modalMarca=true">Agregar marca</button>
+      </div>
+      <div class="onboard-step" :class="(user.telefono && user.alertas_whatsapp) && 'done'">
+        <span class="onboard-check" x-text="(user.telefono && user.alertas_whatsapp) ? '✅' : '⬜'"></span>
+        <span>Activá alertas por WhatsApp</span>
+        <button x-show="!(user.telefono && user.alertas_whatsapp)" class="small sec" @click="tab='config'">Configurar</button>
+      </div>
+    </div>
+  </div>
 
   <div class="tabs">
     <!-- Tabs visibles para todos los suscriptores: Mis marcas, Alertas, Mi suscripción -->
@@ -792,10 +831,21 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     </div>
     <p style="color:#64748b;font-size:14px;margin-top:0">
       Cargá las marcas que tenés registradas, en trámite o de terceros que te interesa seguir.
-      Te avisamos las fechas clave: oposición (90 días desde la publicación),
-      <strong>DJU</strong> a los 5 años y <strong>renovación</strong> a los 10.
+      Te avisamos las fechas clave:
+      <span class="term" tabindex="0" data-tip="Plazo de 90 días desde que la marca se publica en el boletín del INPI para presentar una oposición si alguien intenta registrar algo igual o parecido a lo tuyo.">oposición</span>
+      (90 días desde la publicación),
+      <span class="term" tabindex="0" data-tip="Declaración Jurada de Uso: a los 5 años de concedida la marca, el INPI exige declarar que la estás usando. Si no la presentás, podés perder derechos.">DJU</span>
+      a los 5 años y
+      <span class="term" tabindex="0" data-tip="La marca vence a los 10 años. La renovación la mantiene vigente otros 10 años. Si no renovás, queda libre para que la registre otro.">renovación</span>
+      a los 10.
     </p>
-    <p x-show="!marcas.length" class="empty">Todavía no cargaste ninguna marca. Tocá "Agregar marca" o "Cargar desde Excel".</p>
+    <div x-show="!marcas.length" class="empty">
+      <span class="empty-icon">🏷️</span>
+      <div class="empty-title">Todavía no cargaste ninguna marca</div>
+      <div class="empty-sub">Cargá la primera para que la vigilemos. ¿Tenés el acta? Mejor.
+        Si no, alcanza con el nombre y la clase.</div>
+      <button class="small" @click="modalMarca=true">+ Agregar mi primera marca</button>
+    </div>
     <div x-show="marcas.length" style="overflow-x:auto">
     <table>
       <thead><tr>
@@ -886,7 +936,12 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   <!-- ALERTAS -->
   <div x-show="tab==='alertas'" class="card">
     <h3 style="margin-top:0">Alertas detectadas</h3>
-    <p x-show="!alertas.length" class="empty">No hay alertas. Si activás vigilancia, te avisamos acá y por email.</p>
+    <div x-show="!alertas.length" class="empty">
+      <span class="empty-icon">🔔</span>
+      <div class="empty-title">Sin alertas por ahora</div>
+      <div class="empty-sub">Buena señal. Las vas a recibir acá y por email cuando aparezca algo
+        parecido a tus marcas en el boletín del INPI. Tenés 90 días para oponerte: te avisamos a tiempo.</div>
+    </div>
     <template x-for="a in alertas" :key="a.id">
       <div class="alert-row" :class="a.nivel">
         <div>
@@ -1730,6 +1785,17 @@ function dashboard(){
     },
     perfilLoading: false, perfilMsg: '',
     premium: null, premiumRenew: true,
+    onboardingDismissed: localStorage.getItem('lp_onboard_dismissed') === '1',
+
+    showOnboarding(){
+      if (this.onboardingDismissed) return false;
+      const pasosPendientes = !this.marcas.length || !(this.user.telefono && this.user.alertas_whatsapp);
+      return pasosPendientes;
+    },
+    dismissOnboarding(){
+      this.onboardingDismissed = true;
+      localStorage.setItem('lp_onboard_dismissed', '1');
+    },
 
     async cargar(){
       const me = await fetch('/api/auth/me').then(r=>r.json());
