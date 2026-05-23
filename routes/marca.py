@@ -823,7 +823,7 @@ def _sugerir_clases_adicionales(marca: str, descripcion: str,
         return []
     from similarity import _call_gemini, _call_claude
     actuales = ", ".join(str(c) for c in (clases_actuales or [])) or "ninguna"
-    prompt = f"""Sos asistente experto en clasificación Niza (1-45) de marcas para el INPI Argentina.
+    prompt = f"""Sos asistente experto en clasificación Niza (1-45) de marcas en Argentina.
 Dado un producto/servicio descrito por el usuario, sugerí hasta 5 clases Niza ADICIONALES
 que NO estén en la lista actual y que serían razonables registrar también.
 
@@ -879,7 +879,8 @@ def _analisis_legal(consulta: Consulta, matches: list) -> str:
             f"score: {m.score:.2f})"
         )
 
-    prompt = f"""Sos un asistente experto en el sistema de marcas del INPI Argentina.
+    prompt = f"""Sos un asistente experto en el sistema de marcas de Argentina.
+No menciones al "INPI" por su nombre; referite a "el registro de marcas" o "el organismo".
 Tu tarea es generar un pre-análisis automatizado de viabilidad de registro a
 partir de las coincidencias detectadas. NO sos abogado y el análisis NO es
 asesoramiento legal: es una orientación previa para que el usuario decida si
@@ -948,7 +949,7 @@ cambiar desinencia, agregar elemento distintivo, otra clase, etc.)
 
 ## Próximos pasos
 (qué hacer — registrar, modificar, vigilar; sugerí coordinar con uno de
-nuestros especialistas para el trámite ante el INPI)
+nuestros especialistas para el trámite de registro)
 
 Sé concreto y conciso, máximo 500 palabras. Evitá afirmaciones tajantes;
 usá fórmulas como "podría", "sugiere", "se recomienda evaluar". Nunca

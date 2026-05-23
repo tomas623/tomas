@@ -91,7 +91,7 @@ def create_consulta_preference(
         "items": [{
             "id": f"consulta-{consulta_id}",
             "title": f"Análisis completo de marca: {marca}",
-            "description": "Informe LegalPacers con coincidencias INPI + pre-análisis legal",
+            "description": "Informe LegalPacers con coincidencias en el registro de marcas + pre-análisis legal",
             "category_id": "services",
             "quantity": 1,
             "currency_id": "ARS",

@@ -26,9 +26,9 @@
 
     <!-- HERO -->
     <div class="hero">
-      <div class="hero-eyebrow">Búsqueda en el INPI</div>
+      <div class="hero-eyebrow">Búsqueda de marcas</div>
       <h1>¿Tu marca está<br><span>disponible</span>?</h1>
-      <p>Verificá si tu marca puede registrarse en Argentina consultando la base de datos oficial del INPI.</p>
+      <p>Verificá si tu marca puede registrarse en Argentina consultando la base oficial de marcas registradas.</p>
 
       <div class="hero-card">
         <div class="form-group" style="margin-bottom: 1rem;">
@@ -43,7 +43,7 @@
           </select>
         </div>
         <button class="btn btn-primary btn-full" id="checkerSearchBtn" onclick="verificarMarca()" style="padding: 0.875rem;">
-          Buscar en INPI
+          Buscar marca
         </button>
       </div>
     </div>
@@ -113,7 +113,7 @@
             <div class="faq-answer">
               <p><strong>$130.000 por tipo y clase de marca.</strong> Es un servicio llave en mano que incluye todo:</p>
               <ul>
-                <li><strong>Análisis de viabilidad profesional:</strong> No solo buscamos el nombre — evaluamos si hay riesgo real de oposición bajo el sistema vigente del INPI.</li>
+                <li><strong>Análisis de viabilidad profesional:</strong> No solo buscamos el nombre — evaluamos si hay riesgo real de oposición bajo el sistema vigente.</li>
                 <li><strong>Gestión y tasas oficiales:</strong> Nos hacemos cargo de los costos del organismo y presentamos el expediente.</li>
                 <li><strong>Seguimiento hasta el título:</strong> Monitoreamos el trámite hasta que tengas la marca concedida.</li>
               </ul>
@@ -126,17 +126,17 @@
               <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="faq-answer">
-              <p>Si no hay oposiciones de terceros, aproximadamente <strong>3 meses</strong>. Mucho más rápido que antes, gracias a los cambios normativos del INPI desde diciembre de 2025.</p>
+              <p>Si no hay oposiciones de terceros, aproximadamente <strong>3 meses</strong>. Mucho más rápido que antes, gracias a los cambios normativos desde diciembre de 2025.</p>
             </div>
           </div>
 
           <div class="faq-item">
             <button class="faq-question" onclick="toggleFaq(this)">
-              <span>¿Cómo funciona el nuevo sistema del INPI?</span>
+              <span>¿Cómo funciona el nuevo sistema de registro?</span>
               <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="faq-answer">
-              <p>Desde diciembre de 2025, <strong>el INPI ya no realiza búsquedas de similitud por cuenta del solicitante.</strong> Si presentás sin análisis previo y alguien se opone, perdés el dinero del trámite.</p>
+              <p>Desde diciembre de 2025, <strong>ya no se realizan búsquedas de similitud de oficio.</strong> Si presentás sin análisis previo y alguien se opone, perdés el dinero del trámite.</p>
               <p style="margin-top:0.75rem">Por eso, antes de cualquier presentación, hacemos un análisis de viabilidad a fondo para minimizar ese riesgo.</p>
             </div>
           </div>
@@ -199,7 +199,7 @@
         <div class="progress-connector" id="conn1"></div>
         <div class="progress-step" id="step2">
           <div class="progress-circle">2</div>
-          <div class="progress-label">INPI</div>
+          <div class="progress-label">Búsqueda</div>
         </div>
         <div class="progress-connector" id="conn2"></div>
         <div class="progress-step" id="step3">
@@ -263,7 +263,7 @@
     <!-- PAGE 2 -->
     <div class="wizard-page" id="page2">
       <div class="card">
-        <h2 class="card-title">Búsqueda en el INPI</h2>
+        <h2 class="card-title">Búsqueda de marcas</h2>
         <p class="card-intro">Buscamos variantes de tu marca en el registro oficial</p>
 
         <div id="page2Error" class="error-box"></div>
@@ -279,12 +279,12 @@
         </div>
 
         <button class="btn btn-primary" id="buscarBtn" onclick="buscarInpi()">
-          Buscar en INPI
+          Buscar marca
         </button>
 
         <div id="inpiLoading" style="display: none; text-align: center; padding: 2rem; margin-top: 2rem;">
           <div class="spinner" style="width: 32px; height: 32px; margin: 0 auto 1rem; border-width: 3px;"></div>
-          <div style="font-weight: 600; color: var(--navy);">Consultando el portal del INPI…</div>
+          <div style="font-weight: 600; color: var(--navy);">Consultando la base de marcas…</div>
           <div id="inpiLoadingSub" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;"></div>
         </div>
 
@@ -373,7 +373,7 @@
   <div class="footer-inner">
     <div class="footer-brand">
       <img src="/static/logo-color.png" alt="Legal Pacers">
-      <p>Estudio especializado en registro y monitoreo de marcas en Argentina. Asesoramiento profesional ante el INPI.</p>
+      <p>Estudio especializado en registro y monitoreo de marcas en Argentina. Asesoramiento profesional en el registro de marcas.</p>
     </div>
     <div class="footer-links">
       <a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%20quiero%20registrar%20mi%20marca"
@@ -392,7 +392,7 @@
     </div>
   </div>
   <div class="footer-bottom">
-    Los resultados se basan en datos públicos del INPI. Consultá las bases de datos oficiales para información actualizada. © 2025 Legal Pacers.
+    Los resultados se basan en datos públicos de marcas. Consultá las bases de datos oficiales para información actualizada. © 2025 Legal Pacers.
   </div>
 </footer>
 
@@ -492,9 +492,9 @@ async function verificarMarca() {
         status.innerHTML = '<div style="padding:1rem;background:#FED7AA;color:#92400E;border-radius:8px;"><strong>⚠ Encontramos ' + data.count + ' coincidencia(s)</strong><br>Revisá los resultados abajo para verificar si son conflictivas.</div>';
         document.getElementById('checkerTable').innerHTML = buildResultsTable(data.resultados);
       } else if (!dbReady) {
-        status.innerHTML = '<div style="padding:1rem;background:#FEF3C7;color:#92400E;border-radius:8px;"><strong>⚠ Base de datos en proceso de carga</strong><br>La búsqueda en tiempo real puede ser incompleta. Estamos cargando el historial de marcas del INPI — disponible en unas horas.</div>';
+        status.innerHTML = '<div style="padding:1rem;background:#FEF3C7;color:#92400E;border-radius:8px;"><strong>⚠ Base de datos en proceso de carga</strong><br>La búsqueda en tiempo real puede ser incompleta. Estamos cargando el historial de marcas registradas — disponible en unas horas.</div>';
       } else {
-        status.innerHTML = '<div style="padding:1rem;background:#DBEAFE;color:#0369A1;border-radius:8px;text-align:center;"><strong>✓ Tu marca podría estar disponible</strong><br>No encontramos marcas idénticas registradas en el INPI.</div>';
+        status.innerHTML = '<div style="padding:1rem;background:#DBEAFE;color:#0369A1;border-radius:8px;text-align:center;"><strong>✓ Tu marca podría estar disponible</strong><br>No encontramos marcas idénticas registradas.</div>';
       }
 
       results.style.display = 'block';
@@ -505,7 +505,7 @@ async function verificarMarca() {
   }
 
   btn.disabled = false;
-  btn.innerHTML = 'Buscar en INPI';
+  btn.innerHTML = 'Buscar marca';
 }
 
 async function guardarLead() {

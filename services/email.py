@@ -190,7 +190,7 @@ def template_pago_confirmado(marca: str, monto: float, informe_url: str) -> tupl
           <a href="{informe_url}" style="background:{ACCENT_COLOR};color:#fff;text-decoration:none;
              padding:14px 28px;border-radius:8px;font-weight:600;display:inline-block">Ver informe</a>
         </p>
-        <p>El informe incluye coincidencias en toda la base del INPI con análisis ortográfico,
+        <p>El informe incluye coincidencias en toda la base de marcas registradas en Argentina con análisis ortográfico,
            fonético y conceptual, además del pre-análisis automático de viabilidad de registro.</p>
     """, f"Tu informe de \"{marca}\" está listo")
     text = f"Pago confirmado. Ver informe: {informe_url}"
@@ -211,12 +211,12 @@ def template_alerta_vigilancia(
               <td style="padding:8px 0;text-align:right;font-weight:600">{marca_nueva}</td></tr>
           <tr><td style="padding:8px 0;font-size:13px;color:#64748b">Titular</td>
               <td style="padding:8px 0;text-align:right">{titular or '—'}</td></tr>
-          <tr><td style="padding:8px 0;font-size:13px;color:#64748b">Clase INPI</td>
+          <tr><td style="padding:8px 0;font-size:13px;color:#64748b">Clase</td>
               <td style="padding:8px 0;text-align:right">{clase}</td></tr>
           <tr><td style="padding:8px 0;font-size:13px;color:#64748b">Nivel de similitud</td>
               <td style="padding:8px 0;text-align:right;color:{color};font-weight:700;text-transform:uppercase">{nivel}</td></tr>
         </table>
-        <p style="margin:0 0 24px">Tenés 30 días desde la publicación para presentar oposición ante el INPI.
+        <p style="margin:0 0 24px">Tenés 90 días desde la publicación para presentar la oposición.
            Coordiná con un abogado para evaluar el caso.</p>
         <p style="margin:0 0 12px">
           <a href="{dashboard_url}" style="background:{ACCENT_COLOR};color:#fff;text-decoration:none;
@@ -257,7 +257,7 @@ def template_lead_nurturing(step: int, marca: str, search_url: str,
     """Secuencia de 3 emails post consulta gratuita."""
     if step == 1:
         # Día 1 — refuerzo del valor de registrar
-        subject = f"3 razones para registrar \"{marca}\" en el INPI"
+        subject = f"3 razones para registrar \"{marca}\""
         body = f"""
             <h2 style="color:{BRAND_COLOR};margin:0 0 16px">¿Por qué registrar tu marca?</h2>
             <p>Hace poco hiciste una consulta sobre <strong>"{marca}"</strong>. Estos son los 3 motivos
@@ -277,11 +277,11 @@ def template_lead_nurturing(step: int, marca: str, search_url: str,
         subject = f"¿Cuánto tarda registrar \"{marca}\"?"
         body = f"""
             <h2 style="color:{BRAND_COLOR};margin:0 0 16px">Plazos y costos reales en Argentina</h2>
-            <p>Te dejamos la información concreta sobre el registro de marcas en INPI:</p>
+            <p>Te dejamos la información concreta sobre el registro de marcas en Argentina:</p>
             <ul>
               <li><strong>Plazo:</strong> 18-24 meses si no hay oposiciones (las hay rara vez).</li>
               <li><strong>Vigencia:</strong> 10 años, renovables indefinidamente.</li>
-              <li><strong>Costos del INPI:</strong> los abona el cliente directamente (no van a través de nosotros).</li>
+              <li><strong>Tasas oficiales:</strong> las abona el cliente directamente (no van a través de nosotros).</li>
               <li><strong>Honorarios profesionales:</strong> los cotizamos según el caso.</li>
             </ul>
             <p>Si querés avanzar, solicitá una cotización para "{marca}":</p>

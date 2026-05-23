@@ -274,7 +274,7 @@ PREMIUM_PAGE = """<!DOCTYPE html>
   <span class="badge">Vigilancia de marcas</span>
   <h1>Que nadie registre algo parecido a tu marca sin que te enteres</h1>
   <p style="color:#475569;font-size:17px">
-    Vigilamos el boletín del INPI todas las semanas. Si aparece una marca similar
+    Vigilamos el boletín oficial de marcas todas las semanas. Si aparece una marca similar
     a las tuyas, te avisamos por email y WhatsApp para que puedas presentar oposición a tiempo.
   </p>
 
@@ -308,7 +308,7 @@ PREMIUM_PAGE = """<!DOCTYPE html>
       <div class="compare-price">desde ${{ "{:,.0f}".format(tiers.personal.precio_mes).replace(",", ".") }}<small>/ mes</small></div>
       <p>Ya tenés marcas registradas y querés que <strong>nadie las copie</strong> sin que te enteres.</p>
       <ul>
-        <li>Escaneo quincenal del boletín del INPI</li>
+        <li>Escaneo quincenal del boletín oficial de marcas</li>
         <li>Alertas por email y WhatsApp con el plazo de oposición</li>
         <li>Hasta 3, 10 o 20 marcas según el plan</li>
         <li>Panel privado con tus marcas y alertas</li>
@@ -381,7 +381,7 @@ PREMIUM_PAGE = """<!DOCTYPE html>
     <div class="feat">
       <div class="check">✓</div>
       <div class="feat-text">
-        <strong>Aviso quincenal de similitudes en INPI</strong>
+        <strong>Aviso quincenal de similitudes nuevas</strong>
         <span>Cada 15 días escaneamos los boletines nuevos contra tus marcas y te avisamos si aparece algo parecido.</span>
       </div>
     </div>

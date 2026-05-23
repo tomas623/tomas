@@ -395,7 +395,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
                     padding:8px 12px;background:#F4F5F9;border-radius:6px">
             <strong>Elemento predominante (Mot Vedette):</strong>
             <span x-text="buscarResult.mot_vedette" style="font-weight:600;color:#1B6EF3"></span>
-            — Es la palabra que más capta atención. El INPI lo usa para comparar marcas con varios términos.
+            — Es la palabra que más capta atención. Se usa para comparar marcas con varios términos.
           </p>
         </div>
 
@@ -832,9 +832,9 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     <p style="color:#64748b;font-size:14px;margin-top:0">
       Cargá las marcas que tenés registradas, en trámite o de terceros que te interesa seguir.
       Te avisamos las fechas clave:
-      <span class="term" tabindex="0" data-tip="Plazo de 90 días desde que la marca se publica en el boletín del INPI para presentar una oposición si alguien intenta registrar algo igual o parecido a lo tuyo.">oposición</span>
+      <span class="term" tabindex="0" data-tip="Plazo de 90 días desde que la marca se publica en el boletín oficial de marcas para presentar una oposición si alguien intenta registrar algo igual o parecido a lo tuyo.">oposición</span>
       (90 días desde la publicación),
-      <span class="term" tabindex="0" data-tip="Declaración Jurada de Uso: a los 5 años de concedida la marca, el INPI exige declarar que la estás usando. Si no la presentás, podés perder derechos.">DJU</span>
+      <span class="term" tabindex="0" data-tip="Declaración Jurada de Uso: a los 5 años de concedida la marca, se exige declarar que la estás usando. Si no la presentás, podés perder derechos.">DJU</span>
       a los 5 años y
       <span class="term" tabindex="0" data-tip="La marca vence a los 10 años. La renovación la mantiene vigente otros 10 años. Si no renovás, queda libre para que la registre otro.">renovación</span>
       a los 10.
@@ -900,7 +900,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
   <div x-show="tab==='vigilancia'" class="card">
     <h3 style="margin-top:0">Suscripciones de vigilancia</h3>
     <p style="color:#64748b">
-      Cada semana, cuando el INPI publica su boletín, escaneamos automáticamente
+      Cada semana, cuando se publica el boletín oficial de marcas, escaneamos automáticamente
       las marcas nuevas y te alertamos por email y en este panel si alguna se parece a las tuyas.
       Tu plan <strong>Premium</strong> incluye <strong x-text="precios.vigilancia_cap + ' vigilancias activas'"></strong>;
       las adicionales son $<span x-text="precios.vigilancia_marca.toLocaleString('es-AR')"></span> ARS / mes cada una.
@@ -940,7 +940,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       <span class="empty-icon">🔔</span>
       <div class="empty-title">Sin alertas por ahora</div>
       <div class="empty-sub">Buena señal. Las vas a recibir acá y por email cuando aparezca algo
-        parecido a tus marcas en el boletín del INPI. Tenés 90 días para oponerte: te avisamos a tiempo.</div>
+        parecido a tus marcas en el boletín oficial de marcas. Tenés 90 días para oponerte: te avisamos a tiempo.</div>
     </div>
     <template x-for="a in alertas" :key="a.id">
       <div class="alert-row" :class="a.nivel">
@@ -1296,11 +1296,11 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     </div>
   </div>
 
-  <!-- TARIFAS INPI (admin) -->
+  <!-- TARIFAS OFICIALES (admin) -->
   <div x-show="tab==='tarifas' && user.is_admin" class="card">
-    <h3 style="margin-top:0">💰 Tarifas INPI + Honorarios LegalPacers</h3>
+    <h3 style="margin-top:0">💰 Tasas oficiales + Honorarios LegalPacers</h3>
     <p style="color:#64748b;font-size:13px;margin:0 0 6px">
-      Editá las tarifas vigentes — el INPI las actualiza periódicamente.
+      Editá las tarifas vigentes — se actualizan periódicamente.
       Estos valores alimentan el calculador en el portal y los presupuestos automáticos.
     </p>
     <p style="font-size:12px;color:#64748b;margin:0 0 18px">
@@ -1309,7 +1309,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
     </p>
 
     <h4 style="margin:18px 0 8px;color:#1B6EF3;font-size:14px;text-transform:uppercase;letter-spacing:.5px">
-      Tasas oficiales del INPI (ARS)
+      Tasas oficiales (ARS)
     </h4>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <template x-for="(val, key) in (tarifas?.tasas_inpi || {})" :key="'t-'+key">
@@ -1359,7 +1359,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
       <template x-for="n in [1,2,3,5]" :key="'calc-'+n">
         <div style="background:#F4F5F9;padding:12px;border-radius:8px;font-size:13px">
           <div style="font-weight:700;color:#0D1B4B"><span x-text="n"></span> clase<span x-show="n>1">s</span></div>
-          <div x-text="'Tasa INPI: $' + ((tarifas?.tasas_inpi?.solicitud_marca_x_clase || 0) * n).toLocaleString('es-AR')"></div>
+          <div x-text="'Tasa oficial: $' + ((tarifas?.tasas_inpi?.solicitud_marca_x_clase || 0) * n).toLocaleString('es-AR')"></div>
           <div x-text="'Honorarios: $' + (((tarifas?.honorarios_lp?.registro_1_clase || 0) + (tarifas?.honorarios_lp?.registro_clase_adicional || 0) * Math.max(0, n-1))).toLocaleString('es-AR')"></div>
           <div style="font-weight:700;margin-top:4px"
                x-text="'TOTAL: $' + (((tarifas?.tasas_inpi?.solicitud_marca_x_clase || 0) * n) + ((tarifas?.honorarios_lp?.registro_1_clase || 0) + (tarifas?.honorarios_lp?.registro_clase_adicional || 0) * Math.max(0, n-1))).toLocaleString('es-AR')"></div>
@@ -1505,7 +1505,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html>
           <input type="number" x-model.number="nueva.clase" min="1" max="45" placeholder="ej: 25">
         </div>
         <div>
-          <label>Acta INPI (opcional)</label>
+          <label>Nº de acta (opcional)</label>
           <input type="text" x-model="nueva.acta">
         </div>
       </div>
@@ -2392,7 +2392,7 @@ def api_marcas_template():
     columns = [
         ("denominacion", "denominación", "Nombre exacto de la marca", 28),
         ("clase", "clase", "Clase Niza (1-45)", 8),
-        ("acta", "acta", "Nº de acta INPI (opcional)", 14),
+        ("acta", "acta", "Nº de acta (opcional)", 14),
         ("titular", "titular", "Solo si es marca de tercero", 22),
         ("estado", "estado", "solicitada / publicada / oposicion / concedida / vencida", 16),
         ("es_propia", "es_propia", "sí / no", 10),
