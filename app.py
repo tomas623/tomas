@@ -120,6 +120,18 @@ def _trigger_bulk_import(years=10, from_override=None, to_override=None, limit=N
     return True
 
 
+# Aviso de configuración de email: si no hay transporte, los emails (credenciales
+# Premium, confirmación de pago, alertas, vencimientos) NO se envían.
+try:
+    from services.email import email_configured
+    if not email_configured():
+        logger.warning(
+            "⚠ EMAIL NO CONFIGURADO: falta RESEND_API_KEY o SMTP_HOST. "
+            "No se enviarán credenciales Premium, confirmaciones de pago ni alertas."
+        )
+except Exception as _e:
+    logger.warning(f"No se pudo chequear config de email: {_e}")
+
 # Auto-start import on every deploy — resume logic skips already-imported bulletins quickly
 try:
     logger.info("Startup: auto-starting import (will skip already-imported bulletins)")

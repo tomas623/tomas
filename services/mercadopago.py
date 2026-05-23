@@ -369,13 +369,20 @@ def _process_preapproval_update(sdk, preapproval_id: str) -> dict:
             try:
                 from database import User
                 user = s.query(User).filter_by(id=sub.user_id).first()
-                if user:
-                    _send_premium_welcome(user, sub.metadata_json["pending_password"])
+                if user and _send_premium_welcome(user, sub.metadata_json["pending_password"]):
                     sent_credentials = True
+                    # Solo limpiamos la password si el email REALMENTE salió;
+                    # si no, la dejamos para reintentar y no perder las credenciales.
                     md = dict(sub.metadata_json or {})
                     md.pop("pending_password", None)
                     md["credentials_sent_at"] = datetime.utcnow().isoformat()
                     sub.metadata_json = md
+                elif user:
+                    logger.error(
+                        "Credenciales Premium NO enviadas a %s (sub#%s): el email no salió. "
+                        "Se conserva pending_password para reintentar.",
+                        user.email, sub.id,
+                    )
             except Exception as e:
                 logger.exception(f"No se pudo mandar credenciales premium {sub.id}: {e}")
         # Si cancelan/pausan la Premium, pausamos también todas las vigilancias
@@ -398,8 +405,9 @@ def _process_preapproval_update(sdk, preapproval_id: str) -> dict:
             "paused_covered": paused_covered}
 
 
-def _send_premium_welcome(user, password: str) -> None:
-    """Manda el email de bienvenida Premium con credenciales temporales."""
+def _send_premium_welcome(user, password: str) -> bool:
+    """Manda el email de bienvenida Premium con credenciales temporales.
+    Retorna True si el email salió (para no perder las credenciales si falla)."""
     from services.email import send_email, _wrap
     base = os.getenv("PUBLIC_BASE_URL", "").rstrip("/") or ""
     login_url = f"{base}/login" if base else "/login"
@@ -428,8 +436,8 @@ def _send_premium_welcome(user, password: str) -> None:
             f"Usuario: {user.email}\nContraseña: {password}\n\n"
             f"Accedé al panel: {login_url}")
 
-    send_email(user.email, "Tu cuenta Premium en LegalPacers ya está activa",
-               html, text=text)
+    return send_email(user.email, "Tu cuenta Premium en LegalPacers ya está activa",
+                      html, text=text)
 
 
 def _process_recurring_payment(sdk, authorized_payment_id: str) -> dict:

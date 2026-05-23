@@ -113,6 +113,11 @@ def _send_via_smtp(
         return False
 
 
+def email_configured() -> bool:
+    """True si hay al menos un transporte de email configurado."""
+    return bool(os.getenv("RESEND_API_KEY") or os.getenv("SMTP_HOST"))
+
+
 def send_email(
     to: str,
     subject: str,
@@ -121,10 +126,23 @@ def send_email(
     attachment_bytes: Optional[bytes] = None,
     filename: Optional[str] = None,
 ) -> bool:
-    """Envía un email; intenta Resend primero, SMTP como fallback."""
+    """Envía un email; intenta Resend primero, SMTP como fallback.
+
+    Nunca falla en silencio: si no hay transporte configurado lo avisa por log
+    (WARNING), y si todos los transportes configurados fallan lo loguea (ERROR).
+    """
+    if not email_configured():
+        logger.warning(
+            "Email NO enviado a %s ('%s'): falta configurar RESEND_API_KEY o SMTP_HOST.",
+            to, subject,
+        )
+        return False
     if _send_via_resend(to, subject, html, text, attachment_bytes, filename):
         return True
-    return _send_via_smtp(to, subject, html, text, attachment_bytes, filename)
+    if _send_via_smtp(to, subject, html, text, attachment_bytes, filename):
+        return True
+    logger.error("Email a %s ('%s') falló en todos los transportes configurados.", to, subject)
+    return False
 
 
 # ─────────────────────────────────────────────────────────────────────

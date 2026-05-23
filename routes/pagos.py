@@ -211,13 +211,14 @@ def dev_checkout_resolve():
                     from services.mercadopago import _send_premium_welcome
                     user = s.query(User).filter_by(id=sub.user_id).first()
                     if user:
-                        _send_premium_welcome(user, sub.metadata_json["pending_password"])
-                        credentials_sent = True
-                        md = dict(sub.metadata_json or {})
-                        # Dejamos la password en metadata en dev para poder verla,
-                        # pero marcamos como enviada
-                        md["credentials_sent_at"] = datetime.utcnow().isoformat()
-                        sub.metadata_json = md
+                        credentials_sent = _send_premium_welcome(
+                            user, sub.metadata_json["pending_password"])
+                        if credentials_sent:
+                            md = dict(sub.metadata_json or {})
+                            # Dejamos la password en metadata en dev para poder verla,
+                            # pero marcamos como enviada
+                            md["credentials_sent_at"] = datetime.utcnow().isoformat()
+                            sub.metadata_json = md
                 except Exception:
                     logger.exception("Dev checkout: error mandando credenciales")
             s.commit()
