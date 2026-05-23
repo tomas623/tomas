@@ -366,7 +366,8 @@
           Un abogado especialista te prepara la cotización personalizada en 24 hs.
         </p>
         <div class="actions" style="justify-content:center">
-          <a href="/#planes" class="btn btn-primary">Solicitar cotización de registro</a>
+          <a :href="`/api/marca/consulta/${consultaId}/pdf`" class="btn btn-primary">⬇ Descargar informe en PDF</a>
+          <a href="/#planes" class="btn btn-outline">Solicitar cotización de registro</a>
           <a href="/dashboard" class="btn btn-outline">Volver al panel</a>
         </div>
       </div>

@@ -27,7 +27,7 @@ import re
 from datetime import datetime, timedelta
 from typing import Optional
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from sqlalchemy import func
 
 from database import Consulta, FreeSearchLog, Lead, Pago, get_session
@@ -628,6 +628,57 @@ def nivel_2_ver_informe(consulta_id: int):
             "pre_analisis_ia": c.pre_analisis_ia,
             "diagnostico": c.diagnostico,
         })
+
+
+@bp.route("/api/marca/consulta/<int:consulta_id>/pdf", methods=["GET"])
+def nivel_2_descargar_pdf(consulta_id: int):
+    """Devuelve el informe completo en PDF. Solo si la consulta está paga."""
+    with get_session() as s:
+        c = s.query(Consulta).filter_by(id=consulta_id).first()
+        if not c:
+            return _err("Consulta no encontrada", 404)
+
+        user = current_user()
+        from services.auth import has_active_premium
+        full_access = bool(user and (user.is_admin or has_active_premium(user)))
+        is_owner = bool(user and (user.id == c.user_id or user.email == c.email))
+
+        if not (c.paid or (full_access and is_owner)):
+            return _err("El informe todavía no está disponible (pago pendiente).", 402)
+
+        # Generar el informe si todavía no existe
+        if not c.resultados:
+            _generar_informe_completo(c)
+            c.paid = True
+            s.commit()
+            s.refresh(c)
+
+        marca = c.marca
+        descripcion = c.descripcion
+        clases = c.clases or []
+        diagnostico = c.diagnostico
+        pre_analisis = c.pre_analisis_ia
+        resultados = c.resultados or []
+        created_at = c.created_at
+
+    try:
+        from pdf_generator import LegalPacersPDF
+        buf = LegalPacersPDF().generate_consulta(
+            marca=marca, descripcion=descripcion, clases=clases,
+            diagnostico=diagnostico, pre_analisis_ia=pre_analisis,
+            resultados=resultados, fecha=created_at,
+        )
+    except Exception as e:
+        logger.exception(f"Error generando PDF de consulta {consulta_id}: {e}")
+        return _err("No pudimos generar el PDF. Probá de nuevo o escribinos.", 500)
+
+    safe_marca = re.sub(r"[^A-Za-z0-9_-]+", "_", (marca or "marca")).strip("_") or "marca"
+    filename = f"Informe_{safe_marca}_LegalPacers.pdf"
+    return Response(
+        buf.getvalue(),
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def _generar_informe_completo(consulta: Consulta) -> None:
