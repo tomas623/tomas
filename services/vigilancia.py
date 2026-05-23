@@ -98,6 +98,11 @@ def run_vigilancia_post_import(window_hours: int = 24) -> VigilanciaResult:
     return result
 
 
+# Alias público. El cron semanal y otros callers usan `run_vigilancia`;
+# los scripts de import usan `run_vigilancia_post_import`. Misma función.
+run_vigilancia = run_vigilancia_post_import
+
+
 def _vigilar_suscripcion(s, sub: SuscripcionVigilancia,
                          boletin_nums: list[int]) -> int:
     """Vigila una suscripción contra los boletines indicados.
