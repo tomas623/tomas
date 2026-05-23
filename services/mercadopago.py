@@ -309,6 +309,16 @@ def _process_payment_update(sdk, payment_id: str) -> dict:
                 if consulta and not consulta.paid:
                     consulta.paid = True
 
+                    # Pre-generar el informe ahora (búsqueda + IA) para que la
+                    # primera vista del cliente sea instantánea y el link del
+                    # email funcione sin latencia. Si falla, se generará on-demand.
+                    if not consulta.resultados:
+                        try:
+                            from routes.marca import _generar_informe_completo
+                            _generar_informe_completo(consulta)
+                        except Exception as e:
+                            logger.warning(f"No se pudo pre-generar informe {consulta.id}: {e}")
+
                     # Email de confirmación con link al informe
                     try:
                         base = os.getenv("APP_BASE_URL", "")

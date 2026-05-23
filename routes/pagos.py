@@ -180,6 +180,12 @@ def dev_checkout_resolve():
                                 .filter_by(pago_id=p.id).first())
                     if consulta:
                         consulta.paid = True
+                        if not consulta.resultados:
+                            try:
+                                from routes.marca import _generar_informe_completo
+                                _generar_informe_completo(consulta)
+                            except Exception as e:
+                                logger.warning(f"No se pudo pre-generar informe {consulta.id}: {e}")
                         redirect_url = f"/marca/consulta/{consulta.id}?status=success"
                     else:
                         redirect_url = "/dashboard"
