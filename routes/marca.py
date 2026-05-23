@@ -30,7 +30,7 @@ from typing import Optional
 from flask import Blueprint, jsonify, request, Response
 from sqlalchemy import func
 
-from database import Consulta, FreeSearchLog, Lead, Pago, get_session
+from database import Consulta, FreeSearchLog, Lead, Pago, get_session, count_marcas
 from services.auth import current_user
 from services.domains import check_domains
 from services.social import check_handles
@@ -173,6 +173,17 @@ def nivel_1_check():
         return _err("El nombre de la marca es requerido")
     if email and not EMAIL_RE.match(email):
         return _err("Email inválido")
+
+    # Si la base de marcas está vacía (deploy nuevo o import en curso) NO podemos
+    # dar un veredicto: "sin coincidencias" sería un falso "disponible" peligroso.
+    # Avisamos y no consumimos una búsqueda gratuita.
+    if count_marcas() == 0:
+        return jsonify({
+            "ok": False,
+            "error": ("Estamos actualizando la base de marcas. "
+                      "Probá de nuevo en unos minutos."),
+            "db_loading": True,
+        }), 503
 
     # Normalizar clases a int para validar antes del rate limit
     try:
