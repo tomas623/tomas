@@ -24,6 +24,7 @@ import argparse
 import socket
 import subprocess
 import tempfile
+import threading
 import urllib.request
 import urllib.error
 from datetime import date, datetime
@@ -333,8 +334,12 @@ def import_bulletin(num: int, dry_run: bool = False, timeout: int = 90) -> dict:
         elapsed = time.time() - start_time
         raise TimeoutError(f"Bulletin {num} processing exceeded {timeout}s (elapsed: {elapsed:.1f}s)")
 
-    # Set absolute timeout (Unix only — Windows has no SIGALRM, relies on httpx/curl timeouts inside download_bulletin)
-    has_sigalrm = hasattr(signal, "SIGALRM")
+    # Set absolute timeout via SIGALRM. Solo funciona en el hilo principal
+    # (signal.signal lo exige). Cuando el import corre en un hilo de fondo
+    # (arranque del server) o en Windows, no hay SIGALRM y dependemos de los
+    # timeouts de httpx/curl dentro de download_bulletin.
+    has_sigalrm = (hasattr(signal, "SIGALRM")
+                   and threading.current_thread() is threading.main_thread())
     old_handler = None
     if has_sigalrm:
         old_handler = signal.signal(signal.SIGALRM, timeout_handler)
