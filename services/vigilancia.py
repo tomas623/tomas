@@ -300,9 +300,14 @@ def run_avisos_vencimiento() -> int:
 
     with get_session() as s:
         for fecha_obj, dias in objetivos.items():
+            stamp_attr = "aviso_venc_90_at" if dias == 90 else "aviso_venc_30_at"
             marcas = (s.query(MarcaCliente)
                       .filter(MarcaCliente.fecha_vencimiento == fecha_obj).all())
             for m in marcas:
+                # Idempotencia: si ya avisamos este hito para esta marca, saltar.
+                # Evita el doble envío cuando el cron diario y el semanal coinciden.
+                if getattr(m, stamp_attr, None):
+                    continue
                 user = s.query(User).filter_by(id=m.user_id).first()
                 if not user:
                     continue
@@ -320,6 +325,7 @@ def run_avisos_vencimiento() -> int:
                 )
                 if send_email(user.email, subject, html, text=text):
                     enviados += 1
+                    setattr(m, stamp_attr, datetime.utcnow())
 
                 if user.alertas_whatsapp and user.telefono:
                     try:
@@ -331,6 +337,7 @@ def run_avisos_vencimiento() -> int:
                         )
                     except Exception as e:
                         logger.warning(f"WhatsApp vencimiento falló (no crítico): {e}")
+        s.commit()
     logger.info(f"Avisos de vencimiento enviados: {enviados}")
     return enviados
 

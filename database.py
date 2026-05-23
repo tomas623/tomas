@@ -277,6 +277,10 @@ class MarcaCliente(Base):
     fecha_concesion   = Column(Date)
     fecha_vencimiento = Column(Date)
     notas           = Column(Text)
+    # Idempotencia de los avisos de vencimiento (90 / 30 días antes): evitan el
+    # doble envío cuando el cron diario y el semanal corren el mismo día.
+    aviso_venc_90_at = Column(DateTime)
+    aviso_venc_30_at = Column(DateTime)
     created_at      = Column(DateTime, default=datetime.utcnow)
 
 
@@ -410,6 +414,8 @@ def init_db():
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS domicilio VARCHAR(400)",
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS boletin_num INTEGER",
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS fecha_boletin DATE",
+            "ALTER TABLE marcas_cliente ADD COLUMN IF NOT EXISTS aviso_venc_90_at TIMESTAMP",
+            "ALTER TABLE marcas_cliente ADD COLUMN IF NOT EXISTS aviso_venc_30_at TIMESTAMP",
             """DO $$ BEGIN
               -- Remove duplicate (acta, clase) pairs keeping the highest id
               DELETE FROM marcas a
