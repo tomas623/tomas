@@ -208,7 +208,24 @@ def iniciar():
 PREMIUM_PAGE = """<!DOCTYPE html>
 <html lang="es"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Suscripción Premium — LegalPacers</title>
+<title>Vigilancia de marcas — LegalPacers</title>
+<meta name="description" content="Que nadie registre algo parecido a tu marca sin que te enteres. Vigilamos el boletín de marcas y te avisamos por email y WhatsApp para que puedas oponerte a tiempo.">
+<link rel="icon" href="/static/logo-icon.png">
+<link rel="canonical" href="https://legalpacers.com/premium">
+<meta name="theme-color" content="#0D1B4B">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="LegalPacers">
+<meta property="og:locale" content="es_AR">
+<meta property="og:url" content="https://legalpacers.com/premium">
+<meta property="og:title" content="Vigilá tu marca: que nadie la copie sin que te enteres">
+<meta property="og:description" content="Vigilamos las marcas nuevas y te avisamos por email y WhatsApp si aparece algo parecido a la tuya. Desde un plan mensual, sin permanencia.">
+<meta property="og:image" content="https://legalpacers.com/static/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Vigilá tu marca: que nadie la copie sin que te enteres">
+<meta name="twitter:description" content="Vigilamos las marcas nuevas y te avisamos por email y WhatsApp si aparece algo parecido a la tuya. Desde un plan mensual, sin permanencia.">
+<meta name="twitter:image" content="https://legalpacers.com/static/og-image.png">
 <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
 <style>
   *{box-sizing:border-box}

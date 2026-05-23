@@ -15,7 +15,7 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
 
-from flask import Flask, render_template, render_template_string, request, jsonify
+from flask import Flask, render_template, render_template_string, request, jsonify, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
 from anthropic import Anthropic
@@ -238,6 +238,46 @@ def save_lead(nombre: str, email: str, telefono: str, marca: str, descripcion: s
 def index():
     """Landing nueva (Nivel 1 + plans + FAQ)."""
     return render_template("index.html")
+
+
+@app.route("/robots.txt")
+def robots_txt():
+    """Permite indexar las páginas públicas; bloquea panel, admin y API."""
+    base = (os.getenv("APP_BASE_URL") or "https://legalpacers.com").rstrip("/")
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /api/\n"
+        "Disallow: /admin\n"
+        "Disallow: /dashboard\n"
+        "Disallow: /login\n"
+        "Disallow: /logout\n"
+        "Disallow: /auth/\n"
+        "Disallow: /dev/\n"
+        "Disallow: /marca/consulta/\n"
+        f"\nSitemap: {base}/sitemap.xml\n"
+    )
+    return Response(body, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    """Sitemap con las páginas públicas indexables."""
+    base = (os.getenv("APP_BASE_URL") or "https://legalpacers.com").rstrip("/")
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    pages = [("/", "1.0"), ("/premium", "0.8")]
+    urls = "".join(
+        f"  <url><loc>{base}{path}</loc><lastmod>{today}</lastmod>"
+        f"<priority>{prio}</priority></url>\n"
+        for path, prio in pages
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{urls}"
+        "</urlset>\n"
+    )
+    return Response(xml, mimetype="application/xml")
 
 
 @app.route("/relevamiento")
