@@ -55,6 +55,21 @@ FREE_SEARCH_LIMIT = int(os.getenv("FREE_SEARCH_LIMIT", "3"))
 FREE_SEARCH_WINDOW_HOURS = int(os.getenv("FREE_SEARCH_WINDOW_HOURS", "168"))
 
 
+def _mask_denominacion(name: str) -> str:
+    """Enmascara una denominación para el teaser free: primera letra de cada
+    palabra visible, el resto en puntos. Prueba que la marca existe sin revelarla."""
+    name = (name or "").strip()
+    if not name:
+        return "•••"
+    parts = []
+    for word in name.split():
+        if len(word) <= 1:
+            parts.append(word.upper())
+        else:
+            parts.append(word[0].upper() + "•" * min(len(word) - 1, 6))
+    return " ".join(parts)
+
+
 def _window_label() -> str:
     """Texto humano de la ventana del rate limit (para el mensaje de error)."""
     h = FREE_SEARCH_WINDOW_HOURS
@@ -389,11 +404,22 @@ def nivel_1_check():
     else:
         # FREE: tease del informe + paywall claro
         clases_con_match = len({m.clase for m in matches if m.clase})
+        # Muestras enmascaradas: prueban que las marcas existen sin revelar el nombre.
+        muestras = sorted(matches, key=lambda m: (m.score or 0), reverse=True)[:3]
         response["tease"] = {
             "marcas_similares": len(matches),
             "clases_con_riesgo": clases_con_match,
             "alto_riesgo": len(altos),
             "tiene_notoria": es_notoria,
+            "muestras": [
+                {
+                    "mask": _mask_denominacion(m.denominacion),
+                    "nivel": m.nivel,
+                    "clase": m.clase,
+                    "score": round((m.score or 0) * 100),
+                }
+                for m in muestras
+            ],
         }
         response["siguiente_paso"] = {
             "tipo": "informe_completo",
