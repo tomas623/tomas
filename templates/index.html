@@ -108,6 +108,8 @@
       .result-cta{flex-direction:column}
       .result-cta .btn{flex:1 1 100% !important;min-width:0 !important;width:100%}
       .term:hover::after,.term:focus::after{width:min(250px,80vw);left:auto;right:0}
+      .teaser-row{flex-wrap:wrap}
+      .teaser-row .teaser-mask{flex:1 1 100%}
     }
     .verdict-icon{font-size:32px;margin-bottom:8px}
     .verdict-title{font-size:20px;font-weight:700;margin-bottom:6px}
@@ -167,9 +169,14 @@
     .compare-row .col-bad{color:var(--red);background:#FEF2F2}
     .compare-row .col-good{color:var(--green);background:#ECFDF5;font-weight:600}
     @media(max-width:680px){
-      .compare-row{grid-template-columns:1fr;font-size:14px}
+      .compare-table{box-shadow:none;background:transparent;border-radius:0}
+      .compare-row{grid-template-columns:1fr;font-size:14px;border:1px solid var(--gray-light);
+                   border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}
       .compare-row > div{padding:12px 16px}
+      .compare-row > div:first-child{background:var(--bg);font-weight:700}
       .compare-head{display:none}
+      .compare-row .col-bad::before{content:"Sin LegalPacers — ";font-weight:700}
+      .compare-row .col-good::before{content:"Con LegalPacers — ";font-weight:700}
     }
 
     /* TESTIMONIOS */
@@ -214,7 +221,15 @@
             transition:.2s}
     .wa-fab:hover{transform:translateY(-2px);text-decoration:none;color:#fff}
     .wa-fab svg{width:20px;height:20px;fill:#fff}
-    @media(max-width:600px){.wa-fab span{display:none}.wa-fab{padding:14px}}
+    @media(max-width:600px){.wa-fab span{display:none}.wa-fab{padding:14px;bottom:16px;right:16px}}
+
+    /* MOBILE: respiración general en pantallas chicas */
+    @media(max-width:600px){
+      section{padding:48px 18px}
+      .hero{padding:44px 18px 36px}
+      .search-card{padding:18px}
+      .step,.testi,.plan{padding:22px 18px}
+    }
 
     [x-cloak]{display:none!important}
   </style>
@@ -948,7 +963,7 @@
 <div x-show="modalInforme" x-cloak @click.self="modalInforme=false"
      style="position:fixed;inset:0;background:rgba(13,27,75,.5);z-index:60;
             display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
-  <div style="background:#fff;border-radius:14px;padding:28px;max-width:640px;width:100%;max-height:90vh;overflow-y:auto">
+  <div style="background:#fff;border-radius:14px;padding:clamp(18px,4vw,28px);max-width:640px;width:100%;max-height:90vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
       <div>
         <div style="font-size:11px;color:#1B6EF3;text-transform:uppercase;letter-spacing:1px;font-weight:700">Informe completo</div>
@@ -1059,7 +1074,7 @@
 <div x-show="modalCotizar" x-cloak @click.self="modalCotizar=false"
      style="position:fixed;inset:0;background:rgba(13,27,75,.5);z-index:60;
             display:flex;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#fff;border-radius:14px;padding:32px;max-width:480px;width:100%;
+  <div style="background:#fff;border-radius:14px;padding:clamp(18px,4vw,32px);max-width:480px;width:100%;
               max-height:90vh;overflow:auto">
     <h3 style="margin-bottom:8px">Solicitar cotización de registro</h3>
     <p style="color:var(--gray);font-size:14px;margin-bottom:20px">
