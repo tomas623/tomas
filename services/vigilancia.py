@@ -466,9 +466,9 @@ def run_subscription_maintenance() -> dict:
 def run_birthday_greetings() -> int:
     """Manda saludo de cumpleaños a usuarios Premium activos.
 
-    Idempotente vía un log simple en memoria por fecha (dentro del día no se
-    duplica si se ejecuta varias veces). Cae silenciosamente si el user no
-    tiene fecha de nacimiento cargada.
+    Idempotente por año vía UserProfile.birthday_greeted_year: no duplica el
+    saludo aunque el cron diario y el semanal corran el mismo día. Cae
+    silenciosamente si el user no tiene fecha de nacimiento cargada.
     """
     from database import SuscripcionVigilancia, User, UserProfile
     from services.auth import has_active_premium
@@ -486,6 +486,10 @@ def run_birthday_greetings() -> int:
             if not p.fecha_nacimiento:
                 continue
             if p.fecha_nacimiento.month != hoy.month or p.fecha_nacimiento.day != hoy.day:
+                continue
+            # Idempotencia: si ya saludamos este año, saltar (evita doble envío
+            # cuando el cron diario y el semanal coinciden el día del cumpleaños).
+            if p.birthday_greeted_year == hoy.year:
                 continue
             user = s.query(User).filter_by(id=p.user_id).first()
             if not user or not user.email:
@@ -507,6 +511,7 @@ def run_birthday_greetings() -> int:
                 if send_email(user.email, "¡Feliz cumpleaños! 🎂 — LegalPacers", html,
                               text=f"¡Feliz cumpleaños! Gracias por elegirnos. — LegalPacers"):
                     enviados += 1
+                    p.birthday_greeted_year = hoy.year
                     if user.alertas_whatsapp and user.telefono:
                         try:
                             from services.whatsapp import send_whatsapp
@@ -517,6 +522,8 @@ def run_birthday_greetings() -> int:
                             pass
             except Exception as e:
                 logger.warning(f"Saludo cumpleaños user {user.id} falló: {e}")
+
+        s.commit()
 
     logger.info(f"Saludos de cumpleaños enviados: {enviados}")
     return enviados

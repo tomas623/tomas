@@ -255,6 +255,10 @@ class UserProfile(Base):
     # Foto de perfil (URL/dataURI) — opcional, base64 inline para evitar storage extra
     avatar_data_uri = Column(Text)
 
+    # Idempotencia del saludo de cumpleaños: año en que se mandó por última vez.
+    # Evita el doble envío cuando el cron diario y el semanal corren el mismo día.
+    birthday_greeted_year = Column(Integer)
+
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
@@ -416,6 +420,7 @@ def init_db():
             "ALTER TABLE marcas ADD COLUMN IF NOT EXISTS fecha_boletin DATE",
             "ALTER TABLE marcas_cliente ADD COLUMN IF NOT EXISTS aviso_venc_90_at TIMESTAMP",
             "ALTER TABLE marcas_cliente ADD COLUMN IF NOT EXISTS aviso_venc_30_at TIMESTAMP",
+            "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS birthday_greeted_year INTEGER",
             """DO $$ BEGIN
               -- Remove duplicate (acta, clase) pairs keeping the highest id
               DELETE FROM marcas a
