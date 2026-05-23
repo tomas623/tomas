@@ -325,15 +325,11 @@
           </div>
         </div>
       </div>
-      <div class="input-group" style="margin-top:14px">
-        <label for="email">Tu email <span style="color:var(--gray);font-weight:400">(opcional)</span></label>
-        <input id="email" type="email" x-model="form.email" placeholder="vos@empresa.com">
-      </div>
-      <button class="btn btn-primary" @click="buscar()" :disabled="cargando">
+      <button class="btn btn-primary" @click="buscar()" :disabled="cargando" style="margin-top:18px">
         <span x-show="!cargando">Buscar gratis →</span>
         <span x-show="cargando" x-cloak>Buscando…</span>
       </button>
-      <p class="micro">100% gratuito. Sin tarjeta. Sin compromiso.</p>
+      <p class="micro">100% gratuito. Sin tarjeta. Sin registro.</p>
 
       <template x-if="resultado">
         <div class="result-card" :class="{
@@ -434,7 +430,7 @@
           </div>
 
           <div class="result-cta" style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">
-            <button class="btn btn-primary" @click="modalInforme=true"
+            <button class="btn btn-primary" @click="openInforme()"
                     :disabled="iniciandoPago"
                     style="flex:2;min-width:240px;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;line-height:1.2;padding:14px 24px">
               <span x-show="!iniciandoPago">
@@ -460,6 +456,32 @@
               Charlá con un abogado
             </a>
           </div>
+        </div>
+      </template>
+
+      <!-- CAPTURA DE EMAIL OPCIONAL: avisos sobre la marca -->
+      <template x-if="resultado && !resultado.premium && !emailGuardado">
+        <div class="result-card" style="margin-top:14px;background:#F0F5FF;border-color:#BFD4FF">
+          <div style="font-weight:700;color:#0D1B4B;margin-bottom:4px">📩 ¿Te aviso si algo cambia?</div>
+          <div style="font-size:14px;color:#475569;margin-bottom:12px">
+            Dejá tu email y te avisamos si alguien intenta registrar algo parecido a
+            "<span x-text="form.marca"></span>", más novedades útiles para tu marca. Sin spam.
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="email" x-model="seguimientoEmail" placeholder="vos@empresa.com"
+                   @keydown.enter="guardarSeguimiento()"
+                   style="flex:1;min-width:200px;padding:11px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px">
+            <button class="btn btn-primary" @click="guardarSeguimiento()" :disabled="guardandoEmail" style="min-width:140px">
+              <span x-show="!guardandoEmail">Avisame</span>
+              <span x-show="guardandoEmail" x-cloak>Guardando…</span>
+            </button>
+          </div>
+          <div x-show="emailError" x-cloak style="color:#DC2626;font-size:13px;margin-top:8px" x-text="emailError"></div>
+        </div>
+      </template>
+      <template x-if="resultado && emailGuardado">
+        <div class="result-card good" style="margin-top:14px">
+          <div style="font-weight:600;color:#16A34A">✓ Listo. Te vamos a avisar a <span x-text="seguimientoEmail"></span>.</div>
         </div>
       </template>
 
@@ -496,7 +518,7 @@
             El informe completo revisa marcas idénticas <strong>y</strong> similares (gráfica, fonética e ideológica)
             en tu clase, te dice el riesgo real de rechazo y te deja todo listo para presentar en el INPI.
           </div>
-          <button class="btn btn-primary" @click="modalInforme=true">Quiero el informe completo</button>
+          <button class="btn btn-primary" @click="openInforme()">Quiero el informe completo</button>
         </div>
       </template>
       <template x-if="resultado && rutaElegida==='tengo'">
@@ -976,15 +998,38 @@
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap">
+    <!-- QUÉ PASA DESPUÉS DE PAGAR -->
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:14px 16px;margin-top:20px">
+      <div style="font-weight:700;color:#0D1B4B;font-size:13px;margin-bottom:8px">Qué pasa después de pagar</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#475569">
+        <div>1 · Te redirigimos a <strong>Mercado Pago</strong> para pagar de forma segura.</div>
+        <div>2 · Apenas se acredita, preparamos el informe y te lo mandamos por mail.</div>
+        <div>3 · Recibís el <strong>PDF completo</strong> (normalmente en minutos) con todo el análisis.</div>
+      </div>
+    </div>
+
+    <!-- EMAIL PARA RECIBIR EL INFORME -->
+    <div class="input-group" style="margin-top:16px">
+      <label for="informeEmail">Tu email <span style="color:var(--blue);font-weight:600">— te enviamos el informe acá</span></label>
+      <input id="informeEmail" type="email" x-model="informeEmail" placeholder="vos@empresa.com"
+             @keydown.enter="iniciarConsultaCompleta()"
+             style="width:100%;padding:11px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px">
+      <div x-show="informeEmailError" x-cloak style="color:#DC2626;font-size:13px;margin-top:6px" x-text="informeEmailError"></div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
       <button class="btn btn-outline" @click="modalInforme=false" style="flex:1;min-width:120px">Cancelar</button>
-      <button class="btn btn-primary" @click="modalInforme=false; iniciarConsultaCompleta()"
+      <button class="btn btn-primary" @click="iniciarConsultaCompleta()"
               :disabled="iniciandoPago" style="flex:2;min-width:180px">
         <span x-show="!iniciandoPago">
           Pagar y desbloquear · $<span x-text="(precioInforme?.precio || 9900).toLocaleString('es-AR')"></span>
         </span>
         <span x-show="iniciandoPago" x-cloak>Generando link…</span>
       </button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;color:#64748b;font-size:12px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4zm0 10.9h7c-.5 4-3.2 7.6-7 8.8V12H5V6.3l7-3.1v8.7z"/></svg>
+      Pago protegido por Mercado Pago · No guardamos los datos de tu tarjeta
     </div>
   </div>
 </div>
@@ -1057,7 +1102,9 @@ function landing() {
   const _params = new URLSearchParams(location.search);
   return {
     NIZA_TITLES,
-    form: {marca: _params.get('marca') || '', clases: [], email:''},
+    form: {marca: _params.get('marca') || '', clases: []},
+    seguimientoEmail: '', emailGuardado: false, guardandoEmail: false, emailError: '',
+    informeEmail: '', informeEmailError: '',
     showClasePicker: false,
     claseFiltro: '',
 
@@ -1241,12 +1288,15 @@ function landing() {
       this.errorMsg = '';
       this.resultado = null;
       this.rutaElegida = null;
+      this.emailGuardado = false;
+      this.seguimientoEmail = '';
+      this.emailError = '';
       this.showClasePicker = false;
       try {
         const r = await fetch('/api/marca/check', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
-            marca: this.form.marca, email: this.form.email,
+            marca: this.form.marca,
             clases: this.form.clases.map(c => parseInt(c)),
             fingerprint: this.fingerprint || '',
           })
@@ -1269,14 +1319,52 @@ function landing() {
       }
     },
 
+    async guardarSeguimiento() {
+      const email = (this.seguimientoEmail || '').trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        this.emailError = 'Ingresá un email válido.';
+        return;
+      }
+      this.emailError = '';
+      this.guardandoEmail = true;
+      try {
+        const r = await fetch('/api/marca/seguimiento', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            email,
+            marca: this.form.marca,
+            clases: this.form.clases.map(c => parseInt(c)),
+          })
+        }).then(r => r.json());
+        if (r.ok) { this.emailGuardado = true; }
+        else { this.emailError = r.error || 'No pudimos guardar. Probá de nuevo.'; }
+      } catch(e) {
+        this.emailError = 'Error de red. Probá de nuevo.';
+      } finally {
+        this.guardandoEmail = false;
+      }
+    },
+
+    openInforme() {
+      if (!this.informeEmail) this.informeEmail = this.seguimientoEmail || '';
+      this.informeEmailError = '';
+      this.modalInforme = true;
+    },
+
     async iniciarConsultaCompleta() {
+      const email = (this.informeEmail || '').trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        this.informeEmailError = 'Ingresá un email válido para recibir el informe.';
+        return;
+      }
+      this.informeEmailError = '';
       this.iniciandoPago = true;
       const promoCode = new URLSearchParams(location.search).get('promo') || '';
       try {
         const r = await fetch('/api/marca/consulta/iniciar', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
-            marca: this.form.marca, email: this.form.email,
+            marca: this.form.marca, email,
             clases: (this.form.clases || []).map(c => parseInt(c)),
             promo_code: promoCode,
           })

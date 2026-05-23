@@ -441,6 +441,28 @@ def nivel_1_check():
     return _ok(response)
 
 
+@bp.route("/api/marca/seguimiento", methods=["POST"])
+def seguimiento_email():
+    """Captura liviana de email tras el resultado: guarda el lead para avisos
+    de novedades sobre la marca. No corre búsqueda ni consume rate limit."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    marca = (data.get("marca") or "").strip()
+    clases = data.get("clases") or []
+
+    if not email or not EMAIL_RE.match(email):
+        return _err("Email inválido")
+    if not marca:
+        return _err("Falta la marca")
+    try:
+        clases = [int(c) for c in clases if c]
+    except (ValueError, TypeError):
+        clases = []
+
+    _save_lead(email, marca, "", clases, fuente="seguimiento_resultado")
+    return _ok({"saved": True})
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Nivel 2 — paga
 # ─────────────────────────────────────────────────────────────────────
