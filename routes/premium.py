@@ -38,6 +38,10 @@ bp = Blueprint("premium", __name__)
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
+# Informe completo (pago único) — mismo valor que en routes/marca.py.
+PRECIO_INFORME = float(os.getenv("PRECIO_INFORME_COMPLETO",
+                                  os.getenv("PRECIO_CONSULTA_COMPLETA", "9900")))
+
 # 3 tiers de vigilancia (mensual). Anual = 10 meses (2 gratis).
 PRECIO_VIGILANCIA_INDIVIDUAL = float(os.getenv("PRECIO_VIGILANCIA_INDIVIDUAL", "4900"))
 PRECIO_VIGILANCIA_MULTI = float(os.getenv("PRECIO_VIGILANCIA_MULTI", "9900"))
@@ -98,6 +102,7 @@ def premium_page():
         PREMIUM_PAGE,
         tiers=PLAN_TIERS,
         aviso=aviso,
+        precio_informe=PRECIO_INFORME,
     )
 
 
@@ -239,6 +244,27 @@ PREMIUM_PAGE = """<!DOCTYPE html>
   .badge{display:inline-block;background:#DBEAFE;color:#1B6EF3;padding:4px 12px;
          border-radius:99px;font-size:12px;font-weight:700;margin-bottom:12px;
          text-transform:uppercase;letter-spacing:.5px}
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:28px 0}
+  @media(max-width:640px){.compare-grid{grid-template-columns:1fr}}
+  .compare-card{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:24px;
+                display:flex;flex-direction:column}
+  .compare-card.highlight{border:2px solid #1B6EF3;box-shadow:0 6px 20px rgba(27,110,243,.12)}
+  .compare-card h3{margin:6px 0 4px;font-size:20px}
+  .compare-tag{display:inline-block;align-self:flex-start;font-size:11px;font-weight:700;
+               text-transform:uppercase;letter-spacing:.5px;padding:3px 10px;border-radius:99px;
+               background:#F1F5F9;color:#64748b}
+  .compare-tag.green{background:#DCFCE7;color:#16A34A}
+  .compare-price{font-size:30px;font-weight:800;color:#1B6EF3;margin:6px 0}
+  .compare-price small{font-size:14px;font-weight:400;color:#64748b;margin-left:4px}
+  .compare-card p{color:#475569;font-size:14px;margin:4px 0 14px}
+  .compare-card ul{list-style:none;padding:0;margin:0 0 18px;display:grid;gap:7px;flex:1}
+  .compare-card li{display:flex;gap:8px;font-size:13.5px;color:#334155}
+  .compare-card li::before{content:'✓';color:#16A34A;font-weight:700}
+  .compare-btn{display:block;text-align:center;padding:12px;border-radius:10px;font-weight:700;
+               text-decoration:none;font-size:15px;background:#1B6EF3;color:#fff}
+  .compare-btn.ghost{background:#fff;color:#1B6EF3;border:1px solid #1B6EF3}
+  .faq-q{font-weight:700;color:#0D1B4B;margin:16px 0 4px}
+  .faq-a{color:#475569;font-size:14px;margin:0}
 </style></head>
 <body x-data="premium()">
 
@@ -259,8 +285,42 @@ PREMIUM_PAGE = """<!DOCTYPE html>
   </div>
   {% endif %}
 
+  <!-- COMPARADOR: informe único vs vigilancia -->
+  <h2 style="font-size:22px;margin:28px 0 0">¿Qué necesitás?</h2>
+  <p style="color:#64748b;margin:4px 0 0">Dos formas de proteger tu marca, según tu momento.</p>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <span class="compare-tag">Pago único</span>
+      <h3>Informe completo</h3>
+      <div class="compare-price">${{ "{:,.0f}".format(precio_informe).replace(",", ".") }}<small>una vez</small></div>
+      <p>Estás por registrar <strong>una marca puntual</strong> y querés saber ya si está libre y con qué riesgo.</p>
+      <ul>
+        <li>Lista completa de marcas similares con titular y fecha</li>
+        <li>Score léxico, fonético y conceptual con IA</li>
+        <li>Probabilidad de registro en las 45 clases</li>
+        <li>PDF descargable + cotización de registro</li>
+      </ul>
+      <a href="/" class="compare-btn ghost">Hacer una búsqueda gratis →</a>
+    </div>
+    <div class="compare-card highlight">
+      <span class="compare-tag green">Suscripción</span>
+      <h3>Vigilancia mensual</h3>
+      <div class="compare-price">desde ${{ "{:,.0f}".format(tiers.personal.precio_mes).replace(",", ".") }}<small>/ mes</small></div>
+      <p>Ya tenés marcas registradas y querés que <strong>nadie las copie</strong> sin que te enteres.</p>
+      <ul>
+        <li>Escaneo quincenal del boletín del INPI</li>
+        <li>Alertas por email y WhatsApp con el plazo de oposición</li>
+        <li>Hasta 3, 10 o 20 marcas según el plan</li>
+        <li>Panel privado con tus marcas y alertas</li>
+      </ul>
+      <a href="#planes" class="compare-btn">Ver planes de vigilancia ↓</a>
+    </div>
+  </div>
+
+  <h2 id="planes" style="font-size:22px;margin:36px 0 0;scroll-margin-top:20px">Planes de vigilancia</h2>
+
   <!-- TIER PICKER (3 columnas) -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:24px 0">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0">
     {% for key, t in tiers.items() %}
     <label style="border:2px solid #E2E8F0;border-radius:14px;padding:20px;cursor:pointer;
                   transition:.15s;background:#fff{% if key == 'pyme' %};position:relative{% endif %}"
@@ -297,6 +357,10 @@ PREMIUM_PAGE = """<!DOCTYPE html>
       <span :style="'transform:translateX(' + (anualToggle ? '24px' : '2px') + ');position:absolute;top:2px;left:0;width:20px;height:20px;background:#fff;border-radius:50%;transition:.15s'"></span>
     </label>
     <span style="font-size:13px;color:#0D1B4B;font-weight:600">Anual <span style="background:#DCFCE7;color:#16A34A;font-size:10px;padding:2px 6px;border-radius:99px;margin-left:4px">2 meses GRATIS</span></span>
+  </div>
+
+  <div x-show="anualToggle" x-cloak style="text-align:center;color:#16A34A;font-weight:600;font-size:14px;margin:-4px 0 4px">
+    Ahorrás $<span x-text="ahorroAnual().toLocaleString('es-AR')"></span> al año con el plan <span x-text="TIERS[form.plan_tier]?.nombre"></span>
   </div>
 
   <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;
@@ -404,6 +468,31 @@ PREMIUM_PAGE = """<!DOCTYPE html>
 
     <p class="micro">El pago se procesa con Mercado Pago. Podés cancelar la suscripción cuando quieras desde tu panel.</p>
   </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Preguntas sobre los planes</h2>
+
+    <div class="faq-q">¿Me conviene el informe único o la vigilancia?</div>
+    <p class="faq-a">El <strong>informe único</strong> es para un momento puntual: estás por registrar
+      una marca y querés saber si está libre. La <strong>vigilancia</strong> es continua: ya tenés
+      marcas y querés que te avisemos si alguien intenta registrar algo parecido. Muchos arrancan
+      con el informe y después suman vigilancia.</p>
+
+    <div class="faq-q">¿La presentación de la oposición está incluida?</div>
+    <p class="faq-a">No. La suscripción cubre la vigilancia y las alertas. Presentar una oposición es
+      trabajo de abogado y se cotiza por caso según la complejidad. Cuando llega una alerta relevante,
+      te pasamos la cotización antes de avanzar.</p>
+
+    <div class="faq-q">¿Qué pasa si cancelo?</div>
+    <p class="faq-a">No hay permanencia. Si cancelás, mantenés el acceso y la vigilancia hasta el final
+      del período que ya pagaste.</p>
+
+    <div class="faq-q">¿Puedo cambiar de plan más adelante?</div>
+    <p class="faq-a">Sí. Si tu portfolio crece, podés pasar a un plan con más marcas vigiladas desde tu panel.</p>
+
+    <div class="faq-q">¿El plan anual tiene descuento?</div>
+    <p class="faq-a">Sí: pagás 10 meses y tenés 12 de cobertura. Son 2 meses gratis frente a pagar mes a mes.</p>
+  </div>
 </main>
 
 <script>
@@ -445,6 +534,10 @@ function premium(){
     precioActual(){
       const tier = TIERS[this.form.plan_tier] || TIERS.pyme;
       return this.form.plan_freq === 'anual' ? tier.precio_anual : tier.precio_mes;
+    },
+    ahorroAnual(){
+      const tier = TIERS[this.form.plan_tier] || TIERS.pyme;
+      return tier.precio_mes * 12 - tier.precio_anual;
     },
     async iniciar(){
       if(!this.form.email.trim()){
