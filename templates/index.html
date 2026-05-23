@@ -462,17 +462,17 @@
       <!-- CAPTURA DE EMAIL OPCIONAL: avisos sobre la marca -->
       <template x-if="resultado && !resultado.premium && !emailGuardado">
         <div class="result-card" style="margin-top:14px;background:#F0F5FF;border-color:#BFD4FF">
-          <div style="font-weight:700;color:#0D1B4B;margin-bottom:4px">📩 ¿Te aviso si algo cambia?</div>
+          <div style="font-weight:700;color:#0D1B4B;margin-bottom:4px">📩 Te mandamos los próximos pasos</div>
           <div style="font-size:14px;color:#475569;margin-bottom:12px">
-            Dejá tu email y te avisamos si alguien intenta registrar algo parecido a
-            "<span x-text="form.marca"></span>", más novedades útiles para tu marca. Sin spam.
+            Dejá tu email y te enviamos cómo registrar
+            "<span x-text="form.marca"></span>": plazos, costos reales y un descuento para el informe completo. Sin spam.
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="email" x-model="seguimientoEmail" placeholder="vos@empresa.com"
                    @keydown.enter="guardarSeguimiento()"
                    style="flex:1;min-width:200px;padding:11px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px">
             <button class="btn btn-primary" @click="guardarSeguimiento()" :disabled="guardandoEmail" style="min-width:140px">
-              <span x-show="!guardandoEmail">Avisame</span>
+              <span x-show="!guardandoEmail">Enviarme la guía</span>
               <span x-show="guardandoEmail" x-cloak>Guardando…</span>
             </button>
           </div>
@@ -481,7 +481,7 @@
       </template>
       <template x-if="resultado && emailGuardado">
         <div class="result-card good" style="margin-top:14px">
-          <div style="font-weight:600;color:#16A34A">✓ Listo. Te vamos a avisar a <span x-text="seguimientoEmail"></span>.</div>
+          <div style="font-weight:600;color:#16A34A">✓ Listo. Te escribimos a <span x-text="seguimientoEmail"></span> con los próximos pasos.</div>
         </div>
       </template>
 

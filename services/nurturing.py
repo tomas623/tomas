@@ -44,9 +44,10 @@ def run_lead_nurturing() -> int:
     base = os.getenv("APP_BASE_URL", "")
 
     with get_session() as s:
-        # Solo leads de consultas gratuitas (no los de cotización ni contacto)
+        # Leads de búsquedas gratuitas: consulta directa o captura post-resultado.
+        # No incluye cotización ni contacto (esos tienen su propio flujo).
         leads = (s.query(Lead)
-                 .filter(Lead.fuente == "consulta_gratuita")
+                 .filter(Lead.fuente.in_(["consulta_gratuita", "seguimiento_resultado"]))
                  .filter(Lead.nurtured_step < 3)
                  .all())
 
