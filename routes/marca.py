@@ -346,8 +346,8 @@ def nivel_1_check():
 
     diag = diagnose(matches)
 
-    # Chequeo de dominio + handles en redes (informativo)
-    domains = [d.to_dict() for d in check_domains(marca)]
+    # Chequeo de dominio + handles en redes (informativo) — solo en la versión paga.
+    domains = [d.to_dict() for d in check_domains(marca)] if is_full_access else []
     handles = [h.to_dict() for h in check_handles(marca)] if is_full_access else []
 
     # Resumen por dimensión: cuántas marcas con score relevante en cada eje.

@@ -401,14 +401,16 @@ def get_notorious_with_source() -> list[dict]:
     return out
 
 
-def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:
+def check_notorious(term: str, threshold: float = 0.85) -> list[dict]:
     """Compara el término contra la lista de marcas notorias.
 
-    Devuelve los matches por encima del umbral. Score combinado = promedio
-    ponderado (lex 0.6, fon 0.4). Casos especiales:
-    - lex o fon ≥ 0.90 → score directo (match casi exacto).
-    - Edit distance ≤ 2 chars sobre denominaciones cortas (≤8) → forzar 0.85
-      mínimo. Captura typos como 'minaos' vs 'Manaos' (1 letra diff).
+    Una marca notoria solo debe dispararse cuando es EVIDENTE: la búsqueda es
+    prácticamente la marca famosa o un typo de una sola letra. Por eso el umbral
+    es alto (0.85). Score combinado = promedio ponderado (lex 0.6, fon 0.4).
+    Casos especiales:
+    - lex o fon ≥ 0.92 → score directo (match casi exacto).
+    - Edit distance ≤ 1 sobre denominaciones cortas → forzar 0.88 (typo de una
+      letra). Antes era ≤ 2 y hacía que casi todo pareciera marca notoria.
     """
     if not term or not term.strip():
         return []
@@ -420,17 +422,18 @@ def check_notorious(term: str, threshold: float = 0.70) -> list[dict]:
         if nb in seen_normalized:
             continue
         seen_normalized.add(nb)
+        # Ignorar marcas notorias muy cortas (≤3) que generan falsos positivos.
+        if len(nb) <= 3:
+            continue
         lex = lexical_score(term, brand)
         fon = phonetic_score(term, brand)
 
-        # Edit distance para marcas cortas: 'minaos' vs 'manaos' → distance 1
-        # Si la marca normalizada es corta (≤ 10 chars) y la distancia ≤ 2,
-        # bumpamos el score para no perderlo.
-        if max(lex, fon) >= 0.90:
+        # Solo un typo de UNA letra sobre denominaciones de largo parecido.
+        if max(lex, fon) >= 0.92:
             score = max(lex, fon)
-        elif (len(nb) <= 10 and len(nt) <= 12
-                and _levenshtein(nt, nb) <= 2):
-            score = max(0.85, lex * 0.6 + fon * 0.4)
+        elif (4 <= len(nb) <= 12 and abs(len(nt) - len(nb)) <= 1
+                and _levenshtein(nt, nb) <= 1):
+            score = max(0.88, lex * 0.6 + fon * 0.4)
         else:
             score = lex * 0.6 + fon * 0.4
 
