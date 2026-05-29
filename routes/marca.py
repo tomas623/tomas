@@ -37,8 +37,8 @@ from services.domains import check_domains
 from services.social import check_handles
 from similarity import (
     add_notorious_brand, check_notorious, diagnose, get_notorious_brands,
-    get_notorious_with_source, reload_notorious_cache, remove_notorious_brand,
-    search_similar, NIVEL_ALTO, NIVEL_MEDIO,
+    get_notorious_with_source, normalize, reload_notorious_cache,
+    remove_notorious_brand, search_similar, NIVEL_ALTO, NIVEL_MEDIO,
 )
 
 logger = logging.getLogger(__name__)
@@ -262,12 +262,24 @@ def nivel_1_check():
     # con prefijos no matchean) pero la marca es claramente confusable.
     notorious_warnings = check_notorious(marca)
 
+    # Coincidencias EXACTAS (idénticas tras normalizar): el señalamiento más fuerte.
+    nmarca = normalize(marca)
+    identicas = [m for m in matches if normalize(m.denominacion) == nmarca]
     altos = [m for m in matches if m.nivel == "alto"]
     medios = [m for m in matches if m.nivel == "medio"]
     cross_notorios = [m for m in cross_class_matches if (m.score or 0) >= 0.85]
 
-    # Razones específicas (lista para mostrar como bullets explícitos en UI)
+    # Razones específicas (lista para mostrar como bullets explícitos en UI).
+    # Coincidencias EXACTAS van primero, siempre — es el señalamiento más fuerte.
     razones: list[dict] = []
+    if identicas:
+        clases_iden = sorted({m.clase for m in identicas if m.clase})
+        cls_txt = "/".join(str(c) for c in clases_iden) if clases_iden else "—"
+        razones.append({
+            "tipo": "identicas",
+            "ok": False,
+            "texto": f"Encontramos {len(identicas)} marca(s) IDÉNTICA(S) ya registrada(s) (clase {cls_txt}).",
+        })
     if altos:
         razones.append({
             "tipo": "similares_clase",
@@ -314,7 +326,7 @@ def nivel_1_check():
         })
 
     # Probabilidad de RECHAZO (más directo): baja / media / alta
-    if altos or (notorious_warnings and notorious_warnings[0]["score"] >= 0.80):
+    if identicas or altos or (notorious_warnings and notorious_warnings[0]["score"] >= 0.80):
         veredicto = "no_disponible"
         probabilidad_rechazo = "alta"
     elif notorious_warnings or cross_notorios or medios or cross_class_matches:
@@ -324,9 +336,15 @@ def nivel_1_check():
         veredicto = "probablemente_disponible"
         probabilidad_rechazo = "baja"
 
-    # Mensaje principal (compacto) — la explicación detallada va en razones[]
+    # Mensaje principal (compacto). Prioridad: idénticas > muy similares > notoria.
+    # La notoria solo lidera el mensaje cuando no hay coincidencias reales en la DB.
     if probabilidad_rechazo == "alta":
-        if altos:
+        if identicas:
+            clases_iden = sorted({m.clase for m in identicas if m.clase})
+            cls_txt = "/".join(str(c) for c in clases_iden) if clases_iden else "—"
+            mensaje = (f"Ya existe una marca <strong>idéntica</strong> registrada "
+                       f"(clase {cls_txt}). El registro va a ser rechazado u opuesto.")
+        elif altos:
             mensaje = (f"Encontramos {len(altos)} marca(s) muy similares ya registradas. "
                        "El registro tiene riesgo alto de oposición.")
         else:

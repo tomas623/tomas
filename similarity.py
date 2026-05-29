@@ -1038,8 +1038,8 @@ def search_similar(
         bonus = 0.0
         if clases and c.clase in clases:
             bonus += 0.10
-        if (c.estado_code or "").lower() == "vigente":
-            bonus += 0.05
+        # Nota: NO se bonifica por estado. Una marca en trámite bloquea igual
+        # que una vigente (puede oponerse y/o concederse antes que la tuya).
         score = min(1.0, base + bonus)
 
         if score < min_score:
