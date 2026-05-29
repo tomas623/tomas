@@ -858,6 +858,55 @@
   </div>
 </section>
 
+<!-- REGISTRO: proceso paso a paso + precio -->
+<section id="registro" style="background:#F8FAFC">
+  <div class="container">
+    <div class="section-eyebrow">Registro de marca</div>
+    <h2 class="section-title">Cómo es el proceso y qué incluye</h2>
+    <p class="section-sub">De la presentación al título, te acompañamos en cada etapa.</p>
+
+    <!-- Timeline de 5 pasos -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:40px 0 12px">
+      <template x-for="(p, i) in pasosRegistro" :key="i">
+        <div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:18px 16px;position:relative">
+          <div style="width:34px;height:34px;border-radius:50%;background:#1B6EF3;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;margin-bottom:12px" x-text="i+1"></div>
+          <div style="font-weight:700;color:#0D1B4B;font-size:14px;margin-bottom:6px" x-text="p.titulo"></div>
+          <div style="font-size:12px;color:#64748b;line-height:1.5" x-text="p.desc"></div>
+        </div>
+      </template>
+    </div>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin:0 0 8px">
+      Plazo estimado: <strong>3 a 4 meses</strong> si no hay oposiciones de terceros.
+    </p>
+
+    <!-- Precio + qué incluye -->
+    <div style="max-width:640px;margin:36px auto 0;background:#fff;border:2px solid #1B6EF3;border-radius:16px;padding:28px;box-shadow:0 8px 28px rgba(27,110,243,.1)">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;border-bottom:1px solid #E2E8F0;padding-bottom:16px;margin-bottom:16px">
+        <div>
+          <div style="font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Registro de tu marca</div>
+          <div style="font-size:34px;font-weight:800;color:#0D1B4B">$140.000<span style="font-size:14px;color:#64748b;font-weight:500"> · por clase</span></div>
+        </div>
+        <div style="font-size:12px;color:#64748b;text-align:right">Honorarios profesionales<br>Tasas oficiales aparte</div>
+      </div>
+      <div style="font-weight:700;color:#0D1B4B;margin-bottom:12px">Qué incluye</div>
+      <ul style="list-style:none;padding:0;margin:0;display:grid;gap:9px">
+        <template x-for="(item, i) in incluyeRegistro" :key="i">
+          <li style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:#334155">
+            <span style="color:#16A34A;font-weight:700;flex-shrink:0">✓</span>
+            <span x-text="item"></span>
+          </li>
+        </template>
+      </ul>
+      <button class="btn btn-primary" @click="modalCotizar=true" style="width:100%;margin-top:22px;padding:14px">
+        Quiero registrar mi marca
+      </button>
+      <p style="text-align:center;color:#64748b;font-size:12px;margin-top:10px">
+        Empezá con el informe de viabilidad ($9.900) — se descuenta si avanzás con el registro.
+      </p>
+    </div>
+  </div>
+</section>
+
 <!-- COMPARATIVA -->
 <section>
   <div class="container">
@@ -1240,6 +1289,22 @@ function landing() {
     NIZA_TITLES,
     form: {marca: _params.get('marca') || '', clases: []},
     ejemploTab: 'informe',
+    pasosRegistro: [
+      {titulo:'Presentación del trámite', desc:'Definimos las clases y presentamos la solicitud de tu marca.'},
+      {titulo:'Análisis por IA', desc:'Revisión automática inicial de la solicitud presentada.'},
+      {titulo:'Publicación en boletín', desc:'Tu marca se publica y se abre el plazo de oposiciones de terceros.'},
+      {titulo:'Análisis de fondo', desc:'Se evalúa la registrabilidad y la confundibilidad con marcas previas.'},
+      {titulo:'Publicación / título', desc:'Si todo sale bien, se concede la marca y se emite el título.'},
+    ],
+    incluyeRegistro: [
+      'Análisis de viabilidad previo (búsqueda + IA)',
+      'Definición de clases y estrategia de registro',
+      'Armado y presentación del expediente',
+      'Seguimiento del trámite hasta la resolución',
+      'Respuesta a observaciones formales',
+      'Gestión y entrega del título de registro',
+      'Avisos de oposiciones publicadas en el boletín',
+    ],
     seguimientoEmail: '', emailGuardado: false, guardandoEmail: false, emailError: '',
     informeEmail: '', informeEmailError: '',
     showClasePicker: false,
