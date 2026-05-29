@@ -884,9 +884,9 @@
       <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;border-bottom:1px solid #E2E8F0;padding-bottom:16px;margin-bottom:16px">
         <div>
           <div style="font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Registro de tu marca</div>
-          <div style="font-size:34px;font-weight:800;color:#0D1B4B">$140.000<span style="font-size:14px;color:#64748b;font-weight:500"> · por clase</span></div>
+          <div style="font-size:34px;font-weight:800;color:#0D1B4B">$140.000<span style="font-size:14px;color:#64748b;font-weight:500"> · 1 clase (hasta 20 categorías)</span></div>
         </div>
-        <div style="font-size:12px;color:#64748b;text-align:right">Honorarios profesionales<br>Tasas oficiales aparte</div>
+        <div style="font-size:12px;color:#16A34A;font-weight:700;text-align:right">✓ Tasas oficiales<br>incluidas</div>
       </div>
       <div style="font-weight:700;color:#0D1B4B;margin-bottom:12px">Qué incluye</div>
       <ul style="list-style:none;padding:0;margin:0;display:grid;gap:9px">
@@ -897,7 +897,10 @@
           </li>
         </template>
       </ul>
-      <button class="btn btn-primary" @click="modalCotizar=true" style="width:100%;margin-top:22px;padding:14px">
+      <div style="margin-top:14px;padding:10px 12px;background:#F8FAFC;border-radius:8px;font-size:12px;color:#64748b">
+        No incluye la presentación de <strong>oposiciones</strong> (se cotiza por caso). La vigilancia continúa luego de los 2 meses bonificados.
+      </div>
+      <button class="btn btn-primary" @click="modalCotizar=true" style="width:100%;margin-top:18px;padding:14px">
         Quiero registrar mi marca
       </button>
       <p style="text-align:center;color:#64748b;font-size:12px;margin-top:10px">
@@ -1291,7 +1294,7 @@ function landing() {
     ejemploTab: 'informe',
     pasosRegistro: [
       {titulo:'Presentación del trámite', desc:'Definimos las clases y presentamos la solicitud de tu marca.'},
-      {titulo:'Análisis por IA', desc:'Revisión automática inicial de la solicitud presentada.'},
+      {titulo:'Análisis por IA', desc:'El INPI hace el examen inicial de la solicitud con inteligencia artificial.'},
       {titulo:'Publicación en boletín', desc:'Tu marca se publica y se abre el plazo de oposiciones de terceros.'},
       {titulo:'Análisis de fondo', desc:'Se evalúa la registrabilidad y la confundibilidad con marcas previas.'},
       {titulo:'Publicación / título', desc:'Si todo sale bien, se concede la marca y se emite el título.'},
@@ -1299,11 +1302,11 @@ function landing() {
     incluyeRegistro: [
       'Análisis de viabilidad previo (búsqueda + IA)',
       'Definición de clases y estrategia de registro',
-      'Armado y presentación del expediente',
-      'Seguimiento del trámite hasta la resolución',
+      'Presentación del expediente — 1 clase (hasta 20 categorías)',
+      'Tasas oficiales incluidas',
       'Respuesta a observaciones formales',
       'Gestión y entrega del título de registro',
-      'Avisos de oposiciones publicadas en el boletín',
+      '2 meses de vigilancia bonificados',
     ],
     seguimientoEmail: '', emailGuardado: false, guardandoEmail: false, emailError: '',
     informeEmail: '', informeEmailError: '',
