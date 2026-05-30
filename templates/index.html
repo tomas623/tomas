@@ -4,26 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LegalPacers — Registro y vigilancia de marcas en Argentina</title>
-  <meta name="description" content="Verificá gratis si el nombre de tu marca está libre en Argentina. Análisis de confundibilidad con IA en 30 segundos. Sin tarjeta, sin registro.">
+  <meta name="description" content="Pre-check de marca en 30 segundos. Verificá viabilidad de registro antes de pagar tasas. Análisis léxico, fonético y conceptual con IA.">
   <link rel="icon" href="/static/logo-icon.png">
   <link rel="canonical" href="https://legalpacers.com/">
-  <meta name="theme-color" content="#0D1B4B">
+  <meta name="theme-color" content="#030712">
+  <meta name="color-scheme" content="dark">
 
-  <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="LegalPacers">
   <meta property="og:locale" content="es_AR">
   <meta property="og:url" content="https://legalpacers.com/">
-  <meta property="og:title" content="¿Tu marca está libre? Verificalo gratis">
-  <meta property="og:description" content="Análisis léxico, fonético y conceptual con IA. Si choca con otra, te lo decimos antes de que pierdas las tasas oficiales.">
+  <meta property="og:title" content="¿Tu nombre está libre? Descubrilo antes de gastar de más.">
+  <meta property="og:description" content="Pre-check en 30 segundos. Si el Registro Nacional rechaza tu marca, no devuelve la plata. Te decimos antes si vas a tener problemas.">
   <meta property="og:image" content="https://legalpacers.com/static/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
 
-  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="¿Tu marca está libre? Verificalo gratis">
-  <meta name="twitter:description" content="Análisis léxico, fonético y conceptual con IA antes de pagar las tasas del INPI.">
+  <meta name="twitter:title" content="¿Tu nombre está libre? Descubrilo antes de gastar de más.">
+  <meta name="twitter:description" content="Pre-check de marca con IA. Sin tarjeta, sin registro. En 30 segundos.">
   <meta name="twitter:image" content="https://legalpacers.com/static/og-image.png">
 
   <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
@@ -31,210 +30,437 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --navy:#0D1B4B; --blue:#1B6EF3; --blue-dark:#1656c4;
-      --gray:#64748b; --gray-light:#e2e8f0; --bg:#F4F5F9;
-      --green:#16A34A; --yellow:#F59E0B; --red:#DC2626; --wa:#25D366;
+      --bg:#030712;
+      --bg-soft:#070d1c;
+      --surface:#0f172a;
+      --surface-2:#1e293b;
+      --surface-3:#293548;
+      --border:#334155;
+      --border-soft:#1f2a40;
+      --text:#f8fafc;
+      --text-soft:#e2e8f0;
+      --text-muted:#94a3b8;
+      --text-dim:#64748b;
+      --blue:#1b6ef3;
+      --blue-dark:#1656c4;
+      --blue-soft:rgba(27,110,243,.12);
+      --blue-glow:rgba(27,110,243,.35);
+      --green:#10b981;
+      --green-soft:rgba(16,185,129,.12);
+      --green-glow:rgba(16,185,129,.30);
+      --red:#ef4444;
+      --red-soft:rgba(239,68,68,.12);
+      --red-glow:rgba(239,68,68,.32);
+      --yellow:#f59e0b;
+      --yellow-soft:rgba(245,158,11,.12);
+      --wa:#25d366;
     }
-    html{scroll-behavior:smooth}
+    html{scroll-behavior:smooth;background:var(--bg);color-scheme:dark}
     body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-         color:var(--navy);background:#fff;line-height:1.5;-webkit-font-smoothing:antialiased}
-    h1,h2,h3{font-weight:800;line-height:1.15;color:var(--navy)}
-    a{color:var(--blue);text-decoration:none}
-    a:hover{text-decoration:underline}
-    button{font-family:inherit;cursor:pointer;border:none}
+         color:var(--text);background:var(--bg);line-height:1.55;-webkit-font-smoothing:antialiased;
+         min-height:100vh}
+    h1,h2,h3{font-weight:800;line-height:1.15;color:var(--text);letter-spacing:-.01em}
+    a{color:var(--blue);text-decoration:none;transition:color .15s}
+    a:hover{color:#60a5fa}
+    button{font-family:inherit;cursor:pointer;border:none;color:inherit}
 
-    header{position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
-           border-bottom:1px solid var(--gray-light);z-index:40}
+    ::selection{background:var(--blue);color:#fff}
+
+    /* HEADER */
+    header{position:sticky;top:0;background:rgba(3,7,18,.78);backdrop-filter:blur(14px) saturate(140%);
+           -webkit-backdrop-filter:blur(14px) saturate(140%);
+           border-bottom:1px solid var(--border-soft);z-index:40}
     .header-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;
                   align-items:center;justify-content:space-between}
-    .logo{font-weight:800;font-size:18px;letter-spacing:.5px}
+    .logo{font-weight:800;font-size:18px;letter-spacing:.5px;color:var(--text)}
     .logo .accent{color:var(--blue)}
     .nav-links{display:flex;gap:24px;align-items:center;font-size:14px;font-weight:600}
-    .nav-links a{color:var(--navy)}
-    .btn{padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;
-         display:inline-block;transition:.15s;cursor:pointer}
-    .btn-primary{background:var(--blue);color:#fff}
-    .btn-primary:hover{background:var(--blue-dark);text-decoration:none;color:#fff}
-    .btn-outline{background:transparent;color:var(--navy);border:1px solid var(--gray-light)}
-    .btn-outline:hover{border-color:var(--blue);color:var(--blue);text-decoration:none}
+    .nav-links a{color:var(--text-soft)}
+    .nav-links a:hover{color:#fff}
+    .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
+         display:inline-block;transition:transform .15s,box-shadow .2s,background .15s,border-color .15s,color .15s;
+         cursor:pointer;letter-spacing:.01em}
+    .btn-primary{background:var(--blue);color:#fff;box-shadow:0 4px 18px -4px var(--blue-glow)}
+    .btn-primary:hover{background:var(--blue-dark);text-decoration:none;color:#fff;
+                       transform:translateY(-1px);box-shadow:0 8px 28px -4px var(--blue-glow)}
+    .btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .btn-outline:hover{border-color:var(--blue);color:#60a5fa;text-decoration:none;background:var(--blue-soft)}
+    .btn-dark{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+    .btn-dark:hover{background:var(--surface-3);text-decoration:none;color:#fff;border-color:#475569}
     @media(max-width:720px){.nav-links a:not(.btn){display:none}}
 
-    .hero{background:linear-gradient(180deg,#F0F5FF 0%,#fff 100%);padding:64px 24px 48px}
-    .hero-inner{max-width:1100px;margin:0 auto;text-align:center}
-    .eyebrow{display:inline-block;background:#DBEAFE;color:var(--blue);
-             padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;margin-bottom:20px}
-    .hero h1{font-size:clamp(32px,5vw,52px);max-width:840px;margin:0 auto 20px}
-    .hero h1 span{color:var(--blue)}
-    .hero p.lead{font-size:clamp(16px,2vw,19px);color:var(--gray);
-                 max-width:680px;margin:0 auto 28px}
-
-    .risk-banner{max-width:680px;margin:0 auto 24px;background:#FEF2F2;border:1px solid #FCA5A5;
-                 color:#991B1B;border-radius:10px;padding:12px 16px;font-size:14px;text-align:left;
-                 display:flex;gap:10px;align-items:flex-start}
-    .risk-banner strong{color:#7F1D1D}
-
-    .search-card{background:#fff;border-radius:16px;padding:24px;max-width:680px;
-                 margin:0 auto;box-shadow:0 8px 32px rgba(13,27,75,.12);text-align:left}
-    .search-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media(max-width:580px){.search-row{grid-template-columns:1fr}}
-    .input-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
-    .input-group input,.input-group select{width:100%;padding:13px 14px;
-      border:1px solid var(--gray-light);border-radius:10px;font-size:15px;font-family:inherit}
-    .input-group input:focus,.input-group select:focus{outline:none;border-color:var(--blue);
-      box-shadow:0 0 0 3px rgba(27,110,243,.15)}
-    .search-card .btn-primary{width:100%;padding:14px;font-size:15px;margin-top:20px}
-    .micro{font-size:13px;color:var(--gray);text-align:center;margin-top:12px}
-
-    .clases-chip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;
-                 font-size:12px;color:var(--gray);min-height:22px}
-    .clases-chip .badge{background:#EFF6FF;color:var(--blue);padding:3px 9px;border-radius:99px;
-                        font-weight:700;font-size:11px;border:1px solid #BFDBFE}
-
-    .result-card{margin-top:20px;padding:24px;border-radius:14px;
-                 border:1px solid var(--gray-light);background:#fff}
-    .result-card.good{background:#ECFDF5;border-color:#A7F3D0}
-    .result-card.warn{background:#FFFBEB;border-color:#FCD34D}
-    .result-card.bad{background:#FEF2F2;border-color:#FCA5A5}
-    .ruta-opt{display:flex;align-items:center;gap:12px;text-align:left;width:100%;
-              padding:14px 16px;background:#fff;border:1px solid var(--gray-light);
-              border-radius:10px;cursor:pointer;font-family:inherit;color:var(--navy);
-              transition:border-color .15s,background .15s}
-    .ruta-opt:hover{border-color:var(--blue);background:#F8FAFF}
-    .teaser-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px}
-    .teaser-row:nth-child(even){background:#FAFBFC}
-    .teaser-mask{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;
-      letter-spacing:2px;color:var(--navy);filter:blur(.5px);user-select:none;font-weight:600}
-    .teaser-real{font-family:system-ui,sans-serif;font-size:16px;color:#7F1D1D;font-weight:800;
-                 letter-spacing:.3px}
-    .term{border-bottom:1px dotted var(--blue);cursor:help;position:relative;font-weight:600;color:var(--blue)}
-    .term:hover::after,.term:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:135%;
-      background:var(--navy);color:#fff;padding:9px 11px;border-radius:8px;font-size:12px;font-weight:400;
-      white-space:normal;width:250px;z-index:60;line-height:1.45;box-shadow:0 6px 18px rgba(0,0,0,.22);text-align:left}
-    @media(max-width:520px){
-      .result-cta{flex-direction:column}
-      .result-cta .btn{flex:1 1 100% !important;min-width:0 !important;width:100%}
-      .term:hover::after,.term:focus::after{width:min(250px,80vw);left:auto;right:0}
-      .teaser-row{flex-wrap:wrap}
-      .teaser-row .teaser-mask,.teaser-row .teaser-real{flex:1 1 100%}
+    /* HERO */
+    .hero{
+      position:relative;
+      padding:80px 24px 56px;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(27,110,243,.18), transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(16,185,129,.08), transparent 70%),
+        var(--bg);
+      overflow:hidden;
     }
-    .verdict-icon{font-size:32px;margin-bottom:8px}
-    .verdict-title{font-size:20px;font-weight:700;margin-bottom:6px}
-    .verdict-msg{color:var(--gray);font-size:15px}
+    .hero::before{
+      content:"";position:absolute;inset:0;
+      background-image:
+        linear-gradient(rgba(51,65,85,.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(51,65,85,.18) 1px, transparent 1px);
+      background-size:64px 64px;
+      mask-image:radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+      -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+      pointer-events:none;
+    }
+    .hero-inner{max-width:980px;margin:0 auto;text-align:center;position:relative;z-index:1}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--blue-soft);
+             color:#60a5fa;border:1px solid rgba(27,110,243,.35);
+             padding:7px 14px;border-radius:99px;font-size:12.5px;font-weight:600;
+             margin-bottom:22px;letter-spacing:.02em}
+    .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:#10b981;
+                     box-shadow:0 0 10px #10b981;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .hero h1{font-size:clamp(34px,5.4vw,58px);max-width:880px;margin:0 auto 22px;
+             font-weight:800;letter-spacing:-.02em}
+    .hero h1 .hl{color:var(--blue);text-shadow:0 0 40px var(--blue-glow)}
+    .hero p.lead{font-size:clamp(15.5px,1.8vw,18px);color:var(--text-muted);
+                 max-width:760px;margin:0 auto 36px;line-height:1.65}
+    .hero p.lead strong{color:var(--text-soft)}
+
+    /* SEARCH CARD (glow) */
+    .search-card{
+      position:relative;
+      background:linear-gradient(180deg,var(--surface) 0%,var(--bg-soft) 100%);
+      border:1px solid var(--border-soft);
+      border-radius:18px;padding:26px;max-width:760px;margin:0 auto;
+      text-align:left;
+      box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 20px 60px -20px rgba(0,0,0,.6);
+      transition:border-color .25s,box-shadow .25s,transform .2s;
+    }
+    .search-card::after{
+      content:"";position:absolute;inset:-1px;border-radius:inherit;
+      background:radial-gradient(600px 200px at 50% 0%, var(--blue-glow), transparent 60%);
+      opacity:.55;pointer-events:none;z-index:-1;filter:blur(20px);
+    }
+    .search-card:focus-within{border-color:rgba(27,110,243,.45);
+                               box-shadow:0 0 0 4px rgba(27,110,243,.08),0 20px 60px -20px rgba(0,0,0,.6)}
+    .search-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    @media(max-width:620px){.search-row{grid-template-columns:1fr}}
+    .input-group label{display:block;font-size:12.5px;font-weight:600;margin-bottom:7px;
+                       color:var(--text-soft);letter-spacing:.01em}
+    .input-group input{
+      width:100%;padding:14px 16px;
+      background:var(--bg-soft);color:var(--text);
+      border:1px solid var(--border);border-radius:10px;
+      font-size:15px;font-family:inherit;
+      transition:border-color .15s,box-shadow .15s,background .15s;
+    }
+    .input-group input::placeholder{color:var(--text-dim)}
+    .input-group input:focus{outline:none;border-color:var(--blue);
+                              background:var(--surface);
+                              box-shadow:0 0 0 4px rgba(27,110,243,.18)}
+    .search-card .btn-primary{width:100%;padding:16px;font-size:15.5px;margin-top:22px;
+                              font-weight:700;letter-spacing:.01em}
+    .micro{font-size:12.5px;color:var(--text-dim);text-align:center;margin-top:14px}
+
+    .clases-chip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;
+                 font-size:12.5px;color:var(--text-muted);min-height:24px;line-height:1.5}
+    .clases-chip .badge{background:var(--blue-soft);color:#7eb1ff;
+                        padding:4px 10px;border-radius:99px;font-weight:600;font-size:11.5px;
+                        border:1px solid rgba(27,110,243,.30)}
+
+    /* RISK BANNER */
+    .risk-banner{
+      max-width:760px;margin:0 auto 24px;
+      background:linear-gradient(180deg,rgba(239,68,68,.10),rgba(239,68,68,.04));
+      border:1px solid rgba(239,68,68,.35);
+      color:#fecaca;
+      border-radius:12px;padding:14px 18px;font-size:13.5px;text-align:left;
+      display:flex;gap:12px;align-items:flex-start;line-height:1.55
+    }
+    .risk-banner strong{color:#fff}
+
+    /* RESULT CARD */
+    .result-card{margin-top:22px;padding:24px;border-radius:14px;
+                 background:var(--surface);border:1px solid var(--border-soft);
+                 color:var(--text-soft)}
+    .result-card.good{background:linear-gradient(180deg,rgba(16,185,129,.10),var(--surface));
+                      border-color:rgba(16,185,129,.40)}
+    .result-card.warn{background:linear-gradient(180deg,rgba(245,158,11,.10),var(--surface));
+                      border-color:rgba(245,158,11,.40)}
+    .result-card.bad{background:linear-gradient(180deg,rgba(239,68,68,.12),var(--surface));
+                     border-color:rgba(239,68,68,.45)}
+    .verdict-icon{font-size:34px;margin-bottom:8px}
+    .verdict-title{font-size:21px;font-weight:800;margin-bottom:8px;color:var(--text)}
+    .verdict-msg{color:var(--text-muted);font-size:15px;line-height:1.6}
+
+    .colision-box{
+      margin-top:18px;
+      background:linear-gradient(180deg,rgba(239,68,68,.18),rgba(239,68,68,.05));
+      border:2px solid var(--red);border-radius:14px;padding:18px 20px;text-align:left;
+      box-shadow:0 0 0 1px rgba(239,68,68,.18),0 10px 30px -10px var(--red-glow);
+    }
+    .colision-box .alert-tag{display:inline-flex;align-items:center;gap:6px;
+      background:var(--red);color:#fff;padding:4px 10px;border-radius:99px;
+      font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;
+      margin-bottom:12px}
+    .colision-name{font-size:28px;font-weight:800;color:#fff;letter-spacing:-.01em;
+                   text-shadow:0 0 30px rgba(239,68,68,.4);word-break:break-word}
+    .colision-meta{font-size:12.5px;color:#fca5a5;margin-top:6px}
+    .colision-score{background:var(--red);color:#fff;font-weight:800;
+                    padding:7px 14px;border-radius:99px;font-size:14px;
+                    box-shadow:0 0 18px var(--red-glow)}
+    .colision-warn{margin-top:14px;padding-top:14px;border-top:1px solid rgba(239,68,68,.35);
+                   font-size:13.5px;color:#fecaca;line-height:1.65}
+    .colision-warn strong{color:#fff}
+
+    .razones-box{margin-top:18px;background:var(--bg-soft);border:1px solid var(--border-soft);
+                 padding:14px 18px;border-radius:10px;text-align:left}
+    .razones-box .h{font-weight:600;color:var(--text);margin-bottom:10px;font-size:14px}
+
     .domains-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
     .dom-chip{padding:6px 12px;border-radius:99px;font-size:12px;font-weight:600;
-              border:1px solid var(--gray-light);background:#fff}
-    .dom-chip.dispo{color:var(--green);border-color:#A7F3D0;background:#ECFDF5}
-    .dom-chip.taken{color:var(--red);border-color:#FCA5A5;background:#FEF2F2}
+              border:1px solid var(--border);background:var(--bg-soft);color:var(--text-muted)}
+    .dom-chip.dispo{color:var(--green);border-color:rgba(16,185,129,.4);background:var(--green-soft)}
+    .dom-chip.taken{color:#fca5a5;border-color:rgba(239,68,68,.4);background:var(--red-soft)}
 
-    .colision-box{margin-top:16px;background:#FEE2E2;border:2px solid #DC2626;border-radius:12px;
-                  padding:14px 16px;text-align:left}
-    .colision-box .title{font-size:13px;font-weight:800;color:#7F1D1D;
-                         text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+    .teaser-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;
+                color:var(--text-soft)}
+    .teaser-row:nth-child(even){background:rgba(255,255,255,.02)}
+    .teaser-mask{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;
+      letter-spacing:2px;color:var(--text);filter:blur(.5px);user-select:none;font-weight:600}
 
-    .garantia-pill{display:inline-flex;align-items:center;gap:8px;background:#ECFDF5;
-                   border:1px solid #A7F3D0;color:#065F46;padding:8px 14px;border-radius:99px;
+    .garantia-pill{display:inline-flex;align-items:center;gap:8px;
+                   background:var(--green-soft);
+                   border:1px solid rgba(16,185,129,.35);color:#6ee7b7;
+                   padding:9px 16px;border-radius:99px;
                    font-size:13px;font-weight:600;margin-top:14px}
 
-    section{padding:72px 24px}
-    .container{max-width:1100px;margin:0 auto}
-    .section-eyebrow{color:var(--blue);font-weight:700;font-size:13px;
-                     text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;text-align:center}
-    .section-title{text-align:center;font-size:clamp(26px,3.5vw,38px);margin-bottom:14px}
-    .section-sub{text-align:center;color:var(--gray);font-size:17px;
-                 max-width:640px;margin:0 auto 48px}
+    .result-cta{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+    .result-cta .btn{flex:1 1 auto;text-align:center}
+    @media(max-width:520px){.result-cta{flex-direction:column}.result-cta .btn{width:100%}}
 
-    .steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+    /* SECTIONS */
+    section{padding:80px 24px;position:relative}
+    .container{max-width:1140px;margin:0 auto;position:relative}
+    .section-eyebrow{color:#60a5fa;font-weight:700;font-size:12.5px;
+                     text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;text-align:center}
+    .section-title{text-align:center;font-size:clamp(28px,3.6vw,42px);margin-bottom:14px;
+                    letter-spacing:-.015em}
+    .section-sub{text-align:center;color:var(--text-muted);font-size:17px;
+                 max-width:680px;margin:0 auto 52px;line-height:1.6}
+
+    /* CARD GLOW (reusable) */
+    .glow-card{
+      position:relative;background:var(--surface);
+      border:1px solid var(--border-soft);border-radius:16px;
+      transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+    }
+    .glow-card::before{
+      content:"";position:absolute;inset:0;border-radius:inherit;
+      background:radial-gradient(420px 200px at var(--mx,50%) var(--my,0%), var(--blue-glow), transparent 60%);
+      opacity:0;transition:opacity .35s ease;pointer-events:none;
+    }
+    .glow-card:hover{transform:translateY(-4px);border-color:rgba(27,110,243,.35);
+                     box-shadow:0 20px 50px -20px rgba(0,0,0,.7),0 0 0 1px rgba(27,110,243,.15)}
+    .glow-card:hover::before{opacity:.5}
+
+    /* GARANTÍA SECTION */
+    #garantia{background:linear-gradient(180deg,var(--bg) 0%,var(--bg-soft) 100%);
+              border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft)}
+    .garantia-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:800px;margin:0 auto}
+    @media(max-width:680px){.garantia-grid{grid-template-columns:1fr}}
+    .garantia-card{background:var(--surface);border:1px solid rgba(16,185,129,.30);
+                   border-radius:14px;padding:22px;text-align:left;
+                   box-shadow:0 0 0 1px rgba(16,185,129,.12) inset}
+
+    /* 3 PASOS */
+    .steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
     @media(max-width:820px){.steps-grid{grid-template-columns:1fr}}
-    .step{background:#fff;border-radius:14px;padding:28px;border:1px solid var(--gray-light)}
-    .step-num{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;
+    .step{padding:30px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px}
+    .step-num{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;
               display:flex;align-items:center;justify-content:center;font-weight:800;
-              font-size:18px;margin-bottom:16px}
-    .step h3{font-size:19px;margin-bottom:10px}
-    .step p{color:var(--gray);font-size:15px}
+              font-size:18px;margin-bottom:18px;box-shadow:0 8px 24px -6px var(--blue-glow)}
+    .step h3{font-size:19px;margin-bottom:10px;color:var(--text)}
+    .step p{color:var(--text-muted);font-size:14.5px;line-height:1.65}
 
-    #planes{background:var(--bg)}
-    .plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-    @media(max-width:980px){.plans-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:560px){.plans-grid{grid-template-columns:1fr}}
-    .plan{background:#fff;border-radius:14px;padding:28px 22px;border:1px solid var(--gray-light);
-          display:flex;flex-direction:column}
-    .plan.featured{border:2px solid var(--blue);transform:translateY(-4px)}
-    .plan-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
-              color:var(--blue);margin-bottom:8px}
-    .plan h3{font-size:20px;margin-bottom:10px}
-    .plan-price{font-size:28px;font-weight:800;color:var(--navy);margin:8px 0}
-    .plan-price small{font-size:13px;font-weight:500;color:var(--gray);display:block}
-    .plan-desc{color:var(--gray);font-size:14px;margin-bottom:18px;flex:1}
-    .plan ul{list-style:none;font-size:14px;margin-bottom:20px}
-    .plan ul li{padding:6px 0;display:flex;gap:8px}
-    .plan ul li::before{content:"✓";color:var(--green);font-weight:700}
+    /* PLANES */
+    #planes{background:var(--bg-soft)}
+    .plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    @media(max-width:1020px){.plans-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:580px){.plans-grid{grid-template-columns:1fr}}
+    .plan{padding:28px 24px;display:flex;flex-direction:column}
+    .plan.featured{border:1px solid rgba(27,110,243,.45);transform:translateY(-6px);
+                   box-shadow:0 0 0 1px rgba(27,110,243,.15),0 30px 60px -30px var(--blue-glow)}
+    .plan.featured:hover{transform:translateY(-10px)}
+    .plan-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+              color:#60a5fa;margin-bottom:10px;display:inline-block}
+    .plan h3{font-size:20px;margin-bottom:10px;color:var(--text)}
+    .plan-price{font-size:30px;font-weight:800;color:var(--text);margin:8px 0;letter-spacing:-.01em}
+    .plan-price small{font-size:13px;font-weight:500;color:var(--text-muted);display:block;margin-top:2px}
+    .plan-desc{color:var(--text-muted);font-size:14px;margin-bottom:18px;flex:1;line-height:1.6}
+    .plan ul{list-style:none;font-size:14px;margin-bottom:22px;color:var(--text-soft)}
+    .plan ul li{padding:7px 0;display:flex;gap:8px;line-height:1.5}
+    .plan ul li::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0}
     .plan .btn{width:100%;padding:12px;text-align:center}
 
-    .compare-table{background:#fff;border-radius:16px;overflow:hidden;
-                   box-shadow:0 4px 24px rgba(13,27,75,.06)}
-    .compare-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;
-                 border-bottom:1px solid var(--gray-light)}
+    /* COMPARE */
+    .compare-table{background:var(--surface);border:1px solid var(--border-soft);
+                   border-radius:16px;overflow:hidden}
+    .compare-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;border-bottom:1px solid var(--border-soft)}
     .compare-row:last-child{border:none}
-    .compare-row > div{padding:18px 20px;display:flex;align-items:center;gap:8px}
-    .compare-head{background:var(--bg);font-weight:700;font-size:14px}
-    .compare-row .col-bad{color:var(--red);background:#FEF2F2}
-    .compare-row .col-good{color:var(--green);background:#ECFDF5;font-weight:600}
-    @media(max-width:680px){
-      .compare-table{box-shadow:none;background:transparent;border-radius:0}
-      .compare-row{grid-template-columns:1fr;font-size:14px;border:1px solid var(--gray-light);
-                   border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}
-      .compare-row > div{padding:12px 16px}
-      .compare-row > div:first-child{background:var(--bg);font-weight:700}
+    .compare-row > div{padding:18px 22px;display:flex;align-items:center;gap:8px;
+                       color:var(--text-soft);font-size:14.5px;line-height:1.55}
+    .compare-head{background:var(--bg-soft);font-weight:700;font-size:13px;color:var(--text-muted);
+                  text-transform:uppercase;letter-spacing:.05em}
+    .compare-row .col-bad{color:#fca5a5;background:rgba(239,68,68,.05)}
+    .compare-row .col-good{color:#6ee7b7;background:rgba(16,185,129,.06);font-weight:600}
+    @media(max-width:720px){
+      .compare-table{background:transparent;border:none;border-radius:0}
+      .compare-row{grid-template-columns:1fr;font-size:14px;border:1px solid var(--border-soft);
+                   border-radius:12px;margin-bottom:12px;overflow:hidden;background:var(--surface)}
+      .compare-row > div{padding:14px 18px}
+      .compare-row > div:first-child{background:var(--bg-soft);font-weight:700;color:var(--text)}
       .compare-head{display:none}
       .compare-row .col-bad::before{content:"Sin LegalPacers — ";font-weight:700}
       .compare-row .col-good::before{content:"Con LegalPacers — ";font-weight:700}
     }
 
-    #testimonios{background:var(--bg)}
-    .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    /* TRUST STATS */
+    #stats{background:var(--bg);border-top:1px solid var(--border-soft);
+           border-bottom:1px solid var(--border-soft);padding:56px 24px}
+    .stat-num{font-size:46px;font-weight:800;color:#60a5fa;line-height:1;
+              text-shadow:0 0 30px var(--blue-glow);letter-spacing:-.02em}
+    .stat-lbl{font-size:13.5px;color:var(--text-muted);margin-top:8px}
+
+    /* TESTIMONIOS */
+    #testimonios{background:var(--bg-soft)}
+    .testi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
     @media(max-width:820px){.testi-grid{grid-template-columns:1fr}}
-    .testi{background:#fff;border-radius:14px;padding:28px;border:1px solid var(--gray-light)}
-    .testi-quote{font-size:16px;color:var(--navy);margin-bottom:18px;font-style:italic}
+    .testi{padding:30px}
+    .testi-quote{font-size:16px;color:var(--text-soft);margin-bottom:20px;font-style:italic;line-height:1.65}
     .testi-author{display:flex;align-items:center;gap:12px}
-    .testi-avatar{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;
-                  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px}
-    .testi-name{font-weight:700;font-size:14px}
-    .testi-role{font-size:13px;color:var(--gray)}
+    .testi-avatar{width:42px;height:42px;border-radius:50%;background:var(--blue);color:#fff;
+                  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;
+                  box-shadow:0 8px 20px -6px var(--blue-glow)}
+    .testi-name{font-weight:700;font-size:14px;color:var(--text)}
+    .testi-role{font-size:13px;color:var(--text-muted)}
 
-    .faq-item{background:#fff;border:1px solid var(--gray-light);border-radius:10px;
-              margin-bottom:10px;overflow:hidden}
-    .faq-q{padding:18px 20px;font-weight:700;font-size:16px;cursor:pointer;
-           display:flex;justify-content:space-between;align-items:center}
-    .faq-q::after{content:"+";font-size:22px;color:var(--blue);transition:.2s}
+    /* FAQ */
+    .faq-item{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;
+              margin-bottom:10px;overflow:hidden;transition:border-color .15s}
+    .faq-item:hover{border-color:var(--border)}
+    .faq-item.open{border-color:rgba(27,110,243,.4)}
+    .faq-q{padding:18px 22px;font-weight:700;font-size:15.5px;cursor:pointer;
+           display:flex;justify-content:space-between;align-items:center;color:var(--text)}
+    .faq-q::after{content:"+";font-size:24px;color:var(--blue);transition:.2s;line-height:1}
     .faq-item.open .faq-q::after{content:"–"}
-    .faq-a{padding:0 20px;max-height:0;overflow:hidden;color:var(--gray);
-           font-size:15px;transition:.25s;line-height:1.6}
-    .faq-item.open .faq-a{padding:0 20px 18px;max-height:500px}
+    .faq-a{padding:0 22px;max-height:0;overflow:hidden;color:var(--text-muted);
+           font-size:14.5px;transition:.25s;line-height:1.7}
+    .faq-item.open .faq-a{padding:0 22px 20px;max-height:600px}
+    .faq-a strong{color:var(--text-soft)}
 
-    footer{background:var(--navy);color:#cbd5e1;padding:48px 24px 24px;font-size:14px}
-    .footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px}
+    /* FOOTER */
+    footer{background:#020611;color:var(--text-muted);padding:52px 24px 24px;font-size:14px;
+           border-top:1px solid var(--border-soft)}
+    .footer-inner{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px}
     @media(max-width:720px){.footer-inner{grid-template-columns:1fr}}
-    footer .logo{color:#fff;font-size:18px;margin-bottom:12px;display:inline-block}
-    footer p{margin-bottom:8px}
-    footer h4{color:#fff;font-size:14px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
-    footer a{color:#cbd5e1;display:block;padding:4px 0}
+    footer .logo{color:#fff;font-size:18px;margin-bottom:14px;display:inline-block}
+    footer p{margin-bottom:8px;line-height:1.6}
+    footer h4{color:#fff;font-size:13px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.08em}
+    footer a{color:var(--text-muted);display:block;padding:4px 0}
     footer a:hover{color:#fff}
-    .footer-bottom{max-width:1100px;margin:32px auto 0;padding-top:24px;
-                   border-top:1px solid #1f2a5a;color:#94a3b8;font-size:13px}
+    .footer-bottom{max-width:1140px;margin:36px auto 0;padding-top:24px;
+                   border-top:1px solid var(--border-soft);color:var(--text-dim);font-size:12.5px}
 
+    /* WHATSAPP FAB */
     .wa-fab{position:fixed;bottom:24px;right:24px;background:var(--wa);color:#fff;
-            border-radius:99px;padding:14px 20px;box-shadow:0 4px 16px rgba(37,211,102,.4);
+            border-radius:99px;padding:14px 20px;
+            box-shadow:0 10px 30px -8px rgba(37,211,102,.5);
             font-weight:600;font-size:14px;display:flex;align-items:center;gap:10px;z-index:50;
-            transition:.2s}
+            transition:transform .2s}
     .wa-fab:hover{transform:translateY(-2px);text-decoration:none;color:#fff}
     .wa-fab svg{width:20px;height:20px;fill:#fff}
     @media(max-width:600px){.wa-fab span{display:none}.wa-fab{padding:14px;bottom:16px;right:16px}}
 
+    /* MODALS */
+    .modal-bg{position:fixed;inset:0;background:rgba(2,6,17,.78);backdrop-filter:blur(8px);
+              -webkit-backdrop-filter:blur(8px);z-index:60;
+              display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto}
+    .modal-card{
+      position:relative;
+      background:linear-gradient(180deg,var(--surface) 0%,var(--bg-soft) 100%);
+      border:1px solid var(--border);border-radius:16px;
+      padding:clamp(20px,3vw,30px);max-width:620px;width:100%;
+      box-shadow:0 30px 80px -20px #000,0 0 0 1px rgba(255,255,255,.03) inset;
+      margin:20px 0 40px;
+    }
+    .modal-card::before{
+      content:"";position:absolute;inset:-1px;border-radius:inherit;
+      background:radial-gradient(500px 200px at 50% 0%, var(--blue-glow), transparent 60%);
+      opacity:.6;pointer-events:none;z-index:-1;filter:blur(20px);
+    }
+    .modal-eyebrow{font-size:11.5px;color:#60a5fa;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+    .modal-title{font-size:24px;color:var(--text);margin-top:4px;letter-spacing:-.01em}
+    .modal-close{background:none;border:none;font-size:28px;cursor:pointer;color:var(--text-dim);
+                 line-height:1;padding:0 4px}
+    .modal-close:hover{color:var(--text)}
+
+    .price-block{
+      background:linear-gradient(135deg,var(--blue) 0%,#0a3b95 100%);
+      color:#fff;padding:22px;border-radius:14px;margin:18px 0;text-align:center;
+      box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 20px 40px -20px var(--blue-glow);
+    }
+    .price-block .num{font-size:38px;font-weight:800;letter-spacing:-.02em;line-height:1}
+    .price-block .meta{font-size:13px;opacity:.85;margin-top:8px}
+
+    .entregables{background:var(--bg-soft);border:1px solid var(--border-soft);
+                 border-radius:12px;padding:16px 18px;margin-top:16px}
+    .entregables h4{font-size:13px;text-transform:uppercase;letter-spacing:.08em;
+                    color:#60a5fa;font-weight:700;margin-bottom:12px}
+    .entregables ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+    .entregables li{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--text-soft);line-height:1.5}
+    .entregables li::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px}
+
+    .disclaimer{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.30);
+                color:#fcd34d;border-radius:10px;padding:12px 14px;margin-top:14px;
+                font-size:13px;line-height:1.6}
+    .disclaimer strong{color:#fff}
+
+    .onboarding-steps{margin-top:18px;border:1px solid var(--border-soft);border-radius:12px;
+                      background:var(--bg-soft);padding:18px}
+    .onboarding-steps h4{font-size:13px;text-transform:uppercase;letter-spacing:.08em;
+                         color:var(--text-muted);font-weight:700;margin-bottom:14px}
+    .onboarding-step{display:flex;gap:14px;padding:10px 0;align-items:flex-start;
+                     border-top:1px dashed var(--border-soft)}
+    .onboarding-step:first-of-type{border-top:none;padding-top:0}
+    .onboarding-step .n{flex:0 0 30px;width:30px;height:30px;border-radius:50%;
+                        background:var(--blue);color:#fff;font-weight:800;font-size:13px;
+                        display:flex;align-items:center;justify-content:center;
+                        box-shadow:0 6px 16px -4px var(--blue-glow)}
+    .onboarding-step .body{flex:1}
+    .onboarding-step .body .t{font-weight:700;color:var(--text);font-size:14px;margin-bottom:3px}
+    .onboarding-step .body .d{color:var(--text-muted);font-size:13px;line-height:1.5}
+
+    .mp-badge{display:flex;align-items:center;justify-content:center;gap:7px;
+              margin-top:14px;color:var(--text-dim);font-size:11.5px}
+    .mp-badge svg{width:13px;height:13px;fill:currentColor}
+
+    .modal-input{width:100%;padding:13px 14px;background:var(--bg-soft);color:var(--text);
+                  border:1px solid var(--border);border-radius:10px;font-size:14.5px;
+                  font-family:inherit;transition:border-color .15s,box-shadow .15s}
+    .modal-input::placeholder{color:var(--text-dim)}
+    .modal-input:focus{outline:none;border-color:var(--blue);
+                       box-shadow:0 0 0 3px rgba(27,110,243,.15)}
+
+    .modal-input-label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;
+                       color:var(--text-soft)}
+    .modal-error{color:#fca5a5;font-size:13px;margin-top:6px}
+
+    /* MOBILE */
     @media(max-width:600px){
-      section{padding:48px 18px}
-      .hero{padding:44px 18px 36px}
-      .search-card{padding:18px}
-      .step,.testi,.plan{padding:22px 18px}
+      section{padding:52px 18px}
+      .hero{padding:52px 18px 36px}
+      .search-card{padding:20px}
+      .step,.testi,.plan{padding:24px 20px}
     }
 
     [x-cloak]{display:none!important}
@@ -259,34 +485,36 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <div x-show="precioInforme && precioInforme.descuento_pct > 0"
-         x-cloak
-         style="background:linear-gradient(135deg,#FEF3C7,#FFF7E0);border:2px dashed #D97706;
-                color:#92400E;padding:14px 20px;border-radius:10px;margin-bottom:20px;
+    <div x-show="precioInforme && precioInforme.descuento_pct > 0" x-cloak
+         style="background:linear-gradient(180deg,rgba(245,158,11,.12),rgba(245,158,11,.05));
+                border:1px dashed rgba(245,158,11,.4);
+                color:#fde68a;padding:14px 20px;border-radius:12px;margin-bottom:22px;
                 display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
       <div style="font-weight:600;text-align:left">
-        🎁 Tenés <strong><span x-text="precioInforme?.descuento_pct"></span>% off</strong> activo en el informe completo
+        🎁 Tenés <strong style="color:#fff"><span x-text="precioInforme?.descuento_pct"></span>% off</strong> activo en el informe completo
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-family:monospace;background:#92400E;color:#fff;padding:4px 10px;border-radius:6px;letter-spacing:1px"
+        <span style="font-family:ui-monospace,monospace;background:#f59e0b;color:#1f2937;padding:4px 10px;border-radius:6px;letter-spacing:1px;font-weight:700"
               x-text="precioInforme?.promo_code || promoCode"></span>
         <span style="font-size:13px">
           $<strong x-text="(precioInforme?.precio || 0).toLocaleString('es-AR')"></strong>
-          <span style="text-decoration:line-through;opacity:.7;margin-left:6px">
+          <span style="text-decoration:line-through;opacity:.6;margin-left:6px">
             $<span x-text="(precioInforme?.precio_original || 0).toLocaleString('es-AR')"></span>
           </span>
         </span>
       </div>
     </div>
 
-    <span class="eyebrow">Búsqueda gratuita · 30 segundos · IA</span>
-    <h1>¿Vas a registrar una marca? <span>Primero averiguá si choca con otra.</span></h1>
-    <p class="lead">Desde 2025 el INPI ya no hace búsqueda de similitud de oficio. Si presentás y aparece oposición, <strong>perdés las tasas oficiales</strong>. Hacé el pre-análisis acá: gratis, sin tarjeta, en 30 segundos.</p>
+    <span class="eyebrow">Pre-check con IA · 30 segundos · sin tarjeta</span>
+    <h1>¿Tu nombre está libre? <span class="hl">Descubrilo antes de gastar de más.</span></h1>
+    <p class="lead">
+      Sabías que si iniciás el trámite en el <strong>Registro Nacional de Propiedad Industrial</strong> y te rechazan el nombre, no se te devuelve la plata? Si presentás una marca que puede confundirse con otra, la solicitud se rechaza y perdés lo que pagaste de forma definitiva. Con nuestra herramienta, hacés un pre-check en 30 segundos, medís la viabilidad y sabés de antemano tus chances de registro.
+    </p>
 
     <div class="risk-banner">
       <span style="font-size:18px;line-height:1">⚠</span>
       <div>
-        <strong>Atención:</strong> el INPI ya no filtra colisiones antes de cobrar las tasas. Una marca rechazada por oposición = tasas perdidas. Nuestro análisis de triple dimensión (léxico, fonético y conceptual) te lo evita.
+        <strong>El Registro Nacional no realiza reembolsos.</strong> Si presentás sin pre-análisis y la solicitud se rechaza por confundibilidad, las tasas operativas estatales se pierden definitivamente. Acá lo detectamos antes con análisis de IA en triple dimensión.
       </div>
     </div>
 
@@ -294,24 +522,27 @@
       <div class="search-row">
         <div class="input-group">
           <label for="marca">Nombre de la marca</label>
-          <input id="marca" type="text" x-model="form.marca" placeholder="Ej: Acme, Verbum, MiMarca…"
+          <input id="marca" type="text" x-model="form.marca"
+                 placeholder="Ej: Acme, Verbum, MiMarca…"
                  @keydown.enter="buscar()" autocomplete="off">
         </div>
         <div class="input-group">
-          <label for="rubro">¿Qué vendés o ofrecés?</label>
-          <input id="rubro" type="text" x-model="form.rubro" placeholder="Ej: ropa de diseño, café y pastelería, app de delivery…"
-                 @keydown.enter="buscar()" @input.debounce.250ms="detectarClasesLive()" autocomplete="off" list="rubrosList">
+          <label for="rubro">¿Qué vas a ofrecer?</label>
+          <input id="rubro" type="text" x-model="form.rubro"
+                 placeholder="Ej: ropa de diseño, app de música, café…"
+                 @keydown.enter="buscar()" @input.debounce.250ms="detectarClasesLive()"
+                 autocomplete="off" list="rubrosList">
           <datalist id="rubrosList">
-            <option value="Ropa y indumentaria"></option>
-            <option value="Café y pastelería"></option>
-            <option value="App o software"></option>
-            <option value="Cosmética y skincare"></option>
-            <option value="Restaurante y delivery"></option>
-            <option value="Consultoría y servicios profesionales"></option>
-            <option value="Agencia de marketing y branding"></option>
-            <option value="Educación y cursos online"></option>
-            <option value="Inmobiliaria y construcción"></option>
-            <option value="Bebidas y vinos"></option>
+            <option value="ropa de diseño"></option>
+            <option value="app de música"></option>
+            <option value="café y pastelería"></option>
+            <option value="cosmética natural"></option>
+            <option value="restaurante y delivery"></option>
+            <option value="consultoría profesional"></option>
+            <option value="agencia de marketing"></option>
+            <option value="educación y cursos online"></option>
+            <option value="inmobiliaria"></option>
+            <option value="vinos y bebidas"></option>
           </datalist>
         </div>
       </div>
@@ -319,94 +550,90 @@
       <div class="clases-chip" x-show="form.rubro.trim().length >= 2" x-cloak>
         <template x-if="clasesDetectadas.length > 0">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span>Clases Niza detectadas automáticamente:</span>
+            <span>Clases detectadas automáticamente:</span>
             <template x-for="c in clasesDetectadas" :key="c">
-              <span class="badge" x-text="c + ' · ' + (NIZA_TITLES[c] || '').substring(0,22)"></span>
+              <span class="badge" x-text="'Clase ' + c + ' · ' + (NIZA_TITLES[c] || '').substring(0,22)"></span>
             </template>
           </div>
         </template>
         <template x-if="clasesDetectadas.length === 0">
-          <span style="color:#92400E">No identificamos el rubro automáticamente — igual buscamos en la clase 35 (servicios generales).</span>
+          <span style="color:#fcd34d">Sin match directo del rubro — buscamos en Clase 35 (servicios generales).</span>
         </template>
       </div>
 
-      <button class="btn btn-primary" @click="buscar()" :disabled="cargando" style="margin-top:18px">
-        <span x-show="!cargando">Buscar gratis →</span>
+      <button class="btn btn-primary" @click="buscar()" :disabled="cargando">
+        <span x-show="!cargando">Hacer pre-check gratis →</span>
         <span x-show="cargando" x-cloak>Analizando con IA…</span>
       </button>
       <p class="micro">100% gratuito · Sin tarjeta · Sin registro · Resultado al instante</p>
 
+      <!-- RESULT CARD -->
       <template x-if="resultado">
         <div class="result-card" :class="{
           good: resultado.veredicto==='probablemente_disponible',
           warn: resultado.veredicto==='necesita_analisis',
           bad: resultado.veredicto==='no_disponible'
         }">
-          <div class="verdict-icon" x-text="{
-            baja:'🟢', media:'🟡', alta:'🔴'
-          }[resultado.probabilidad_rechazo || 'media']"></div>
+          <div class="verdict-icon" x-text="{baja:'🟢',media:'🟡',alta:'🔴'}[resultado.probabilidad_rechazo || 'media']"></div>
           <div class="verdict-title" x-text="{
-            baja:'BAJA probabilidad de rechazo',
-            media:'MEDIA probabilidad de rechazo',
-            alta:'ALTA probabilidad de rechazo — NO presentes el trámite'
+            baja:'Probabilidad de rechazo BAJA',
+            media:'Probabilidad de rechazo MEDIA',
+            alta:'Probabilidad de rechazo ALTA — NO presentes el trámite'
           }[resultado.probabilidad_rechazo || 'media']"></div>
           <div class="verdict-msg" x-html="resultado.mensaje"></div>
 
-          <!-- COLISIÓN EXPLÍCITA: ROJO muestra denominación real de la marca con la que choca -->
+          <!-- COLISIÓN ROJA: denominación real expuesta -->
           <template x-if="resultado.veredicto==='no_disponible' && colisionPrincipal">
             <div class="colision-box">
-              <div class="title">⛔ Choca directamente con esta marca registrada:</div>
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-                <div>
-                  <div style="font-size:22px;font-weight:800;color:#7F1D1D" x-text="colisionPrincipal.denominacion || colisionPrincipal.mask"></div>
-                  <div style="font-size:12px;color:#475569;margin-top:4px">
+              <div class="alert-tag">⛔ Colisión directa detectada</div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+                <div style="flex:1;min-width:200px">
+                  <div class="colision-name" x-text="(colisionPrincipal.denominacion || colisionPrincipal.mask || '').toUpperCase()"></div>
+                  <div class="colision-meta">
                     <span x-show="colisionPrincipal.acta">Acta <span x-text="colisionPrincipal.acta"></span> · </span>
                     <span x-show="colisionPrincipal.titular">Titular: <span x-text="colisionPrincipal.titular"></span> · </span>
                     Clase <span x-text="colisionPrincipal.clase || (form.clases[0] || '—')"></span> · Vigente
                   </div>
                 </div>
-                <div style="background:#DC2626;color:#fff;font-weight:800;padding:6px 14px;border-radius:99px;font-size:14px">
-                  <span x-text="colisionPrincipal.score || 92"></span>% similar
-                </div>
+                <div class="colision-score"><span x-text="colisionPrincipal.score || 92"></span>% similar</div>
               </div>
-              <div style="margin-top:12px;padding-top:12px;border-top:1px solid #FCA5A5;font-size:13px;color:#7F1D1D">
-                <strong>Recomendación:</strong> pivoteá el nombre antes de pagar las tasas. Si presentás igual, perdés ~$87.000 en tasas oficiales por rechazo. Pedí el informe completo para ver alternativas viables.
+              <div class="colision-warn">
+                <strong>Si avanzás con este nombre, perdés las tasas operativas estatales.</strong>
+                El Registro Nacional de Propiedad Industrial no realiza reembolsos por solicitudes rechazadas por confundibilidad. Pivoteá el nombre antes de pagar el trámite.
               </div>
             </div>
           </template>
 
-          <div x-show="resultado.razones && resultado.razones.length"
-               style="margin-top:18px;text-align:left;background:#F8FAFC;
-                      padding:14px 18px;border-radius:10px">
-            <div style="font-weight:600;color:#0D1B4B;margin-bottom:10px;font-size:14px">Por qué te lo decimos:</div>
+          <!-- Razones -->
+          <div x-show="resultado.razones && resultado.razones.length" class="razones-box">
+            <div class="h">Por qué te lo decimos:</div>
             <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px">
               <template x-for="r in (resultado.razones || [])" :key="r.tipo">
                 <li style="display:flex;gap:10px;align-items:flex-start;font-size:14px">
-                  <span :style="r.ok ? 'color:#16A34A;font-weight:700' : 'color:#DC2626;font-weight:700'"
+                  <span :style="r.ok ? 'color:#10b981;font-weight:700' : 'color:#ef4444;font-weight:700'"
                         x-text="r.ok ? '✓' : '✕'"></span>
-                  <span style="color:#475569" x-text="r.texto"></span>
+                  <span style="color:var(--text-muted)" x-text="r.texto"></span>
                 </li>
               </template>
             </ul>
           </div>
 
+          <!-- Dominios -->
           <div class="domains-row" x-show="resultado.dominios && resultado.dominios.length">
             <template x-for="d in resultado.dominios" :key="d.domain">
-              <span class="dom-chip" :class="{
-                dispo: d.status==='disponible', taken: d.status==='tomado'
-              }">
+              <span class="dom-chip" :class="{dispo:d.status==='disponible',taken:d.status==='tomado'}">
                 <strong x-text="d.domain"></strong> ·
                 <span x-text="{disponible:'libre',tomado:'ocupado',desconocido:'verificar'}[d.status]"></span>
               </span>
             </template>
           </div>
 
-          <!-- TEASER: las secundarias (riesgo medio) van enmascaradas. La principal roja ya se mostró arriba. -->
-          <div x-show="!resultado.premium && resultado.tease && resultado.tease.muestras && resultado.tease.muestras.length"
-               style="margin-top:20px;text-align:left;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden">
-            <div style="background:#F8FAFC;padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #E2E8F0">
+          <!-- TEASER (sólo secundarias enmascaradas) -->
+          <div x-show="!resultado.premium && resultado.tease && muestrasSecundarias.length"
+               style="margin-top:22px;border:1px solid var(--border-soft);border-radius:12px;overflow:hidden;text-align:left">
+            <div style="background:var(--bg-soft);padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-soft)">
               <span style="font-size:16px">🔒</span>
-              <span style="font-size:14px;color:#0D1B4B;font-weight:600">
+              <span style="font-size:14px;color:var(--text-soft);font-weight:600">
                 Encontramos <span x-text="resultado.tease.marcas_similares"></span> marca(s) parecida(s). Estas son algunas:
               </span>
             </div>
@@ -415,56 +642,39 @@
                 <div class="teaser-row">
                   <span class="teaser-mask" x-text="m.mask"></span>
                   <span style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-shrink:0">
-                    <span style="background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.4px">Similar</span>
-                    <span style="font-size:12px;color:#64748b;white-space:nowrap">clase <span x-text="m.clase || '—'"></span></span>
-                    <span style="font-size:13px;font-weight:700;color:#0D1B4B" x-text="m.score + '%'"></span>
+                    <span style="background:rgba(245,158,11,.15);color:#fcd34d;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;border:1px solid rgba(245,158,11,.30)">Similar</span>
+                    <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">clase <span x-text="m.clase || '—'"></span></span>
+                    <span style="font-size:13px;font-weight:700;color:var(--text)" x-text="m.score + '%'"></span>
                   </span>
                 </div>
               </template>
             </div>
-            <div style="padding:10px 16px;background:#F0F5FF;font-size:13px;color:#1B6EF3;font-weight:600;text-align:center">
-              Desbloqueá los nombres, titulares y fechas en el informe completo ↓
+            <div style="padding:10px 16px;background:var(--blue-soft);font-size:13px;color:#7eb1ff;font-weight:600;text-align:center;border-top:1px solid var(--border-soft)">
+              Desbloqueá nombres, titulares y fechas en el informe completo ↓
             </div>
           </div>
 
-          <!-- GARANTÍA DE VIABILIDAD -->
           <div class="garantia-pill">
-            🛡️ <strong>Garantía de Viabilidad:</strong> si el informe pago detecta riesgo ALTO, te devolvemos el 100% o lo aplicamos a un nombre viable.
+            🛡️ <strong>Garantía de Viabilidad:</strong> si el informe pago detecta riesgo ALTO, te devolvemos el 100%.
           </div>
 
-          <div x-show="resultado.siguiente_paso && resultado.siguiente_paso.incluye"
-               style="margin-top:18px;text-align:left;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:16px 18px">
-            <div style="font-weight:700;color:#0D1B4B;margin-bottom:10px;font-size:14px;display:flex;align-items:center;gap:8px">
-              <span>📄</span> Qué incluye el informe completo — $<span x-text="precioFinalInforme.toLocaleString('es-AR')"></span>
-            </div>
-            <ul style="list-style:none;padding:0;margin:0;display:grid;gap:7px">
-              <template x-for="(item, i) in (resultado.siguiente_paso?.incluye || incluyeInformeFallback)" :key="i">
-                <li style="display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:#334155">
-                  <span style="color:#16A34A;font-weight:700;flex-shrink:0">✓</span>
-                  <span x-text="item"></span>
-                </li>
-              </template>
-            </ul>
-          </div>
-
-          <div class="result-cta" style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:stretch">
-            <button class="btn btn-primary" @click="openInforme()"
-                    :disabled="iniciandoPago"
-                    style="flex:2;min-width:240px;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;line-height:1.2;padding:14px 24px">
+          <div class="result-cta">
+            <button class="btn btn-primary" @click="openInforme()" :disabled="iniciandoPago"
+                    style="flex:2;min-width:240px;flex-direction:column;line-height:1.2;padding:15px 22px">
               <span x-show="!iniciandoPago">
-                <span style="font-weight:700">Pedir informe completo con IA</span>
+                <span style="font-weight:700;display:block">Pedir informe completo con IA</span>
                 <span style="display:block;margin-top:4px;font-size:15px;font-weight:700">
                   $<span x-text="precioFinalInforme.toLocaleString('es-AR')"></span>
                   <span x-show="precioInforme && precioInforme.descuento_pct > 0" x-cloak
-                        style="text-decoration:line-through;opacity:.7;font-weight:400;font-size:13px;margin-left:6px">
+                        style="text-decoration:line-through;opacity:.65;font-weight:400;font-size:13px;margin-left:6px">
                     $<span x-text="(precioInforme?.precio_original || PRECIO_INFORME_BASE).toLocaleString('es-AR')"></span>
                   </span>
                 </span>
               </span>
               <span x-show="iniciandoPago" x-cloak>Generando link de pago…</span>
             </button>
-            <button class="btn" @click="iniciarRegistroDirecto()" :disabled="iniciandoRegistro"
-                    style="flex:1;min-width:180px;background:#0D1B4B;color:#fff;font-weight:700">
+            <button class="btn btn-dark" @click="iniciarRegistroDirecto()" :disabled="iniciandoRegistro"
+                    style="flex:1;min-width:170px;font-weight:700">
               <span x-show="!iniciandoRegistro">🚀 Registrar marca</span>
               <span x-show="iniciandoRegistro" x-cloak>Procesando…</span>
             </button>
@@ -472,28 +682,29 @@
         </div>
       </template>
 
+      <!-- Email opcional -->
       <template x-if="resultado && !resultado.premium && !emailGuardado">
-        <div class="result-card" style="margin-top:14px;background:#F0F5FF;border-color:#BFD4FF">
-          <div style="font-weight:700;color:#0D1B4B;margin-bottom:4px">📩 Te mandamos los próximos pasos</div>
-          <div style="font-size:14px;color:#475569;margin-bottom:12px">
+        <div class="result-card" style="margin-top:14px;background:linear-gradient(180deg,rgba(27,110,243,.10),var(--surface));border-color:rgba(27,110,243,.30)">
+          <div style="font-weight:700;color:var(--text);margin-bottom:4px">📩 Te mandamos los próximos pasos</div>
+          <div style="font-size:14px;color:var(--text-muted);margin-bottom:14px;line-height:1.55">
             Dejá tu email y te enviamos cómo registrar
-            "<span x-text="form.marca"></span>": plazos, tasas reales y un descuento para el informe completo. Sin spam.
+            "<span x-text="form.marca" style="color:var(--text-soft);font-weight:600"></span>": plazos, tasas reales y descuento. Sin spam.
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input type="email" x-model="seguimientoEmail" placeholder="vos@empresa.com"
-                   @keydown.enter="guardarSeguimiento()"
-                   style="flex:1;min-width:200px;padding:11px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px">
-            <button class="btn btn-primary" @click="guardarSeguimiento()" :disabled="guardandoEmail" style="min-width:140px">
+                   @keydown.enter="guardarSeguimiento()" class="modal-input"
+                   style="flex:1;min-width:200px">
+            <button class="btn btn-primary" @click="guardarSeguimiento()" :disabled="guardandoEmail" style="min-width:150px">
               <span x-show="!guardandoEmail">Enviarme la guía</span>
               <span x-show="guardandoEmail" x-cloak>Guardando…</span>
             </button>
           </div>
-          <div x-show="emailError" x-cloak style="color:#DC2626;font-size:13px;margin-top:8px" x-text="emailError"></div>
+          <div x-show="emailError" x-cloak class="modal-error" x-text="emailError"></div>
         </div>
       </template>
       <template x-if="resultado && emailGuardado">
         <div class="result-card good" style="margin-top:14px">
-          <div style="font-weight:600;color:#16A34A">✓ Listo. Te escribimos a <span x-text="seguimientoEmail"></span> con los próximos pasos.</div>
+          <div style="font-weight:600;color:#6ee7b7">✓ Listo. Te escribimos a <span x-text="seguimientoEmail"></span>.</div>
         </div>
       </template>
 
@@ -509,176 +720,25 @@
   </div>
 </section>
 
-<!-- GARANTÍA DE VIABILIDAD -->
-<section id="garantia" style="background:linear-gradient(135deg,#ECFDF5,#F0FDF4);padding:56px 24px">
-  <div class="container" style="max-width:880px;text-align:center">
-    <div class="section-eyebrow" style="color:#065F46">Sin riesgo para vos</div>
-    <h2 class="section-title">Garantía de Viabilidad — 100% de tu dinero protegido</h2>
-    <p style="color:#065F46;font-size:16px;max-width:700px;margin:0 auto 28px">
-      Si después de pagar el informe nuestro análisis con IA determina <strong>riesgo ALTO</strong> de rechazo,
-      tenés dos opciones a elegir:
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:760px;margin:0 auto">
-      <div style="background:#fff;border:2px solid #A7F3D0;border-radius:14px;padding:22px;text-align:left">
-        <div style="font-size:28px;margin-bottom:6px">💰</div>
-        <div style="font-weight:800;color:#065F46;margin-bottom:6px">Reembolso total</div>
-        <div style="font-size:14px;color:#475569">Te devolvemos el 100% del informe ($19.900) sin preguntas.</div>
-      </div>
-      <div style="background:#fff;border:2px solid #A7F3D0;border-radius:14px;padding:22px;text-align:left">
-        <div style="font-size:28px;margin-bottom:6px">🔄</div>
-        <div style="font-weight:800;color:#065F46;margin-bottom:6px">Crédito para otro nombre</div>
-        <div style="font-size:14px;color:#475569">Aplicamos el saldo al análisis de un nombre alternativo viable.</div>
-      </div>
-    </div>
-    <p style="color:#065F46;font-size:13px;margin-top:24px">
-      Porque preferimos que registres una marca que se concede, no que pierdas las tasas oficiales.
-    </p>
-  </div>
-</section>
-
-<!-- SAMPLE REPORT -->
-<section id="ejemplo" style="background:#F8FAFC;padding:64px 24px">
+<!-- GARANTÍA -->
+<section id="garantia">
   <div class="container">
-    <div class="section-eyebrow">El producto por dentro</div>
-    <h2 class="section-title">Mirá exactamente lo que vas a recibir</h2>
-    <p class="section-sub">Nada de promesas vagas: así se ve el producto en acción.</p>
-
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:32px 0 0">
-      <button @click="ejemploTab='informe'" :style="ejemploTab==='informe' ? 'background:#1B6EF3;color:#fff;border-color:#1B6EF3' : 'background:#fff;color:#0D1B4B'" style="padding:10px 18px;border:1px solid #E2E8F0;border-radius:99px;font-weight:600;font-size:14px;cursor:pointer">📄 El informe</button>
-      <button @click="ejemploTab='alerta'" :style="ejemploTab==='alerta' ? 'background:#1B6EF3;color:#fff;border-color:#1B6EF3' : 'background:#fff;color:#0D1B4B'" style="padding:10px 18px;border:1px solid #E2E8F0;border-radius:99px;font-weight:600;font-size:14px;cursor:pointer">🔔 Alerta de vigilancia</button>
-      <button @click="ejemploTab='panel'" :style="ejemploTab==='panel' ? 'background:#1B6EF3;color:#fff;border-color:#1B6EF3' : 'background:#fff;color:#0D1B4B'" style="padding:10px 18px;border:1px solid #E2E8F0;border-radius:99px;font-weight:600;font-size:14px;cursor:pointer">📊 Tu panel</button>
-    </div>
-
-    <div x-show="ejemploTab==='informe'" style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;margin-top:32px">
-      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:24px;
-                  box-shadow:0 4px 12px rgba(13,27,75,.08)">
-        <div style="display:flex;justify-content:space-between;align-items:start;border-bottom:1px solid #E2E8F0;padding-bottom:14px;margin-bottom:14px">
-          <div>
-            <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px">Informe de viabilidad</div>
-            <div style="font-size:18px;font-weight:800;color:#0D1B4B">"VERBUM"</div>
-            <div style="font-size:12px;color:#64748b">Clase 41 — Educación · 28/05/2026</div>
-          </div>
-          <div style="background:#FEF3C7;color:#92400E;padding:6px 12px;border-radius:99px;font-size:11px;font-weight:700">⚠ NECESITA ANÁLISIS</div>
-        </div>
-
-        <div style="background:#F4F5F9;padding:12px;border-radius:8px;margin-bottom:14px;font-size:13px">
-          <div><strong>17</strong> marcas similares · <strong>3</strong> nivel alto · 1 idéntica</div>
-        </div>
-
-        <div style="margin-bottom:14px">
-          <div style="font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:1px;margin-bottom:6px">Confundibilidad — primera coincidencia</div>
-          <div style="background:#fff;border:1px solid #E2E8F0;padding:12px;border-radius:8px">
-            <div style="display:flex;justify-content:space-between"><strong>VERBO EDU</strong> <span style="color:#DC2626;font-weight:700">78%</span></div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px">Acta 4291837 · Vigente · Clase 41</div>
-            <div style="margin-top:8px;display:flex;align-items:center;gap:6px;font-size:11px">
-              <span style="color:#64748b;min-width:60px">Léxico</span>
-              <div style="flex:1;background:#E2E8F0;height:5px;border-radius:99px;overflow:hidden"><div style="width:70%;height:100%;background:#1B6EF3"></div></div>
-              <span style="font-weight:700">70%</span>
-            </div>
-            <div style="margin-top:4px;display:flex;align-items:center;gap:6px;font-size:11px">
-              <span style="color:#64748b;min-width:60px">Fonético</span>
-              <div style="flex:1;background:#E2E8F0;height:5px;border-radius:99px;overflow:hidden"><div style="width:60%;height:100%;background:#7C3AED"></div></div>
-              <span style="font-weight:700">60%</span>
-            </div>
-            <div style="margin-top:4px;display:flex;align-items:center;gap:6px;font-size:11px">
-              <span style="color:#64748b;min-width:60px">Conceptual</span>
-              <div style="flex:1;background:#E2E8F0;height:5px;border-radius:99px;overflow:hidden"><div style="width:85%;height:100%;background:#16A34A"></div></div>
-              <span style="font-weight:700">85%</span>
-            </div>
-            <div style="font-size:11px;color:#475569;font-style:italic;margin-top:6px">Traducción: 'Verbum' es 'verbo' en latín. Misma idea protegida.</div>
-          </div>
-        </div>
-
-        <div style="font-size:11px;color:#64748b;background:#F4F5F9;padding:10px;border-radius:6px;text-align:center">
-          + 16 marcas más · Análisis 45 clases · Marca débil/fuerte · Dominios + IG/TikTok · PDF
-        </div>
+    <div class="section-eyebrow">Sin riesgo</div>
+    <h2 class="section-title">Garantía de Viabilidad — 100% reintegrable</h2>
+    <p class="section-sub">
+      Si después de pagar el informe nuestro análisis con IA determina riesgo ALTO de rechazo, tenés dos opciones a elegir.
+    </p>
+    <div class="garantia-grid">
+      <div class="garantia-card glow-card">
+        <div style="font-size:30px;margin-bottom:8px">💰</div>
+        <div style="font-weight:800;color:var(--text);font-size:17px;margin-bottom:6px">Reembolso total</div>
+        <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Te devolvemos el 100% del informe ($19.900) sin preguntas.</div>
       </div>
-
-      <div>
-        <h3 style="margin:0 0 16px">Qué incluye exactamente</h3>
-        <div style="display:flex;flex-direction:column;gap:14px">
-          <div style="display:flex;gap:14px;align-items:start">
-            <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px">1</div>
-            <div><strong>Lista completa de marcas similares</strong><div style="font-size:13px;color:#64748b">Titular, fecha, acta, estado — todas las coincidencias con denominación real.</div></div>
-          </div>
-          <div style="display:flex;gap:14px;align-items:start">
-            <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px">2</div>
-            <div><strong>IA profunda triple dimensión</strong><div style="font-size:13px;color:#64748b">Léxico, fonético y conceptual con Claude, marca por marca.</div></div>
-          </div>
-          <div style="display:flex;gap:14px;align-items:start">
-            <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px">3</div>
-            <div><strong>Análisis de confundibilidad</strong><div style="font-size:13px;color:#64748b">Criterios oficiales del INPI aplicados caso por caso.</div></div>
-          </div>
-          <div style="display:flex;gap:14px;align-items:start">
-            <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px">4</div>
-            <div><strong>Validación de dominios y redes</strong><div style="font-size:13px;color:#64748b">.com, .com.ar + usuarios de Instagram y TikTok.</div></div>
-          </div>
-          <div style="display:flex;gap:14px;align-items:start">
-            <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px">5</div>
-            <div><strong>Probabilidad de registro en las 45 clases</strong><div style="font-size:13px;color:#64748b">Para ver dónde conviene registrar y dónde no.</div></div>
-          </div>
-          <div style="display:flex;gap:14px;align-items:start">
-            <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px">6</div>
-            <div><strong>Marca fuerte/débil + marcas notorias</strong><div style="font-size:13px;color:#64748b">Distintividad y riesgo frente a Coca-Cola, Nike, etc.</div></div>
-          </div>
-          <div style="display:flex;gap:14px;align-items:start">
-            <div style="background:#1B6EF3;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;flex:0 0 28px">7</div>
-            <div><strong>PDF descargable + Garantía de Viabilidad</strong><div style="font-size:13px;color:#64748b">Si dice riesgo ALTO, te devolvemos el dinero.</div></div>
-          </div>
-        </div>
-        <button @click="document.getElementById('marca').focus(); document.getElementById('marca').scrollIntoView({behavior:'smooth',block:'center'})" class="btn btn-primary"
-           style="cursor:pointer;display:inline-block;margin-top:24px">
-          Pedir mi informe — $19.900
-        </button>
+      <div class="garantia-card glow-card">
+        <div style="font-size:30px;margin-bottom:8px">🔄</div>
+        <div style="font-weight:800;color:var(--text);font-size:17px;margin-bottom:6px">Crédito para otro nombre</div>
+        <div style="font-size:14px;color:var(--text-muted);line-height:1.6">Aplicamos el saldo al análisis de un nombre alternativo viable.</div>
       </div>
-    </div>
-
-    <div x-show="ejemploTab==='alerta'" x-cloak style="max-width:560px;margin:32px auto 0">
-      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(13,27,75,.08)">
-        <div style="background:#0D1B4B;color:#fff;padding:14px 20px;font-size:13px;display:flex;align-items:center;gap:8px">
-          <span style="font-size:16px">📨</span> Email · LegalPacers
-        </div>
-        <div style="padding:22px">
-          <div style="font-size:18px;font-weight:800;color:#0D1B4B;margin-bottom:4px">🔔 Apareció una marca parecida a la tuya</div>
-          <div style="font-size:13px;color:#64748b;margin-bottom:16px">Detectada en el boletín de esta semana · marca vigilada: <strong>SOL</strong></div>
-          <div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:14px;margin-bottom:16px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <strong style="font-size:16px;color:#0D1B4B">SOLCITO</strong>
-              <span style="background:#DC2626;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px">82% · ALTO</span>
-            </div>
-            <div style="font-size:12px;color:#64748b;margin-top:6px">Acta 4.612.330 · Clase 25 · Titular: Indumentaria del Sur SA</div>
-          </div>
-          <div style="background:#FFFBEB;border-radius:8px;padding:12px;font-size:13px;color:#92400E;margin-bottom:16px">
-            ⏳ Tenés <strong>90 días</strong> desde la publicación para presentar oposición.
-          </div>
-          <div style="background:#1B6EF3;color:#fff;text-align:center;padding:12px;border-radius:8px;font-weight:600;font-size:14px">Ver alerta en mi panel</div>
-        </div>
-      </div>
-      <p style="text-align:center;color:#64748b;font-size:13px;margin-top:14px">Te llega por email y WhatsApp apenas aparece. Así nadie registra algo parecido sin que te enteres.</p>
-    </div>
-
-    <div x-show="ejemploTab==='panel'" x-cloak style="max-width:680px;margin:32px auto 0">
-      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:22px;box-shadow:0 4px 12px rgba(13,27,75,.08)">
-        <div style="font-size:16px;font-weight:800;color:#0D1B4B;margin-bottom:4px">Tus marcas, en un solo lugar</div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:16px">Estado de cada marca, alertas y vencimientos.</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #E2E8F0;border-radius:10px;padding:12px 14px">
-            <div><strong style="color:#0D1B4B">SOL</strong> <span style="font-size:12px;color:#64748b">· Clase 25</span></div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="background:#DCFCE7;color:#16A34A;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px">Vigente</span>
-              <span style="background:#FEE2E2;color:#DC2626;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px">1 alerta</span>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #E2E8F0;border-radius:10px;padding:12px 14px">
-            <div><strong style="color:#0D1B4B">SOL NACIENTE</strong> <span style="font-size:12px;color:#64748b">· Clase 43</span></div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="background:#FEF9C3;color:#B45309;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px">En trámite</span>
-              <span style="background:#F1F5F9;color:#64748b;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px">Sin alertas</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p style="text-align:center;color:#64748b;font-size:13px;margin-top:14px">Cargás tus marcas y nosotros vigilamos, te avisamos de alertas y te recordamos cada vencimiento.</p>
     </div>
   </div>
 </section>
@@ -688,23 +748,22 @@
   <div class="container">
     <div class="section-eyebrow">Cómo funciona</div>
     <h2 class="section-title">3 pasos para registrar sin perder las tasas</h2>
-    <p class="section-sub">Desde la verificación con IA hasta el título de propiedad, todo automatizado.</p>
+    <p class="section-sub">Desde el pre-check con IA hasta el título de propiedad — todo online, sin reuniones.</p>
     <div class="steps-grid">
-      <div class="step">
+      <div class="step glow-card">
         <div class="step-num">1</div>
-        <h3>Verificá con IA</h3>
-        <p>Análisis de <span class="term" tabindex="0" data-tip="Riesgo de que tu marca se confunda con otra ya registrada. Se evalúa en tres planos: cómo se ve (gráfica), cómo suena (fonética) y qué significa (conceptual). Si hay confundibilidad, te rechazan el registro y perdés las tasas.">confundibilidad</span>
-           en tres dimensiones: léxica, fonética y conceptual. Detectamos colisiones antes de que pagues las tasas oficiales del INPI.</p>
+        <h3>Pre-check con IA</h3>
+        <p>Análisis de confundibilidad léxica, fonética y conceptual. Detectamos colisiones antes de que pagues las tasas operativas estatales.</p>
       </div>
-      <div class="step">
+      <div class="step glow-card">
         <div class="step-num">2</div>
         <h3>Pagás y registramos</h3>
-        <p>Si el nombre es viable, pagás $120.000 de honorarios + tasas oficiales y nosotros presentamos. Sin reuniones, sin cotizaciones eternas. Listo desde el navegador.</p>
+        <p>Si el nombre es viable, pagás $120.000 de honorarios + tasas oficiales y presentamos. Sin reuniones, sin cotizaciones eternas.</p>
       </div>
-      <div class="step">
+      <div class="step glow-card">
         <div class="step-num">3</div>
         <h3>Vigilamos por vos</h3>
-        <p>Las marcas duran 10 años. Revisamos cada semana el boletín del INPI y te avisamos si alguien intenta registrar algo parecido para que opongas a tiempo.</p>
+        <p>Las marcas duran 10 años. Revisamos cada semana el boletín del Registro Nacional y te avisamos si alguien intenta registrar algo parecido.</p>
       </div>
     </div>
   </div>
@@ -714,25 +773,26 @@
 <section id="planes">
   <div class="container">
     <div class="section-eyebrow">Planes</div>
-    <h2 class="section-title">Precios claros, todo automatizado</h2>
-    <p class="section-sub">Sin reuniones, sin cotizaciones. Pagás y arrancamos.</p>
+    <h2 class="section-title">Precios claros, todo online</h2>
+    <p class="section-sub">Sin reuniones ni cotizaciones. Pagás y arrancamos.</p>
 
     <div class="plans-grid">
-      <div class="plan">
+      <div class="plan glow-card">
         <div class="plan-tag">Free</div>
-        <h3>Búsqueda gratuita</h3>
+        <h3>Pre-check gratuito</h3>
         <div class="plan-price">$0<small>sin tarjeta, sin registro</small></div>
-        <p class="plan-desc">Veredicto rápido para 1 marca, clases detectadas con IA.</p>
+        <p class="plan-desc">Veredicto rápido con detección automática de clases.</p>
         <ul>
-          <li>Veredicto BAJA / MEDIA / ALTA probabilidad</li>
+          <li>Veredicto BAJA / MEDIA / ALTA</li>
           <li>Detección automática de clases Niza</li>
-          <li>Cantidad de marcas similares detectadas</li>
+          <li>Cantidad de marcas similares</li>
           <li>Detección de marcas notorias</li>
         </ul>
-        <button onclick="document.getElementById('marca').focus(); document.getElementById('marca').scrollIntoView({behavior:'smooth',block:'center'})" class="btn btn-outline" style="cursor:pointer">Buscar gratis</button>
+        <button class="btn btn-outline"
+                onclick="document.getElementById('marca').focus(); document.getElementById('marca').scrollIntoView({behavior:'smooth',block:'center'})">Buscar gratis</button>
       </div>
 
-      <div class="plan featured">
+      <div class="plan glow-card featured">
         <div class="plan-tag">Más elegido</div>
         <h3>Informe completo</h3>
         <div class="plan-price">$19.900<small>pago único · IA profunda</small></div>
@@ -740,45 +800,44 @@
         <ul>
           <li>Lista completa con titular, acta, fecha y estado</li>
           <li>IA triple dimensión (léxico, fonético, conceptual)</li>
-          <li>Probabilidad de registro en las 45 clases Niza</li>
-          <li>Validación de dominios .com / .com.ar</li>
-          <li>Chequeo de usuarios en Instagram y TikTok</li>
-          <li>PDF descargable con cotización del registro</li>
-          <li style="color:#16A34A;font-weight:600">🛡️ Garantía de Viabilidad (100% reintegrable)</li>
+          <li>Probabilidad en las 45 clases Niza</li>
+          <li>Validación de dominios y redes sociales</li>
+          <li>PDF descargable con cotización</li>
+          <li style="color:#6ee7b7">🛡️ Garantía de Viabilidad</li>
         </ul>
-        <button @click="abrirCheckoutInformeDirecto()" :disabled="iniciandoPago" class="btn btn-primary" style="cursor:pointer">
+        <button @click="abrirCheckoutInformeDirecto()" :disabled="iniciandoPago" class="btn btn-primary">
           <span x-show="!iniciandoPago">Pagar informe ahora</span>
           <span x-show="iniciandoPago" x-cloak>Generando link…</span>
         </button>
       </div>
 
-      <div class="plan featured" style="border-color:#0D1B4B">
-        <div class="plan-tag" style="color:#0D1B4B">Venta directa</div>
+      <div class="plan glow-card featured" style="border-color:rgba(16,185,129,.35);box-shadow:0 0 0 1px rgba(16,185,129,.15),0 30px 60px -30px var(--green-glow)">
+        <div class="plan-tag" style="color:#6ee7b7">Venta directa</div>
         <h3>Registro de marca</h3>
-        <div class="plan-price">$120.000<small>+ tasas oficiales del INPI</small></div>
-        <p class="plan-desc">Honorarios fijos. Tasas oficiales transparentes según las clases elegidas el día de la presentación.</p>
+        <div class="plan-price">$120.000<small>+ tasas oficiales del Registro</small></div>
+        <p class="plan-desc">Honorarios fijos transparentes. Tasas estatales a precio de costo según rubros a proteger.</p>
         <ul>
-          <li>Definición de clases optimizada con IA</li>
-          <li>Presentación del expediente ante el INPI</li>
-          <li>Seguimiento del trámite + respuesta a vistas</li>
+          <li>Pre-análisis con IA incluido</li>
+          <li>Definición optimizada de clases</li>
+          <li>Presentación del expediente</li>
+          <li>Seguimiento y respuesta a vistas</li>
           <li>3 meses de vigilancia bonificada</li>
-          <li>Entrega del título digital</li>
-          <li style="color:#16A34A;font-weight:600">🛡️ Garantía de Viabilidad incluida</li>
+          <li style="color:#6ee7b7">🛡️ Garantía de Viabilidad</li>
         </ul>
         <button @click="iniciarRegistroDirecto()" :disabled="iniciandoRegistro" class="btn btn-primary"
-                style="background:#0D1B4B">
+                style="background:var(--green);box-shadow:0 4px 18px -4px var(--green-glow)">
           <span x-show="!iniciandoRegistro">Iniciar registro ahora</span>
           <span x-show="iniciandoRegistro" x-cloak>Procesando…</span>
         </button>
       </div>
 
-      <div class="plan">
+      <div class="plan glow-card">
         <div class="plan-tag">Vigilancia</div>
-        <h3>Vigilancia</h3>
+        <h3>Vigilancia mensual</h3>
         <div class="plan-price">desde $4.900<small>por mes</small></div>
         <p class="plan-desc">Que nadie registre algo parecido sin que te enteres.</p>
         <ul>
-          <li>Aviso quincenal de similitudes nuevas</li>
+          <li>Aviso quincenal de similitudes</li>
           <li>Alertas por email y WhatsApp</li>
           <li>3 planes: Personal, PyME, Agencia</li>
           <li>Cancelás cuando quieras</li>
@@ -789,65 +848,12 @@
   </div>
 </section>
 
-<!-- REGISTRO: proceso paso a paso + precio -->
-<section id="registro" style="background:#F8FAFC">
-  <div class="container">
-    <div class="section-eyebrow">Registro de marca · venta directa</div>
-    <h2 class="section-title">$120.000 de honorarios + tasas oficiales</h2>
-    <p class="section-sub">Transparencia total: las tasas oficiales las paga el INPI y dependen de las clases elegidas el día de la presentación.</p>
-
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:40px 0 12px">
-      <template x-for="(p, i) in pasosRegistro" :key="i">
-        <div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:18px 16px;position:relative">
-          <div style="width:34px;height:34px;border-radius:50%;background:#1B6EF3;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;margin-bottom:12px" x-text="i+1"></div>
-          <div style="font-weight:700;color:#0D1B4B;font-size:14px;margin-bottom:6px" x-text="p.titulo"></div>
-          <div style="font-size:12px;color:#64748b;line-height:1.5" x-text="p.desc"></div>
-        </div>
-      </template>
-    </div>
-    <p style="text-align:center;color:#64748b;font-size:13px;margin:0 0 8px">
-      Plazo estimado: <strong>3 a 4 meses</strong> si no hay oposiciones de terceros.
-    </p>
-
-    <div style="max-width:640px;margin:36px auto 0;background:#fff;border:2px solid #1B6EF3;border-radius:16px;padding:28px;box-shadow:0 8px 28px rgba(27,110,243,.1)">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;border-bottom:1px solid #E2E8F0;padding-bottom:16px;margin-bottom:16px">
-        <div>
-          <div style="font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;font-weight:700">Honorarios profesionales</div>
-          <div style="font-size:34px;font-weight:800;color:#0D1B4B">$120.000<span style="font-size:14px;color:#64748b;font-weight:500"> · fee fijo</span></div>
-          <div style="font-size:13px;color:#475569;margin-top:6px">+ Tasas oficiales del INPI (se calculan al día de la presentación según clases elegidas)</div>
-        </div>
-        <div style="font-size:12px;color:#16A34A;font-weight:700;text-align:right">🛡️ Garantía de<br>Viabilidad incluida</div>
-      </div>
-      <div style="font-weight:700;color:#0D1B4B;margin-bottom:12px">Qué incluye</div>
-      <ul style="list-style:none;padding:0;margin:0;display:grid;gap:9px">
-        <template x-for="(item, i) in incluyeRegistro" :key="i">
-          <li style="display:flex;gap:10px;align-items:flex-start;font-size:14px;color:#334155">
-            <span style="color:#16A34A;font-weight:700;flex-shrink:0">✓</span>
-            <span x-text="item"></span>
-          </li>
-        </template>
-      </ul>
-      <div style="margin-top:14px;padding:12px 14px;background:#EFF6FF;border:1px dashed #BFDBFE;border-radius:8px;font-size:13px;color:#1E3A8A">
-        💡 <strong>Tip:</strong> hacé primero el informe de $19.900. Si arroja viabilidad ALTA, te lo descontamos del registro.
-      </div>
-      <button @click="iniciarRegistroDirecto()" :disabled="iniciandoRegistro" class="btn btn-primary"
-              style="width:100%;margin-top:18px;padding:14px;background:#0D1B4B">
-        <span x-show="!iniciandoRegistro">🚀 Iniciar registro ahora — Pago seguro Mercado Pago</span>
-        <span x-show="iniciandoRegistro" x-cloak>Generando link de pago…</span>
-      </button>
-      <p style="text-align:center;color:#64748b;font-size:12px;margin-top:10px">
-        Sin reuniones, sin cotizaciones. Pagás y arrancamos el trámite hoy mismo.
-      </p>
-    </div>
-  </div>
-</section>
-
 <!-- COMPARATIVA -->
 <section>
   <div class="container">
     <div class="section-eyebrow">Por qué LegalPacers</div>
     <h2 class="section-title">Hacerlo solo vs. hacerlo con nosotros</h2>
-    <p class="section-sub">Desde 2025 el INPI ya no filtra colisiones de oficio. Una sola decisión mal tomada cuesta las tasas.</p>
+    <p class="section-sub">Una sola decisión mal tomada cuesta las tasas operativas estatales.</p>
 
     <div class="compare-table">
       <div class="compare-row compare-head">
@@ -857,23 +863,23 @@
       </div>
       <div class="compare-row">
         <div><strong>Búsqueda de similitud</strong></div>
-        <div class="col-bad">El INPI ya no la hace de oficio: pagás y te enterás del rechazo</div>
+        <div class="col-bad">Sin filtrado previo: pagás y te enterás del rechazo</div>
         <div class="col-good">IA léxica, fonética y conceptual antes de pagar las tasas</div>
       </div>
       <div class="compare-row">
         <div><strong>Clasificación Niza</strong></div>
         <div class="col-bad">Adivinar entre 45 clases sin contexto</div>
-        <div class="col-good">Detección automática por rubro + validación con IA</div>
+        <div class="col-good">Detección automática por rubro</div>
       </div>
       <div class="compare-row">
         <div><strong>Riesgo económico</strong></div>
-        <div class="col-bad">Si te rechazan, perdés las tasas oficiales (~$87.000+)</div>
-        <div class="col-good">Garantía de Viabilidad: te devolvemos el informe si hay riesgo ALTO</div>
+        <div class="col-bad">Si te rechazan, perdés las tasas operativas</div>
+        <div class="col-good">Garantía de Viabilidad: 100% reintegrable</div>
       </div>
       <div class="compare-row">
         <div><strong>Vigilancia post-registro</strong></div>
-        <div class="col-bad">Tenés que mirar el boletín manualmente</div>
-        <div class="col-good">Alertas automáticas por cada marca similar nueva</div>
+        <div class="col-bad">Mirás el boletín manualmente</div>
+        <div class="col-good">Alertas automáticas por marca nueva</div>
       </div>
       <div class="compare-row">
         <div><strong>Declaración de uso y renovación</strong></div>
@@ -884,35 +890,15 @@
   </div>
 </section>
 
-<!-- TRUST STATS -->
-<section style="background:#fff;padding:48px 24px;border-top:1px solid #E2E8F0;border-bottom:1px solid #E2E8F0">
+<!-- STATS -->
+<section id="stats">
   <div class="container" style="text-align:center">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px">
-      <div>
-        <div style="font-size:42px;font-weight:800;color:#1B6EF3;line-height:1">+100</div>
-        <div style="font-size:14px;color:#475569;margin-top:6px">marcas registradas en el año</div>
-      </div>
-      <div>
-        <div style="font-size:42px;font-weight:800;color:#1B6EF3;line-height:1">+200</div>
-        <div style="font-size:14px;color:#475569;margin-top:6px">vigilancias activas</div>
-      </div>
-      <div>
-        <div style="font-size:42px;font-weight:800;color:#1B6EF3;line-height:1">45</div>
-        <div style="font-size:14px;color:#475569;margin-top:6px">clases Niza cubiertas</div>
-      </div>
-      <div>
-        <div style="font-size:42px;font-weight:800;color:#1B6EF3;line-height:1">24/7</div>
-        <div style="font-size:14px;color:#475569;margin-top:6px">monitoreo automático</div>
-      </div>
+      <div><div class="stat-num">+100</div><div class="stat-lbl">marcas registradas en el año</div></div>
+      <div><div class="stat-num">+200</div><div class="stat-lbl">vigilancias activas</div></div>
+      <div><div class="stat-num">45</div><div class="stat-lbl">clases Niza cubiertas</div></div>
+      <div><div class="stat-num">24/7</div><div class="stat-lbl">monitoreo automático</div></div>
     </div>
-    <p style="margin-top:28px;color:#64748b;font-size:14px">
-      Un servicio de la consultora
-      <a href="https://www.legalpacers.com" target="_blank" rel="noopener"
-         style="color:#1B6EF3;font-weight:600;text-decoration:none">
-        LegalPacers
-      </a>
-      — especialistas en propiedad intelectual.
-    </p>
   </div>
 </section>
 
@@ -921,12 +907,10 @@
   <div class="container">
     <div class="section-eyebrow">Clientes</div>
     <h2 class="section-title">Marcas que ya están protegidas</h2>
-    <p class="section-sub">Emprendedores y agencias que confían en LegalPacers para cuidar lo que construyeron.</p>
+    <p class="section-sub">Emprendedores y agencias que confían en LegalPacers.</p>
     <div class="testi-grid">
-      <div class="testi">
-        <p class="testi-quote">"Llegué a LegalPacers para registrar una marca y terminamos blindando todo el portfolio.
-          Nos detectaron coincidencias en clases que nosotros ni habíamos pensado, y desde entonces vigilan
-          todo lo que se publica en el boletín de marcas."</p>
+      <div class="testi glow-card">
+        <p class="testi-quote">"Llegué a LegalPacers para registrar una marca y terminamos blindando todo el portfolio. Nos detectaron coincidencias en clases que ni habíamos pensado."</p>
         <div class="testi-author">
           <div class="testi-avatar">ES</div>
           <div>
@@ -935,10 +919,8 @@
           </div>
         </div>
       </div>
-      <div class="testi">
-        <p class="testi-quote">"Estuve a punto de invertir en branding sin verificar la marca. Hice la consulta en
-          el portal y aparecieron tres marcas similares en mi clase. El informe completo me ahorró meses de trabajo
-          tirado. Hoy Focca Fuegos está registrada."</p>
+      <div class="testi glow-card">
+        <p class="testi-quote">"Estuve a punto de invertir en branding sin verificar la marca. Aparecieron tres marcas similares en mi clase. El informe me ahorró meses de trabajo tirado."</p>
         <div class="testi-author">
           <div class="testi-avatar">FM</div>
           <div>
@@ -953,7 +935,7 @@
 
 <!-- FAQ -->
 <section id="faq">
-  <div class="container" style="max-width:780px">
+  <div class="container" style="max-width:820px">
     <div class="section-eyebrow">Preguntas frecuentes</div>
     <h2 class="section-title">Lo que más nos preguntan</h2>
     <p class="section-sub">Si tu duda no aparece, escribinos por WhatsApp y te respondemos en el día.</p>
@@ -975,16 +957,16 @@
       <p>Consultora especializada en propiedad intelectual y registro de marcas en Argentina.</p>
       <p style="margin-top:12px">
         <a href="https://www.legalpacers.com" target="_blank" rel="noopener"
-           style="color:#1B6EF3;font-weight:600">www.legalpacers.com</a>
+           style="color:#60a5fa;font-weight:600">www.legalpacers.com</a>
       </p>
       <p style="margin-top:4px">contacto@legalpacers.com</p>
     </div>
     <div>
       <h4>Servicios</h4>
-      <a href="#planes">Búsqueda gratuita</a>
-      <a href="#ejemplo">Informe completo</a>
+      <a href="#planes">Pre-check gratuito</a>
+      <a href="#planes">Informe completo</a>
       <a href="#planes">Vigilancia mensual</a>
-      <a href="#registro">Registro de marca</a>
+      <a href="#planes">Registro de marca</a>
     </div>
     <div>
       <h4>Recursos</h4>
@@ -1006,119 +988,188 @@
   <span>Escribinos por WhatsApp</span>
 </a>
 
-<!-- MODAL Email para informe -->
-<div x-show="modalInforme" x-cloak @click.self="modalInforme=false"
-     style="position:fixed;inset:0;background:rgba(13,27,75,.5);z-index:60;
-            display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
-  <div style="background:#fff;border-radius:14px;padding:clamp(18px,4vw,28px);max-width:540px;width:100%;max-height:90vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+<!-- ==================== MODAL INFORME ==================== -->
+<div x-show="modalInforme" x-cloak @click.self="modalInforme=false" class="modal-bg">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div>
-        <div style="font-size:11px;color:#1B6EF3;text-transform:uppercase;letter-spacing:1px;font-weight:700">Informe completo</div>
-        <h2 style="margin:4px 0 0;font-size:22px;color:#0D1B4B">Recibilo en tu email</h2>
+        <div class="modal-eyebrow">Informe completo</div>
+        <h2 class="modal-title">Análisis profundo con IA + Garantía</h2>
       </div>
-      <button @click="modalInforme=false" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94a3b8">×</button>
+      <button @click="modalInforme=false" class="modal-close">×</button>
     </div>
 
-    <div style="background:linear-gradient(135deg,#1B6EF3,#0D1B4B);color:#fff;padding:18px;border-radius:12px;margin:18px 0;text-align:center">
-      <div style="font-size:32px;font-weight:800">
+    <div class="price-block">
+      <div class="num">
         $<span x-text="precioFinalInforme.toLocaleString('es-AR')"></span>
         <span x-show="precioInforme && precioInforme.descuento_pct > 0" x-cloak
-              style="text-decoration:line-through;opacity:.6;font-weight:400;font-size:18px;margin-left:8px">
+              style="text-decoration:line-through;opacity:.55;font-weight:400;font-size:20px;margin-left:8px">
           $<span x-text="(precioInforme?.precio_original || PRECIO_INFORME_BASE).toLocaleString('es-AR')"></span>
         </span>
       </div>
-      <div style="font-size:13px;opacity:.85">Pago único · PDF descargable · 🛡️ Garantía de Viabilidad</div>
+      <div class="meta">Pago único · PDF descargable · 🛡️ Garantía de Viabilidad</div>
     </div>
 
-    <div class="input-group" style="margin-top:16px">
-      <label for="informeEmail">Tu email <span style="color:var(--blue);font-weight:600">— te enviamos el informe acá</span></label>
-      <input id="informeEmail" type="email" x-model="informeEmail" placeholder="vos@empresa.com"
-             @keydown.enter="iniciarConsultaCompleta()"
-             style="width:100%;padding:11px 12px;border:1px solid #CBD5E1;border-radius:8px;font-size:14px">
-      <div x-show="informeEmailError" x-cloak style="color:#DC2626;font-size:13px;margin-top:6px" x-text="informeEmailError"></div>
+    <div class="entregables">
+      <h4>📦 Qué incluye</h4>
+      <ul>
+        <li>Lista completa de marcas similares con denominación real, titular, acta y fecha</li>
+        <li>Análisis con IA en triple dimensión: léxico, fonético y conceptual</li>
+        <li>Probabilidad de registro en las 45 clases Niza</li>
+        <li>Validación de dominios (.com / .com.ar)</li>
+        <li>Chequeo de disponibilidad en Instagram y TikTok</li>
+        <li>Detección de marcas notorias (Coca-Cola, Nike, etc.)</li>
+        <li>PDF descargable con cotización del registro</li>
+        <li>Garantía de Viabilidad: 100% reintegrable si el riesgo es ALTO</li>
+      </ul>
     </div>
 
-    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:14px 16px;margin-top:16px">
-      <div style="font-weight:700;color:#0D1B4B;font-size:13px;margin-bottom:8px">Qué pasa después de pagar</div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:#475569">
-        <div>1 · Preparamos el informe con IA al instante.</div>
-        <div>2 · Lo ves acá mismo y te lo enviamos por email.</div>
-        <div>3 · Si el riesgo es ALTO, activamos la <strong>Garantía de Viabilidad</strong>.</div>
+    <div class="modal-input-label" style="margin-top:18px">
+      <label for="informeEmail">Tu email <span style="color:#60a5fa;font-weight:600">— te enviamos el informe acá</span></label>
+    </div>
+    <input id="informeEmail" type="email" x-model="informeEmail"
+           placeholder="vos@empresa.com" @keydown.enter="iniciarConsultaCompleta()"
+           class="modal-input">
+    <div x-show="informeEmailError" x-cloak class="modal-error" x-text="informeEmailError"></div>
+
+    <div class="onboarding-steps">
+      <h4>Después de pasar tu tarjeta</h4>
+      <div class="onboarding-step">
+        <div class="n">1</div>
+        <div class="body">
+          <div class="t">Procesamos tu pago</div>
+          <div class="d">Cobro seguro vía Mercado Pago. No guardamos los datos de tu tarjeta.</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="n">2</div>
+        <div class="body">
+          <div class="t">Generamos el informe con IA</div>
+          <div class="d">Análisis triple dimensión + validación digital. Tarda minutos, no días.</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="n">3</div>
+        <div class="body">
+          <div class="t">Lo recibís en tu email</div>
+          <div class="d">PDF descargable + acceso permanente en tu panel.</div>
+        </div>
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
       <button class="btn btn-outline" @click="modalInforme=false" style="flex:1;min-width:120px">Cancelar</button>
-      <button class="btn btn-primary" @click="iniciarConsultaCompleta()"
-              :disabled="iniciandoPago" style="flex:2;min-width:200px">
+      <button class="btn btn-primary" @click="iniciarConsultaCompleta()" :disabled="iniciandoPago"
+              style="flex:2;min-width:200px">
         <span x-show="!iniciandoPago">
           Pagar con Mercado Pago · $<span x-text="precioFinalInforme.toLocaleString('es-AR')"></span>
         </span>
         <span x-show="iniciandoPago" x-cloak>Generando link…</span>
       </button>
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;color:#64748b;font-size:12px">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4zm0 10.9h7c-.5 4-3.2 7.6-7 8.8V12H5V6.3l7-3.1v8.7z"/></svg>
+
+    <div class="mp-badge">
+      <svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4zm0 10.9h7c-.5 4-3.2 7.6-7 8.8V12H5V6.3l7-3.1v8.7z"/></svg>
       Pago protegido por Mercado Pago · No guardamos datos de tu tarjeta
     </div>
   </div>
 </div>
 
-<!-- MODAL Registro de marca (email + checkout MP) -->
-<div x-show="modalRegistro" x-cloak @click.self="modalRegistro=false"
-     style="position:fixed;inset:0;background:rgba(13,27,75,.5);z-index:60;
-            display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
-  <div style="background:#fff;border-radius:14px;padding:clamp(18px,4vw,28px);max-width:540px;width:100%;max-height:90vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+<!-- ==================== MODAL REGISTRO DIRECTO ==================== -->
+<div x-show="modalRegistro" x-cloak @click.self="modalRegistro=false" class="modal-bg">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div>
-        <div style="font-size:11px;color:#0D1B4B;text-transform:uppercase;letter-spacing:1px;font-weight:700">Registro de marca</div>
-        <h2 style="margin:4px 0 0;font-size:22px;color:#0D1B4B">Iniciar trámite ante el INPI</h2>
+        <div class="modal-eyebrow" style="color:#6ee7b7">Registro de marca · venta directa</div>
+        <h2 class="modal-title">Iniciar trámite ante el Registro Nacional</h2>
       </div>
-      <button @click="modalRegistro=false" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94a3b8">×</button>
+      <button @click="modalRegistro=false" class="modal-close">×</button>
     </div>
 
-    <div style="background:#0D1B4B;color:#fff;padding:18px;border-radius:12px;margin:18px 0;text-align:center">
-      <div style="font-size:28px;font-weight:800">$120.000</div>
-      <div style="font-size:13px;opacity:.85">Honorarios fijos + tasas oficiales del INPI</div>
-      <div style="font-size:11px;opacity:.7;margin-top:6px">Las tasas se calculan al día de la presentación según las clases elegidas</div>
+    <div class="price-block" style="background:linear-gradient(135deg,var(--green) 0%,#065f46 100%);box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 20px 40px -20px var(--green-glow)">
+      <div class="num">$120.000</div>
+      <div class="meta">Honorarios profesionales fijos + tasas oficiales del Registro Nacional</div>
     </div>
 
-    <div class="input-group" style="margin-bottom:12px">
-      <label>Marca a registrar</label>
-      <input x-model="regForm.marca" placeholder="Nombre de tu marca">
-    </div>
-    <div class="input-group" style="margin-bottom:12px">
-      <label>¿Qué vendés o ofrecés?</label>
-      <input x-model="regForm.rubro" placeholder="Ej: ropa, café, app de delivery…">
-    </div>
-    <div class="input-group" style="margin-bottom:12px">
-      <label>Tu email</label>
-      <input type="email" x-model="regForm.email" placeholder="vos@empresa.com">
-    </div>
-    <div class="input-group" style="margin-bottom:12px">
-      <label>Tu nombre / razón social</label>
-      <input x-model="regForm.nombre">
-    </div>
-    <div class="input-group" style="margin-bottom:12px">
-      <label>Teléfono / WhatsApp</label>
-      <input x-model="regForm.telefono">
+    <div class="disclaimer">
+      <strong>Transparencia de aranceles:</strong> Los $120.000 corresponden a nuestros honorarios fijos de gestión. Al presentar el expediente se anexan las tasas oficiales de la entidad nacional a precio de costo, calculadas de forma transparente según los rubros a proteger.
     </div>
 
-    <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#065F46">
-      🛡️ <strong>Garantía de Viabilidad:</strong> si el análisis previo arroja riesgo ALTO, te devolvemos el honorario o lo aplicamos a un nombre alternativo.
+    <div class="entregables">
+      <h4>📦 Qué incluye</h4>
+      <ul>
+        <li>Pre-análisis con IA (cubierto por Garantía de Viabilidad)</li>
+        <li>Definición de clases optimizada por rubro</li>
+        <li>Presentación del expediente ante el Registro Nacional</li>
+        <li>Respuesta a vistas del organismo</li>
+        <li>Seguimiento del trámite hasta el título concedido</li>
+        <li>Tasas oficiales a precio de costo (transparente)</li>
+        <li>3 meses de vigilancia bonificada</li>
+        <li>Entrega del título digital</li>
+      </ul>
     </div>
 
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="modal-input-label" for="regMarca">Marca a registrar</label>
+        <input id="regMarca" x-model="regForm.marca" placeholder="Nombre de tu marca" class="modal-input">
+      </div>
+      <div>
+        <label class="modal-input-label" for="regRubro">¿Qué vas a ofrecer?</label>
+        <input id="regRubro" x-model="regForm.rubro" placeholder="Ej: ropa, app, café…" class="modal-input">
+      </div>
+      <div>
+        <label class="modal-input-label" for="regNombre">Tu nombre / razón social</label>
+        <input id="regNombre" x-model="regForm.nombre" class="modal-input">
+      </div>
+      <div>
+        <label class="modal-input-label" for="regTelefono">Teléfono / WhatsApp</label>
+        <input id="regTelefono" x-model="regForm.telefono" class="modal-input">
+      </div>
+      <div style="grid-column:1/-1">
+        <label class="modal-input-label" for="regEmail">Tu email</label>
+        <input id="regEmail" type="email" x-model="regForm.email" placeholder="vos@empresa.com" class="modal-input">
+      </div>
+    </div>
+
+    <div class="onboarding-steps">
+      <h4>Después de pasar tu tarjeta</h4>
+      <div class="onboarding-step">
+        <div class="n">1</div>
+        <div class="body">
+          <div class="t">Procesamos los honorarios</div>
+          <div class="d">Cobro seguro vía Mercado Pago. Al instante activamos tu expediente.</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="n">2</div>
+        <div class="body">
+          <div class="t">Disparamos el pre-análisis con IA</div>
+          <div class="d">Si arroja riesgo ALTO, activamos la Garantía de Viabilidad antes de pagar tasas.</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <div class="n">3</div>
+        <div class="body">
+          <div class="t">Presentamos ante el Registro Nacional</div>
+          <div class="d">Anexamos las tasas oficiales a precio de costo y arrancamos el seguimiento del trámite.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
       <button class="btn btn-outline" @click="modalRegistro=false" style="flex:1;min-width:120px">Cancelar</button>
       <button class="btn btn-primary" @click="confirmarRegistroDirecto()" :disabled="iniciandoRegistro"
-              style="flex:2;min-width:200px;background:#0D1B4B">
-        <span x-show="!iniciandoRegistro">Pagar honorarios — $120.000</span>
+              style="flex:2;min-width:220px;background:var(--green);box-shadow:0 4px 18px -4px var(--green-glow)">
+        <span x-show="!iniciandoRegistro">Pagar honorarios · $120.000</span>
         <span x-show="iniciandoRegistro" x-cloak>Generando link…</span>
       </button>
     </div>
-    <div x-show="regError" x-cloak style="color:#DC2626;font-size:13px;margin-top:10px;text-align:center" x-text="regError"></div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;color:#64748b;font-size:12px">
-      Pago protegido por Mercado Pago · Sin reuniones, sin cotizaciones eternas
+    <div x-show="regError" x-cloak class="modal-error" style="text-align:center" x-text="regError"></div>
+
+    <div class="mp-badge">
+      <svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4zm0 10.9h7c-.5 4-3.2 7.6-7 8.8V12H5V6.3l7-3.1v8.7z"/></svg>
+      Pago seguro · Sin reuniones · Sin cotizaciones eternas
     </div>
   </div>
 </div>
@@ -1147,83 +1198,91 @@ const PRECIO_INFORME_BASE = 19900;
 const PRECIO_REGISTRO_BASE = 120000;
 
 const CLASES_KEYWORDS = {
-  "ropa":[25,35,24], "indumentaria":[25,35], "remera":[25,35], "vestido":[25,35],
-  "pantalon":[25,35], "pantalón":[25,35], "moda":[25,35,14], "zapatos":[25,18,35],
-  "calzado":[25,35], "zapatillas":[25,35], "cartera":[18,25,35], "accesorio":[14,18,25],
-  "joya":[14,35], "joyería":[14,35], "joyeria":[14,35], "reloj":[14,9],
-  "anteojos":[9,35], "lentes":[9,35],
-  "diseño":[25,35,42], "diseno":[25,35,42],
+  "ropa":[25,35,24],"indumentaria":[25,35],"remera":[25,35],"vestido":[25,35],
+  "pantalon":[25,35],"pantalón":[25,35],"moda":[25,35,14],"zapatos":[25,18,35],
+  "calzado":[25,35],"zapatillas":[25,35],"cartera":[18,25,35],"accesorio":[14,18,25],
+  "joya":[14,35],"joyería":[14,35],"joyeria":[14,35],"reloj":[14,9],
+  "anteojos":[9,35],"lentes":[9,35],"diseño":[25,35,42],"diseno":[25,35,42],
 
-  "comida":[29,30,43], "restaurant":[43,29], "restaurante":[43,29],
-  "café":[30,43,35], "cafe":[30,43,35], "bar":[43,33],
-  "panadería":[30,43], "panaderia":[30,43], "pastelería":[30,43,29],
-  "pasteleria":[30,43,29], "delivery":[43,39,35], "catering":[43],
-  "alimento":[29,30,31], "bebida":[32,33,30], "cerveza":[32,43],
-  "vino":[33,35], "fernet":[33], "gaseosa":[32,35], "lácteo":[29],
-  "lacteo":[29], "carne":[29], "fruta":[31,29], "verdura":[31,29],
+  "comida":[29,30,43],"restaurant":[43,29],"restaurante":[43,29],
+  "café":[30,43,35],"cafe":[30,43,35],"bar":[43,33],
+  "panadería":[30,43],"panaderia":[30,43],"pastelería":[30,43,29],
+  "pasteleria":[30,43,29],"delivery":[43,39,35],"catering":[43],
+  "alimento":[29,30,31],"bebida":[32,33,30],"cerveza":[32,43],
+  "vino":[33,35],"fernet":[33],"gaseosa":[32,35],"lácteo":[29],
+  "lacteo":[29],"carne":[29],"fruta":[31,29],"verdura":[31,29],
 
-  "app":[9,42,38], "software":[9,42], "web":[42,9,35],
-  "tecnología":[9,42], "tecnologia":[9,42], "saas":[42,9],
-  "ecommerce":[35,9,38], "e-commerce":[35,9,38], "tienda":[35,9],
-  "marketplace":[35,9,42], "fintech":[36,42,9], "cripto":[36,9,42],
-  "videojuego":[9,28,41], "juego":[28,41,9], "ia":[9,42],
-  "inteligencia artificial":[9,42], "redes sociales":[38,42,9],
+  "app":[9,42,38],"software":[9,42],"web":[42,9,35],
+  "tecnología":[9,42],"tecnologia":[9,42],"saas":[42,9],
+  "ecommerce":[35,9,38],"e-commerce":[35,9,38],"tienda":[35,9],
+  "marketplace":[35,9,42],"fintech":[36,42,9],"cripto":[36,9,42],
+  "videojuego":[9,28,41],"juego":[28,41,9],"ia":[9,42],
+  "inteligencia artificial":[9,42],"redes sociales":[38,42,9],
 
-  "salud":[44,5,10], "medicina":[44,5], "medico":[44,10],
-  "médico":[44,10], "clínica":[44,10], "clinica":[44,10],
-  "farmacia":[5,35,44], "farmacéutico":[5], "farmaceutico":[5],
-  "psicología":[44], "psicologia":[44], "dental":[44,10],
-  "odontología":[44,10], "estética":[44,3], "estetica":[44,3],
+  "salud":[44,5,10],"medicina":[44,5],"medico":[44,10],
+  "médico":[44,10],"clínica":[44,10],"clinica":[44,10],
+  "farmacia":[5,35,44],"farmacéutico":[5],"farmaceutico":[5],
+  "psicología":[44],"psicologia":[44],"dental":[44,10],
+  "odontología":[44,10],"estética":[44,3],"estetica":[44,3],
 
-  "cosmética":[3,44,35], "cosmetica":[3,44,35], "perfume":[3],
-  "maquillaje":[3,35], "shampoo":[3], "crema":[3,5],
-  "skincare":[3,5,44], "limpieza":[3,21],
+  "cosmética":[3,44,35],"cosmetica":[3,44,35],"perfume":[3],
+  "maquillaje":[3,35],"shampoo":[3],"crema":[3,5],
+  "skincare":[3,5,44],"limpieza":[3,21],
 
-  "construcción":[37,19,6], "construccion":[37,19,6],
-  "inmobiliaria":[36,37,35], "inmueble":[36,37,35],
-  "arquitectura":[37,42], "interiorismo":[37,42], "mueble":[20,35],
+  "construcción":[37,19,6],"construccion":[37,19,6],
+  "inmobiliaria":[36,37,35],"inmueble":[36,37,35],
+  "arquitectura":[37,42],"interiorismo":[37,42],"mueble":[20,35],
 
-  "publicidad":[35,38,41], "marketing":[35,38,41], "branding":[35,42,41],
-  "agencia":[35,41,42], "consultoría":[35,36,42],
-  "consultoria":[35,36,42], "contabilidad":[35,36],
-  "abogado":[45,35], "legal":[45,35],
+  "publicidad":[35,38,41],"marketing":[35,38,41],"branding":[35,42,41],
+  "agencia":[35,41,42],"consultoría":[35,36,42],
+  "consultoria":[35,36,42],"contabilidad":[35,36],
+  "abogado":[45,35],"legal":[45,35],
 
-  "educación":[41,16], "educacion":[41,16], "escuela":[41,16],
-  "curso":[41,9,16], "academia":[41,16], "capacitación":[41],
+  "educación":[41,16],"educacion":[41,16],"escuela":[41,16],
+  "curso":[41,9,16],"academia":[41,16],"capacitación":[41],
   "capacitacion":[41],
 
-  "transporte":[39,12], "logística":[39,35], "logistica":[39,35],
-  "envío":[39,35], "envio":[39,35], "auto":[12,37,39],
-  "automóvil":[12,37], "automovil":[12,37], "moto":[12,37,39],
+  "transporte":[39,12],"logística":[39,35],"logistica":[39,35],
+  "envío":[39,35],"envio":[39,35],"auto":[12,37,39],
+  "automóvil":[12,37],"automovil":[12,37],"moto":[12,37,39],
   "bicicleta":[12,28,25],
 
-  "banco":[36,35], "finanzas":[36,35,9], "seguro":[36,45],
-  "préstamo":[36,45], "prestamo":[36,45], "tarjeta":[36],
+  "banco":[36,35],"finanzas":[36,35,9],"seguro":[36,45],
+  "préstamo":[36,45],"prestamo":[36,45],"tarjeta":[36],
 
-  "hotel":[43,36], "alojamiento":[43,39], "turismo":[39,43,41],
+  "hotel":[43,36],"alojamiento":[43,39],"turismo":[39,43,41],
   "viaje":[39,43,41],
 
-  "entretenimiento":[41,38,9], "música":[15,9,41], "musica":[15,9,41],
-  "deporte":[28,41,25], "gym":[41,28], "fitness":[41,28,25],
-  "yoga":[41,44], "spa":[44,3,41], "bienestar":[44,3,41],
+  "entretenimiento":[41,38,9],"música":[15,9,41],"musica":[15,9,41],
+  "deporte":[28,41,25],"gym":[41,28],"fitness":[41,28,25],
+  "yoga":[41,44],"spa":[44,3,41],"bienestar":[44,3,41],
 
-  "mascota":[31,28,44], "veterinaria":[44,31,5], "animal":[31,44],
+  "mascota":[31,28,44],"veterinaria":[44,31,5],"animal":[31,44],
 
-  "jardinería":[44,31], "jardineria":[44,31], "plomería":[37], "plomeria":[37],
+  "jardinería":[44,31],"jardineria":[44,31],"plomería":[37],"plomeria":[37],
   "electricista":[37,11],
 
-  "energía":[4,37,11], "energia":[4,37,11], "solar":[11,9,37],
-  "ecológico":[3,5,31], "ecologico":[3,5,31], "sustentable":[3,5,31],
+  "energía":[4,37,11],"energia":[4,37,11],"solar":[11,9,37],
+  "ecológico":[3,5,31],"ecologico":[3,5,31],"sustentable":[3,5,31],
 };
 
-// Tracking helper: dispara CustomEvent que captura GA4 / Meta Pixel desde el listener global.
+// Tracking helper: CustomEvent nativo + GA4 dataLayer + Meta Pixel
 function trackEvent(name, payload) {
   try {
     window.dispatchEvent(new CustomEvent(name, {detail: payload || {}}));
-    if (window.dataLayer) window.dataLayer.push({event: name, ...payload});
+    if (window.dataLayer) window.dataLayer.push({event: name, ...(payload || {})});
     if (window.fbq) window.fbq('trackCustom', name, payload || {});
   } catch(e) { /* silencioso */ }
 }
+
+// Mouse-tracking glow para .glow-card
+document.addEventListener('mousemove', function(e) {
+  const card = e.target.closest && e.target.closest('.glow-card');
+  if (!card) return;
+  const r = card.getBoundingClientRect();
+  card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+  card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+}, {passive: true});
 
 function landing() {
   const _params = new URLSearchParams(location.search);
@@ -1233,36 +1292,6 @@ function landing() {
     PRECIO_REGISTRO_BASE,
     form: {marca: _params.get('marca') || '', rubro: '', clases: []},
     clasesDetectadas: [],
-    ejemploTab: 'informe',
-
-    pasosRegistro: [
-      {titulo:'Pago y onboarding', desc:'Pagás los honorarios online en Mercado Pago. Sin reuniones.'},
-      {titulo:'Pre-análisis con IA', desc:'Validamos viabilidad antes de presentar. Si hay riesgo ALTO, activamos garantía.'},
-      {titulo:'Presentación al INPI', desc:'Definimos clases óptimas y presentamos el expediente.'},
-      {titulo:'Publicación en boletín', desc:'Tu marca se publica y se abre el plazo de oposiciones.'},
-      {titulo:'Análisis de fondo y título', desc:'Si todo sale bien, se concede la marca y se emite el título.'},
-    ],
-
-    incluyeRegistro: [
-      'Pre-análisis de viabilidad con IA (cubierto por Garantía)',
-      'Definición de clases optimizada por rubro',
-      'Presentación del expediente — 1 clase incluida',
-      'Honorarios fijos ($120.000) — sin sorpresas',
-      'Tasas oficiales transparentes según clases (las paga el INPI)',
-      'Respuesta a vistas del organismo',
-      'Gestión y entrega del título de registro',
-      '3 meses de vigilancia bonificada',
-    ],
-
-    incluyeInformeFallback: [
-      'Lista completa de marcas similares con denominación real',
-      'IA triple dimensión: léxico, fonético y conceptual',
-      'Probabilidad de registro en las 45 clases Niza',
-      'Validación de dominios .com y .com.ar',
-      'Chequeo de usuarios en Instagram y TikTok',
-      'PDF descargable + cotización del registro',
-      'Garantía de Viabilidad: 100% reintegrable si el riesgo es ALTO',
-    ],
 
     seguimientoEmail: '', emailGuardado: false, guardandoEmail: false, emailError: '',
     informeEmail: '', informeEmailError: '',
@@ -1297,7 +1326,7 @@ function landing() {
         msg = `Hola LegalPacers, quiero consultar sobre la marca "${this.form.marca}".`;
       }
       if (this.resultado && this.resultado.veredicto === 'no_disponible') {
-        msg = `Hola LegalPacers, busqué "${this.form.marca}" y aparecieron coincidencias. Quiero asesorarme.`;
+        msg = `Hola LegalPacers, hice el pre-check de "${this.form.marca}" y aparecieron colisiones. Quiero asesorarme.`;
       }
       return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
     },
@@ -1314,7 +1343,6 @@ function landing() {
     },
 
     get muestrasSecundarias() {
-      // Excluye la principal (que ya se muestra explícitamente en rojo)
       const muestras = this.resultado?.tease?.muestras || [];
       if (this.resultado?.veredicto !== 'no_disponible') return muestras;
       const principal = this.colisionPrincipal;
@@ -1322,22 +1350,22 @@ function landing() {
     },
 
     faqs: [
-      {q: "¿Por qué hacer el pre-análisis antes de registrar?",
-       a: "Desde 2025 el <strong>INPI ya no realiza búsqueda de similitud de oficio</strong>. Esto significa que podés presentar una marca, pagar las tasas oficiales (~$87.000+) y que después aparezca una oposición o un examen de fondo que rechaza tu marca. Sin pre-análisis, perdés ese dinero."},
-      {q: "¿Cómo funciona la búsqueda gratuita?",
-       a: "Escribís el nombre y qué vendés. Nuestro sistema detecta automáticamente las clases Niza y compara con el registro oficial usando IA en tres dimensiones: <em>léxica</em>, <em>fonética</em> y <em>conceptual</em>. En 30 segundos te decimos si hay riesgo BAJO, MEDIO o ALTO."},
+      {q: "¿Por qué hacer el pre-check antes de registrar?",
+       a: "Si presentás una marca que puede confundirse con otra ya registrada, la solicitud se rechaza y <strong>las tasas operativas estatales se pierden definitivamente</strong> — el Registro Nacional de Propiedad Industrial no realiza reembolsos. Por eso el pre-check con IA antes de pagar es la mejor inversión que podés hacer."},
+      {q: "¿Cómo funciona el pre-check gratuito?",
+       a: "Escribís el nombre y qué vas a ofrecer. El sistema detecta automáticamente las clases Niza y compara con el registro oficial usando IA en tres dimensiones: <em>léxica</em>, <em>fonética</em> y <em>conceptual</em>. En 30 segundos te decimos si hay riesgo BAJO, MEDIO o ALTO."},
       {q: "¿Qué incluye el informe completo de $19.900?",
-       a: "IA profunda con Claude analizando cada coincidencia, lista completa con denominación real, validación de dominios y usuarios de redes (Instagram + TikTok), probabilidad de registro en las 45 clases, marcas notorias y PDF descargable. Más la <strong>Garantía de Viabilidad</strong>: si el informe arroja riesgo ALTO, te devolvemos el 100% o lo aplicamos a un nombre alternativo."},
+       a: "IA profunda con análisis triple dimensión, lista completa con denominación real, validación de dominios y usuarios de redes (Instagram + TikTok), probabilidad de registro en las 45 clases, marcas notorias y PDF descargable. Más la <strong>Garantía de Viabilidad</strong>: si el informe arroja riesgo ALTO, te devolvemos el 100% o lo aplicamos a un nombre alternativo."},
       {q: "¿Cuánto cuesta el registro completo?",
-       a: "<strong>$120.000 de honorarios fijos</strong> + tasas oficiales del INPI. Las tasas dependen de la cantidad de clases elegidas y se calculan el día de la presentación (transparente, las paga el INPI, no nosotros). Sin reuniones, sin cotizaciones eternas: pagás online y arrancamos el trámite."},
+       a: "<strong>$120.000 de honorarios profesionales fijos</strong> + tasas oficiales del Registro Nacional. Las tasas se anexan al expediente <strong>a precio de costo</strong> y se calculan de forma transparente según los rubros a proteger. Sin reuniones, sin cotizaciones: pagás online y arrancamos."},
       {q: "¿Qué es la Garantía de Viabilidad?",
-       a: "Si después de pagar el informe nuestro análisis con IA determina que el riesgo de rechazo es <strong>ALTO</strong>, tenés dos opciones: (1) reembolso total del informe ($19.900), o (2) aplicar el saldo al análisis de un nombre alternativo viable. Cubrimos el riesgo por vos."},
+       a: "Si después de pagar el informe nuestro análisis con IA determina riesgo <strong>ALTO</strong> de rechazo, tenés dos opciones: (1) reembolso total del informe ($19.900), o (2) aplicar el saldo al análisis de un nombre alternativo viable. Cubrimos el riesgo por vos."},
       {q: "¿Cuánto tarda el registro?",
-       a: "Aproximadamente <strong>3 a 4 meses</strong> si no hay oposiciones. La marca se publica en el boletín del INPI y desde ahí terceros tienen 30 días para oponerse."},
+       a: "Aproximadamente <strong>3 a 4 meses</strong> si no hay oposiciones. La marca se publica en el boletín y desde ahí terceros tienen 30 días para oponerse."},
       {q: "¿Por cuánto tiempo dura el registro?",
-       a: "<strong>10 años</strong>, renovable indefinidamente. A los 5 años tenés que presentar declaración jurada de uso, y a los 10 renovás. Si te olvidás de alguno de estos hitos, perdés la marca. Por eso enviamos avisos automáticos."},
-      {q: "¿La consulta gratuita es realmente gratis?",
-       a: "Sí. Hasta 3 búsquedas por semana, sin tarjeta y sin registro. El veredicto lo ves al instante en pantalla."},
+       a: "<strong>10 años</strong>, renovable indefinidamente. A los 5 años tenés que presentar declaración jurada de uso, y a los 10 renovás. Si te olvidás, perdés la marca. Por eso enviamos avisos automáticos."},
+      {q: "¿El pre-check es realmente gratis?",
+       a: "Sí. Hasta 3 búsquedas por semana, sin tarjeta y sin registro."},
     ],
 
     async fetchPrecioInforme() {
@@ -1349,13 +1377,12 @@ function landing() {
       } catch(e) { /* fallback al precio base */ }
     },
 
-    // Detecta clases Niza desde texto libre del rubro
     detectarClases(textoRubro) {
       const q = (textoRubro || '').toLowerCase().trim();
       if (!q) return [];
       const tokens = q.split(/[\s,;/-]+/).filter(t => t.length >= 2);
       const score = new Map();
-      // 1) match directo de tokens completos
+      // Match directo de tokens completos
       for (const t of tokens) {
         if (CLASES_KEYWORDS[t]) {
           CLASES_KEYWORDS[t].forEach((c, idx) => {
@@ -1363,7 +1390,7 @@ function landing() {
           });
         }
       }
-      // 2) match parcial keyword-en-frase / frase-en-keyword
+      // Match parcial keyword-en-frase / frase-en-keyword
       for (const [kw, clases] of Object.entries(CLASES_KEYWORDS)) {
         if (kw.length < 3) continue;
         if (q.includes(kw) || tokens.some(t => kw.includes(t) && t.length >= 4)) {
@@ -1387,9 +1414,9 @@ function landing() {
         this.errorMsg = 'Ingresá el nombre de la marca.';
         return;
       }
-      // Detectar clases automáticamente desde el rubro
+      // Detección transparente de clases desde el rubro; fallback a clase 35.
       let clases = this.detectarClases(this.form.rubro);
-      if (clases.length === 0) clases = [35]; // fallback transparente: servicios genéricos
+      if (clases.length === 0) clases = [35];
       this.form.clases = clases;
       this.clasesDetectadas = clases;
 
@@ -1403,7 +1430,7 @@ function landing() {
       trackEvent('lp:search', {
         marca: this.form.marca,
         rubro: this.form.rubro,
-        clases: clases,
+        clases,
         auto_detected: true,
       });
 
@@ -1485,7 +1512,6 @@ function landing() {
       trackEvent('lp:checkout_informe_open', {marca: this.form.marca});
     },
 
-    // Permite saltarse el resultado: clic directo desde planes -> abre modal con email
     abrirCheckoutInformeDirecto() {
       if (!this.form.marca.trim()) {
         document.getElementById('marca')?.focus();
@@ -1524,8 +1550,9 @@ function landing() {
           })
         });
         const d = await r.json();
-        if (d.ok && d.data.init_point) {
-          window.location.href = d.data.init_point;
+        const initPoint = d?.data?.init_point || d?.init_point;
+        if (d.ok && initPoint) {
+          window.location.href = initPoint;
         } else {
           trackEvent('lp:checkout_informe_error', {error: d.error || 'unknown'});
           alert(d.error || 'No pudimos iniciar el pago. Escribinos por WhatsApp.');
@@ -1539,7 +1566,6 @@ function landing() {
     },
 
     iniciarRegistroDirecto() {
-      // Prefill desde la búsqueda actual
       this.regForm.marca = this.regForm.marca || this.form.marca || '';
       this.regForm.rubro = this.regForm.rubro || this.form.rubro || '';
       this.regForm.email = this.regForm.email || this.informeEmail || this.seguimientoEmail || '';
@@ -1582,11 +1608,14 @@ function landing() {
             telefono: f.telefono,
             rubro: f.rubro,
             clases: clasesPayload,
+            honorarios: PRECIO_REGISTRO_BASE,
+            origen: 'modal_directo',
           })
         });
         const d = await r.json();
-        if (d.ok && d.data.init_point) {
-          window.location.href = d.data.init_point;
+        const initPoint = d?.data?.init_point || d?.init_point;
+        if (d.ok && initPoint) {
+          window.location.href = initPoint;
         } else {
           this.regError = d.error || 'No pudimos iniciar el pago. Escribinos por WhatsApp.';
           trackEvent('lp:checkout_registro_error', {error: d.error || 'unknown'});
