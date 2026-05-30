@@ -111,11 +111,11 @@
               <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="faq-answer">
-              <p><strong>$130.000 por tipo y clase de marca.</strong> Es un servicio llave en mano que incluye todo:</p>
+              <p><strong>$120.000 de honorarios profesionales + tasas oficiales del INPI</strong> (las tasas se calculan al día de la presentación según las clases y partidas elegidas):</p>
               <ul>
-                <li><strong>Análisis de viabilidad profesional:</strong> No solo buscamos el nombre — evaluamos si hay riesgo real de oposición bajo el sistema vigente.</li>
-                <li><strong>Gestión y tasas oficiales:</strong> Nos hacemos cargo de los costos del organismo y presentamos el expediente.</li>
-                <li><strong>Seguimiento hasta el título:</strong> Monitoreamos el trámite hasta que tengas la marca concedida.</li>
+                <li><strong>Análisis de viabilidad con IA:</strong> Triple dimensión (léxico, fonético y conceptual) antes de pagar tasas. Si arroja riesgo ALTO, activamos la <strong>Garantía de Viabilidad</strong>: 100% reintegrable o aplicable a un nombre alternativo.</li>
+                <li><strong>Gestión integral del trámite:</strong> Presentamos el expediente, respondemos vistas y hacemos el seguimiento hasta el título concedido.</li>
+                <li><strong>Tasas oficiales transparentes:</strong> Las paga el organismo, no van en nuestros honorarios. Se confirman al día de la presentación.</li>
               </ul>
             </div>
           </div>
@@ -158,8 +158,8 @@
               <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="faq-answer">
-              <p>No. Los $130.000 cubren el proceso estándar completo. Solo si un tercero presenta una oposición formal, te presupuestamos la defensa por separado.</p>
-              <p style="margin-top:0.75rem">Justamente, el objetivo del análisis previo es evitar llegar a esa instancia.</p>
+              <p>No. Los <strong>$120.000 de honorarios</strong> cubren el proceso estándar completo: análisis con IA, presentación, respuesta a vistas y seguimiento. Las tasas oficiales se pagan aparte al INPI (transparentes, dependen de las clases elegidas).</p>
+              <p style="margin-top:0.75rem">Solo si un tercero presenta una oposición formal, te presupuestamos la defensa por separado. El objetivo del pre-análisis es justamente evitar llegar a esa instancia.</p>
             </div>
           </div>
 
@@ -312,15 +312,36 @@
     <!-- PAGE 3 -->
     <div class="wizard-page" id="page3">
       <div class="card">
-        <h2 class="card-title">Posiciones y presupuesto</h2>
-        <p class="card-intro">Seleccioná las partidas específicas para cada clase</p>
+        <h2 class="card-title">Confirmá las partidas y arrancamos el registro</h2>
+        <p class="card-intro">Seleccioná las partidas específicas por clase. Al confirmar, pagás los honorarios online y disparamos el trámite ante el INPI.</p>
 
-        <div class="cost-summary">
-          <div>
-            <div class="cost-label">Presupuesto estimado</div>
-            <div class="cost-detail" id="costDetail">—</div>
+        <div class="cost-summary" style="display:flex;flex-direction:column;gap:10px;align-items:stretch">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+            <div>
+              <div class="cost-label">Honorarios profesionales</div>
+              <div class="cost-detail" style="font-size:0.8rem;color:var(--text-muted)">Fee fijo · único</div>
+            </div>
+            <div style="font-weight:700;color:var(--navy);white-space:nowrap">$120.000</div>
           </div>
-          <div class="cost-amount" id="costAmount">$0</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+            <div>
+              <div class="cost-label">Tasas oficiales INPI (estimadas)</div>
+              <div class="cost-detail" id="costDetail">—</div>
+            </div>
+            <div style="font-weight:700;color:var(--navy);white-space:nowrap" id="costTasas">$0</div>
+          </div>
+          <hr style="border:none;border-top:1px solid #E2E8F0;margin:2px 0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+            <div style="font-weight:800;color:var(--navy)">Total estimado</div>
+            <div class="cost-amount" id="costAmount" style="white-space:nowrap">$120.000</div>
+          </div>
+          <div style="font-size:0.75rem;color:var(--text-muted);font-style:italic;line-height:1.4">
+            ⓘ Las tasas oficiales del INPI se confirman al día de la presentación según las clases y partidas finales elegidas.
+          </div>
+        </div>
+
+        <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:12px 14px;margin:16px 0;font-size:0.875rem;color:#065F46">
+          🛡️ <strong>Garantía de Viabilidad:</strong> si nuestro pre-análisis con IA arroja riesgo ALTO de rechazo, te devolvemos el 100% de los honorarios o los aplicamos al análisis de un nombre alternativo viable.
         </div>
 
         <div id="classBlocksArea"></div>
@@ -331,39 +352,40 @@
 
         <div class="nav-row">
           <button class="btn btn-outline" onclick="goToPage(2)">← Volver</button>
-          <button class="btn btn-primary" id="sendPdfBtn" onclick="sendPDF()">Enviar PDF por Email</button>
+          <button class="btn btn-primary" id="registroBtn" onclick="iniciarRegistroDesdeWizard()">
+            🚀 Iniciar Registro de Marca con estas Partidas
+          </button>
         </div>
-        <div style="text-align: right; margin-top: 0.5rem;">
-          <p id="posicionesError" style="display: none; color: var(--red); font-size: 0.85rem; margin-bottom: 0.5rem;">
-            Por favor seleccioná al menos una posición.
+        <div style="text-align:right;margin-top:0.5rem">
+          <p id="posicionesError" style="display:none;color:var(--red);font-size:0.85rem;margin-bottom:0.5rem">
+            Seleccioná al menos una posición para arrancar el trámite.
           </p>
         </div>
+        <p style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:14px;line-height:1.5">
+          Pago seguro vía Mercado Pago · El PDF del relevamiento se genera y envía a tu email automáticamente al confirmar el pago.
+        </p>
       </div>
     </div>
 
-    <!-- PDF Success -->
-    <div id="pdfSuccessScreen" style="display: none;">
-      <div class="card" style="text-align: center; padding: 3rem 2rem; max-width: 500px; margin: 3rem auto;">
-        <div style="font-size: 3.5rem; color: var(--green); margin-bottom: 1rem;">✓</div>
-        <h2 class="card-title" style="margin-bottom: 0.5rem;">¡Informe enviado!</h2>
-        <p style="color: var(--text-muted); margin-bottom: 0.5rem;">
-          Se ha enviado el reporte a <strong id="pdfSuccessEmail"></strong>.
+    <!-- Checkout iniciado: redirigiendo a MP -->
+    <div id="checkoutPendingScreen" style="display:none">
+      <div class="card" style="text-align:center;padding:3rem 2rem;max-width:520px;margin:3rem auto">
+        <div class="spinner" style="width:40px;height:40px;margin:0 auto 1.25rem;border-width:3px"></div>
+        <h2 class="card-title" style="margin-bottom:0.5rem">Generando tu link de pago…</h2>
+        <p style="color:var(--text-muted);margin-bottom:0.75rem">
+          Te redirigimos a <strong>Mercado Pago</strong> en segundos.
         </p>
-        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
-          Si no lo encontrás, revisá tu casilla de correo no deseado (spam).
-        </p>
-
-        <div style="background: var(--blue-light); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1.1rem; color: var(--navy); margin-bottom: 0.75rem;">¿Necesitás más ayuda?</h3>
-          <a href="https://api.whatsapp.com/send/?phone=5491128774200&text=Hola%20Legal%20Pacers%20me%20gustaría%20saber%20más%20sobre%20mi%20registro" 
-             target="_blank" rel="noopener" class="btn btn-primary btn-full" style="margin-top: 0.5rem;">
-            Contactanos por WhatsApp
-          </a>
+        <div style="background:#F0F5FF;border-radius:10px;padding:14px 16px;margin:1rem 0;font-size:0.9rem;color:#1B6EF3;text-align:left">
+          <strong>Qué pasa después de pagar:</strong>
+          <ol style="margin:0.5rem 0 0 1.25rem;color:#334155;line-height:1.7">
+            <li>Recibís el <strong>PDF del relevamiento</strong> en tu email automáticamente.</li>
+            <li>Activamos el pre-análisis con IA (Garantía de Viabilidad).</li>
+            <li>Presentamos el expediente ante el INPI.</li>
+          </ol>
         </div>
-
-        <button class="btn btn-outline btn-full" onclick="location.reload();">
-          Realizar otro Relevamiento
-        </button>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-top:1rem">
+          Si no te redirige automáticamente, <a href="#" id="checkoutManualLink">hacé click acá</a>.
+        </p>
       </div>
     </div>
   </div>
@@ -423,6 +445,20 @@ const NICE_CLASSES = {
   44:"Servicios médicos y veterinarios",45:"Servicios jurídicos y seguridad"
 };
 
+// ── Constantes de monetización (alineadas con index.html) ──
+const FEE_HONORARIOS = 120000;
+const TASA_INPI_BASE_POR_CLASE = 87000;      // estimada al día de hoy (con hasta 20 partidas incluidas)
+const TASA_INPI_POR_POSICION_EXTRA = 200;    // por partida adicional > 20
+
+// ── Tracking helper: dispara CustomEvent + GA4 dataLayer + Meta Pixel fbq ──
+function trackEvent(name, payload) {
+  try {
+    window.dispatchEvent(new CustomEvent(name, {detail: payload || {}}));
+    if (window.dataLayer) window.dataLayer.push({event: name, ...(payload || {})});
+    if (window.fbq) window.fbq('trackCustom', name, payload || {});
+  } catch(e) { /* silencioso */ }
+}
+
 // ── Data ──
 const state = {
   email: null,
@@ -472,6 +508,12 @@ async function verificarMarca() {
   const clase = document.getElementById('checkerClase').value;
 
   if (!marca) { alert('Ingresá el nombre de la marca'); return; }
+
+  trackEvent('lp:search', {
+    origen: 'relevamiento_checker',
+    marca,
+    clase: clase ? parseInt(clase) : null,
+  });
 
   const btn = document.getElementById('checkerSearchBtn');
   btn.disabled = true;
@@ -552,6 +594,7 @@ function goToPage(n) {
     if (conn) conn.classList.toggle('done', i < n);
   }
   window.scrollTo({top: 0, behavior: 'smooth'});
+  trackEvent('lp:wizard_step', {step: n, marca: state.marca || null, search_id: state.searchId || null});
   if (n === 2) onEnterPage2();
   if (n === 3) onEnterPage3();
 }
@@ -569,8 +612,10 @@ async function sugerirClases() {
 
   try {
     const data = await api('POST', '/api/relevamiento/suggest-classes', { marca, descripcion: desc, email });
-    if (data.error) alert('Error: ' + data.error);
-    else {
+    if (data.error) {
+      alert('Error: ' + data.error);
+      trackEvent('lp:wizard_suggest_error', {error: data.error});
+    } else {
       state.email = email;
       state.marca = marca;
       state.descripcion = desc;
@@ -580,6 +625,13 @@ async function sugerirClases() {
       renderClasesPanel();
       document.getElementById('classesSection').style.display = '';
       document.getElementById('page1Next').style.display = 'flex';
+      trackEvent('lp:lead', {
+        stage: 'wizard_email',
+        email_hash: btoa(email).slice(0,12),
+        marca,
+        clases_sugeridas: data.classes,
+        search_id: data.search_id,
+      });
     }
   } catch (e) {
     alert('Error: ' + e.message);
@@ -793,25 +845,31 @@ function filterPosiciones(classNum, q) {
 }
 
 function updateCost() {
-  let total = 0;
+  let tasas = 0;
   let clases = 0;
   document.querySelectorAll('.class-block').forEach(block => {
-    const classNum = parseInt(block.dataset.class);
     const checked = block.querySelectorAll('input[type="checkbox"]:checked').length;
     if (checked > 0) {
       const extra = Math.max(0, checked - 20);
-      total += 17680 + extra * 200;
+      tasas += TASA_INPI_BASE_POR_CLASE + extra * TASA_INPI_POR_POSICION_EXTRA;
       clases++;
     }
   });
 
+  const honorarios = clases > 0 ? FEE_HONORARIOS : 0;
+  const total = honorarios + tasas;
+
+  document.getElementById('costTasas').textContent = '$' + tasas.toLocaleString('es-AR');
   document.getElementById('costAmount').textContent = '$' + total.toLocaleString('es-AR');
-  document.getElementById('costDetail').textContent = clases > 0 ? 
-    `${clases} clase${clases !== 1 ? 's' : ''} · 20 posiciones incluidas por clase` : '—';
+  document.getElementById('costDetail').textContent = clases > 0
+    ? `${clases} clase${clases !== 1 ? 's' : ''} · 20 partidas base por clase + extras`
+    : '—';
 }
 
-async function sendPDF() {
+async function iniciarRegistroDesdeWizard() {
+  // 1) Recopilar posiciones seleccionadas por clase desde el DOM y el cache
   const posiciones = {};
+  let totalPosiciones = 0;
   document.querySelectorAll('.class-block').forEach(block => {
     const classNum = parseInt(block.dataset.class);
     const checked = block.querySelectorAll('.posicion-item input:checked');
@@ -820,41 +878,86 @@ async function sendPDF() {
         const item = cb.closest('.posicion-item');
         return {
           codigo: item.querySelector('.posicion-code').textContent.trim(),
-          partida: item.querySelector('.posicion-text').textContent.replace(/^✨\s*/, '')
+          partida: item.querySelector('.posicion-text').textContent.replace(/^✨\s*/, '').trim(),
         };
       });
+      totalPosiciones += checked.length;
     }
   });
 
-  if (!Object.keys(posiciones).length) { alert('Seleccioná al menos una posición'); return; }
+  const errorEl = document.getElementById('posicionesError');
+  if (!Object.keys(posiciones).length) {
+    errorEl.style.display = 'block';
+    return;
+  }
+  errorEl.style.display = 'none';
 
-  const btn = document.getElementById('sendPdfBtn');
+  // 2) Recalcular el total actualizado en el cliente (transparencia)
+  let tasas = 0;
+  Object.values(posiciones).forEach(arr => {
+    const extra = Math.max(0, arr.length - 20);
+    tasas += TASA_INPI_BASE_POR_CLASE + extra * TASA_INPI_POR_POSICION_EXTRA;
+  });
+  const total = FEE_HONORARIOS + tasas;
+  const clases = Object.keys(posiciones).map(c => parseInt(c));
+
+  // 3) Tracking — fuga del wizard hacia checkout
+  trackEvent('lp:checkout_registro', {
+    stage: 'wizard_submit',
+    marca: state.marca,
+    search_id: state.searchId,
+    clases,
+    total_posiciones: totalPosiciones,
+    honorarios: FEE_HONORARIOS,
+    tasas_estimadas: tasas,
+    total_estimado: total,
+  });
+
+  const btn = document.getElementById('registroBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner spinner-white" style="width:14px;height:14px;border-width:2px;"></span> Generando…';
+  btn.innerHTML = '<span class="spinner spinner-white" style="width:14px;height:14px;border-width:2px"></span> Generando link de pago…';
 
+  // 4) Disparar checkout — el PDF se genera POST-pago en el backend
   try {
-    const data = await api('POST', '/api/relevamiento/send-pdf', {
-      email: state.email,
+    const data = await api('POST', '/api/marca/registro/iniciar', {
       marca: state.marca,
+      email: state.email,
       descripcion: state.descripcion,
-      clases: state.selectedClasses,
-      variantes: Object.keys(state.inpiResults),
+      clases,
       posiciones,
-      resultados: state.inpiResults
+      variantes: Object.keys(state.inpiResults || {}),
+      resultados: state.inpiResults,
+      honorarios: FEE_HONORARIOS,
+      tasas_estimadas: tasas,
+      total_estimado: total,
+      origen: 'wizard_relevamiento',
+      search_id: state.searchId,
     });
 
-    if (data.error) alert('Error: ' + data.error);
-    else {
-      document.getElementById('page3').style.display = 'none';
-      document.getElementById('pdfSuccessEmail').textContent = state.email;
-      document.getElementById('pdfSuccessScreen').style.display = 'block';
+    const initPoint = (data && data.data && data.data.init_point) || data?.init_point;
+    if (!initPoint || (data && data.ok === false) || (data && data.error && !initPoint)) {
+      const msg = (data && data.error) || 'No pudimos generar el link de pago. Escribinos por WhatsApp.';
+      alert(msg);
+      trackEvent('lp:checkout_registro_error', {error: msg});
+      btn.disabled = false;
+      btn.innerHTML = '🚀 Iniciar Registro de Marca con estas Partidas';
+      return;
     }
-  } catch (e) {
-    alert('Error: ' + e.message);
-  }
 
-  btn.disabled = false;
-  btn.innerHTML = 'Enviar PDF por Email';
+    // Mostrar pantalla de redirección + ir a MP
+    document.getElementById('page3').style.display = 'none';
+    document.querySelectorAll('.wizard-page').forEach(p => p.classList.remove('active'));
+    const pending = document.getElementById('checkoutPendingScreen');
+    pending.style.display = 'block';
+    const manual = document.getElementById('checkoutManualLink');
+    if (manual) manual.href = initPoint;
+    setTimeout(() => { window.location.href = initPoint; }, 700);
+  } catch (e) {
+    alert('Error de red: ' + e.message);
+    trackEvent('lp:checkout_registro_error', {error: 'network'});
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Iniciar Registro de Marca con estas Partidas';
+  }
 }
 
 // Init
