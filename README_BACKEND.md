@@ -154,7 +154,20 @@ Implementado de `BUILD_SPEC_MOTOR.md`:
 - **UI estática** en `public/admin/index.html`, montada en `GET /admin`. Vanilla JS, mismo tema dark que la landing. Login → tabs (Resumen / Alertas / Leads / Usuarios / Marcas vigiladas / Packs / Boletines / Auditoría).
 - **Seed demo**: además del admin, ahora crea un cliente (`demo.cliente@legalpacers.com / demo12345`), una marca vigilada `Focca`, un boletín ficticio y una alerta con 2 candidatos (FOKKA / FOCA) ya analizados por Etapa 2 stub — para que la bandeja muestre algo al primer arranque.
 
-**Lo que queda para los próximos slices**: portal cliente (carga de marcas con cupo del pack), ingesta de PDF de boletines, scheduler semanal, alertas mail (Resend) + WhatsApp Cloud API.
+### Slice 3 — Portal cliente
+
+- **Endpoints** (`src/cliente.js`, todos detrás de `requireAuth('cliente')`):
+  - `GET /api/cliente/me` — info del usuario + pack + cupo (`cupo_marcas`, `marcas_activas`, `cupo_disponible`).
+  - `GET /api/cliente/marcas` — sus marcas + estado del pack.
+  - `POST /api/cliente/marcas` — alta de marca. **El cupo se valida acá**: si `marcas_activas >= cupo_marcas` devuelve 403 con `{ cupo_excedido: true }` para que el front muestre CTA a upgrade. Nunca confía en el front.
+  - `PATCH /api/cliente/marcas/:id` — pausar/reactivar. Al reactivar revalida cupo.
+  - `DELETE /api/cliente/marcas/:id` — baja.
+  - `GET /api/cliente/alertas` — sus alertas, con candidatos resumidos. No expone el JSON crudo de Gemini ni los motivos técnicos (eso queda en el panel admin).
+  - `GET /api/cliente/packs` — catálogo para mostrar opciones de upgrade.
+- **UI estática** en `public/cliente/index.html`, montada en `GET /cliente`. Login → tabs: Mis marcas / Mis alertas / Mi pack. Banner con barra de cupo que se pone roja cuando llega al tope y deshabilita el formulario de alta.
+- Todas las acciones quedan registradas en `audit_log` (`vigilancia.alta`, `vigilancia.cambio_estado`, `vigilancia.baja`).
+
+**Lo que queda para los próximos slices**: ingesta de PDF de boletines, scheduler semanal, alertas reales (mail Resend + WhatsApp Cloud API).
 
 ### Probar el slice
 
@@ -198,12 +211,14 @@ curl -X POST http://localhost:3000/api/marca/check -H 'Content-Type: application
 │   ├── auth.js                # bcrypt + cookies firmadas + middleware
 │   ├── audit.js               # audit_log helper
 │   ├── admin.js               # endpoints del panel admin
+│   ├── cliente.js             # endpoints del portal cliente (cupo del pack)
 │   ├── matching/
 │   │   ├── etapa1.js          # determinístico: fonético ES + Lev + trigramas + clases
 │   │   └── etapa2.js          # Gemini (stub sin API key)
 │   └── seed.js                # marcas + packs + admin + demo
 ├── public/
-│   └── admin/index.html       # UI del panel (vanilla JS)
+│   ├── admin/index.html       # UI del panel admin (vanilla JS)
+│   └── cliente/index.html     # UI del portal cliente (vanilla JS)
 └── data/
     └── marcas_seed.csv        # dataset de ejemplo
 ```

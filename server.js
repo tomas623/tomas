@@ -8,6 +8,7 @@ const { buscarEnINPI, enmascararActa } = require('./src/inpi');
 const { crearPreferencia, obtenerPago } = require('./src/pagos');
 const { mountAuthRoutes } = require('./src/auth');
 const { mountAdminRoutes } = require('./src/admin');
+const { mountClienteRoutes } = require('./src/cliente');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -19,6 +20,7 @@ const ROOT_DIR = __dirname;
 app.use(express.json({ limit: '256kb' }));
 mountAuthRoutes(app);
 mountAdminRoutes(app);
+mountClienteRoutes(app);
 
 // Detectar clases Niza por rubro — espejo de la lógica del front (detectarClases).
 function detectarClasesPorRubro(rubro) {
@@ -287,6 +289,8 @@ app.use('/static', express.static(path.join(ROOT_DIR, 'static')));
 
 // Panel admin (HTML estático). Las rutas /api/admin/* viven en src/admin.js.
 app.use('/admin', express.static(path.join(ROOT_DIR, 'public', 'admin')));
+// Portal cliente (HTML estático). Las rutas /api/cliente/* viven en src/cliente.js.
+app.use('/cliente', express.static(path.join(ROOT_DIR, 'public', 'cliente')));
 
 app.use((req, res) => res.status(404).json(fail('Not found', 404)));
 

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi portal · LegalPacers</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{
+  --bg:#030712; --bg-soft:#070d1c; --surface:#0f172a; --surface-2:#1e293b;
+  --border:#334155; --border-soft:#1f2a40;
+  --text:#f8fafc; --text-soft:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
+  --blue:#1b6ef3; --blue-dark:#1656c4; --blue-soft:rgba(27,110,243,.12);
+  --green:#10b981; --green-soft:rgba(16,185,129,.12);
+  --red:#ef4444; --red-soft:rgba(239,68,68,.12);
+  --yellow:#f59e0b; --yellow-soft:rgba(245,158,11,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+a{color:#60a5fa;text-decoration:none}
+input,select{font-family:inherit}
+
+header.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border-soft);background:rgba(3,7,18,.85);backdrop-filter:blur(14px);position:sticky;top:0;z-index:10}
+.brand{font-weight:800;letter-spacing:.5px;font-size:16px}
+.brand .accent{color:var(--blue)}
+.user-chip{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--text-muted)}
+.user-chip strong{color:var(--text-soft);font-weight:600}
+.btn{padding:10px 18px;border-radius:8px;font-weight:600;font-size:13.5px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);transition:all .15s}
+.btn:hover{background:var(--surface);border-color:#475569}
+.btn.primary{background:var(--blue);border-color:transparent;color:#fff}
+.btn.primary:hover{background:var(--blue-dark)}
+.btn.tiny{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn.outline{background:transparent}
+.btn.red{background:var(--red);border-color:transparent;color:#fff}
+.btn.green{background:var(--green);border-color:transparent;color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+main{max-width:1100px;margin:0 auto;padding:24px}
+
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--border-soft);margin-bottom:24px;overflow-x:auto}
+.tab{padding:10px 16px;background:transparent;color:var(--text-muted);font-size:13.5px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--text-soft)}
+.tab.active{color:#60a5fa;border-bottom-color:var(--blue)}
+
+.card{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:24px;margin-bottom:18px}
+.card h3{font-size:16px;margin-bottom:12px;color:#fff}
+
+.pack-card{background:linear-gradient(180deg,var(--blue-soft),transparent);border:1px solid rgba(27,110,243,.35);border-radius:16px;padding:22px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.pack-left{flex:1;min-width:220px}
+.pack-name{font-size:13px;font-weight:700;text-transform:uppercase;color:#60a5fa;letter-spacing:.06em}
+.pack-cupo{font-size:28px;font-weight:800;color:#fff;margin-top:6px;letter-spacing:-.02em}
+.pack-cupo .small{font-size:14px;color:var(--text-muted);font-weight:600}
+.pack-bar{width:100%;height:8px;background:var(--bg-soft);border-radius:99px;margin-top:12px;overflow:hidden}
+.pack-bar > div{height:100%;background:linear-gradient(90deg,var(--blue),#60a5fa);transition:width .3s}
+.pack-bar.full > div{background:linear-gradient(90deg,var(--red),#fca5a5)}
+
+.alta-form{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end}
+@media(max-width:720px){.alta-form{grid-template-columns:1fr}}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
+.field input,.field select{width:100%;padding:10px 12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+
+.marca-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:14px 18px;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;margin-bottom:8px}
+.marca-name{font-weight:700;font-size:15px;color:#fff;letter-spacing:.02em}
+.marca-meta{font-size:12px;color:var(--text-muted);margin-top:2px}
+.marca-actions{display:flex;gap:6px}
+
+.alerta-row{padding:14px 18px;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;margin-bottom:8px}
+.alerta-row.alto{border-color:rgba(239,68,68,.35);background:linear-gradient(180deg,rgba(239,68,68,.06),var(--bg-soft))}
+.alerta-row.medio{border-color:rgba(245,158,11,.35)}
+.alerta-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.alerta-title{font-weight:700;color:#fff;font-size:14.5px}
+.alerta-fund{font-size:13px;color:var(--text-soft);margin-top:8px;line-height:1.55}
+.alerta-cands{margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.65}
+
+.chip{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.chip.green{background:var(--green-soft);color:#6ee7b7}
+.chip.red{background:var(--red-soft);color:#fca5a5}
+.chip.yellow{background:var(--yellow-soft);color:#fcd34d}
+.chip.blue{background:var(--blue-soft);color:#7eb1ff}
+.chip.muted{background:var(--surface-2);color:var(--text-muted)}
+
+.empty{text-align:center;padding:50px 20px;color:var(--text-dim);font-size:14px;background:var(--bg-soft);border:1px dashed var(--border-soft);border-radius:12px}
+
+/* Login */
+.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:36px;max-width:400px;width:100%}
+.login-card h2{font-size:22px;margin-bottom:24px;color:#fff}
+.hint{font-size:12px;color:var(--text-dim);margin-top:14px;text-align:center;line-height:1.5}
+.hint code{background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px}
+.error-msg{color:#fca5a5;font-size:13px;margin-top:8px}
+.flash{padding:11px 16px;border-radius:8px;font-size:13.5px;margin-bottom:14px}
+.flash.ok{background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)}
+.flash.bad{background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35)}
+
+.packs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px}
+.pack-opt{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:12px;padding:18px}
+.pack-opt.current{border-color:rgba(27,110,243,.45);box-shadow:0 0 0 1px rgba(27,110,243,.25)}
+.pack-opt-cupo{font-size:24px;font-weight:800;color:#fff}
+.pack-opt-precio{color:var(--text-muted);font-size:13px;margin-top:4px}
+.pack-opt .badge-cur{font-size:10px;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:.06em;margin-top:6px;display:inline-block}
+
+[hidden]{display:none!important}
+.muted{color:var(--text-muted)}
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar" hidden>
+  <div class="brand">LEGAL<span class="accent">PACERS</span> · mi portal</div>
+  <div class="user-chip">
+    <span id="userInfo"></span>
+    <button class="btn outline tiny" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<main>
+
+<!-- LOGIN -->
+<section id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <h2>Mi portal · ingreso</h2>
+    <form id="loginForm">
+      <div class="field" style="margin-bottom:14px">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required autocomplete="username" value="demo.cliente@legalpacers.com">
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Password</label>
+        <input type="password" id="loginPass" required autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn primary" style="width:100%;padding:12px">Ingresar</button>
+      <div class="error-msg" id="loginError" hidden></div>
+    </form>
+    <p class="hint">Cliente demo: <code>demo.cliente@legalpacers.com</code> / <code>demo12345</code></p>
+  </div>
+</section>
+
+<!-- PORTAL -->
+<section id="portalScreen" hidden>
+  <nav class="tabs">
+    <button class="tab active" data-tab="marcas">Mis marcas</button>
+    <button class="tab" data-tab="alertas">Mis alertas</button>
+    <button class="tab" data-tab="pack">Mi pack</button>
+  </nav>
+
+  <div id="flash"></div>
+
+  <div id="panel-marcas" class="panel">
+    <div class="pack-card" id="packBanner"></div>
+
+    <div class="card">
+      <h3>Agregar marca a vigilancia</h3>
+      <form id="altaForm">
+        <div class="alta-form">
+          <div class="field">
+            <label>Denominación</label>
+            <input type="text" id="newDenom" required placeholder="Ej: Focca, Acme, Brio…">
+          </div>
+          <div class="field">
+            <label>Clase(s) Niza (coma)</label>
+            <input type="text" id="newClases" required placeholder="9, 42">
+          </div>
+          <div class="field">
+            <label>Tipo</label>
+            <select id="newTipo">
+              <option value="denominativa">Denominativa</option>
+              <option value="mixta">Mixta</option>
+              <option value="figurativa">Figurativa</option>
+            </select>
+          </div>
+          <button type="submit" class="btn primary" id="altaBtn">Cargar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Marcas en vigilancia</h3>
+      <div id="marcasList"></div>
+    </div>
+  </div>
+
+  <div id="panel-alertas" class="panel" hidden>
+    <div class="card">
+      <h3>Alertas recibidas</h3>
+      <p class="muted" style="font-size:13px;margin-bottom:14px">Si detectamos una solicitud de marca similar a alguna de las que tenés en vigilancia, te aparece acá y te avisamos por mail / WhatsApp.</p>
+      <div id="alertasList"></div>
+    </div>
+  </div>
+
+  <div id="panel-pack" class="panel" hidden>
+    <div class="card">
+      <h3>Tu pack actual</h3>
+      <div id="packDetalle"></div>
+    </div>
+    <div class="card">
+      <h3>Opciones de pack</h3>
+      <p class="muted" style="font-size:13px;margin-bottom:6px">Si necesitás vigilar más marcas, podés hacer upgrade. El cambio lo coordinamos por WhatsApp.</p>
+      <div id="packsGrid" class="packs-grid"></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = s => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('es-AR') : '—';
+async function api(path, opts = {}) {
+  const r = await fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
+  return r.json();
+}
+function flash(msg, type = 'ok') {
+  $('#flash').innerHTML = `<div class="flash ${type}">${esc(msg)}</div>`;
+  setTimeout(() => { $('#flash').innerHTML = ''; }, 4500);
+}
+
+let MY_PACK = null;
+
+async function checkAuth() {
+  const r = await api('/api/auth/me');
+  if (r.ok && r.data.rol === 'cliente') {
+    $('#loginScreen').hidden = true;
+    $('#topbar').hidden = false;
+    $('#portalScreen').hidden = false;
+    $('#userInfo').innerHTML = `<strong>${esc(r.data.email)}</strong>`;
+    selectTab('marcas');
+    return true;
+  }
+  $('#loginScreen').hidden = false;
+  $('#topbar').hidden = true;
+  $('#portalScreen').hidden = true;
+  return false;
+}
+
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#loginError').hidden = true;
+  const r = await api('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: $('#loginEmail').value.trim(), password: $('#loginPass').value }),
+  });
+  if (r.ok) {
+    if (r.data.rol === 'cliente') checkAuth();
+    else { $('#loginError').textContent = 'Esta cuenta no es de cliente. Entrá al panel admin.'; $('#loginError').hidden = false; }
+  } else {
+    $('#loginError').textContent = r.error || 'Error de login';
+    $('#loginError').hidden = false;
+  }
+});
+
+async function logout() { await api('/api/auth/logout', { method: 'POST' }); location.reload(); }
+
+$$('.tab').forEach(t => t.addEventListener('click', () => selectTab(t.dataset.tab)));
+function selectTab(name) {
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  $$('.panel').forEach(p => p.hidden = p.id !== `panel-${name}`);
+  const fn = { marcas: loadMarcas, alertas: loadAlertas, pack: loadPack }[name];
+  if (fn) fn();
+}
+
+function renderPackBanner(pack) {
+  MY_PACK = pack;
+  const cupo = pack.cupo_marcas || 0;
+  const usadas = pack.marcas_activas || 0;
+  const pct = cupo ? Math.min(100, Math.round((usadas / cupo) * 100)) : 0;
+  const isFull = cupo && usadas >= cupo;
+  $('#packBanner').innerHTML = pack.pack_id ? `
+    <div class="pack-left">
+      <div class="pack-name">${esc(pack.pack_nombre || pack.pack_codigo)}</div>
+      <div class="pack-cupo">${usadas} <span class="small">de ${cupo} marcas activas</span></div>
+      <div class="pack-bar ${isFull ? 'full' : ''}"><div style="width:${pct}%"></div></div>
+    </div>
+    ${isFull ? `<button class="btn primary" onclick="selectTab('pack')">Hacer upgrade</button>` : ''}
+  ` : `
+    <div class="pack-left"><div class="pack-name">Sin pack asignado</div>
+    <div class="pack-cupo small" style="font-size:14px;margin-top:8px">Contactanos para asignarte uno.</div></div>
+  `;
+  $('#altaBtn').disabled = !pack.pack_id || isFull;
+}
+
+async function loadMarcas() {
+  const r = await api('/api/cliente/marcas');
+  if (!r.ok) return;
+  renderPackBanner(r.data.pack);
+  if (!r.data.marcas.length) {
+    $('#marcasList').innerHTML = '<div class="empty">Todavía no cargaste ninguna marca a vigilancia. Usá el formulario de arriba.</div>';
+    return;
+  }
+  $('#marcasList').innerHTML = r.data.marcas.map(m => marcaRow(m)).join('');
+}
+
+function marcaRow(m) {
+  const chip = m.estado === 'activa' ? '<span class="chip green">activa</span>'
+    : m.estado === 'pausada' ? '<span class="chip yellow">pausada</span>'
+    : '<span class="chip blue">en trámite</span>';
+  return `
+    <div class="marca-row">
+      <div>
+        <div class="marca-name">${esc(m.denominacion)} ${chip}</div>
+        <div class="marca-meta">Clases ${esc(m.clases)} · ${esc(m.tipo || 'denominativa')} · alta ${fmtDate(m.created_at)}</div>
+      </div>
+      <div class="marca-actions">
+        ${m.estado === 'activa'
+          ? `<button class="btn tiny outline" onclick="togglePausa(${m.id}, 'pausada')">Pausar</button>`
+          : m.estado === 'pausada'
+            ? `<button class="btn tiny outline" onclick="togglePausa(${m.id}, 'activa')">Reactivar</button>`
+            : ''}
+        <button class="btn tiny outline" style="color:#fca5a5" onclick="bajaMarca(${m.id}, '${esc(m.denominacion)}')">Quitar</button>
+      </div>
+    </div>
+  `;
+}
+
+$('#altaForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const denom = $('#newDenom').value.trim();
+  const clases = $('#newClases').value;
+  const tipo = $('#newTipo').value;
+  if (!denom || !clases) return;
+  const r = await api('/api/cliente/marcas', { method: 'POST', body: JSON.stringify({ denominacion: denom, clases, tipo }) });
+  if (r.ok) {
+    flash(`"${denom}" agregada a vigilancia.`, 'ok');
+    $('#newDenom').value = ''; $('#newClases').value = '';
+    loadMarcas();
+  } else {
+    flash(r.error || 'Error', 'bad');
+  }
+});
+
+async function togglePausa(id, estado) {
+  const r = await api(`/api/cliente/marcas/${id}`, { method: 'PATCH', body: JSON.stringify({ estado }) });
+  if (r.ok) loadMarcas(); else flash(r.error, 'bad');
+}
+
+async function bajaMarca(id, name) {
+  if (!confirm(`¿Quitar "${name}" de vigilancia? Las alertas históricas se borran.`)) return;
+  const r = await api(`/api/cliente/marcas/${id}`, { method: 'DELETE' });
+  if (r.ok) { flash('Marca quitada.', 'ok'); loadMarcas(); } else flash(r.error, 'bad');
+}
+
+async function loadAlertas() {
+  const r = await api('/api/cliente/alertas');
+  if (!r.ok) return;
+  if (!r.data.alertas.length) {
+    $('#alertasList').innerHTML = '<div class="empty">Sin alertas todavía. Te avisamos por mail y WhatsApp si detectamos una coincidencia.</div>';
+    return;
+  }
+  $('#alertasList').innerHTML = r.data.alertas.map(a => alertaRow(a)).join('');
+}
+
+function alertaRow(a) {
+  const chipNivel = { alto:'red', medio:'yellow', bajo:'green' }[a.nivel] || 'muted';
+  const chipEstado = { nueva:'red', revisada:'blue', accion_tomada:'green', descartada:'muted' }[a.estado] || 'muted';
+  const cands = (a.candidatos || []).map(c =>
+    `<div>· <strong>${esc(c.denominacion || '—')}</strong> (clase ${esc(c.clase || '?')}, ${esc(c.estado || '—')})</div>`
+  ).join('');
+  return `
+    <div class="alerta-row ${esc(a.nivel)}">
+      <div class="alerta-head">
+        <div>
+          <div class="alerta-title">Posible coincidencia con tu marca <strong>${esc(a.marca)}</strong></div>
+          <div class="muted" style="font-size:12px;margin-top:2px">${fmtDate(a.created_at)} · Clases ${esc(a.marca_clases)}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <span class="chip ${chipNivel}">Riesgo ${esc(a.nivel)}</span>
+          <span class="chip ${chipEstado}">${esc(a.estado)}</span>
+        </div>
+      </div>
+      ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
+      ${cands ? `<div class="alerta-cands"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Marcas detectadas en el boletín</div>${cands}</div>` : ''}
+    </div>
+  `;
+}
+
+async function loadPack() {
+  const meR = await api('/api/cliente/me');
+  if (!meR.ok) return;
+  const me = meR.data;
+  $('#packDetalle').innerHTML = me.pack_id
+    ? `<div style="display:flex;gap:30px;flex-wrap:wrap">
+        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Pack</div><div style="font-size:18px;font-weight:700">${esc(me.pack_nombre)}</div></div>
+        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Cupo</div><div style="font-size:18px;font-weight:700">${me.cupo_marcas} marcas</div></div>
+        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Usadas</div><div style="font-size:18px;font-weight:700">${me.marcas_activas}</div></div>
+        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Disponibles</div><div style="font-size:18px;font-weight:700">${me.cupo_disponible}</div></div>
+       </div>`
+    : '<div class="empty">Sin pack asignado. Contactanos.</div>';
+
+  const pR = await api('/api/cliente/packs');
+  if (pR.ok) {
+    $('#packsGrid').innerHTML = pR.data.packs.map(p => `
+      <div class="pack-opt ${me.pack_codigo === p.codigo ? 'current' : ''}">
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">${esc(p.codigo)}</div>
+        <div class="pack-opt-cupo">${p.cupo_marcas} marcas</div>
+        <div class="pack-opt-precio">$${(p.precio_mensual || 0).toLocaleString('es-AR')} / mes</div>
+        ${me.pack_codigo === p.codigo ? '<div class="badge-cur">tu pack actual</div>' : ''}
+      </div>
+    `).join('');
+  }
+}
+
+checkAuth();
+</script>
+</body>
+</html>
