@@ -183,6 +183,47 @@ Implementado de `BUILD_SPEC_MOTOR.md`:
 - **Fix de Etapa 1**: el código fonético español ahora distingue `c+e/i` (suena `s`) de `c+otra` (suena `k`) y colapsa `ll ↔ y` (yeísmo). Antes "Focca" no matcheaba "FOKKA" — ahora sí (score 96, "coincidencia_fonetica + misma_clase").
 - **Fixture** en `data/boletin-fixture.csv` con 15 actas pensadas para disparar alertas contra el cliente demo.
 
+### Slice 6 — Import de la DB Python + puente automático
+
+**Importación inicial** (`src/import-python-db.js`):
+- Lee `marcas.db` (la DB de la app Python heredada) en read-only y vuelca a
+  las tablas del backend Node:
+  - `boletin_log` (502 filas) → `boletines`
+  - `marcas` (408 197 filas) → `marcas_inpi` + `marcas_boletin`
+- Idempotente: índices únicos parciales en `marcas_inpi(acta, clase)` y
+  `marcas_boletin(boletin_id, acta)`. Re-correr el script no duplica.
+- Transacciones por batches de 5 000 filas + prepared statements →
+  ~27 segundos en local para 408 k filas.
+- Configurable con `PYTHON_DB_PATH` en `.env`. Flags `--limit N` y
+  `--no-boletin` para pruebas.
+- `npm run import-python` lo dispara.
+
+**Backfill** (`src/run-backfill.js` / `npm run backfill`):
+- Corre el monitoreo retroactivo sobre los últimos N boletines reales
+  (default 8) sin enviar notificaciones, para poblar el panel con
+  alertas históricas a la vista. Flag `--n N` para ajustar.
+
+**Puente automático** (`src/jobs/puente-python.js`):
+- Si `PYTHON_DB_PATH` está seteado, el scheduler programa un job
+  adicional (`CRON_PUENTE_PYTHON`, default cada hora en punto) que:
+  1. Lista en `marcas.db` los boletines `status='ok'` que aún no
+     existen en `boletines`.
+  2. Para cada nuevo: inserta `boletines` + `marcas_boletin` + actualiza
+     `marcas_inpi`.
+  3. Dispara `monitoreo-semanal` sobre ese boletín específico
+     (idempotente por el UNIQUE de alertas).
+  4. Audita el resultado.
+- El scraper Python sigue siendo el dueño de descargar los boletines
+  oficiales — el backend Node sólo los consume.
+
+**Fix de fonético**: eliminar todas las vocales era muy agresivo —
+generaba falsos positivos absurdos (KAIROS ≡ CURAZAO, NOVA ≡ NUVIA).
+Ahora se conservan las vocales y se confía en Levenshtein + trigramas
+para captar variantes ortográficas. Verificado contra 6 boletines
+reales: bajó de 8 alertas con falsos positivos a 4 alertas todas
+legítimas (incluyendo una **coincidencia exacta real** de NOVA con un
+titular registrado en el INPI, clase 35).
+
 ### Slice 5 — Scheduler automático
 
 - `src/jobs/scheduler.js`: programa el monitoreo semanal con **`node-cron`**. Default `0 9 * * 3` (miércoles 9:00, TZ `America/Argentina/Buenos_Aires`), configurable con `CRON_MONITOREO` y `TZ`. Toda corrida queda en `audit_log` como `cron.monitoreo` (o `cron.monitoreo.error`).

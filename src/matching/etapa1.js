@@ -45,9 +45,10 @@ function codigoFonetico(s) {
   t = t.replace(/x/g, 's');                // x → s en la mayoría de casos ES
   t = t.replace(/X/g, 'ch');               // ch restaurado
   t = t.replace(/[wk]/g, 'k');
-  // Reducir vocales (algunas implementaciones las eliminan al medio; mantenemos al inicio).
-  if (t.length > 1) t = t[0] + t.slice(1).replace(/[aeiou]/g, '');
-  // Eliminar duplicados consecutivos
+  // NO eliminamos vocales — eso producía falsos positivos (KAIROS ≡ CURAZAO).
+  // Confiamos en que las reglas consonantes alcancen, y dejamos que Levenshtein
+  // y trigramas atrapen variantes ortográficas.
+  // Eliminar duplicados consecutivos (focca → foka → foka, fokka → foka).
   t = t.replace(/(.)\1+/g, '$1');
   return t;
 }
