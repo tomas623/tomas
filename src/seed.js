@@ -95,6 +95,67 @@ async function main() {
     console.log(`[seed] Admin ya existía: ${adminEmail}`);
   }
 
+  // ===== 4) Demo: cliente + marca vigilada + alerta para la bandeja =====
+  // Idempotente: si ya existe el cliente demo, no duplica nada.
+  const demoEmail = 'demo.cliente@legalpacers.com';
+  let demo = db.prepare('SELECT id FROM usuarios WHERE email = ?').get(demoEmail);
+  if (!demo) {
+    const pack10 = db.prepare('SELECT id FROM packs WHERE codigo = ?').get('vigilancia_10');
+    const hashDemo = await hashPassword('demo12345');
+    const info = db.prepare(`
+      INSERT INTO usuarios (email, password_hash, rol, nombre, telefono, pack_id)
+      VALUES (?, ?, 'cliente', ?, ?, ?)
+    `).run(demoEmail, hashDemo, 'Cliente Demo', '+5491100000000', pack10?.id || null);
+    demo = { id: info.lastInsertRowid };
+
+    // Marca vigilada de prueba
+    const mv = db.prepare(`
+      INSERT INTO marcas_vigiladas (usuario_id, denominacion, denominacion_norm, clases, tipo, estado)
+      VALUES (?, 'Focca', 'focca', '[9,42]', 'denominativa', 'activa')
+    `).run(demo.id);
+
+    // Boletín ficticio para que las muestras de alerta tengan FK válida
+    const boletin = db.prepare(`
+      INSERT INTO boletines (numero, fecha_publicacion, archivo, hash, estado, total_actas)
+      VALUES ('DEMO-001', date('now'), 'demo-fixture', 'demo-hash-001', 'procesado', 2)
+    `).run();
+
+    const mb1 = db.prepare(`
+      INSERT INTO marcas_boletin (boletin_id, acta, denominacion, denominacion_norm, clase, titular, tipo, estado, fecha)
+      VALUES (?, '4500001', 'FOKKA', 'fokka', 9, 'Otro Titular SRL', 'denominativa', 'Solicitada', date('now'))
+    `).run(boletin.lastInsertRowid);
+    const mb2 = db.prepare(`
+      INSERT INTO marcas_boletin (boletin_id, acta, denominacion, denominacion_norm, clase, titular, tipo, estado, fecha)
+      VALUES (?, '4500002', 'FOCA', 'foca', 42, 'Empresa X SA', 'denominativa', 'Solicitada', date('now'))
+    `).run(boletin.lastInsertRowid);
+
+    // Alerta + candidatos (con stub de Etapa 2)
+    const { analizar } = require('./matching/etapa2');
+    const alerta = db.prepare(`
+      INSERT INTO alertas (usuario_id, marca_vigilada_id, nivel, notoria, estado, canal, fundamento)
+      VALUES (?, ?, 'alto', 0, 'nueva', 'mail+wa', ?)
+    `).run(demo.id, mv.lastInsertRowid,
+      'Detectamos 2 solicitudes nuevas con alta similitud fonética con "Focca" en clases 9 y 42.');
+
+    const cands = [
+      { mb_id: mb1.lastInsertRowid, score: 88, motivo: 'coincidencia_fonetica,misma_clase', denom: 'FOKKA', clase: 9 },
+      { mb_id: mb2.lastInsertRowid, score: 72, motivo: 'ortografica_cercana,misma_clase',   denom: 'FOCA',  clase: 42 },
+    ];
+    for (const c of cands) {
+      const ge = await analizar(
+        { denominacion: 'Focca', clases: [9, 42] },
+        { id: c.mb_id, denominacion: c.denom, clase: c.clase, titular: 'demo', score: c.score, motivos: c.motivo.split(',') },
+      );
+      db.prepare(`
+        INSERT INTO alerta_candidatos (alerta_id, marca_boletin_id, score, motivo, gemini_json)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(alerta.lastInsertRowid, c.mb_id, c.score, c.motivo, JSON.stringify(ge));
+    }
+    console.log(`[seed] Demo: cliente ${demoEmail} (pass: demo12345) + 1 marca vigilada + 1 alerta con 2 candidatos.`);
+  } else {
+    console.log(`[seed] Demo ya existía: ${demoEmail}`);
+  }
+
   console.log('[seed] Listo.');
 }
 

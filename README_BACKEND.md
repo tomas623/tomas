@@ -144,7 +144,17 @@ Implementado de `BUILD_SPEC_MOTOR.md`:
 - **Etapa 2 (Gemini)** en stub (`src/matching/etapa2.js`): devuelve el JSON estructurado pedido por el spec (`nivel_riesgo` / `notoria` / `fundamento` / `recomendacion`). Con `GEMINI_API_KEY` real llama a `gemini-2.5-pro`. Cache por par marca-candidata en `audit_log`.
 - **`audit_log`** (`src/audit.js`): hook listo, ya registra altas de usuario, login, logout y los hits de cache de Gemini.
 
-**Lo que queda para los próximos slices (no entregado en éste)**: panel admin (subida de boletines, bandeja de revisión), portal cliente (carga de marcas con cupo del pack), scheduler semanal, alertas mail/WhatsApp, ingesta de PDF.
+### Slice 2 — Panel admin
+
+- **Endpoints** (`src/admin.js`, todos detrás de `requireAuth('admin','operador')`):
+  - `GET /api/admin/resumen` — métricas de dashboard.
+  - `GET /api/admin/alertas[?estado=]` — bandeja con candidatos + JSON de Etapa 2 (stub).
+  - `PATCH /api/admin/alertas/:id` — cambiar estado (`revisada` / `accion_tomada` / `descartada`), queda registrado en `audit_log`.
+  - `GET /api/admin/{leads,usuarios,packs,marcas-vigiladas,boletines,audit}` — lectura.
+- **UI estática** en `public/admin/index.html`, montada en `GET /admin`. Vanilla JS, mismo tema dark que la landing. Login → tabs (Resumen / Alertas / Leads / Usuarios / Marcas vigiladas / Packs / Boletines / Auditoría).
+- **Seed demo**: además del admin, ahora crea un cliente (`demo.cliente@legalpacers.com / demo12345`), una marca vigilada `Focca`, un boletín ficticio y una alerta con 2 candidatos (FOKKA / FOCA) ya analizados por Etapa 2 stub — para que la bandeja muestre algo al primer arranque.
+
+**Lo que queda para los próximos slices**: portal cliente (carga de marcas con cupo del pack), ingesta de PDF de boletines, scheduler semanal, alertas mail (Resend) + WhatsApp Cloud API.
 
 ### Probar el slice
 
@@ -187,10 +197,13 @@ curl -X POST http://localhost:3000/api/marca/check -H 'Content-Type: application
 │   ├── pagos.js               # Mercado Pago (con modo stub)
 │   ├── auth.js                # bcrypt + cookies firmadas + middleware
 │   ├── audit.js               # audit_log helper
+│   ├── admin.js               # endpoints del panel admin
 │   ├── matching/
 │   │   ├── etapa1.js          # determinístico: fonético ES + Lev + trigramas + clases
 │   │   └── etapa2.js          # Gemini (stub sin API key)
-│   └── seed.js                # marcas + packs + admin
+│   └── seed.js                # marcas + packs + admin + demo
+├── public/
+│   └── admin/index.html       # UI del panel (vanilla JS)
 └── data/
     └── marcas_seed.csv        # dataset de ejemplo
 ```

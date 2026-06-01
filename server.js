@@ -7,6 +7,7 @@ const db = require('./src/db');
 const { buscarEnINPI, enmascararActa } = require('./src/inpi');
 const { crearPreferencia, obtenerPago } = require('./src/pagos');
 const { mountAuthRoutes } = require('./src/auth');
+const { mountAdminRoutes } = require('./src/admin');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -17,6 +18,7 @@ const ROOT_DIR = __dirname;
 
 app.use(express.json({ limit: '256kb' }));
 mountAuthRoutes(app);
+mountAdminRoutes(app);
 
 // Detectar clases Niza por rubro — espejo de la lógica del front (detectarClases).
 function detectarClasesPorRubro(rubro) {
@@ -283,15 +285,8 @@ app.get('/pagos/pendiente', (req, res) =>
 app.get('/', (req, res) => res.sendFile(path.join(ROOT_DIR, 'landing-legalpacers.html')));
 app.use('/static', express.static(path.join(ROOT_DIR, 'static')));
 
-// Endpoint de inspección de leads (sólo cuando ADMIN_TOKEN coincide).
-app.get('/api/admin/leads', (req, res) => {
-  const adminToken = (process.env.ADMIN_TOKEN || '').trim();
-  if (!adminToken || req.query.token !== adminToken) {
-    return res.status(401).json(fail('No autorizado'));
-  }
-  const rows = db.prepare('SELECT * FROM leads ORDER BY id DESC LIMIT 200').all();
-  res.json(ok({ leads: rows }));
-});
+// Panel admin (HTML estático). Las rutas /api/admin/* viven en src/admin.js.
+app.use('/admin', express.static(path.join(ROOT_DIR, 'public', 'admin')));
 
 app.use((req, res) => res.status(404).json(fail('Not found', 404)));
 
