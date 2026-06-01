@@ -48,9 +48,17 @@ async function main() {
     process.exit(1);
   }
 
-  db.exec('DELETE FROM marcas_inpi');
+  // Sólo seed inicial de marcas ficticias si la tabla está vacía o muy chica.
+  // En producción, con marcas reales ya importadas (npm run import-python),
+  // no se borra nada.
+  const existentes = db.prepare('SELECT COUNT(*) AS n FROM marcas_inpi').get().n;
+  if (existentes > 100) {
+    console.log(`[seed] marcas_inpi ya tiene ${existentes.toLocaleString()} filas — salteo carga del CSV fixture.`);
+  } else {
+    if (existentes > 0) db.exec('DELETE FROM marcas_inpi');
+  }
   const stmt = db.prepare(`
-    INSERT INTO marcas_inpi (denominacion, denominacion_norm, clase, acta, titular, estado)
+    INSERT OR IGNORE INTO marcas_inpi (denominacion, denominacion_norm, clase, acta, titular, estado)
     VALUES (?, ?, ?, ?, ?, ?)
   `);
   const tx = db.transaction((batch) => { for (const r of batch) stmt.run(...r); });
@@ -66,8 +74,10 @@ async function main() {
       iEstado >= 0 ? (r[iEstado] || '').trim() : 'Concedida',
     ]);
   }
-  tx(batch);
-  console.log(`[seed] Marcas INPI: ${batch.length} insertadas desde ${path.basename(csvPath)}`);
+  if (existentes <= 100) {
+    tx(batch);
+    console.log(`[seed] Marcas INPI: ${batch.length} insertadas desde ${path.basename(csvPath)}`);
+  }
 
   // ===== 2) Packs de vigilancia (BUILD_SPEC_MOTOR §1) =====
   const packs = [

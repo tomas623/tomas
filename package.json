@@ -13,7 +13,8 @@
     "ingesta": "node src/run-ingesta.js",
     "monitoreo": "node src/run-monitoreo.js",
     "import-python": "node src/import-python-db.js",
-    "backfill": "node src/run-backfill.js"
+    "backfill": "node src/run-backfill.js",
+    "prep-prod": "node src/run-prep-prod.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

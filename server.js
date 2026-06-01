@@ -41,7 +41,18 @@ function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400) { return { ok: false, error: msg, code }; }
 
 // ===== Healthcheck =====
-app.get('/api/health', (req, res) => res.json(ok({ status: 'up', ts: Date.now() })));
+app.get('/api/health', (req, res) => {
+  try {
+    const checks = {
+      db: db.prepare('SELECT 1 AS ok').get()?.ok === 1,
+      marcas_inpi: db.prepare('SELECT COUNT(*) AS n FROM marcas_inpi').get().n,
+      usuarios: db.prepare('SELECT COUNT(*) AS n FROM usuarios').get().n,
+    };
+    res.json(ok({ status: 'up', ts: Date.now(), checks }));
+  } catch (err) {
+    res.status(503).json({ ok: false, status: 'degraded', error: err.message });
+  }
+});
 
 // ===== 2.1 Precio del informe =====
 app.get('/api/marca/precio-informe', (req, res) => {

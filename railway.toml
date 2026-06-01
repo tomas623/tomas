@@ -1,0 +1,23 @@
+# Railway deployment config — https://docs.railway.app/reference/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Volumen persistente: Railway monta el disk en /app/data por convención.
+# Setear en el dashboard: Service → Volumes → New Volume → mount /app/data.
+# Variables obligatorias en Railway → Service → Variables:
+#   BASE_URL=https://<tu-dominio>
+#   SESSION_SECRET=<32+ caracteres random>
+#   SEED_ADMIN_EMAIL=<tu mail>
+#   SEED_ADMIN_PASSWORD=<password fuerte>
+#   ADMIN_TOKEN=<token random para crear operadores>
+#   MP_ACCESS_TOKEN=<token productivo Mercado Pago>
+#   PYTHON_DB_PATH=                   # vacío si no usás el puente Python
