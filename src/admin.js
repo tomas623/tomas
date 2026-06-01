@@ -130,13 +130,37 @@ function mountAdminRoutes(app) {
     res.json(ok({ audit: rows }));
   });
 
-  // ===== Boletines (pendiente ingesta) =====
+  // ===== Boletines =====
   app.get('/api/admin/boletines', guard, (req, res) => {
     const rows = db.prepare(`
       SELECT id, numero, fecha_publicacion, archivo, estado, total_actas, created_at
       FROM boletines ORDER BY id DESC LIMIT 100
     `).all();
     res.json(ok({ boletines: rows }));
+  });
+
+  // Ingestar un boletín por path (CSV o PDF presente en el filesystem del server).
+  app.post('/api/admin/boletines/ingestar', guard, async (req, res) => {
+    const { archivo } = req.body || {};
+    if (!archivo) return res.status(400).json(fail('Falta "archivo" (path del CSV/PDF)'));
+    try {
+      const { ingestar } = require('./ingesta');
+      const r = await ingestar(archivo, { actorId: req.user.id });
+      res.json(ok(r));
+    } catch (err) {
+      res.status(500).json(fail(err.message, 500));
+    }
+  });
+
+  // Correr el monitoreo semanal a demanda.
+  app.post('/api/admin/monitoreo/run', guard, async (req, res) => {
+    try {
+      const { correr } = require('./jobs/monitoreo-semanal');
+      const r = await correr({ boletinId: req.body?.boletin_id || null, actorId: req.user.id });
+      res.json(ok(r));
+    } catch (err) {
+      res.status(500).json(fail(err.message, 500));
+    }
   });
 }
 

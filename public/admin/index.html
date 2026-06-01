@@ -387,19 +387,58 @@ async function loadPacks() {
 async function loadBoletines() {
   const r = await api('/api/admin/boletines');
   if (!r.ok) return;
-  if (!r.data.boletines.length) { $('#panel-boletines').innerHTML = '<div class="empty">Sin boletines cargados. La ingesta de PDF llega en el próximo slice.</div>'; return; }
-  $('#panel-boletines').innerHTML = tabla(
+  const toolbar = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end">
+      <div class="field" style="flex:1;min-width:240px">
+        <label style="display:block;font-size:12px;color:var(--text-soft);margin-bottom:6px">Path del archivo (CSV o PDF en el server)</label>
+        <input id="ingPath" placeholder="./data/boletin-fixture.csv" value="./data/boletin-fixture.csv"
+               style="width:100%;padding:9px 12px;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+      </div>
+      <button class="btn primary" onclick="ingestar()">Ingestar boletín</button>
+      <button class="btn green" onclick="correrMonitoreo()">Correr monitoreo ahora</button>
+    </div>
+    <div id="ingResult"></div>`;
+  if (!r.data.boletines.length) {
+    $('#panel-boletines').innerHTML = toolbar + '<div class="empty">Sin boletines cargados. Probá con <code>./data/boletin-fixture.csv</code>.</div>';
+    return;
+  }
+  $('#panel-boletines').innerHTML = toolbar + tabla(
     ['#','Número','Fecha publicación','Archivo','Estado','Actas','Creado'],
     r.data.boletines.map(b => [
       `<span class="mono">${b.id}</span>`,
       esc(b.numero || '—'),
       esc(b.fecha_publicacion || '—'),
-      `<span class="mono">${esc(b.archivo)}</span>`,
-      `<span class="chip blue">${esc(b.estado)}</span>`,
+      `<span class="mono" style="word-break:break-all">${esc(b.archivo)}</span>`,
+      `<span class="chip ${b.estado === 'procesado' ? 'green' : 'yellow'}">${esc(b.estado)}</span>`,
       b.total_actas,
       fmtDate(b.created_at),
     ])
   );
+}
+
+async function ingestar() {
+  const archivo = $('#ingPath').value.trim();
+  if (!archivo) return;
+  $('#ingResult').innerHTML = '<div class="muted" style="font-size:13px">Procesando…</div>';
+  const r = await api('/api/admin/boletines/ingestar', { method: 'POST', body: JSON.stringify({ archivo }) });
+  if (r.ok) {
+    const d = r.data;
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">${d.dedup ? `Boletín ya existía (#${d.boletin_id}), no se duplicó.` : `Boletín #${d.boletin_id} ingerido: ${d.total_actas} actas.`}${d.warning ? '  ⚠ ' + esc(d.warning) : ''}</div>`;
+    loadBoletines();
+  } else {
+    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35);margin-bottom:10px">${esc(r.error)}</div>`;
+  }
+}
+
+async function correrMonitoreo() {
+  $('#ingResult').innerHTML = '<div class="muted" style="font-size:13px">Corriendo monitoreo (puede tardar unos segundos)…</div>';
+  const r = await api('/api/admin/monitoreo/run', { method: 'POST', body: JSON.stringify({}) });
+  if (r.ok) {
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">Monitoreo OK · <strong>${r.data.alertas}</strong> alerta(s) creada(s) · ${r.data.candidatos || 0} candidato(s) evaluado(s). ${r.data.mensaje || ''}</div>`;
+    loadResumen();
+  } else {
+    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">${esc(r.error)}</div>`;
+  }
 }
 
 async function loadAudit() {

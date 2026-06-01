@@ -27,22 +27,23 @@ function codigoFonetico(s) {
   if (!s) return '';
   let t = s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   t = t.replace(/[^a-zñ]/g, '');
-  // Pre-reglas
-  t = t.replace(/h/g, '');           // h muda
+  // Pre-reglas (orden importa)
+  t = t.replace(/h/g, '');                 // h muda
   t = t.replace(/qu([eiéí])/g, 'k$1');
   t = t.replace(/qu/g, 'k');
-  t = t.replace(/c([eiéí])/g, 's$1');
+  t = t.replace(/c([eiéí])/g, 's$1');      // ce/ci suenan a 's'
+  t = t.replace(/c/g, 'k');                // resto de c's (focca, casa) → 'k'
   t = t.replace(/g([eiéí])/g, 'j$1');
-  t = t.replace(/ch/g, 'X');         // marker temporal
+  t = t.replace(/ch/g, 'X');               // marker temporal
   t = t.replace(/ll/g, 'Y');
   t = t.replace(/ñ/g, 'N');
   // Colapsos
   t = t.replace(/[vb]/g, 'b');
-  t = t.replace(/[zc]/g, 's');
-  t = t.replace(/y/g, 'i');          // 'y' como vocal
-  t = t.replace(/Y/g, 'y');          // ll → y fonético (mantenido como 'y' ahora consonante)
-  t = t.replace(/x/g, 's');          // x → s (mayoría de casos en ES)
-  t = t.replace(/X/g, 'ch');         // restaurar ch
+  t = t.replace(/z/g, 's');                // 'z' en ES rioplatense suena 's'
+  t = t.replace(/y/g, 'Y');                // marker para colapsar con ll
+  t = t.replace(/Y/g, 'y');                // ll y y → 'y' (yeísmo)
+  t = t.replace(/x/g, 's');                // x → s en la mayoría de casos ES
+  t = t.replace(/X/g, 'ch');               // ch restaurado
   t = t.replace(/[wk]/g, 'k');
   // Reducir vocales (algunas implementaciones las eliminan al medio; mantenemos al inicio).
   if (t.length > 1) t = t[0] + t.slice(1).replace(/[aeiou]/g, '');

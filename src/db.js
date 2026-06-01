@@ -161,4 +161,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_sesiones_user ON sesiones(usuario_id);
 `);
 
+// ===== Migraciones incrementales (post-create) =====
+function columnExists(table, col) {
+  return db.prepare(`PRAGMA table_info(${table})`).all().some(c => c.name === col);
+}
+if (!columnExists('alertas', 'boletin_id')) {
+  db.exec(`ALTER TABLE alertas ADD COLUMN boletin_id INTEGER REFERENCES boletines(id)`);
+}
+// Idempotencia del scheduler: una alerta por (cliente, marca vigilada, boletín).
+db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS uniq_alertas_por_boletin
+    ON alertas(usuario_id, marca_vigilada_id, boletin_id)
+    WHERE boletin_id IS NOT NULL;
+`);
+
 module.exports = db;

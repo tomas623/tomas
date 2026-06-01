@@ -167,7 +167,23 @@ Implementado de `BUILD_SPEC_MOTOR.md`:
 - **UI estática** en `public/cliente/index.html`, montada en `GET /cliente`. Login → tabs: Mis marcas / Mis alertas / Mi pack. Banner con barra de cupo que se pone roja cuando llega al tope y deshabilita el formulario de alta.
 - Todas las acciones quedan registradas en `audit_log` (`vigilancia.alta`, `vigilancia.cambio_estado`, `vigilancia.baja`).
 
-**Lo que queda para los próximos slices**: ingesta de PDF de boletines, scheduler semanal, alertas reales (mail Resend + WhatsApp Cloud API).
+### Slice 4 — Ingesta de boletines + scheduler
+
+- **Parser** (`src/ingesta/parser.js`): soporta **CSV nativo** y **PDF** (con `pdf-parse` opcional). El PDF queda con un regex heurístico — los boletines reales del INPI tienen layout tabular y van a requerir ajustar el regex con un boletín real de muestra.
+- **Pipeline** (`src/ingesta/index.js`): hash SHA-256 del archivo → si ya se ingirió, deduplica. Inserta filas en `marcas_boletin` y registra en `boletines` (`estado`, `total_actas`). Todo dentro de una transacción.
+- **Comandos**:
+  - `npm run ingesta -- ./data/boletin-fixture.csv` (un archivo o una carpeta).
+  - `npm run monitoreo` — corre Etapa 1 + Etapa 2 contra el último boletín procesado. Flags: `--boletin <id>`, `--no-notify`.
+- **Job** (`src/jobs/monitoreo-semanal.js`): por cada marca vigilada activa, corre matching contra las actas del boletín, descarta lo que quede en nivel `bajo` (Etapa 2) y genera una alerta + candidatos. **Idempotente** vía índice único `(usuario_id, marca_vigilada_id, boletin_id)`: re-correr el job sobre el mismo boletín no duplica nada.
+- **Notificaciones** (`src/notificaciones.js`): mail con **Resend** y WhatsApp con **Cloud API**. Modo stub si faltan credenciales — loguea y registra en `notificaciones` con estado `enviada_stub`. Todo envío (real o stub) queda auditado en la tabla.
+- **Endpoints admin nuevos**:
+  - `POST /api/admin/boletines/ingestar` — ingestar por path.
+  - `POST /api/admin/monitoreo/run` — correr el monitoreo a demanda (lo mismo que el comando CLI).
+- **Panel admin** → tab "Boletines": ahora tiene un campo de path + botón "Ingestar boletín" + botón "Correr monitoreo ahora".
+- **Fix de Etapa 1**: el código fonético español ahora distingue `c+e/i` (suena `s`) de `c+otra` (suena `k`) y colapsa `ll ↔ y` (yeísmo). Antes "Focca" no matcheaba "FOKKA" — ahora sí (score 96, "coincidencia_fonetica + misma_clase").
+- **Fixture** en `data/boletin-fixture.csv` con 15 actas pensadas para disparar alertas contra el cliente demo.
+
+**Lo que queda para el próximo slice**: scheduler **automático** (cron a los miércoles) — hoy se dispara manualmente con `npm run monitoreo` o desde el panel. La pipeline ya está armada; sólo falta enchufar `node-cron`.
 
 ### Probar el slice
 
@@ -212,13 +228,22 @@ curl -X POST http://localhost:3000/api/marca/check -H 'Content-Type: application
 │   ├── audit.js               # audit_log helper
 │   ├── admin.js               # endpoints del panel admin
 │   ├── cliente.js             # endpoints del portal cliente (cupo del pack)
+│   ├── notificaciones.js      # mail (Resend) + WhatsApp Cloud API (stub)
 │   ├── matching/
 │   │   ├── etapa1.js          # determinístico: fonético ES + Lev + trigramas + clases
 │   │   └── etapa2.js          # Gemini (stub sin API key)
+│   ├── ingesta/
+│   │   ├── parser.js          # CSV nativo + PDF (con pdf-parse opcional)
+│   │   └── index.js           # pipeline con dedup por hash
+│   ├── jobs/
+│   │   └── monitoreo-semanal.js  # Etapa 1 + Etapa 2 + alertas idempotentes + notif
+│   ├── run-ingesta.js         # CLI: npm run ingesta -- archivo.csv
+│   ├── run-monitoreo.js       # CLI: npm run monitoreo
 │   └── seed.js                # marcas + packs + admin + demo
 ├── public/
 │   ├── admin/index.html       # UI del panel admin (vanilla JS)
 │   └── cliente/index.html     # UI del portal cliente (vanilla JS)
 └── data/
-    └── marcas_seed.csv        # dataset de ejemplo
+    ├── marcas_seed.csv        # dataset INPI de ejemplo
+    └── boletin-fixture.csv    # boletín de prueba para ingesta + monitoreo
 ```
