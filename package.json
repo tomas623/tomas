@@ -1,0 +1,19 @@
+{
+  "name": "legalpacers-backend",
+  "version": "1.0.0",
+  "description": "Backend Node + Express + SQLite para la landing de LegalPacers (registro de marcas en Argentina).",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  }
+}

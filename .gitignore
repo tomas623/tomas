@@ -10,3 +10,9 @@ cache/
 
 *.mp4
 *.logtype
+
+# Node backend
+node_modules/
+data/legalpacers.db
+data/legalpacers.db-*
+npm-debug.log*
