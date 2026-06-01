@@ -183,7 +183,19 @@ Implementado de `BUILD_SPEC_MOTOR.md`:
 - **Fix de Etapa 1**: el código fonético español ahora distingue `c+e/i` (suena `s`) de `c+otra` (suena `k`) y colapsa `ll ↔ y` (yeísmo). Antes "Focca" no matcheaba "FOKKA" — ahora sí (score 96, "coincidencia_fonetica + misma_clase").
 - **Fixture** en `data/boletin-fixture.csv` con 15 actas pensadas para disparar alertas contra el cliente demo.
 
-**Lo que queda para el próximo slice**: scheduler **automático** (cron a los miércoles) — hoy se dispara manualmente con `npm run monitoreo` o desde el panel. La pipeline ya está armada; sólo falta enchufar `node-cron`.
+### Slice 5 — Scheduler automático
+
+- `src/jobs/scheduler.js`: programa el monitoreo semanal con **`node-cron`**. Default `0 9 * * 3` (miércoles 9:00, TZ `America/Argentina/Buenos_Aires`), configurable con `CRON_MONITOREO` y `TZ`. Toda corrida queda en `audit_log` como `cron.monitoreo` (o `cron.monitoreo.error`).
+- Se desactiva con `CRON_ENABLED=false` (útil en dev/CI). Expresión inválida ⇒ logueo del error y el server arranca igual sin cron.
+- Endpoint `GET /api/admin/scheduler` para inspeccionar estado.
+- En el dashboard del panel admin aparece un chip "cron activo" + lista de tasks programadas.
+
+**Con esto el BUILD_SPEC_MOTOR.md queda cubierto end-to-end en modo stub**. Para producción sólo falta enchufar credenciales reales:
+- `GEMINI_API_KEY` → Etapa 2 deja de devolver el mock.
+- `RESEND_API_KEY` + `MAIL_FROM` verificado → mail real.
+- `WA_TOKEN` + `WA_PHONE_NUMBER_ID` + plantilla aprobada → WhatsApp real.
+- `MP_ACCESS_TOKEN` real → checkout productivo de Mercado Pago.
+- Conectar la fuente de boletines real (CSV oficial / export INPI / scraping autorizado) reemplazando `src/inpi.js` o ingestando vía `npm run ingesta`.
 
 ### Probar el slice
 
@@ -236,7 +248,8 @@ curl -X POST http://localhost:3000/api/marca/check -H 'Content-Type: application
 │   │   ├── parser.js          # CSV nativo + PDF (con pdf-parse opcional)
 │   │   └── index.js           # pipeline con dedup por hash
 │   ├── jobs/
-│   │   └── monitoreo-semanal.js  # Etapa 1 + Etapa 2 + alertas idempotentes + notif
+│   │   ├── monitoreo-semanal.js  # Etapa 1 + Etapa 2 + alertas idempotentes + notif
+│   │   └── scheduler.js          # node-cron, programa el monitoreo a los miércoles
 │   ├── run-ingesta.js         # CLI: npm run ingesta -- archivo.csv
 │   ├── run-monitoreo.js       # CLI: npm run monitoreo
 │   └── seed.js                # marcas + packs + admin + demo

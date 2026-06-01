@@ -232,7 +232,7 @@ function selectTab(name) {
 
 // ===== Loaders =====
 async function loadResumen() {
-  const r = await api('/api/admin/resumen');
+  const [r, sch] = await Promise.all([api('/api/admin/resumen'), api('/api/admin/scheduler')]);
   if (!r.ok) return;
   const d = r.data;
   const m = (lbl, num, cls = '') => `<div class="metric"><div class="lbl">${esc(lbl)}</div><div class="num ${cls}">${num}</div></div>`;
@@ -247,6 +247,22 @@ async function loadResumen() {
     m('Alertas totales', d.alertas_total);
   if (d.alertas_nuevas > 0) { $('#badgeAlertas').textContent = d.alertas_nuevas; $('#badgeAlertas').hidden = false; }
   else $('#badgeAlertas').hidden = true;
+
+  if (sch.ok) {
+    const s = sch.data;
+    const tasksTxt = s.tasks.length
+      ? s.tasks.map(t => `<code style="background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px">${esc(t.name)} → ${esc(t.expr)}</code>`).join(' · ')
+      : '<span class="muted">sin tasks</span>';
+    const chip = s.enabled
+      ? `<span class="chip green">cron activo</span>`
+      : `<span class="chip muted">cron desactivado</span>`;
+    const existing = $('#schedulerInfo');
+    const html = `<div id="schedulerInfo" style="margin-top:14px;padding:14px;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;font-size:13px;color:var(--text-soft)">
+      ${chip} &nbsp; ${tasksTxt}
+    </div>`;
+    if (existing) existing.outerHTML = html;
+    else $('#metricsGrid').insertAdjacentHTML('afterend', html);
+  }
 }
 
 async function loadAlertas() {

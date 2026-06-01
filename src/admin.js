@@ -152,6 +152,12 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // Estado del scheduler.
+  app.get('/api/admin/scheduler', guard, (req, res) => {
+    const { estado } = require('./jobs/scheduler');
+    res.json(ok(estado()));
+  });
+
   // Correr el monitoreo semanal a demanda.
   app.post('/api/admin/monitoreo/run', guard, async (req, res) => {
     try {

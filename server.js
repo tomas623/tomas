@@ -9,6 +9,7 @@ const { crearPreferencia, obtenerPago } = require('./src/pagos');
 const { mountAuthRoutes } = require('./src/auth');
 const { mountAdminRoutes } = require('./src/admin');
 const { mountClienteRoutes } = require('./src/cliente');
+const scheduler = require('./src/jobs/scheduler');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -297,4 +298,5 @@ app.use((req, res) => res.status(404).json(fail('Not found', 404)));
 app.listen(PORT, () => {
   const mpMode = (process.env.MP_ACCESS_TOKEN || '').trim() ? 'real' : 'STUB';
   console.log(`[legalpacers] escuchando en ${BASE_URL} (PORT=${PORT}, MP=${mpMode})`);
+  scheduler.iniciar();
 });
