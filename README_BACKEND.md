@@ -126,6 +126,53 @@ curl -s -X POST http://localhost:3000/api/marca/registro/iniciar \
   4. Si vas a recibir pagos reales, exponer `BASE_URL` por HTTPS y configurar la URL de webhook en MP.
 - El archivo `Procfile` existente del repo apunta a la app Python; si el target es desplegar este backend Node, reemplazá la línea o usá un `Procfile` específico (`web: node server.js`).
 
+---
+
+## Parte 2 — Motor de vigilancia (avance: Slice 1)
+
+Implementado de `BUILD_SPEC_MOTOR.md`:
+
+- **Schema completo** (las 9 tablas de §9): `packs`, `usuarios`, `boletines`, `marcas_boletin`, `marcas_vigiladas`, `alertas`, `alerta_candidatos`, `audit_log`, `notificaciones` + `sesiones`. Todo idempotente (`CREATE TABLE IF NOT EXISTS`).
+- **Seed extendido**: `npm run seed` ahora carga marcas INPI + los 3 packs (`vigilancia_3`, `vigilancia_10`, `vigilancia_20`) + un usuario admin (`admin@legalpacers.com` / `admin12345`, configurable con `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD`).
+- **Auth con roles** (`src/auth.js`): `bcryptjs` para passwords + cookie de sesión firmada (HMAC-SHA256) + tabla `sesiones`. Endpoints:
+  - `POST /api/auth/register` — alta de `cliente` libre; alta de `admin`/`operador` requiere header `X-Admin-Token`.
+  - `POST /api/auth/login` → setea cookie `lp_sid` httpOnly.
+  - `POST /api/auth/logout`.
+  - `GET /api/auth/me`.
+  - Helper `requireAuth('admin','operador')` para proteger rutas.
+- **Etapa 1 del matching** (`src/matching/etapa1.js`): normalización + código fonético español (ll/y, b/v, c/s/z, g/j, h muda) + Levenshtein + similitud por trigramas + clases relacionadas. Devuelve score 0–100 y motivos. Reemplaza la lógica interna del pre-check (`/api/marca/check` ahora se apoya en ella).
+- **Etapa 2 (Gemini)** en stub (`src/matching/etapa2.js`): devuelve el JSON estructurado pedido por el spec (`nivel_riesgo` / `notoria` / `fundamento` / `recomendacion`). Con `GEMINI_API_KEY` real llama a `gemini-2.5-pro`. Cache por par marca-candidata en `audit_log`.
+- **`audit_log`** (`src/audit.js`): hook listo, ya registra altas de usuario, login, logout y los hits de cache de Gemini.
+
+**Lo que queda para los próximos slices (no entregado en éste)**: panel admin (subida de boletines, bandeja de revisión), portal cliente (carga de marcas con cupo del pack), scheduler semanal, alertas mail/WhatsApp, ingesta de PDF.
+
+### Probar el slice
+
+```bash
+npm run seed       # ahora crea admin + packs
+npm start
+
+# Login admin
+curl -c cookies.txt -X POST http://localhost:3000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@legalpacers.com","password":"admin12345"}'
+
+# Quién soy
+curl -b cookies.txt http://localhost:3000/api/auth/me
+
+# Pre-check con la nueva Etapa 1 (mismo endpoint, ahora con score interno y motivos)
+curl -X POST http://localhost:3000/api/marca/check -H 'Content-Type: application/json' \
+  -d '{"marca":"Brío","clases":[25],"rubro":"ropa de diseño"}'
+```
+
+### Notas de diseño
+
+- El pre-check público sigue usando `minScore: 80` para mantener el espíritu "sólo coincidencia exacta o casi exacta" del check gratis. La función `listaCorta()` expone el matching completo (con fonético + trigramas) para el motor de vigilancia interno.
+- La etapa 2 **no decide**: siempre se loguea prompt + respuesta y la salida es señal para revisión humana, alineado con la condición del spec ("ninguna determinación legal quede decidida por la IA sin revisión humana").
+- `SESSION_SECRET` debe setearse en prod — el default `dev-session-secret-cambiame` está pensado para que el server arranque local sin fricción, no para producción.
+
+---
+
 ## Estructura
 
 ```
@@ -135,10 +182,15 @@ curl -s -X POST http://localhost:3000/api/marca/registro/iniciar \
 ├── server.js                  # entrypoint Express
 ├── package.json
 ├── src/
-│   ├── db.js                  # better-sqlite3 + schema
-│   ├── inpi.js                # buscarEnINPI + normalización + enmascarado
+│   ├── db.js                  # better-sqlite3 + schema (Parte 1 + Parte 2)
+│   ├── inpi.js                # adaptador de fuente INPI (sobre Etapa 1)
 │   ├── pagos.js               # Mercado Pago (con modo stub)
-│   └── seed.js                # importador del CSV
+│   ├── auth.js                # bcrypt + cookies firmadas + middleware
+│   ├── audit.js               # audit_log helper
+│   ├── matching/
+│   │   ├── etapa1.js          # determinístico: fonético ES + Lev + trigramas + clases
+│   │   └── etapa2.js          # Gemini (stub sin API key)
+│   └── seed.js                # marcas + packs + admin
 └── data/
     └── marcas_seed.csv        # dataset de ejemplo
 ```

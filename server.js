@@ -6,6 +6,7 @@ const express = require('express');
 const db = require('./src/db');
 const { buscarEnINPI, enmascararActa } = require('./src/inpi');
 const { crearPreferencia, obtenerPago } = require('./src/pagos');
+const { mountAuthRoutes } = require('./src/auth');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -15,6 +16,7 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const ROOT_DIR = __dirname;
 
 app.use(express.json({ limit: '256kb' }));
+mountAuthRoutes(app);
 
 // Detectar clases Niza por rubro — espejo de la lógica del front (detectarClases).
 function detectarClasesPorRubro(rubro) {
