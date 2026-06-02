@@ -1,0 +1,43 @@
+# Render deployment config — https://render.com/docs/blueprint-spec
+# Útil si vas con Render en vez de Railway. Crea un Web Service + Disk persistente.
+
+services:
+  - type: web
+    name: legalpacers-backend
+    env: docker
+    plan: starter
+    region: ohio
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: legalpacers-data
+      mountPath: /app/data
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: SQLITE_PATH
+        value: /app/data/legalpacers.db
+      - key: BASE_URL
+        sync: false              # setear en el dashboard al URL final
+      - key: SESSION_SECRET
+        generateValue: true       # Render lo genera automáticamente
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: MP_ACCESS_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: WA_TOKEN
+        sync: false
+      - key: WA_PHONE_NUMBER_ID
+        sync: false

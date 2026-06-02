@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel admin · LegalPacers</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{
+  --bg:#030712; --bg-soft:#070d1c; --surface:#0f172a; --surface-2:#1e293b;
+  --border:#334155; --border-soft:#1f2a40;
+  --text:#f8fafc; --text-soft:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
+  --blue:#1b6ef3; --blue-dark:#1656c4; --blue-soft:rgba(27,110,243,.12);
+  --green:#10b981; --green-soft:rgba(16,185,129,.12);
+  --red:#ef4444; --red-soft:rgba(239,68,68,.12);
+  --yellow:#f59e0b; --yellow-soft:rgba(245,158,11,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+a{color:#60a5fa;text-decoration:none}
+input,select{font-family:inherit}
+
+header.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border-soft);background:rgba(3,7,18,.85);backdrop-filter:blur(14px);position:sticky;top:0;z-index:10}
+.brand{font-weight:800;letter-spacing:.5px;font-size:16px}
+.brand .accent{color:var(--blue)}
+.user-chip{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--text-muted)}
+.user-chip strong{color:var(--text-soft);font-weight:600}
+.btn{padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);transition:all .15s}
+.btn:hover{background:var(--surface);border-color:#475569}
+.btn.primary{background:var(--blue);border-color:transparent;color:#fff}
+.btn.primary:hover{background:var(--blue-dark)}
+.btn.tiny{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn.green{background:var(--green);border-color:transparent;color:#fff}
+.btn.red{background:var(--red);border-color:transparent;color:#fff}
+.btn.outline{background:transparent}
+
+main{max-width:1240px;margin:0 auto;padding:24px}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--border-soft);margin-bottom:24px;overflow-x:auto}
+.tab{padding:10px 16px;background:transparent;color:var(--text-muted);font-size:13.5px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.tab:hover{color:var(--text-soft)}
+.tab.active{color:#60a5fa;border-bottom-color:var(--blue)}
+.tab .badge{background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:6px;font-weight:700}
+
+/* Dashboard */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.metric{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:18px}
+.metric .lbl{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.metric .num{font-size:30px;font-weight:800;margin-top:4px}
+.metric .num.alert{color:#fca5a5}
+.metric .num.ok{color:#6ee7b7}
+.metric .num.warn{color:#fcd34d}
+
+/* Tablas */
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;overflow:hidden;font-size:13.5px}
+th{background:var(--bg-soft);color:var(--text-muted);text-transform:uppercase;font-size:11px;letter-spacing:.05em;padding:11px 14px;text-align:left;font-weight:700;border-bottom:1px solid var(--border-soft)}
+td{padding:12px 14px;border-bottom:1px solid var(--border-soft);color:var(--text-soft);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+
+.chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.chip.green{background:var(--green-soft);color:#6ee7b7}
+.chip.red{background:var(--red-soft);color:#fca5a5}
+.chip.yellow{background:var(--yellow-soft);color:#fcd34d}
+.chip.blue{background:var(--blue-soft);color:#7eb1ff}
+.chip.muted{background:var(--surface-2);color:var(--text-muted)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--text-dim);font-size:14px;background:var(--surface);border:1px dashed var(--border-soft);border-radius:12px}
+
+/* Alertas */
+.alerta-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:20px;margin-bottom:14px}
+.alerta-card.alto{border-color:rgba(239,68,68,.4)}
+.alerta-card.medio{border-color:rgba(245,158,11,.4)}
+.alerta-card.bajo{border-color:rgba(16,185,129,.4)}
+.alerta-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:12px}
+.alerta-marca{font-size:18px;font-weight:800;color:#fff}
+.alerta-meta{font-size:12px;color:var(--text-muted);margin-top:4px}
+.alerta-fund{font-size:13px;color:var(--text-soft);background:var(--bg-soft);border-radius:8px;padding:10px 12px;margin:12px 0;line-height:1.55}
+.candidato{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-top:8px;font-size:13px}
+.candidato-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cand-name{font-weight:700;color:#fff;font-size:14px;letter-spacing:.02em}
+.cand-meta{font-size:11.5px;color:var(--text-muted)}
+.cand-gemini{margin-top:10px;padding:10px;background:rgba(27,110,243,.05);border:1px dashed rgba(27,110,243,.3);border-radius:8px;font-size:12.5px;line-height:1.5;color:var(--text-soft)}
+.cand-gemini b{color:#7eb1ff}
+.alerta-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.score-pill{background:var(--surface-2);border:1px solid var(--border);font-family:ui-monospace,monospace;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;color:var(--text-soft)}
+
+/* Login */
+.login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:36px;max-width:400px;width:100%;box-shadow:0 20px 60px -20px rgba(0,0,0,.6)}
+.login-card h2{font-size:22px;margin-bottom:24px;color:#fff}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
+.field input{width:100%;padding:11px 14px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px}
+.field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+.error-msg{color:#fca5a5;font-size:13px;margin-top:8px}
+.hint{font-size:12px;color:var(--text-dim);margin-top:14px;text-align:center;line-height:1.5}
+.hint code{background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px}
+
+[hidden]{display:none!important}
+.muted{color:var(--text-muted)}
+.mono{font-family:ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;font-size:12px}
+.row-actions{display:flex;gap:6px}
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar" hidden>
+  <div class="brand">LEGAL<span class="accent">PACERS</span> · panel admin</div>
+  <div class="user-chip">
+    <span id="userInfo"></span>
+    <button class="btn outline tiny" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<main>
+
+<!-- LOGIN -->
+<section id="loginScreen" class="login-wrap">
+  <div class="login-card">
+    <h2>Panel · ingreso</h2>
+    <form id="loginForm">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" required autocomplete="username" value="admin@legalpacers.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPass" required autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn primary" style="width:100%;padding:12px">Ingresar</button>
+      <div class="error-msg" id="loginError" hidden></div>
+    </form>
+    <p class="hint">Default sembrado: <code>admin@legalpacers.com</code> / <code>admin12345</code><br>(cambiá con <code>SEED_ADMIN_*</code> en .env).</p>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section id="dashboardScreen" hidden>
+  <nav class="tabs">
+    <button class="tab active" data-tab="resumen">Resumen</button>
+    <button class="tab" data-tab="alertas">Alertas <span class="badge" id="badgeAlertas" hidden></span></button>
+    <button class="tab" data-tab="leads">Leads</button>
+    <button class="tab" data-tab="usuarios">Usuarios</button>
+    <button class="tab" data-tab="marcas">Marcas vigiladas</button>
+    <button class="tab" data-tab="packs">Packs</button>
+    <button class="tab" data-tab="boletines">Boletines</button>
+    <button class="tab" data-tab="audit">Auditoría</button>
+  </nav>
+
+  <div id="panel-resumen" class="panel">
+    <div class="metrics" id="metricsGrid"></div>
+    <div class="muted" style="font-size:13px">Slice 2 entregado: bandeja de revisión, leads, usuarios, marcas vigiladas, auditoría. Próximo: ingesta de boletines + scheduler + alertas reales.</div>
+  </div>
+  <div id="panel-alertas" class="panel" hidden></div>
+  <div id="panel-leads" class="panel" hidden></div>
+  <div id="panel-usuarios" class="panel" hidden></div>
+  <div id="panel-marcas" class="panel" hidden></div>
+  <div id="panel-packs" class="panel" hidden></div>
+  <div id="panel-boletines" class="panel" hidden></div>
+  <div id="panel-audit" class="panel" hidden></div>
+</section>
+
+</main>
+
+<script>
+// ===== Utilidades =====
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = s => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('es-AR') : '—';
+async function api(path, opts = {}) {
+  const r = await fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
+  return r.json();
+}
+
+// ===== Auth =====
+async function checkAuth() {
+  const r = await api('/api/auth/me');
+  if (r.ok && (r.data.rol === 'admin' || r.data.rol === 'operador')) {
+    $('#loginScreen').hidden = true;
+    $('#topbar').hidden = false;
+    $('#dashboardScreen').hidden = false;
+    $('#userInfo').innerHTML = `<strong>${esc(r.data.email)}</strong> · ${esc(r.data.rol)}`;
+    selectTab('resumen');
+    return true;
+  }
+  $('#loginScreen').hidden = false;
+  $('#topbar').hidden = true;
+  $('#dashboardScreen').hidden = true;
+  return false;
+}
+
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#loginError').hidden = true;
+  const r = await api('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: $('#loginEmail').value.trim(), password: $('#loginPass').value }),
+  });
+  if (r.ok) {
+    if (r.data.rol === 'admin' || r.data.rol === 'operador') {
+      checkAuth();
+    } else {
+      $('#loginError').textContent = 'Tu rol no tiene acceso a este panel.';
+      $('#loginError').hidden = false;
+    }
+  } else {
+    $('#loginError').textContent = r.error || 'Error de login';
+    $('#loginError').hidden = false;
+  }
+});
+
+async function logout() {
+  await api('/api/auth/logout', { method: 'POST' });
+  location.reload();
+}
+
+// ===== Tabs =====
+$$('.tab').forEach(t => t.addEventListener('click', () => selectTab(t.dataset.tab)));
+
+function selectTab(name) {
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  $$('.panel').forEach(p => p.hidden = p.id !== `panel-${name}`);
+  const fn = { resumen: loadResumen, alertas: loadAlertas, leads: loadLeads,
+    usuarios: loadUsuarios, marcas: loadMarcas, packs: loadPacks,
+    boletines: loadBoletines, audit: loadAudit }[name];
+  if (fn) fn();
+}
+
+// ===== Loaders =====
+async function loadResumen() {
+  const [r, sch] = await Promise.all([api('/api/admin/resumen'), api('/api/admin/scheduler')]);
+  if (!r.ok) return;
+  const d = r.data;
+  const m = (lbl, num, cls = '') => `<div class="metric"><div class="lbl">${esc(lbl)}</div><div class="num ${cls}">${num}</div></div>`;
+  $('#metricsGrid').innerHTML =
+    m('Alertas nuevas', d.alertas_nuevas, d.alertas_nuevas > 0 ? 'alert' : 'ok') +
+    m('Leads pagados', d.leads_pagados, 'ok') +
+    m('Leads pendientes', d.leads_pendientes, d.leads_pendientes > 0 ? 'warn' : '') +
+    m('Clientes', d.clientes) +
+    m('Marcas vigiladas', d.marcas_vigiladas) +
+    m('Marcas INPI', d.marcas_inpi) +
+    m('Boletines', d.boletines) +
+    m('Alertas totales', d.alertas_total);
+  if (d.alertas_nuevas > 0) { $('#badgeAlertas').textContent = d.alertas_nuevas; $('#badgeAlertas').hidden = false; }
+  else $('#badgeAlertas').hidden = true;
+
+  if (sch.ok) {
+    const s = sch.data;
+    const tasksTxt = s.tasks.length
+      ? s.tasks.map(t => `<code style="background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px">${esc(t.name)} → ${esc(t.expr)}</code>`).join(' · ')
+      : '<span class="muted">sin tasks</span>';
+    const chip = s.enabled
+      ? `<span class="chip green">cron activo</span>`
+      : `<span class="chip muted">cron desactivado</span>`;
+    const existing = $('#schedulerInfo');
+    const html = `<div id="schedulerInfo" style="margin-top:14px;padding:14px;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;font-size:13px;color:var(--text-soft)">
+      ${chip} &nbsp; ${tasksTxt}
+    </div>`;
+    if (existing) existing.outerHTML = html;
+    else $('#metricsGrid').insertAdjacentHTML('afterend', html);
+  }
+}
+
+async function loadAlertas() {
+  $('#panel-alertas').innerHTML = '<div class="muted">Cargando…</div>';
+  const r = await api('/api/admin/alertas');
+  if (!r.ok) { $('#panel-alertas').innerHTML = `<div class="empty">${esc(r.error)}</div>`; return; }
+  if (!r.data.alertas.length) { $('#panel-alertas').innerHTML = '<div class="empty">Sin alertas todavía.</div>'; return; }
+  $('#panel-alertas').innerHTML = r.data.alertas.map(a => alertaCard(a)).join('');
+}
+
+function alertaCard(a) {
+  const estadoChip = { nueva:'red', revisada:'blue', accion_tomada:'green', descartada:'muted' }[a.estado] || 'muted';
+  const nivelChip = { alto:'red', medio:'yellow', bajo:'green' }[a.nivel] || 'muted';
+  const cands = (a.candidatos || []).map(c => candidatoCard(c)).join('');
+  return `
+    <div class="alerta-card ${esc(a.nivel)}">
+      <div class="alerta-head">
+        <div>
+          <div class="alerta-marca">${esc(a.marca)}</div>
+          <div class="alerta-meta">
+            Cliente: ${esc(a.usuario_nombre || '—')} (${esc(a.usuario_email)}) · Clases: ${esc(a.marca_clases)} · ${fmtDate(a.created_at)}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <span class="chip ${nivelChip}">Riesgo ${esc(a.nivel)}</span>
+          <span class="chip ${estadoChip}">${esc(a.estado)}</span>
+        </div>
+      </div>
+      ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
+      ${cands}
+      <div class="alerta-actions">
+        <button class="btn tiny" onclick="cambiarEstado(${a.id}, 'revisada')">Marcar revisada</button>
+        <button class="btn tiny green" onclick="cambiarEstado(${a.id}, 'accion_tomada')">Acción tomada</button>
+        <button class="btn tiny outline" onclick="cambiarEstado(${a.id}, 'descartada')">Descartar</button>
+        ${a.revisada_por_email ? `<span class="muted" style="font-size:12px;align-self:center">Última revisión: ${esc(a.revisada_por_email)} · ${fmtDate(a.revisada_en)}</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function candidatoCard(c) {
+  const ge = c.gemini;
+  const stubTag = ge?.stub ? '<span class="chip muted" style="margin-left:4px">stub</span>' : '';
+  return `
+    <div class="candidato">
+      <div class="candidato-head">
+        <div>
+          <span class="cand-name">${esc(c.denominacion || '—')}</span>
+          <span class="cand-meta">· clase ${esc(c.clase || '—')} · acta ${esc(c.acta || '—')} · ${esc(c.titular || '—')}</span>
+        </div>
+        <span class="score-pill">score ${c.score}</span>
+      </div>
+      <div class="cand-meta">Motivos Etapa 1: ${esc(c.motivo || '—')}</div>
+      ${ge ? `<div class="cand-gemini">
+        <b>Etapa 2${stubTag ? '' : ' (Gemini)'}:</b> nivel <b>${esc(ge.nivel_riesgo)}</b>${ge.notoria ? ' · <b>notoria</b>' : ''} ${stubTag}<br>
+        ${esc(ge.fundamento || '')}<br>
+        <i>${esc(ge.recomendacion || '')}</i>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+async function cambiarEstado(id, estado) {
+  const r = await api(`/api/admin/alertas/${id}`, { method: 'PATCH', body: JSON.stringify({ estado }) });
+  if (r.ok) { loadAlertas(); loadResumen(); } else alert(r.error);
+}
+
+async function loadLeads() {
+  const r = await api('/api/admin/leads');
+  if (!r.ok) return;
+  if (!r.data.leads.length) { $('#panel-leads').innerHTML = '<div class="empty">Sin leads.</div>'; return; }
+  $('#panel-leads').innerHTML = tabla(
+    ['#','Tipo','Marca','Email','Tel','Monto','Estado','Ref pago','Creado'],
+    r.data.leads.map(l => [
+      `<span class="mono">${l.id}</span>`,
+      `<span class="chip blue">${esc(l.tipo)}</span>`,
+      esc(l.marca),
+      esc(l.email || '—'),
+      esc(l.telefono || '—'),
+      `$${(l.monto || 0).toLocaleString('es-AR')}`,
+      `<span class="chip ${l.estado === 'pagado' ? 'green' : l.estado === 'rechazado' ? 'red' : 'yellow'}">${esc(l.estado)}</span>`,
+      `<span class="mono">${esc(l.payment_ref || '—')}</span>`,
+      fmtDate(l.created_at),
+    ])
+  );
+}
+
+async function loadUsuarios() {
+  const r = await api('/api/admin/usuarios');
+  if (!r.ok) return;
+  $('#panel-usuarios').innerHTML = tabla(
+    ['#','Email','Rol','Nombre','Pack','Cupo','Activo','Creado'],
+    r.data.usuarios.map(u => [
+      `<span class="mono">${u.id}</span>`,
+      esc(u.email),
+      `<span class="chip ${u.rol === 'admin' ? 'red' : u.rol === 'operador' ? 'yellow' : 'blue'}">${esc(u.rol)}</span>`,
+      esc(u.nombre || '—'),
+      esc(u.pack_codigo || '—'),
+      u.cupo_marcas ?? '—',
+      u.activo ? '<span class="chip green">sí</span>' : '<span class="chip red">no</span>',
+      fmtDate(u.created_at),
+    ])
+  );
+}
+
+async function loadMarcas() {
+  const r = await api('/api/admin/marcas-vigiladas');
+  if (!r.ok) return;
+  if (!r.data.marcas.length) { $('#panel-marcas').innerHTML = '<div class="empty">Ningún cliente cargó marcas todavía.</div>'; return; }
+  $('#panel-marcas').innerHTML = tabla(
+    ['#','Denominación','Clases','Tipo','Estado','Cliente','Creado'],
+    r.data.marcas.map(m => [
+      `<span class="mono">${m.id}</span>`,
+      `<strong>${esc(m.denominacion)}</strong>`,
+      esc(m.clases),
+      esc(m.tipo || '—'),
+      `<span class="chip ${m.estado === 'activa' ? 'green' : m.estado === 'pausada' ? 'yellow' : 'blue'}">${esc(m.estado)}</span>`,
+      `${esc(m.usuario_email)}`,
+      fmtDate(m.created_at),
+    ])
+  );
+}
+
+async function loadPacks() {
+  const r = await api('/api/admin/packs');
+  if (!r.ok) return;
+  $('#panel-packs').innerHTML = tabla(
+    ['Código','Nombre','Cupo','Precio mensual'],
+    r.data.packs.map(p => [
+      `<span class="mono">${esc(p.codigo)}</span>`,
+      esc(p.nombre),
+      p.cupo_marcas,
+      `$${(p.precio_mensual || 0).toLocaleString('es-AR')}`,
+    ])
+  );
+}
+
+async function loadBoletines() {
+  const r = await api('/api/admin/boletines');
+  if (!r.ok) return;
+  const toolbar = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end">
+      <div class="field" style="flex:1;min-width:240px">
+        <label style="display:block;font-size:12px;color:var(--text-soft);margin-bottom:6px">Path del archivo (CSV o PDF en el server)</label>
+        <input id="ingPath" placeholder="./data/boletin-fixture.csv" value="./data/boletin-fixture.csv"
+               style="width:100%;padding:9px 12px;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+      </div>
+      <button class="btn primary" onclick="ingestar()">Ingestar boletín</button>
+      <button class="btn green" onclick="correrMonitoreo()">Correr monitoreo ahora</button>
+    </div>
+    <div id="ingResult"></div>`;
+  if (!r.data.boletines.length) {
+    $('#panel-boletines').innerHTML = toolbar + '<div class="empty">Sin boletines cargados. Probá con <code>./data/boletin-fixture.csv</code>.</div>';
+    return;
+  }
+  $('#panel-boletines').innerHTML = toolbar + tabla(
+    ['#','Número','Fecha publicación','Archivo','Estado','Actas','Creado'],
+    r.data.boletines.map(b => [
+      `<span class="mono">${b.id}</span>`,
+      esc(b.numero || '—'),
+      esc(b.fecha_publicacion || '—'),
+      `<span class="mono" style="word-break:break-all">${esc(b.archivo)}</span>`,
+      `<span class="chip ${b.estado === 'procesado' ? 'green' : 'yellow'}">${esc(b.estado)}</span>`,
+      b.total_actas,
+      fmtDate(b.created_at),
+    ])
+  );
+}
+
+async function ingestar() {
+  const archivo = $('#ingPath').value.trim();
+  if (!archivo) return;
+  $('#ingResult').innerHTML = '<div class="muted" style="font-size:13px">Procesando…</div>';
+  const r = await api('/api/admin/boletines/ingestar', { method: 'POST', body: JSON.stringify({ archivo }) });
+  if (r.ok) {
+    const d = r.data;
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">${d.dedup ? `Boletín ya existía (#${d.boletin_id}), no se duplicó.` : `Boletín #${d.boletin_id} ingerido: ${d.total_actas} actas.`}${d.warning ? '  ⚠ ' + esc(d.warning) : ''}</div>`;
+    loadBoletines();
+  } else {
+    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35);margin-bottom:10px">${esc(r.error)}</div>`;
+  }
+}
+
+async function correrMonitoreo() {
+  $('#ingResult').innerHTML = '<div class="muted" style="font-size:13px">Corriendo monitoreo (puede tardar unos segundos)…</div>';
+  const r = await api('/api/admin/monitoreo/run', { method: 'POST', body: JSON.stringify({}) });
+  if (r.ok) {
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">Monitoreo OK · <strong>${r.data.alertas}</strong> alerta(s) creada(s) · ${r.data.candidatos || 0} candidato(s) evaluado(s). ${r.data.mensaje || ''}</div>`;
+    loadResumen();
+  } else {
+    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">${esc(r.error)}</div>`;
+  }
+}
+
+async function loadAudit() {
+  const r = await api('/api/admin/audit');
+  if (!r.ok) return;
+  if (!r.data.audit.length) { $('#panel-audit').innerHTML = '<div class="empty">Sin entradas.</div>'; return; }
+  $('#panel-audit').innerHTML = tabla(
+    ['#','Cuándo','Actor','Acción','Entidad','Detalle'],
+    r.data.audit.map(a => [
+      `<span class="mono">${a.id}</span>`,
+      fmtDate(a.created_at),
+      a.actor_email ? `${esc(a.actor_email)} <span class="muted">(${esc(a.actor_rol)})</span>` : '<span class="muted">sistema</span>',
+      `<span class="mono">${esc(a.accion)}</span>`,
+      a.entidad ? `${esc(a.entidad)}${a.entidad_id ? ' #' + a.entidad_id : ''}` : '—',
+      a.detalle ? `<span class="mono" style="white-space:pre-wrap">${esc(a.detalle)}</span>` : '—',
+    ])
+  );
+}
+
+function tabla(cols, rows) {
+  return `<div style="overflow-x:auto"><table>
+    <thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+// ===== Init =====
+checkAuth();
+</script>
+</body>
+</html>

@@ -1,28 +1,24 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-.Python
-
-# Env
+﻿__pycache__/
+*.pyc
+*.log
+import_s*.log
 .env
-
-# Leads data
-leads.json
-
-# Local SQLite DB (use PostgreSQL in production)
-*.db
-*.sqlite
-
-# Virtual environments
-venv/
 .venv/
-env/
+venv/
+*.pdf
+cache/
 
-# IDEs
-.vscode/
-.idea/
+*.mp4
+*.logtype
 
-# OS
-.DS_Store
-Thumbs.db
+# Node backend
+node_modules/
+data/legalpacers.db
+data/legalpacers.db-*
+npm-debug.log*
+
+# Bases SQLite locales (la app Python heredada usa marcas.db, queda fuera del repo)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
