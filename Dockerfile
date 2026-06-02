@@ -2,9 +2,10 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Dependencias del sistema mínimas para better-sqlite3 (precompila desde npm cache).
+# Dependencias del sistema para compilar better-sqlite3 con node-gyp si la
+# precompiled binary no está disponible para esta arquitectura.
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
-      ca-certificates curl \
+      ca-certificates curl python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalación de deps (capa cacheable).
