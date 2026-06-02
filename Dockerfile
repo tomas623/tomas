@@ -18,9 +18,10 @@ COPY public ./public
 COPY data ./data
 COPY landing-legalpacers.html ./
 
-# El volumen persistente del PaaS debe montarse en /app/data
-# (donde vive `legalpacers.db`). En Railway: Volume → mountPath /app/data.
-VOLUME ["/app/data"]
+# El volumen persistente del PaaS se configura desde su UI (Railway: Volume con
+# mountPath /app/data). Railway rechaza la directiva VOLUME del Dockerfile —
+# por eso queda sólo como comentario.
+RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 ENV PORT=3000
