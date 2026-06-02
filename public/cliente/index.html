@@ -391,7 +391,7 @@ async function loadPack() {
 
   const pR = await api('/api/cliente/packs');
   if (pR.ok) {
-    $('#packsGrid').innerHTML = pR.data.packs.map(p => {
+    const packsHtml = pR.data.packs.map(p => {
       const esActual = me.pack_codigo === p.codigo;
       let cta;
       if (esActual) cta = '<div class="badge-cur">tu pack actual</div>';
@@ -405,6 +405,18 @@ async function loadPack() {
           ${cta}
         </div>`;
     }).join('');
+
+    // Card para "+20 marcas" → derivar a WhatsApp para cotización custom.
+    const waMsg = encodeURIComponent('Hola LegalPacers, necesito vigilar más de 20 marcas. ¿Pueden cotizarme un plan corporativo?');
+    const waCard = `
+      <div class="pack-opt" style="background:linear-gradient(180deg,rgba(34,197,94,.06),var(--bg-soft));border-color:rgba(34,197,94,.3)">
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">vigilancia_corporativa</div>
+        <div class="pack-opt-cupo">+20 marcas</div>
+        <div class="pack-opt-precio">cotización a medida</div>
+        <a class="btn primary" style="width:100%;margin-top:10px;padding:8px;font-size:13px;background:#22c55e;display:block;text-align:center;text-decoration:none" href="https://wa.me/5491128774200?text=${waMsg}" target="_blank">Consultar por WhatsApp</a>
+      </div>`;
+
+    $('#packsGrid').innerHTML = packsHtml + waCard;
   }
 }
 
