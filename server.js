@@ -156,6 +156,7 @@ app.post('/api/marca/consulta/iniciar', async (req, res) => {
 
   try {
     const pref = await crearPreferencia({
+      tipo: 'informe',
       titulo: `LegalPacers · Informe de viabilidad de marca "${String(marca).slice(0, 60)}"`,
       precio: PRECIO_INFORME,
       externalReference: lead.externalReference,
@@ -190,6 +191,7 @@ app.post('/api/marca/registro/iniciar', async (req, res) => {
 
   try {
     const pref = await crearPreferencia({
+      tipo: 'registro',
       titulo: `LegalPacers · Honorarios registro de marca "${String(marca).slice(0, 60)}"`,
       precio: PRECIO_REGISTRO,
       externalReference: lead.externalReference,
@@ -205,38 +207,80 @@ app.post('/api/marca/registro/iniciar', async (req, res) => {
 });
 
 // ===== Webhook de Mercado Pago =====
+// Soporta dos tipos de eventos:
+//   - { type: "payment", data: { id } }         → pagos únicos (informe, registro)
+//   - { type: "subscription_preapproval", ... } → activación de plan de suscripción (packs)
 app.post('/api/pagos/webhook', express.json(), async (req, res) => {
-  // MP manda eventos tipo: { type: "payment", data: { id: "..." } } o como query string.
-  const type = req.body?.type || req.query?.type;
-  const paymentId = req.body?.data?.id || req.query?.['data.id'] || req.query?.id;
+  const type = req.body?.type || req.query?.type || req.body?.topic;
+  const externalId = req.body?.data?.id || req.query?.['data.id'] || req.query?.id;
 
   res.status(200).json({ ok: true }); // ACK rápido a MP
 
-  if (type !== 'payment' || !paymentId) return;
-
   try {
-    const pago = await obtenerPago(paymentId);
-    if (!pago) return;
-    const ref = pago.external_reference;
-    const estado = pago.status; // approved | rejected | pending ...
-    if (!ref) return;
-
-    const lead = db.prepare('SELECT * FROM leads WHERE external_reference = ?').get(ref);
-    if (!lead) return;
-
-    if (estado === 'approved' && lead.estado !== 'pagado') {
-      db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
-        .run(String(paymentId), lead.id);
-      console.log(`[webhook] lead ${lead.id} (${lead.tipo}, ${lead.marca}) marcado pagado.`);
-      // TODO: disparar WhatsApp/email al cliente y al equipo legal.
-    } else {
-      db.prepare(`UPDATE leads SET estado = ?, payment_ref = ? WHERE id = ?`)
-        .run(estado || lead.estado, String(paymentId), lead.id);
+    if (type === 'payment' && externalId) {
+      await procesarPago(externalId);
+    } else if ((type === 'subscription_preapproval' || type === 'preapproval') && externalId) {
+      await procesarSuscripcion(externalId);
+    } else if (type === 'subscription_authorized_payment' && externalId) {
+      // Cobro recurrente de una suscripción ya activa — sólo log por ahora.
+      console.log(`[webhook] cobro recurrente de suscripción ${externalId}`);
     }
   } catch (err) {
-    console.error('[webhook] error procesando pago:', err.message);
+    console.error('[webhook] error:', err.message);
   }
 });
+
+async function procesarPago(paymentId) {
+  const { obtenerPago } = require('./src/pagos');
+  const pago = await obtenerPago(paymentId);
+  if (!pago) return;
+  const ref = pago.external_reference;
+  const estado = pago.status;
+  if (!ref) return;
+
+  const lead = db.prepare('SELECT * FROM leads WHERE external_reference = ?').get(ref);
+  if (!lead) return;
+
+  if (estado === 'approved' && lead.estado !== 'pagado') {
+    db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
+      .run(String(paymentId), lead.id);
+    console.log(`[webhook] lead ${lead.id} (${lead.tipo}, ${lead.marca}) marcado pagado.`);
+    // TODO: mail al cliente y al equipo legal con Resend.
+  } else {
+    db.prepare(`UPDATE leads SET estado = ?, payment_ref = ? WHERE id = ?`)
+      .run(estado || lead.estado, String(paymentId), lead.id);
+  }
+}
+
+async function procesarSuscripcion(preapprovalId) {
+  const { obtenerPreapproval } = require('./src/pagos');
+  const sub = await obtenerPreapproval(preapprovalId);
+  if (!sub) return;
+  const ref = sub.external_reference;
+  const estado = sub.status; // authorized | paused | cancelled | pending
+  if (!ref) return;
+
+  const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'suscripcion'")
+    .get(ref);
+  if (!lead) return;
+
+  // El external_reference de packs viene como "pack-<userId>-<codigoPack>-<rand>"
+  const partes = ref.split('-');
+  const usuarioId = parseInt(partes[1], 10);
+  const codigoPack = partes[2] + '_' + partes[3]; // vigilancia_3
+  const pack = db.prepare('SELECT id FROM packs WHERE codigo = ?').get(codigoPack);
+
+  if (estado === 'authorized' && pack) {
+    db.prepare('UPDATE usuarios SET pack_id = ? WHERE id = ?').run(pack.id, usuarioId);
+    db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
+      .run(String(preapprovalId), lead.id);
+    console.log(`[webhook] suscripción autorizada · user ${usuarioId} → pack ${codigoPack}`);
+  } else {
+    db.prepare(`UPDATE leads SET estado = ?, payment_ref = ? WHERE id = ?`)
+      .run(estado || lead.estado, String(preapprovalId), lead.id);
+    console.log(`[webhook] suscripción ${preapprovalId} estado: ${estado}`);
+  }
+}
 
 // ===== Endpoints stub para Mercado Pago en modo sin credenciales =====
 app.get('/pagos/stub', (req, res) => {

@@ -391,15 +391,27 @@ async function loadPack() {
 
   const pR = await api('/api/cliente/packs');
   if (pR.ok) {
-    $('#packsGrid').innerHTML = pR.data.packs.map(p => `
-      <div class="pack-opt ${me.pack_codigo === p.codigo ? 'current' : ''}">
-        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">${esc(p.codigo)}</div>
-        <div class="pack-opt-cupo">${p.cupo_marcas} marcas</div>
-        <div class="pack-opt-precio">$${(p.precio_mensual || 0).toLocaleString('es-AR')} / mes</div>
-        ${me.pack_codigo === p.codigo ? '<div class="badge-cur">tu pack actual</div>' : ''}
-      </div>
-    `).join('');
+    $('#packsGrid').innerHTML = pR.data.packs.map(p => {
+      const esActual = me.pack_codigo === p.codigo;
+      let cta;
+      if (esActual) cta = '<div class="badge-cur">tu pack actual</div>';
+      else if (p.tiene_link) cta = `<button class="btn primary" style="width:100%;margin-top:10px;padding:8px;font-size:13px" onclick="suscribirPack('${esc(p.codigo)}')">Suscribirme</button>`;
+      else cta = '<div class="muted" style="font-size:11px;margin-top:8px">Disponible próximamente</div>';
+      return `
+        <div class="pack-opt ${esActual ? 'current' : ''}">
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">${esc(p.codigo)}</div>
+          <div class="pack-opt-cupo">${p.cupo_marcas} marcas</div>
+          <div class="pack-opt-precio">$${(p.precio_mensual || 0).toLocaleString('es-AR')} / mes</div>
+          ${cta}
+        </div>`;
+    }).join('');
   }
+}
+
+async function suscribirPack(codigo) {
+  const r = await api(`/api/cliente/packs/${codigo}/suscribir`, { method: 'POST' });
+  if (r.ok && r.data.url) window.location.href = r.data.url;
+  else flash(r.error || 'No se pudo iniciar la suscripción', 'bad');
 }
 
 checkAuth();

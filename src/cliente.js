@@ -6,6 +6,8 @@ const db = require('./db');
 const { requireAuth } = require('./auth');
 const { normalizar } = require('./matching/etapa1');
 const audit = require('./audit');
+const crypto = require('crypto');
+const { linkPackSuscripcion } = require('./pagos');
 
 function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400, extra) { return { ok: false, error: msg, code, ...(extra || {}) }; }
@@ -157,7 +159,37 @@ function mountClienteRoutes(app) {
   // ===== Catálogo de packs (para mostrar upgrade) =====
   app.get('/api/cliente/packs', guard, (req, res) => {
     const rows = db.prepare('SELECT codigo, nombre, cupo_marcas, precio_mensual FROM packs ORDER BY cupo_marcas ASC').all();
-    res.json(ok({ packs: rows }));
+    const conLink = rows.map(p => ({
+      ...p,
+      tiene_link: !!process.env[`MP_PLAN_${p.codigo.toUpperCase().replace('VIGILANCIA_', 'VIG_')}`],
+    }));
+    res.json(ok({ packs: conLink }));
+  });
+
+  // ===== Iniciar suscripción a un pack =====
+  // Devuelve la URL del Plan de Suscripción de MP con external_reference para
+  // que el webhook correlacione el pago con este cliente.
+  app.post('/api/cliente/packs/:codigo/suscribir', guard, (req, res) => {
+    const codigo = req.params.codigo;
+    const pack = db.prepare('SELECT * FROM packs WHERE codigo = ?').get(codigo);
+    if (!pack) return res.status(404).json(fail('Pack no encontrado'));
+
+    const externalReference = `pack-${req.user.id}-${codigo}-${crypto.randomBytes(4).toString('hex')}`;
+    // Registramos el intento como un "lead de suscripción" para trazabilidad.
+    db.prepare(`
+      INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, external_reference)
+      VALUES ('suscripcion', ?, ?, NULL, '[]', NULL, ?, ?)
+    `).run(codigo, req.user.email, pack.precio_mensual, externalReference);
+
+    const url = linkPackSuscripcion(codigo, externalReference);
+    if (!url) {
+      return res.status(503).json(fail(
+        `El pack "${codigo}" todavía no tiene link de suscripción configurado. Setealo en MP_PLAN_VIG_3 / VIG_10 / VIG_20.`,
+        503,
+      ));
+    }
+    audit.log(req.user.id, 'pack.suscripcion.iniciar', { detalle: { codigo, externalReference } });
+    res.json(ok({ url, external_reference: externalReference }));
   });
 }
 

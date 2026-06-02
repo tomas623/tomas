@@ -2,7 +2,46 @@ const crypto = require('crypto');
 
 const MP_API = 'https://api.mercadopago.com';
 
-async function crearPreferencia({ titulo, precio, externalReference, email, baseUrl }) {
+// Si está seteado, el endpoint correspondiente devuelve este link fijo (Link de pago
+// hosted por MP) en vez de generar una preferencia con Checkout Pro. Más simple:
+// vos manejás el link desde el dashboard de MP, el backend solo redirige y procesa
+// el webhook.
+function linkConRef(baseUrl, externalReference) {
+  if (!baseUrl) return null;
+  const sep = baseUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${sep}external_reference=${encodeURIComponent(externalReference)}`;
+}
+
+function linkInformeUnico(externalReference) {
+  return linkConRef((process.env.MP_LINK_INFORME || '').trim(), externalReference);
+}
+function linkRegistroUnico(externalReference) {
+  return linkConRef((process.env.MP_LINK_REGISTRO || '').trim(), externalReference);
+}
+
+// Planes de suscripción (preapproval): un link fijo por pack. La activación del
+// pack del cliente la hace el webhook al recibir un preapproval_authorized.
+function linkPackSuscripcion(codigoPack, externalReference) {
+  const map = {
+    vigilancia_3:  (process.env.MP_PLAN_VIG_3 || '').trim(),
+    vigilancia_10: (process.env.MP_PLAN_VIG_10 || '').trim(),
+    vigilancia_20: (process.env.MP_PLAN_VIG_20 || '').trim(),
+  };
+  return linkConRef(map[codigoPack], externalReference);
+}
+
+async function crearPreferencia({ titulo, precio, externalReference, email, baseUrl, tipo }) {
+  // Si hay un link fijo configurado para este tipo, devolvemos ese antes de
+  // hablar con la API de MP. Caso típico: usás Link de pago hosted por MP.
+  if (tipo === 'informe') {
+    const link = linkInformeUnico(externalReference);
+    if (link) return { stub: false, preference_id: null, init_point: link, source: 'link_fijo' };
+  }
+  if (tipo === 'registro') {
+    const link = linkRegistroUnico(externalReference);
+    if (link) return { stub: false, preference_id: null, init_point: link, source: 'link_fijo' };
+  }
+
   const token = (process.env.MP_ACCESS_TOKEN || '').trim();
 
   if (!token) {
@@ -63,4 +102,17 @@ async function obtenerPago(paymentId) {
   return res.json();
 }
 
-module.exports = { crearPreferencia, obtenerPago };
+async function obtenerPreapproval(preapprovalId) {
+  const token = (process.env.MP_ACCESS_TOKEN || '').trim();
+  if (!token) return null;
+  const res = await fetch(`${MP_API}/preapproval/${preapprovalId}`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+module.exports = {
+  crearPreferencia, obtenerPago, obtenerPreapproval,
+  linkInformeUnico, linkRegistroUnico, linkPackSuscripcion,
+};
