@@ -20,7 +20,6 @@ COPY landing-legalpacers.html ./
 
 # El volumen persistente del PaaS debe montarse en /app/data
 # (donde vive `legalpacers.db`). En Railway: Volume → mountPath /app/data.
-VOLUME ["/app/data"]
 
 ENV NODE_ENV=production
 ENV PORT=3000
