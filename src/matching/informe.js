@@ -54,6 +54,34 @@ Pre-checks especiales: ninguno.`,
       ley_aplicable: 'Art. 3 inc. a y b Ley 22.362 (marcas idénticas o casi idénticas en la misma clase).',
       recomendacion_principal: 'No presentar como está; cambiar la denominación.',
       alternativas_sugeridas: ['Acmétik', 'Acmélab', 'NeoAcme', 'Acmegest'],
+      cliente: {
+        veredicto_breve: 'Tu marca "Acmé" choca de frente con "Acme", que ya está registrada en tu mismo rubro. Si la presentás como está, el INPI te la rechaza casi seguro. La buena noticia: cambiando un poco el nombre, podés zafar.',
+        bloques: [
+          {
+            icono: 'fail',
+            titulo: 'YA HAY UNA MARCA IDÉNTICA REGISTRADA',
+            mensaje: 'Se llama "Acme" y está registrada por la empresa Acme Holdings SA en tu mismo rubro (publicidad y gestión). Una tilde no cambia las cosas: para el INPI son la misma marca.',
+            subbloques: [
+              {
+                titulo: '¿Pueden coexistir?',
+                mensaje: 'No. Es como si quisieras abrir una panadería llamada "El Trigo" en una cuadra donde ya hay otra "El Trigo". El INPI no lo permite, aunque la otra esté en otra zona.',
+              },
+            ],
+          },
+          {
+            icono: 'info',
+            titulo: 'EL NOMBRE EN SÍ NO ES EL PROBLEMA',
+            mensaje: '"Acmé" es un nombre con suficiente personalidad. El obstáculo no es tu marca, es lo que ya existe registrado.',
+          },
+        ],
+        proximos_pasos: [
+          'No presentes "Acmé" tal como está — es plata perdida en tasas y tiempo.',
+          'Probá alguna de estas variantes que rompen el choque: Acmétik, Acmélab, NeoAcme, Acmegest.',
+          'Cuando elijas una, pedinos un nuevo análisis sobre esa variante — está incluido sin costo extra.',
+          'Si querés ir igual por "Acmé", podés intentar conseguir el consentimiento por escrito de Acme Holdings SA. Es difícil pero posible.',
+        ],
+        apendice_legal_corto: 'Este análisis se apoya en el Art. 3 inc. a y b de la Ley 22.362 de Marcas, que prohíbe registrar marcas idénticas o casi idénticas a otras ya registradas en la misma clase.',
+      },
     },
   },
   {
@@ -94,6 +122,38 @@ Pre-checks especiales: ninguno.`,
       ley_aplicable: 'Art. 3 inc. b Ley 22.362 (marcas confundibles fonéticamente).',
       recomendacion_principal: 'Auditar variante con cambio fonético, o pedir consentimiento al titular de FOKKA.',
       alternativas_sugeridas: ['Foccaly', 'Foxxa', 'Fokima', 'Foccatech'],
+      cliente: {
+        veredicto_breve: 'Tu marca "Focca" suena igual que "FOKKA", que ya está registrada en tu mismo rubro. El INPI casi seguro te la va a rechazar — aunque las escribas distinto. Hay salida con un pequeño cambio.',
+        bloques: [
+          {
+            icono: 'fail',
+            titulo: 'HAY UNA MARCA REGISTRADA QUE SUENA IGUAL',
+            mensaje: 'Se llama FOKKA y está registrada por Otro Titular SRL en tu mismo rubro (electrónica de consumo). Al oído son la misma palabra — "cc" y "kk" en español se pronuncian igual.',
+            subbloques: [
+              {
+                titulo: '¿Por qué importa cómo suena?',
+                mensaje: 'Porque el INPI evalúa cómo el consumidor escucha la marca, no solo cómo la lee. Aunque tu logo se vea distinto, si alguien la nombra en voz alta, son lo mismo.',
+              },
+              {
+                titulo: '¿Pueden coexistir?',
+                mensaje: 'Difícil. Es como si quisieras abrir un bar "El Sol" y ya hay uno "El Sool" en la cuadra: aunque se escriban distinto, el cliente los confunde al pedirlos.',
+              },
+            ],
+          },
+          {
+            icono: 'info',
+            titulo: 'EL NOMBRE EN SÍ ES ORIGINAL',
+            mensaje: '"Focca" es una palabra inventada, sin problema de fondo. El obstáculo es que el espacio fonético ya está ocupado.',
+          },
+        ],
+        proximos_pasos: [
+          'No presentes "Focca" tal como está — hay alta chance de rechazo.',
+          'Probá variantes con un cambio fonético claro: Foccaly, Foxxa, Fokima o Foccatech rompen el choque.',
+          'Cuando elijas una, pedinos un nuevo análisis sobre esa variante — está incluido sin costo extra.',
+          'Alternativa: pedir consentimiento por escrito a Otro Titular SRL para coexistir. Camino largo, pero posible.',
+        ],
+        apendice_legal_corto: 'Este análisis se apoya en el Art. 3 inc. b de la Ley 22.362, que prohíbe registrar marcas que puedan confundirse fonéticamente aunque estén escritas distinto.',
+      },
     },
   },
   {
@@ -131,6 +191,33 @@ Pre-checks especiales: ninguno.`,
       ley_aplicable: null,
       recomendacion_principal: 'Presentar tal como está. Riesgo bajo.',
       alternativas_sugeridas: [],
+      cliente: {
+        veredicto_breve: 'Tu marca "Nimbus" tiene buen panorama. Hay una marca parecida llamada "Nimboes" pero es de un rubro muy distinto (indumentaria, no software), así que no chocan. Podés presentarla.',
+        bloques: [
+          {
+            icono: 'ok',
+            titulo: 'EL NOMBRE ESTÁ BIEN ELEGIDO',
+            mensaje: '"Nimbus" evoca la idea de nube — calza perfecto con software / SaaS. Es original y distintivo en tu sector.',
+          },
+          {
+            icono: 'ok',
+            titulo: 'LA MARCA PARECIDA NO ES UN PROBLEMA',
+            mensaje: 'Encontramos "Nimboes", pero está registrada en otro rubro (ropa, clase 25). Como vos vas por software (clase 42), no se cruzan: son universos comerciales distintos, distinto público, distintos canales.',
+            subbloques: [
+              {
+                titulo: '¿Esto puede cambiar más adelante?',
+                mensaje: 'Si en el futuro Nimboes quisiera expandirse a software o vos a ropa, ahí podría haber roce. Pero hoy son dos mundos separados.',
+              },
+            ],
+          },
+        ],
+        proximos_pasos: [
+          'Presentá "Nimbus" en clase 42 — el panorama es favorable.',
+          'Asegurate los dominios y handles disponibles cuanto antes para no perder el espacio digital.',
+          'Si vas a operar en otras clases (ej. apps móviles clase 9), avisanos antes de presentar para chequear esas también.',
+        ],
+        apendice_legal_corto: null,
+      },
     },
   },
   {
@@ -171,6 +258,33 @@ Pre-checks especiales: ninguno.`,
       ley_aplicable: 'Art. 6bis CUP + Art. 16.3 ADPIC + Art. 3 Ley 22.362.',
       recomendacion_principal: 'No presentar bajo ninguna variante que conserve "Coca" o "Cola" como elemento dominante.',
       alternativas_sugeridas: ['Nombre desvinculado por completo del campo léxico — sugerir alternativa neutra elegida por el cliente'],
+      cliente: {
+        veredicto_breve: 'Esto no se puede registrar. Aunque vos vayas por entretenimiento y Coca-Cola venda bebidas, son marcas tan conocidas mundialmente que tienen protección extra en todos los rubros. Cualquier nombre que arranque con "Coca" o "Cola" te lo van a rechazar.',
+        bloques: [
+          {
+            icono: 'fail',
+            titulo: 'COCA-COLA TIENE PROTECCIÓN ESPECIAL EN TODOS LOS RUBROS',
+            mensaje: 'Las marcas mundialmente conocidas como Coca-Cola, Nike o Apple gozan de una protección más amplia que las marcas comunes. Aunque ellos vendan bebidas y vos quieras hacer entretenimiento, el INPI no permite usar nombres que se apoyen en su prestigio.',
+            subbloques: [
+              {
+                titulo: '¿Por qué es tan estricto?',
+                mensaje: 'Porque cualquier persona que vea "CocaCola Studio" va a pensar que es algo de Coca-Cola. El INPI protege esa asociación para evitar que alguien se beneficie del prestigio que la otra empresa construyó.',
+              },
+            ],
+          },
+          {
+            icono: 'fail',
+            titulo: 'NINGUNA VARIANTE CON "COCA" O "COLA" VA A FUNCIONAR',
+            mensaje: 'No alcanza con agregarle palabras al lado o cambiar una letra. El elemento que choca es la raíz "CocaCola" como tal — cualquier variante que la conserve cae en el mismo problema.',
+          },
+        ],
+        proximos_pasos: [
+          'No presentes "CocaCola Studio" ni ninguna variante que conserve "Coca" o "Cola".',
+          'Pensá un nombre completamente distinto, sin relación con el universo de bebidas.',
+          'Cuando tengas un candidato nuevo, pedinos un nuevo análisis sobre ese nombre — está incluido en este informe sin costo.',
+        ],
+        apendice_legal_corto: 'Este análisis se apoya en el Art. 6bis del Convenio de París y el Art. 16.3 del Acuerdo ADPIC, que dan a las marcas mundialmente conocidas protección que va más allá de su rubro original.',
+      },
     },
   },
 ];
@@ -237,10 +351,61 @@ Devolvé UN ÚNICO JSON con esta estructura exacta. Sin texto extra, sin markdow
     "riesgos_especificos": ["aprovechamiento_prestigio" | "free_riding" | "dilucion" | "vulgarizacion" | "confusion_origen"],
     "comentario": "Si nivel != 'no', explicar el quiebre de especialidad y los riesgos específicos. Si 'no', indicar criterio aplicado."
   },
+  "cliente": {
+    "veredicto_breve": "2-3 frases en lenguaje del emprendedor. SIN citas legales. Empieza con el qué (sí/no/depende) y termina con qué hacer.",
+    "bloques": [
+      {
+        "icono": "ok" | "warning" | "fail" | "info",
+        "titulo": "TÍTULO EN MAYÚSCULAS CORTAS QUE EL EMPRENDEDOR ENTIENDE",
+        "mensaje": "1-3 frases en lenguaje cotidiano. SIN 'distintividad intrínseca', SIN 'principio de especialidad', SIN 'Art. 3'. Usá ejemplos del día a día. Si ayuda, usá una analogía concreta (ej: 'es como si quisieras abrir un bar X y ya hay uno X' '). Mencioná datos concretos: nombre exacto de la marca en conflicto, titular, rubro.",
+        "subbloques": [{ "titulo": "¿...?", "mensaje": "..." }]
+      }
+    ],
+    "proximos_pasos": ["Lista de 3-5 acciones concretas. Tono directo, accionable. Mencioná las variantes específicas si las sugerís."],
+    "apendice_legal_corto": "Un párrafo de 1-2 frases que cita el artículo aplicable de la Ley 22.362 u otra. Va al final del PDF en chico, para los curiosos. Si no aplica nada, valor null."
+  },
   "ley_aplicable": "Artículo específico de Ley 22.362 u otra, o null si no aplica.",
   "recomendacion_principal": "Una frase. 'Presentar como está' | 'Modificar antes de presentar' | 'Auditar variante' | 'No presentar, alto riesgo'.",
   "alternativas_sugeridas": ["Lista de 2-4 variantes del nombre que podrían sortear el conflicto. [] si no aplica."]
 }
+
+---
+
+# REGLAS DEL BLOQUE "cliente" (CRÍTICAS)
+
+El bloque "cliente" es la única parte del JSON que el usuario final va a leer.
+Es lo que aparece en el PDF que recibe el emprendedor. Las otras secciones
+son para revisión profesional interna del Agente de la Propiedad Industrial.
+
+OBLIGATORIO en este bloque:
+- Lenguaje del emprendedor, NO jerga legal.
+- Prohibido escribir: "principio de especialidad", "confundibilidad",
+  "distintividad intrínseca", "marca notoria/renombrada", "Art. X de la Ley Y",
+  "secondary meaning", "cotejo marcario", "prohibición absoluta/relativa".
+- Cuando haya conflicto, mencioná el nombre exacto de la marca chocante,
+  su titular y su rubro. Datos concretos > abstracciones.
+- Usá analogías cotidianas si ayudan a entender (bar, panadería, marcas
+  reconocibles).
+- "proximos_pasos" deben ser accionables: usá verbos en infinitivo o
+  imperativo, mencioná opciones concretas (variantes, registros que asegurar,
+  decisiones que tomar).
+- "apendice_legal_corto" es la ÚNICA parte del bloque cliente donde podés
+  citar el artículo de la ley. 1-2 frases máximo. Va al final del PDF en
+  letra chica para los curiosos.
+- Iconos válidos para "icono": "ok" (verde, positivo), "warning" (amarillo,
+  atención), "fail" (rojo, problema serio), "info" (gris, contextual).
+
+Cómo armar los bloques típicos según el caso:
+- Cliente sin conflictos serios → bloques con icono "ok" celebrando la
+  originalidad del nombre y la viabilidad.
+- Cliente con coincidencia exacta → bloque "fail" con la marca chocante +
+  bloque "ok"/"warning" sobre originalidad propia + dominios.
+- Cliente con coincidencia fonética/cross-clase → bloque "warning" con el
+  matiz, no es bloqueo total pero requiere atención.
+- Conflicto con marca notoria/renombrada → bloque "fail" mencionándola
+  por nombre (Coca-Cola, Nike, etc.) sin usar la palabra "renombrada".
+- Si hay flag de ley especial (eco/olímpico/tabaco) → bloque "fail"
+  específico con explicación accionable de qué cambiar.
 
 ---
 
@@ -341,6 +506,18 @@ function stubInforme(marca, candidatas, flags) {
       ? 'Modificar antes de presentar'
       : nivel === 'medio' ? 'Auditar variante' : 'Presentar como está',
     alternativas_sugeridas: [],
+    cliente: {
+      veredicto_breve: `[STUB sin GEMINI_API_KEY] Análisis aproximado: nivel ${nivel}, ${candidatas.length} marca(s) parecida(s) detectada(s) y ${flags.length} restricción(es) legal(es).`,
+      bloques: [
+        {
+          icono: nivel === 'alto' ? 'fail' : nivel === 'medio' ? 'warning' : 'ok',
+          titulo: 'ANÁLISIS PRELIMINAR EN MODO STUB',
+          mensaje: 'Este informe se generó sin acceso al motor de análisis principal. El resultado es aproximado y debe completarse manualmente antes de enviar al cliente.',
+        },
+      ],
+      proximos_pasos: ['Reintentar la generación con GEMINI_API_KEY configurada.'],
+      apendice_legal_corto: null,
+    },
     stub: true,
   };
 }
