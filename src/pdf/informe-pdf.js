@@ -86,9 +86,9 @@ function deshabilitarLigaduras(doc) {
   };
 }
 
+// Area util de contenido: hasta yPie=112pt desde abajo. Dejamos 20pt extra de aire.
 function asegurarEspacio(doc, alto) {
-  // Forzamos salto de página si no entra el bloque entero (deja margen para pie).
-  if (doc.y + alto > doc.page.height - 90) doc.addPage();
+  if (doc.y + alto > doc.page.height - 130) doc.addPage();
 }
 
 function dibujarHeader(doc, { cliente }) {
@@ -186,38 +186,37 @@ function dibujarBloque(doc, bloque) {
 
   const yInicio = doc.y;
 
-  // Icono + título en la misma línea
+  // Icono + título en la misma línea — lineBreak:false para evitar wrap
   const iconoSimbolo = simboloIcono(icono);
-  const iconoBoxX = X_MARGEN;
-  const iconoBoxY = yInicio;
   const iconoSize = 18;
   doc.save();
-  doc.roundedRect(iconoBoxX, iconoBoxY, iconoSize, iconoSize, 3)
+  doc.roundedRect(X_MARGEN, yInicio, iconoSize, iconoSize, 3)
     .fillColor(color).fillOpacity(0.15).fill();
   doc.fillOpacity(1).restore();
   doc.font('cuerpo-bold').fontSize(11).fillColor(color)
-    .text(iconoSimbolo, iconoBoxX, iconoBoxY + 3, { width: iconoSize, align: 'center' });
+    .text(iconoSimbolo, X_MARGEN, yInicio + 3, { width: iconoSize, align: 'center', lineBreak: false });
 
   doc.font('titulo').fontSize(10).fillColor(COLORES.navy)
-    .text(titulo, X_MARGEN + iconoSize + 8, yInicio + 4, { width: ANCHO_CONTENIDO - iconoSize - 8 });
+    .text(titulo, X_MARGEN + iconoSize + 8, yInicio + 5,
+      { width: ANCHO_CONTENIDO - iconoSize - 8, lineBreak: false });
 
-  doc.y = yInicio + 26;
+  doc.y = yInicio + 24;
   doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
     .text(mensaje, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
 
   // Subbloques (preguntas/respuestas tipo FAQ)
   if (Array.isArray(bloque.subbloques) && bloque.subbloques.length) {
-    doc.moveDown(0.4);
+    doc.moveDown(0.3);
     for (const sb of bloque.subbloques) {
       doc.font('demi').fontSize(9).fillColor(COLORES.navy)
-        .text(sb.titulo || '', X_MARGEN + 12, doc.y);
+        .text(sb.titulo || '', X_MARGEN + 12, doc.y, { width: ANCHO_CONTENIDO - 12 });
       doc.font('cuerpo').fontSize(9).fillColor(COLORES.textoCuerpo)
         .text(sb.mensaje || '', X_MARGEN + 12, doc.y, { width: ANCHO_CONTENIDO - 12 });
-      doc.moveDown(0.25);
+      doc.moveDown(0.2);
     }
   }
 
-  doc.moveDown(0.8);
+  doc.moveDown(0.6);
 }
 
 function dibujarContextoDigital(doc, contexto) {
@@ -235,52 +234,51 @@ function dibujarContextoDigital(doc, contexto) {
     .fillColor(COLORES.azul).fillOpacity(0.15).fill();
   doc.fillOpacity(1).restore();
   doc.font('cuerpo-bold').fontSize(11).fillColor(COLORES.azul)
-    .text('@', X_MARGEN, yInicio + 3, { width: 18, align: 'center' });
+    .text('@', X_MARGEN, yInicio + 3, { width: 18, align: 'center', lineBreak: false });
   doc.font('titulo').fontSize(10).fillColor(COLORES.navy)
-    .text('TU MARCA EN INTERNET', X_MARGEN + 26, yInicio + 4);
+    .text('TU MARCA EN INTERNET', X_MARGEN + 26, yInicio + 4, { lineBreak: false, width: ANCHO_CONTENIDO - 26 });
 
   doc.y = yInicio + 26;
 
+  const dibujarFilaRecurso = (icono, color, etiquetaPrincipal, estado) => {
+    const yRow = doc.y;
+    doc.font('cuerpo-bold').fontSize(10).fillColor(color)
+      .text(icono, X_MARGEN + 12, yRow, { width: 12, align: 'left', lineBreak: false });
+    doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
+      .text(etiquetaPrincipal, X_MARGEN + 30, yRow, { lineBreak: false, width: 200 });
+    doc.font('cuerpo-light').fontSize(10).fillColor(COLORES.textoSuave)
+      .text(`— ${estado}`, X_MARGEN + 230, yRow, { lineBreak: false, width: ANCHO_CONTENIDO - 230 });
+    doc.y = yRow + 14;
+  };
+
+  const interpretarDisponibilidad = (info) => {
+    if (info.disponible === true) return { estado: 'libre — podés registrarlo', color: COLORES.ok, icono: '✓' };
+    if (info.disponible === false) return { estado: 'tomado', color: COLORES.fail, icono: '✗' };
+    return { estado: 'no pudimos verificar (la plataforma bloquea)', color: COLORES.textoSuave, icono: '?' };
+  };
+
   if (tieneDominios) {
-    doc.font('demi').fontSize(9).fillColor(COLORES.textoSuave).text('Dominios web', X_MARGEN, doc.y);
-    doc.moveDown(0.2);
+    doc.font('demi').fontSize(9).fillColor(COLORES.textoSuave)
+      .text('Dominios web', X_MARGEN, doc.y, { lineBreak: false, width: ANCHO_CONTENIDO });
+    doc.y += 12;
     for (const [tld, info] of Object.entries(contexto.dominios.resultados)) {
-      const estado = info.disponible === true ? 'libre — podés registrarlo'
-        : info.disponible === false ? 'tomado'
-          : 'no pudimos verificar';
-      const color = info.disponible === true ? COLORES.ok
-        : info.disponible === false ? COLORES.fail
-          : COLORES.textoSuave;
-      const icono = info.disponible === true ? '✓' : info.disponible === false ? '✗' : '?';
-      doc.font('cuerpo-bold').fontSize(10).fillColor(color)
-        .text(icono, X_MARGEN + 12, doc.y, { width: 14, continued: true, lineBreak: false });
-      doc.font('cuerpo').fillColor(COLORES.textoCuerpo)
-        .text(`  ${contexto.dominios.slug}.${tld}`, { continued: true });
-      doc.font('cuerpo-light').fillColor(COLORES.textoSuave).text(`  —  ${estado}`);
+      const { estado, color, icono } = interpretarDisponibilidad(info);
+      dibujarFilaRecurso(icono, color, `${contexto.dominios.slug}.${tld}`, estado);
     }
-    doc.moveDown(0.5);
+    doc.y += 6;
   }
 
   if (tieneRedes) {
-    doc.font('demi').fontSize(9).fillColor(COLORES.textoSuave).text('Redes sociales', X_MARGEN, doc.y);
-    doc.moveDown(0.2);
+    doc.font('demi').fontSize(9).fillColor(COLORES.textoSuave)
+      .text('Redes sociales', X_MARGEN, doc.y, { lineBreak: false, width: ANCHO_CONTENIDO });
+    doc.y += 12;
     for (const [red, info] of Object.entries(contexto.redes.resultados)) {
-      const estado = info.disponible === true ? 'libre — podés registrarlo'
-        : info.disponible === false ? 'tomado'
-          : 'no pudimos verificar (la plataforma bloquea)';
-      const color = info.disponible === true ? COLORES.ok
-        : info.disponible === false ? COLORES.fail
-          : COLORES.textoSuave;
-      const icono = info.disponible === true ? '✓' : info.disponible === false ? '✗' : '?';
+      const { estado, color, icono } = interpretarDisponibilidad(info);
       const nombreRed = red.charAt(0).toUpperCase() + red.slice(1);
-      doc.font('cuerpo-bold').fontSize(10).fillColor(color)
-        .text(icono, X_MARGEN + 12, doc.y, { width: 14, continued: true, lineBreak: false });
-      doc.font('cuerpo').fillColor(COLORES.textoCuerpo)
-        .text(`  ${nombreRed} @${contexto.redes.handle}`, { continued: true });
-      doc.font('cuerpo-light').fillColor(COLORES.textoSuave).text(`  —  ${estado}`);
+      dibujarFilaRecurso(icono, color, `${nombreRed} @${contexto.redes.handle}`, estado);
     }
   }
-  doc.moveDown(1);
+  doc.moveDown(0.8);
 }
 
 function dibujarProximosPasos(doc, informe) {
@@ -327,22 +325,29 @@ function dibujarApendiceLegal(doc, informe) {
 }
 
 function dibujarPie(doc) {
+  // El pie tiene que entrar entero arriba de maxY = page.height - margin.bottom = 792 (A4).
+  // Si las coords del texto + lineHeight pasan 792, PDFKit hace addPage automatico.
+  // Por eso ubicamos el bloque del pie a y=730 (margen efectivo de 112pt desde abajo).
   const range = doc.bufferedPageRange();
   const pageCount = range.count;
   for (let i = 0; i < pageCount; i++) {
     doc.switchToPage(range.start + i);
-    const yPie = doc.page.height - 60;
+    const yPie = doc.page.height - 112;
     doc.moveTo(X_MARGEN, yPie).lineTo(X_MARGEN + ANCHO_CONTENIDO, yPie)
       .lineWidth(0.5).strokeColor(COLORES.separador).stroke();
     doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
       .text('Legal Pacers · Consultora de PI · legalpacers.com',
-        X_MARGEN, yPie + 8, { lineBreak: false, width: ANCHO_CONTENIDO, align: 'left' });
+        X_MARGEN, yPie + 8, { lineBreak: false, width: ANCHO_CONTENIDO - 80, align: 'left' });
     doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
       .text(`Página ${i + 1} de ${pageCount}`,
         X_MARGEN, yPie + 8, { lineBreak: false, width: ANCHO_CONTENIDO, align: 'right' });
     doc.font('italic').fontSize(7).fillColor(COLORES.textoSuave)
       .text('Análisis técnico orientativo. El INPI resuelve sobre el expediente de fondo.',
-        X_MARGEN, yPie + 22, { lineBreak: false, width: ANCHO_CONTENIDO, align: 'left' });
+        X_MARGEN, yPie + 24, { lineBreak: false, width: ANCHO_CONTENIDO, align: 'left' });
+    // Reseteamos el cursor en cada pagina para que ningun text posterior
+    // herede doc.y cerca del borde y dispare un addPage espurio.
+    doc.x = X_MARGEN;
+    doc.y = doc.page.margins.top;
   }
 }
 
