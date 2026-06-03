@@ -102,4 +102,54 @@ async function enviarWhatsApp({ alertaId, to, marca, nivel, panel_url }) {
   }
 }
 
-module.exports = { enviarMail, enviarWhatsApp };
+module.exports = { enviarMail, enviarWhatsApp, enviarMailGenerico };
+
+/**
+ * Envío de mail genérico (subject/HTML arbitrario + adjuntos opcionales).
+ * Pensado para informes pagos, follow-ups de leads y mails al equipo legal.
+ *
+ * @param {object} opts
+ * @param {string|string[]} opts.to - destinatario(s)
+ * @param {string} opts.subject - asunto
+ * @param {string} opts.html - cuerpo HTML
+ * @param {Array<{filename, content}>=} opts.attachments - PDF u otros (content = Buffer base64)
+ * @param {string=} opts.from - override del FROM
+ * @param {string=} opts.replyTo - reply-to opcional
+ * @param {string=} opts.tag - etiqueta para auditoría (ej. "informe_pagado", "lead_followup")
+ */
+async function enviarMailGenerico({ to, subject, html, attachments, from, replyTo, tag }) {
+  const apiKey = (process.env.RESEND_API_KEY || '').trim();
+  const fromAddr = (from || process.env.MAIL_FROM || 'contacto@legalpacers.com').trim();
+  const tagFinal = tag || 'generico';
+
+  if (!apiKey) {
+    console.log(`[mail/STUB · ${tagFinal}] → ${to} · ${subject}`);
+    return { ok: true, stub: true };
+  }
+
+  try {
+    const body = { from: fromAddr, to, subject, html };
+    if (replyTo) body.reply_to = replyTo;
+    if (Array.isArray(attachments) && attachments.length) {
+      body.attachments = attachments.map(a => ({
+        filename: a.filename,
+        content: Buffer.isBuffer(a.content) ? a.content.toString('base64') : a.content,
+      }));
+    }
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      console.error(`[mail/${tagFinal}] error HTTP ${res.status}:`, txt.slice(0, 300));
+      return { ok: false, error: `HTTP ${res.status}` };
+    }
+    const data = await res.json();
+    return { ok: true, id: data.id };
+  } catch (err) {
+    console.error(`[mail/${tagFinal}] error red:`, err.message);
+    return { ok: false, error: err.message };
+  }
+}
