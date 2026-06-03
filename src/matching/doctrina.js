@@ -71,6 +71,18 @@ El cotejo marcario se hace en tres ámbitos:
 - **Auditivo / fonético**: cómo suenan al pronunciarse en español rioplatense.
 - **Ideológico / conceptual**: significado o idea evocada por el signo.
 
+### Tipos de confusión
+
+- **Confusión directa**: el consumidor cree que está adquiriendo el producto/servicio del titular
+  anterior. Se da típicamente con marcas idénticas sobre productos idénticos (Art. 3 inc. a
+  Ley 22.362).
+- **Confusión indirecta**: el consumidor distingue las marcas pero cree que el segundo signo es
+  una variante, línea o licencia del titular original. Se da con marcas similares o con marcas
+  idénticas sobre productos afines (Art. 3 inc. b). El INPI bloquea ambas.
+
+Es aplicable tanto a marcas de distintos titulares como a marcas del **mismo titular** que
+intente registrar variantes confundibles dentro de su propia familia.
+
 ### Reglas de cotejo
 
 1. **Cotejo sucesivo, no simultáneo**: las marcas NO se comparan una al lado de la otra.
@@ -161,6 +173,57 @@ Cuando detectes una marca notoria o renombrada en el lado del registro previo:
 Solo afirmá notoriedad cuando es evidente y verificable (ejemplos no taxativos:
 Coca-Cola, Nike, Apple, Google, Mercado Libre, YPF, La Serenísima, Quilmes, Arcor).
 Ante cualquier duda: **nivel = "no"** y dejá que el Agente humano lo evalúe en revisión.
+
+---
+
+## ANEXO — Estilo de razonamiento del INPI (dictamen modelo de denegatoria)
+
+Este es el texto real de un dictamen de denegación del Director Nacional de Marcas.
+Tu output NO debe imitar este formato (vos devolvés JSON estructurado), pero sí debe reflejar
+el **rigor argumentativo y vocabulario técnico** del INPI cuando justificás un nivel_riesgo alto.
+
+> SR DIRECTOR NACIONAL DE MARCAS:
+> En las presentes actuaciones se solicitó el registro de la marca cuyos datos y protección
+> surgen de las constancias digitales obrantes en el presente expediente electrónico.
+> Realizado el examen de viabilidad de registro se observó que el signo pretendido como marca
+> se encontraría alcanzado por la prohibición que surge del **art. 3 inc. a) de la Ley 22362**
+> de Marcas y Designaciones en virtud de existir **identidad** con el/los antecedente/s
+> marcarios que surgen de la vista oportunamente cursada, existiendo **superposición de
+> productos/servicios** a proteger entre los mismos.
+>
+> El artículo 3 inciso a) de la Ley 22.362 de Marcas y Designaciones, prohíbe el registro de
+> las marcas idénticas a otras ya registradas o solicitadas para distinguir los mismos
+> productos o servicios. Este artículo tiene por finalidad evitar la coexistencia de marcas
+> confundibles.
+>
+> Desde el aspecto de los productos o servicios, el cotejo debe realizarse de acuerdo con la
+> **regla de la especialidad**, es decir, que el derecho de exclusiva que detenta la marca
+> antecedente está limitado a los productos o servicios para los cuales se otorgó.
+>
+> La norma legal impide la coexistencia de marcas idénticas sobre productos o servicios
+> idénticos (**confusión directa**) o similares (**confusión indirecta**). Esto es aplicable
+> no sólo con relación a marcas de distintos titulares, sino también con relación a marcas
+> de un mismo titular.
+>
+> Por lo manifestado en los párrafos anteriores y habiéndose efectuado el estudio de fondo de
+> las presentes actuaciones, se aconseja **denegar la solicitud de registro de marca** de
+> referencia, por encuadrar dentro de la prohibición establecida en el artículo 3 inciso a)
+> de la Ley de Marcas N° 22.362 y modificatorias.
+
+### Lecciones operativas que se desprenden del dictamen
+
+1. La fundamentación del INPI es **cualitativa, no cuantitativa**: no dice "85% de similitud",
+   dice "existe identidad" + cita el artículo + invoca la regla de especialidad.
+2. La secuencia argumental tipo es: **identificar la prohibición → citar el artículo →
+   describir la regla aplicable → concluir con la consecuencia (denegar/conceder)**.
+3. Cuando el conflicto cae en **Art. 3 inc. a** (marcas idénticas + productos idénticos),
+   la denegatoria es prácticamente automática. Tu análisis debe marcar este caso como
+   riesgo alto sin ambigüedad.
+4. Cuando cae en **Art. 3 inc. b** (marcas similares o productos afines), el análisis se
+   vuelve más fino y se evalúa el riesgo de confusión indirecta. Aplicá las reglas de cotejo.
+5. El INPI **da vista al solicitante** antes de denegar — el dictamen documenta que se
+   recibió y analizó la respuesta del interesado. Si el cliente insiste en presentar,
+   tendrá oportunidad de defender el registro, aunque sin argumento nuevo suele perder.
 `;
 
 module.exports = { DOCTRINA_INPI };
