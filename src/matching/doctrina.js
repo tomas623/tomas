@@ -105,14 +105,62 @@ salvo que se trate de marca notoria.
 
 ---
 
-## 6. MARCA NOTORIA (Art. 6bis Convenio de París)
+## 6. MARCA NOTORIA Y MARCA RENOMBRADA (Art. 6bis CUP + ADPIC)
 
-Una marca es notoria cuando es **ampliamente reconocida** por el público consumidor del sector
-relevante o el público general en Argentina. Su protección **trasciende el principio de
-especialidad**: puede oponerse en clases donde su titular no registró.
+### 6.1. Distinción conceptual
 
-Criterio cauteloso: solo afirmar notoriedad si la marca es claramente reconocible
-(ej: Coca-Cola, Nike, Mercado Libre, YPF). Ante la duda, declarar **no notoria**.
+- **Marca notoria**: conocida por **el sector pertinente** del público consumidor del rubro.
+  Su fama es indiscutible dentro del nicho, aunque alguien ajeno al sector pueda no conocerla.
+  Ejemplo INPI: "Gibson" (reconocida por músicos).
+- **Marca renombrada**: trasciende el sector y es conocida por **el público general**.
+  Es el grado máximo de reconocimiento. Ejemplo clásico: "Coca-Cola".
+
+Origen doctrinario: "marca famosa" viene de la doctrina norteamericana; "marca de alto renombre"
+de la francesa. Ambos conceptos confluyen en el sistema argentino con la misma consecuencia
+jurídica: **máxima protección y quiebre del principio de especialidad**.
+
+### 6.2. Efectos jurídicos del estatus de marca notoria/renombrada
+
+Cuando una marca es notoria o renombrada, las reglas tradicionales del cotejo se alteran:
+
+**a) Quiebre del principio de especialidad.** La protección se extiende a clases distintas e
+incluso a productos no afines, si el uso del signo posterior sugiere conexión con el titular
+original o puede lesionar sus intereses (Art. 16.3 ADPIC).
+
+**b) Ampliación de los daños tutelados.** No se protege solo contra la confusión de origen
+empresarial. Se suman dos pilares adicionales:
+- **Aprovechamiento del prestigio ajeno** (*free-riding*): el solicitante posterior se
+  beneficia del valor reputacional construido por el titular notorio.
+- **Afectación o desprestigio** del valor simbólico de la marca: la exclusividad y el estatus
+  son activos por los que el consumidor paga; degradarlos lesiona al titular.
+
+**c) Protección contra dilución y vulgarización.**
+- **Dilución**: dispersión de la identidad única de la marca y de su retención en la mente
+  del público. Una marca notoria se debilita si surgen variantes que la "vulgaricen".
+- **Vulgarización**: el éxito del signo lo convierte en término genérico para el producto
+  (el "infierno" de la marca notoria), destruyendo su capacidad distintiva.
+
+**d) Régimen probatorio especial.**
+- Por tratarse de **hecho notorio**, el titular suele estar relevado de probar exhaustivamente
+  el reconocimiento. La notoriedad se evidencia por sí misma.
+- Basta evaluar la notoriedad en el **sector pertinente** del público consumidor, incluyendo
+  la ganada por promoción y publicidad.
+
+### 6.3. Criterio operativo del análisis
+
+Cuando detectes una marca notoria o renombrada en el lado del registro previo:
+
+- El **nivel_riesgo** se eleva incluso si la clase Niza del cliente es distinta.
+- El **principio de especialidad NO opera como atenuante**.
+- Reflejá el o los **riesgos específicos** aplicables: confusión de origen, aprovechamiento
+  del prestigio, dilución, vulgarización.
+- Si la coincidencia es exacta o casi, recomendá no presentar — el riesgo es estructural.
+
+### 6.4. Criterio cauteloso para etiquetar
+
+Solo afirmá notoriedad cuando es evidente y verificable (ejemplos no taxativos:
+Coca-Cola, Nike, Apple, Google, Mercado Libre, YPF, La Serenísima, Quilmes, Arcor).
+Ante cualquier duda: **nivel = "no"** y dejá que el Agente humano lo evalúe en revisión.
 `;
 
 module.exports = { DOCTRINA_INPI };

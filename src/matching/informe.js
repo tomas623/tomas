@@ -44,7 +44,13 @@ Pre-checks especiales: ninguno.`,
         afinidad: 'identidad',
         comentario: 'Misma clase 35, mismo género comercial. Sin escape por especialidad.',
       },
-      marca_notoria: { es_notoria: false, comentario: 'Sin evidencia de notoriedad del titular registrado.' },
+      notoriedad: {
+        nivel: 'no',
+        publico_relevante: null,
+        rompe_especialidad: false,
+        riesgos_especificos: [],
+        comentario: 'Sin evidencia de notoriedad del titular registrado.',
+      },
       ley_aplicable: 'Art. 3 inc. a y b Ley 22.362 (marcas idénticas o casi idénticas en la misma clase).',
       recomendacion_principal: 'No presentar como está; cambiar la denominación.',
       alternativas_sugeridas: ['Acmétik', 'Acmélab', 'NeoAcme', 'Acmegest'],
@@ -78,7 +84,13 @@ Pre-checks especiales: ninguno.`,
         afinidad: 'identidad',
         comentario: 'Misma clase 9, mismo género comercial.',
       },
-      marca_notoria: { es_notoria: false, comentario: 'Ninguna de las partes es notoria.' },
+      notoriedad: {
+        nivel: 'no',
+        publico_relevante: null,
+        rompe_especialidad: false,
+        riesgos_especificos: [],
+        comentario: 'Ninguna de las partes es notoria.',
+      },
       ley_aplicable: 'Art. 3 inc. b Ley 22.362 (marcas confundibles fonéticamente).',
       recomendacion_principal: 'Auditar variante con cambio fonético, o pedir consentimiento al titular de FOKKA.',
       alternativas_sugeridas: ['Foccaly', 'Foxxa', 'Fokima', 'Foccatech'],
@@ -109,10 +121,56 @@ Pre-checks especiales: ninguno.`,
         afinidad: 'nula',
         comentario: 'Clase 42 (software) y clase 25 (indumentaria): géneros comerciales sin canales ni público compartido.',
       },
-      marca_notoria: { es_notoria: false, comentario: 'Ninguna es notoria.' },
+      notoriedad: {
+        nivel: 'no',
+        publico_relevante: null,
+        rompe_especialidad: false,
+        riesgos_especificos: [],
+        comentario: 'Ninguna es notoria.',
+      },
       ley_aplicable: null,
       recomendacion_principal: 'Presentar tal como está. Riesgo bajo.',
       alternativas_sugeridas: [],
+    },
+  },
+  {
+    input: `Cliente: "CocaCola Studio", clase 41 (entretenimiento), denominativa.
+Candidata INPI: "Coca-Cola", clase 32 (bebidas no alcohólicas), titular The Coca-Cola Company, estado Concedida. Score Etapa 1: 88. Motivos: coincidencia_token_inicial, marca_referencia_global.
+Pre-checks especiales: ninguno.`,
+    output: {
+      nivel_riesgo: 'alto',
+      viabilidad_estimada: 3,
+      resumen_ejecutivo: 'Conflicto inevitable: Coca-Cola es marca renombrada reconocida por el público general. Aunque la clase 41 difiere de la 32 registrada, la protección de la marca renombrada quiebra el principio de especialidad. El INPI rechazará el registro y el titular tiene legitimación para oponerse.',
+      distintividad_intrinseca: {
+        nivel: 'baja',
+        comentario: 'La denominación se apoya íntegramente sobre "CocaCola" — sin distintividad propia, solo agrega "Studio" como sufijo genérico de actividad.',
+      },
+      prohibiciones_absolutas: { flags: [], comentario: 'No es genérica ni descriptiva en sí misma, pero la dependencia de un signo renombrado anula la capacidad distintiva autónoma.' },
+      prohibiciones_relativas: {
+        flags: ['conflicto_marca_preexistente', 'enganosa'],
+        comentario: 'Conflicto con marca renombrada de titular activo. Adicionalmente induce a confusión sobre el origen empresarial del servicio.',
+      },
+      leyes_especiales: { flags: [], comentario: 'No aplican Ley 25.127, 24.664 ni 26.687.' },
+      confundibilidad: {
+        fonetica: { similitud: 'alta', explicacion: 'El elemento dominante "CocaCola" es fonéticamente idéntico al registro previo.' },
+        visual: { similitud: 'alta', explicacion: 'El sufijo "Studio" no altera la percepción visual del elemento distintivo predominante.' },
+        ideologica: { similitud: 'alta', explicacion: 'El consumidor asocia inevitablemente la denominación con la bebida y su titular.' },
+        regla_predominante: 'Elemento distintivo predominante + condición de marca renombrada — la regla del cotejo cede frente al estatus reforzado del titular.',
+      },
+      especialidad: {
+        afinidad: 'baja',
+        comentario: 'Clase 41 (entretenimiento) vs clase 32 (bebidas): en condiciones normales serían géneros distantes. Pero el principio de especialidad NO opera frente a marca renombrada.',
+      },
+      notoriedad: {
+        nivel: 'renombrada',
+        publico_relevante: 'publico general',
+        rompe_especialidad: true,
+        riesgos_especificos: ['aprovechamiento_prestigio', 'free_riding', 'dilucion', 'confusion_origen'],
+        comentario: 'Coca-Cola es marca renombrada por excelencia, conocida por el público general más allá del sector de bebidas. Su titular goza de protección reforzada en todas las clases. El uso de "CocaCola" en clase 41 configuraría aprovechamiento del prestigio ajeno y dilución del valor simbólico de la marca.',
+      },
+      ley_aplicable: 'Art. 6bis CUP + Art. 16.3 ADPIC + Art. 3 Ley 22.362.',
+      recomendacion_principal: 'No presentar bajo ninguna variante que conserve "Coca" o "Cola" como elemento dominante.',
+      alternativas_sugeridas: ['Nombre desvinculado por completo del campo léxico — sugerir alternativa neutra elegida por el cliente'],
     },
   },
 ];
@@ -172,9 +230,12 @@ Devolvé UN ÚNICO JSON con esta estructura exacta. Sin texto extra, sin markdow
     "afinidad": "identidad" | "alta" | "media" | "baja" | "nula",
     "comentario": "Análisis de afinidad de clases / canales / público."
   },
-  "marca_notoria": {
-    "es_notoria": true | false,
-    "comentario": "Si es notoria, explicar protección cross-clase. Si no, indicar criterio aplicado."
+  "notoriedad": {
+    "nivel": "no" | "notoria" | "renombrada",
+    "publico_relevante": "sector pertinente" | "publico general" | null,
+    "rompe_especialidad": true | false,
+    "riesgos_especificos": ["aprovechamiento_prestigio" | "free_riding" | "dilucion" | "vulgarizacion" | "confusion_origen"],
+    "comentario": "Si nivel != 'no', explicar el quiebre de especialidad y los riesgos específicos. Si 'no', indicar criterio aplicado."
   },
   "ley_aplicable": "Artículo específico de Ley 22.362 u otra, o null si no aplica.",
   "recomendacion_principal": "Una frase. 'Presentar como está' | 'Modificar antes de presentar' | 'Auditar variante' | 'No presentar, alto riesgo'.",
@@ -268,7 +329,13 @@ function stubInforme(marca, candidatas, flags) {
       regla_predominante: 'STUB',
     },
     especialidad: { afinidad: 'media', comentario: 'STUB' },
-    marca_notoria: { es_notoria: false, comentario: 'STUB' },
+    notoriedad: {
+      nivel: 'no',
+      publico_relevante: null,
+      rompe_especialidad: false,
+      riesgos_especificos: [],
+      comentario: 'STUB',
+    },
     ley_aplicable: hayConflicto ? 'Art. 3 inc. b Ley 22.362' : null,
     recomendacion_principal: nivel === 'alto'
       ? 'Modificar antes de presentar'
