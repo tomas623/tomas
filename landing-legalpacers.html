@@ -117,7 +117,7 @@
       {
         "@type": "Question",
         "name": "¿Cuándo y cómo me avisan si alguien intenta copiar mi marca?",
-        "acceptedAnswer": { "@type": "Answer", "text": "El Boletín de marcas en Argentina se publica una vez por semana, los miércoles. Por eso el monitoreo es semanal, no 24/7: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas y, si hay riesgo, te avisamos por WhatsApp para preparar la oposición dentro del plazo legal." }
+        "acceptedAnswer": { "@type": "Answer", "text": "El Boletín de marcas en Argentina se publica una vez por semana, los miércoles. Por eso el monitoreo es semanal, no 24/7: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas y, si hay riesgo, te avisamos por mail para preparar la oposición dentro del plazo legal." }
       }
     ]
   }
@@ -281,8 +281,9 @@
     .step{padding:30px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px}
     .step-num{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;margin-bottom:16px}
 
-    .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:0 auto}
-    @media(max-width:760px){.plans-grid{grid-template-columns:1fr}}
+    .plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1180px;margin:0 auto}
+    @media(max-width:1024px){.plans-grid{grid-template-columns:repeat(2,1fr);max-width:760px}}
+    @media(max-width:600px){.plans-grid{grid-template-columns:1fr}}
     .plan{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:28px 24px;display:flex;flex-direction:column}
     .plan.featured{border-color:rgba(27,110,243,.5);box-shadow:0 20px 40px -20px var(--blue-glow)}
     .plan h3{font-size:18px;margin-bottom:4px}
@@ -290,6 +291,8 @@
     .plan-price{font-size:32px;font-weight:800;margin:8px 0;line-height:1.1}
     .plan-price small{font-size:12px;color:var(--text-muted);display:block;font-weight:500;margin-top:4px;line-height:1.4}
     .plan-desc{font-size:13px;color:var(--text-muted);margin-bottom:18px;line-height:1.45}
+    .plan-ideal{background:var(--bg-soft);border-left:3px solid var(--blue);padding:10px 12px;border-radius:0 8px 8px 0;font-size:12.5px;color:var(--text-soft);line-height:1.5;margin-bottom:14px}
+    .plan-ideal strong{color:#7eb1ff;font-weight:700;display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
     .plan ul{list-style:none;font-size:13.5px;margin-bottom:22px;flex-grow:1}
     .plan ul li{padding:6px 0;display:flex;gap:8px;line-height:1.4}
     .plan ul li::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0}
@@ -511,28 +514,28 @@
 
 <section id="custodia" style="border-top:1px solid var(--border-soft); background:var(--bg-soft)">
   <div class="container">
-    <div class="section-eyebrow">Mantenimiento y Vigilancia de Marcas</div>
-    <h2 class="section-title">El ciclo de vida de tu propiedad intelectual</h2>
-    <p class="section-sub">Registrar tu marca es solo el nacimiento de tu activo patrimonial. Para protegerla de plagios y evitar que el Estado la dé de baja de oficio, estructuramos un seguimiento cronológico profesional.</p>
-    
+    <div class="section-eyebrow">Hitos legales post-registro</div>
+    <h2 class="section-title">El ciclo de vida de tu marca, después del registro</h2>
+    <p class="section-sub">Una vez registrada, tu marca tiene momentos legales que no podés saltear. Te acompañamos en cada uno para que no pierdas el activo.</p>
+
     <div class="ciclo-grid">
       <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:var(--blue-soft); color:#60a5fa">Mes 1 al 120 (Suscripción)</div>
-        <h4>Monitoreo Semanal de Boletines</h4>
-        <p>Todas las semanas se presentan miles de nombres nuevos ante el INPI. Escaneamos la base de datos oficial cada miércoles y te alertamos directo por WhatsApp si algún competidor intenta registrar algo similar para interponer la oposición a tiempo.</p>
-        <div class="ciclo-price">Desde $4.900/mes (Opcional post-trámite)</div>
+        <div class="ciclo-badge" style="background:var(--green-soft); color:#6ee7b7">Cómo funciona la vigilancia</div>
+        <h4>Monitoreo semanal del INPI</h4>
+        <p>Cada miércoles el INPI publica un boletín con todas las solicitudes nuevas. Nuestro sistema lo escanea automáticamente, lo cruza con tu marca y te avisa por mail si detecta una posible coincidencia. Tu equipo decide si hay que oponerse dentro del plazo legal.</p>
+        <div class="ciclo-price">Producto Vigilancia · ver planes arriba</div>
       </div>
       <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:rgba(245,158,11,.15); color:#fcd34d">Año 5 (Obligatorio por Ley)</div>
+        <div class="ciclo-badge" style="background:rgba(245,158,11,.15); color:#fcd34d">Año 5 (obligatorio por ley)</div>
         <h4>Declaración Jurada de Uso (DJU)</h4>
-        <p>Un hito legal mandatorio en Argentina. Al llegar al quinto año, es obligatorio declarar bajo firma que la marca está comercialmente activa. Si no se presenta, el organismo oficial aplica multas y la da de baja.</p>
-        <div class="ciclo-price">Se presupuesta de forma independiente al llegar al Año 5</div>
+        <p>Un hito legal mandatorio en Argentina. Al quinto año tenés que declarar bajo firma que la marca está comercialmente activa. Si no la presentás, el INPI aplica multas y puede darla de baja de oficio.</p>
+        <div class="ciclo-price">Se presupuesta al llegar al Año 5</div>
       </div>
       <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:var(--green-soft); color:#6ee7b7">Año 10 (Renovación)</div>
-        <h4>Renovación de Propiedad</h4>
-        <p>La exclusividad comercial concedida por el INPI vence a los 10 años exactos. Gestionamos la prórroga técnica de tus derechos de marca para extender tu blindaje legal por otra década consecutiva.</p>
-        <div class="ciclo-price">Se presupuesta de forma independiente al llegar al Año 10</div>
+        <div class="ciclo-badge" style="background:var(--blue-soft); color:#60a5fa">Año 10 (renovación)</div>
+        <h4>Renovación de propiedad</h4>
+        <p>La exclusividad comercial concedida por el INPI vence a los 10 años exactos. Gestionamos la prórroga de tus derechos de marca para extender el blindaje legal por otra década consecutiva.</p>
+        <div class="ciclo-price">Se presupuesta al llegar al Año 10</div>
       </div>
     </div>
   </div>
@@ -564,52 +567,70 @@
 
 <section id="planes" style="background:var(--bg)">
   <div class="container">
-    <div class="section-eyebrow">Aranceles y Honorarios Fijos</div>
-    <h2 class="section-title">Elegí tu nivel de seguridad jurídica</h2>
-    <p class="section-sub">Precios transparentes para registrar tu marca en Argentina: emprendedores, pymes y startups. Sin costos ocultos.</p>
+    <div class="section-eyebrow">Nuestros servicios</div>
+    <h2 class="section-title">Cuatro servicios independientes para tu marca</h2>
+    <p class="section-sub">Combiná los que necesités. Podés arrancar con el chequeo gratis, comprar solo el informe si ya tenés un nombre, registrar una marca directo o sumar vigilancia a una marca que ya está registrada o en trámite.</p>
 
     <div class="plans-grid">
       <div class="plan">
-        <span class="plan-tag">Free</span>
-        <h3>Consulta Básica</h3>
+        <span class="plan-tag">Gratis</span>
+        <h3>Chequeo de marca</h3>
         <div class="plan-price">$0</div>
-        <p class="plan-desc">Filtro inmediato en pantalla para descartar marcas idénticas registradas en Argentina.</p>
+        <p class="plan-desc">Filtro inmediato en pantalla para descartar marcas idénticas o casi idénticas registradas en Argentina.</p>
+        <div class="plan-ideal"><strong>Ideal si…</strong>Querés validar rápido si tu nombre choca con algo registrado, antes de invertir en branding o tasas.</div>
         <ul>
-          <li>Chequeo de coincidencias exactas</li>
+          <li>Chequeo de coincidencias exactas y casi exactas</li>
           <li>Identificación de clase sugerida</li>
           <li>Visualización de marcas bloqueantes</li>
         </ul>
-        <button class="btn btn-outline" @click="window.scrollTo({top:0,behavior:'smooth'})">Consultar gratis</button>
+        <button class="btn btn-outline" @click="window.scrollTo({top:0,behavior:'smooth'})">Chequear gratis</button>
       </div>
 
       <div class="plan featured">
-        <span class="plan-tag">Recomendado para Startups/Pymes</span>
-        <h3>Auditoría de Viabilidad</h3>
+        <span class="plan-tag">Pago único</span>
+        <h3>Informe de viabilidad</h3>
         <div class="plan-price">$19.900</div>
-        <p class="plan-desc">El mapa de riesgo total de sonido, significado e identidad digital antes de abonar aranceles públicos.</p>
+        <p class="plan-desc">Análisis profesional de riesgo fonético, conceptual y digital antes de invertir en branding o pagar tasas oficiales.</p>
+        <div class="plan-ideal"><strong>Ideal si…</strong>Ya tenés un nombre en mente y querés evaluar el riesgo real de rechazo antes de avanzar.</div>
         <ul>
-          <li>Análisis Fonético y Léxico</li>
-          <li>Análisis Conceptual con IA</li>
-          <li>Disponibilidad de dominios y usuarios</li>
-          <li>Garantía de Re-intento gratis si da ROJO</li>
+          <li>Análisis fonético y léxico con IA</li>
+          <li>Análisis conceptual e ideológico</li>
+          <li>Disponibilidad de dominios y redes</li>
+          <li>Garantía: re-auditoría gratis si da ROJO</li>
           <li style="color:#6ee7b7">🎁 +10% OFF en honorarios de Registro</li>
         </ul>
         <button class="btn btn-primary" @click="openInforme()">Comprar informe</button>
       </div>
 
       <div class="plan">
-        <span class="plan-tag">Gestión Profesional Completa</span>
-        <h3>Registro de Marca</h3>
+        <span class="plan-tag">Pago único</span>
+        <h3>Registro de marca</h3>
         <div class="plan-price">$120.000<small>+ Tasa oficial INPI por clase a precio de costo (~$36.000 = 100 UMAPI). Desde mayo 2026 el INPI cobra en UMAPI y la actualiza por IPC cada mes: se cotiza el valor exacto el día de la presentación.</small></div>
-        <p class="plan-desc">Tramitación legal llave en mano efectuada y firmada por Agentes de la Propiedad Industrial.</p>
+        <p class="plan-desc">Tramitación legal llave en mano firmada por un Agente de la Propiedad Industrial matriculado.</p>
+        <div class="plan-ideal"><strong>Ideal si…</strong>Ya decidiste tu marca y querés presentarla ante el INPI sin pelearte con burocracia.</div>
         <ul>
           <li>Armado técnico de categorías del expediente</li>
           <li>Presentación formal ante el Registro Nacional</li>
           <li>Contestación de vistas de forma incluidas</li>
-          <li style="color:#6ee7b7">🎁 2 meses de Vigilancia de boletín incluidos</li>
-          <li>Vigilancia semanal post-mes 2 y DJU año 5 independientes</li>
+          <li style="color:#6ee7b7">🎁 2 meses de Vigilancia incluidos</li>
         </ul>
-        <button class="btn btn-primary" @click="iniciarRegistroDirecto()" style="background:var(--surface-3); border:1px solid var(--border)">Iniciar registro</button>
+        <button class="btn btn-primary" @click="iniciarRegistroDirecto()">Iniciar registro</button>
+      </div>
+
+      <div class="plan" style="border-color:rgba(16,185,129,0.35)">
+        <span class="plan-tag" style="color:#6ee7b7">Suscripción mensual</span>
+        <h3>Vigilancia de marca</h3>
+        <div class="plan-price">desde $4.900<small>por mes · cancelás cuando quieras</small></div>
+        <p class="plan-desc">Monitoreo semanal del Boletín del INPI con alertas inmediatas si alguien intenta registrar algo similar a tu marca.</p>
+        <div class="plan-ideal" style="border-left-color:#10b981"><strong style="color:#6ee7b7">Ideal si…</strong>Ya tenés una marca <strong style="display:inline">registrada o en trámite</strong> y querés que te avisemos cuando aparezca una posible copia.</div>
+        <ul>
+          <li>Pack 3 marcas — $4.900/mes</li>
+          <li>Pack 10 marcas — $12.900/mes</li>
+          <li>Pack 20 marcas — $19.900/mes</li>
+          <li>Alertas por mail · escaneo semanal</li>
+        </ul>
+        <a href="/cliente/" class="btn btn-primary" style="background:#10b981; text-decoration:none">Suscribirme</a>
+        <a :href="waLink" target="_blank" style="display:block;text-align:center;margin-top:8px;font-size:12px;color:var(--text-muted)">+20 marcas? Cotización a medida</a>
       </div>
     </div>
   </div>
@@ -639,7 +660,7 @@
       <div class="compare-row">
         <div><strong>Custodia de marcas</strong></div>
         <div class="col-bad">Obligación de revisar manualmente los listados del Boletín Oficial de marcas.</div>
-        <div class="col-good">Monitoreo semanal: escaneamos el boletín cada miércoles y te avisamos por WhatsApp si hay riesgo de plagio.</div>
+        <div class="col-good">Monitoreo semanal: escaneamos el boletín cada miércoles y te avisamos por mail si hay riesgo de plagio.</div>
       </div>
     </div>
   </div>
@@ -763,7 +784,7 @@
 
     <details class="faq-item">
       <summary class="faq-q">¿Cuándo y cómo me avisan si alguien intenta copiar mi nombre?</summary>
-      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos directo por WhatsApp para preparar la oposición formal dentro del plazo legal. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles.</div>
+      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos por mail para preparar la oposición formal dentro del plazo legal. Las alertas también quedan registradas en tu portal cliente para que decidas cómo seguir. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles.</div>
     </details>
   </div>
 </section>
@@ -1020,7 +1041,7 @@ function landing() {
       },
       {
         q: "¿Cuándo y cómo me avisan si alguien intenta copiar mi nombre?",
-        a: "El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos directo por WhatsApp para preparar la oposición formal dentro del plazo legal. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles."
+        a: "El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos por mail para preparar la oposición formal dentro del plazo legal. Las alertas también quedan registradas en tu portal cliente para que decidas cómo seguir. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles."
       }
     ]
   };
