@@ -291,8 +291,13 @@
     .plan-price{font-size:32px;font-weight:800;margin:8px 0;line-height:1.1}
     .plan-price small{font-size:12px;color:var(--text-muted);display:block;font-weight:500;margin-top:4px;line-height:1.4}
     .plan-desc{font-size:13px;color:var(--text-muted);margin-bottom:18px;line-height:1.45}
+    .plan-step{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;color:#60a5fa;letter-spacing:.07em;margin-bottom:10px;padding:4px 9px;background:var(--blue-soft);border-radius:6px;border:1px solid rgba(27,110,243,.25)}
+    .plan-step.green{color:#6ee7b7;background:var(--green-soft);border-color:rgba(16,185,129,.3)}
+    .plan-step.amber{color:#fcd34d;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3)}
+    .plan-step.gray{color:var(--text-muted);background:var(--surface-2);border-color:var(--border)}
     .plan-ideal{background:var(--bg-soft);border-left:3px solid var(--blue);padding:10px 12px;border-radius:0 8px 8px 0;font-size:12.5px;color:var(--text-soft);line-height:1.5;margin-bottom:14px}
     .plan-ideal strong{color:#7eb1ff;font-weight:700;display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+    .plan-note{font-size:11.5px;color:#fcd34d;background:rgba(245,158,11,.08);border-left:3px solid rgba(245,158,11,.5);padding:7px 10px;border-radius:0 6px 6px 0;margin-bottom:14px;line-height:1.45}
     .plan ul{list-style:none;font-size:13.5px;margin-bottom:22px;flex-grow:1}
     .plan ul li{padding:6px 0;display:flex;gap:8px;line-height:1.4}
     .plan ul li::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0}
@@ -397,7 +402,6 @@
     <div class="logo">LEGAL<span class="accent">PACERS</span></div>
     <nav class="nav-links">
       <a href="#planes">Servicios</a>
-      <a href="#custodia">Post-registro</a>
       <a href="#comparativa">Comparativa</a>
       <a href="#somos">Quiénes somos</a>
       <a href="#faq">FAQ</a>
@@ -514,28 +518,14 @@
 
 <section id="planes" style="background:var(--bg)">
   <div class="container">
-    <div class="section-eyebrow">Nuestros servicios</div>
-    <h2 class="section-title">Cuatro servicios independientes para tu marca</h2>
-    <p class="section-sub">Combiná los que necesités. Podés arrancar con el chequeo gratis, comprar solo el informe si ya tenés un nombre, registrar una marca directo o sumar vigilancia a una marca que ya está registrada o en trámite.</p>
+    <div class="section-eyebrow">El journey de tu marca</div>
+    <h2 class="section-title">Cuatro servicios, uno para cada etapa</h2>
+    <p class="section-sub">Antes de registrar, durante el trámite, para protegerla en el tiempo y cuando hay que renovarla. Cada servicio es independiente: contratá solo el que te corresponde ahora.</p>
 
     <div class="plans-grid">
       <div class="plan">
-        <span class="plan-tag">Gratis</span>
-        <h3>Chequeo de marca</h3>
-        <div class="plan-price">$0</div>
-        <p class="plan-desc">Filtro inmediato en pantalla para descartar marcas idénticas o casi idénticas registradas en Argentina.</p>
-        <div class="plan-ideal"><strong>Ideal si…</strong>Querés validar rápido si tu nombre choca con algo registrado, antes de invertir en branding o tasas.</div>
-        <ul>
-          <li>Chequeo de coincidencias exactas y casi exactas</li>
-          <li>Identificación de clase sugerida</li>
-          <li>Visualización de marcas bloqueantes</li>
-        </ul>
-        <button class="btn btn-outline" @click="window.scrollTo({top:0,behavior:'smooth'})">Chequear gratis</button>
-      </div>
-
-      <div class="plan featured">
-        <span class="plan-tag">Pago único</span>
-        <h3>Informe de viabilidad</h3>
+        <span class="plan-step">Etapa 1 · Antes de registrar</span>
+        <h3>Chequeo de viabilidad</h3>
         <div class="plan-price">$19.900</div>
         <p class="plan-desc">Análisis profesional de riesgo fonético, conceptual y digital antes de invertir en branding o pagar tasas oficiales.</p>
         <div class="plan-ideal"><strong>Ideal si…</strong>Ya tenés un nombre en mente y querés evaluar el riesgo real de rechazo antes de avanzar.</div>
@@ -549,9 +539,9 @@
         <button class="btn btn-primary" @click="openInforme()">Comprar informe</button>
       </div>
 
-      <div class="plan">
-        <span class="plan-tag">Pago único</span>
-        <h3>Registro de marca</h3>
+      <div class="plan featured">
+        <span class="plan-step">Etapa 2 · Registrar</span>
+        <h3>Inicio del registro</h3>
         <div class="plan-price">$120.000<small>+ Tasa oficial INPI por clase a precio de costo (~$36.000 = 100 UMAPI). Desde mayo 2026 el INPI cobra en UMAPI y la actualiza por IPC cada mes: se cotiza el valor exacto el día de la presentación.</small></div>
         <p class="plan-desc">Tramitación legal llave en mano firmada por un Agente de la Propiedad Industrial matriculado.</p>
         <div class="plan-ideal"><strong>Ideal si…</strong>Ya decidiste tu marca y querés presentarla ante el INPI sin pelearte con burocracia.</div>
@@ -559,54 +549,41 @@
           <li>Armado técnico de categorías del expediente</li>
           <li>Presentación formal ante el Registro Nacional</li>
           <li>Contestación de vistas de forma incluidas</li>
-          <li style="color:#6ee7b7">🎁 2 meses de Vigilancia incluidos</li>
+          <li style="color:#6ee7b7">🎁 2 meses de Protección continua incluidos</li>
         </ul>
+        <div class="plan-note">⚠️ <strong>Sin oposiciones de terceros incluidas.</strong> Si alguien se opone a tu marca durante el trámite, se cotiza por separado.</div>
         <button class="btn btn-primary" @click="iniciarRegistroDirecto()">Iniciar registro</button>
       </div>
 
       <div class="plan" style="border-color:rgba(16,185,129,0.35)">
-        <span class="plan-tag" style="color:#6ee7b7">Suscripción mensual</span>
-        <h3>Vigilancia de marca</h3>
+        <span class="plan-step green">Etapa 3 · Protegerla</span>
+        <h3>Protección continua</h3>
         <div class="plan-price">desde $4.900<small>por mes · cancelás cuando quieras</small></div>
-        <p class="plan-desc">Monitoreo semanal del Boletín del INPI con alertas inmediatas si alguien intenta registrar algo similar a tu marca.</p>
-        <div class="plan-ideal" style="border-left-color:#10b981"><strong style="color:#6ee7b7">Ideal si…</strong>Ya tenés una marca <strong style="display:inline">registrada o en trámite</strong> y querés que te avisemos cuando aparezca una posible copia.</div>
+        <p class="plan-desc">Monitoreo semanal del Boletín del INPI con alertas por mail si alguien intenta registrar algo similar a tu marca.</p>
+        <div class="plan-ideal" style="border-left-color:#10b981"><strong style="color:#6ee7b7">Ideal si…</strong>Tu marca está <strong style="display:inline">registrada o en trámite</strong> y querés que te avisemos cuando aparezca una posible copia.</div>
         <ul>
           <li>Pack 3 marcas — $4.900/mes</li>
           <li>Pack 10 marcas — $12.900/mes</li>
           <li>Pack 20 marcas — $19.900/mes</li>
-          <li>Alertas por mail · escaneo semanal</li>
+          <li>Escaneo cada miércoles + alertas por mail</li>
         </ul>
         <a href="/cliente/" class="btn btn-primary" style="background:#10b981; text-decoration:none">Suscribirme</a>
         <a :href="waLink" target="_blank" style="display:block;text-align:center;margin-top:8px;font-size:12px;color:var(--text-muted)">+20 marcas? Cotización a medida</a>
       </div>
-    </div>
-  </div>
-</section>
 
-<section id="custodia" style="border-top:1px solid var(--border-soft); background:var(--bg-soft)">
-  <div class="container">
-    <div class="section-eyebrow">Hitos legales post-registro</div>
-    <h2 class="section-title">Tu marca después del registro</h2>
-    <p class="section-sub">Una vez registrada, tu marca tiene momentos legales que no podés saltear. Te acompañamos en cada uno para que no pierdas el activo.</p>
-
-    <div class="ciclo-grid">
-      <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:var(--green-soft); color:#6ee7b7">Cómo funciona la vigilancia</div>
-        <h4>Monitoreo semanal del INPI</h4>
-        <p>Cada miércoles el INPI publica un boletín con todas las solicitudes nuevas. Nuestro sistema lo escanea automáticamente, lo cruza con tu marca y te avisa por mail si detecta una posible coincidencia. Tu equipo decide si hay que oponerse dentro del plazo legal.</p>
-        <div class="ciclo-price">Producto Vigilancia · ver planes arriba</div>
-      </div>
-      <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:rgba(245,158,11,.15); color:#fcd34d">Año 5 (obligatorio por ley)</div>
-        <h4>Declaración Jurada de Uso (DJU)</h4>
-        <p>Un hito legal mandatorio en Argentina. Al quinto año tenés que declarar bajo firma que la marca está comercialmente activa. Si no la presentás, el INPI aplica multas y puede darla de baja de oficio.</p>
-        <div class="ciclo-price">Se presupuesta al llegar al Año 5</div>
-      </div>
-      <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:var(--blue-soft); color:#60a5fa">Año 10 (renovación)</div>
-        <h4>Renovación de propiedad</h4>
-        <p>La exclusividad comercial concedida por el INPI vence a los 10 años exactos. Gestionamos la prórroga de tus derechos de marca para extender el blindaje legal por otra década consecutiva.</p>
-        <div class="ciclo-price">Se presupuesta al llegar al Año 10</div>
+      <div class="plan">
+        <span class="plan-step amber">Etapa 4 · Mantenerla vigente</span>
+        <h3>DJU y Renovación</h3>
+        <div class="plan-price">a cotizar<small>al acercarse el hito legal</small></div>
+        <p class="plan-desc">Declaración Jurada de Uso al año 5 (obligatoria por ley) y renovación de la marca al año 10. Trámites firmados por el Agente.</p>
+        <div class="plan-ideal"><strong>Ideal si…</strong>Tu marca cumple 5 años (DJU obligatoria) o 10 años (renovación o pierde la exclusividad).</div>
+        <ul>
+          <li><strong>Año 5</strong> — DJU obligatoria por ley</li>
+          <li><strong>Año 10</strong> — renovación de propiedad</li>
+          <li>Sin sorpresas: cotizamos antes de presentar</li>
+          <li>Te avisamos cuando se acerca el hito</li>
+        </ul>
+        <a :href="waLink" target="_blank" class="btn btn-outline" style="text-decoration:none">Consultar por WhatsApp</a>
       </div>
     </div>
   </div>
