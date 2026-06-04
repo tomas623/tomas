@@ -165,6 +165,98 @@ function dibujarVeredicto(doc, informe) {
   doc.y = yCard + altoCard + 22;
 }
 
+// Medidor de 5 puntos para un eje de similitud (alta/media/baja/nula).
+const NIVEL_PUNTOS = { alta: 5, media: 3, baja: 2, nula: 1 };
+const NIVEL_TEXTO = { alta: 'IDÉNTICA', media: 'PARECIDA', baja: 'ALGO PARECIDA', nula: 'DISTINTA' };
+
+function dibujarMedidor(doc, label, nivel, color, yBase) {
+  const llenos = NIVEL_PUNTOS[nivel] || 1;
+  const txt = NIVEL_TEXTO[nivel] || '';
+  doc.font('cuerpo').fontSize(9).fillColor(COLORES.textoCuerpo)
+    .text(label, X_MARGEN + 18, yBase, { width: 95, lineBreak: false });
+  const dx = X_MARGEN + 122, r = 3.2, gap = 11;
+  for (let i = 0; i < 5; i++) {
+    const cx = dx + i * gap;
+    doc.circle(cx, yBase + 5, r);
+    if (i < llenos) doc.fillColor(color).fill();
+    else doc.lineWidth(0.8).strokeColor(COLORES.separador).stroke();
+  }
+  doc.font('demi').fontSize(8.5).fillColor(color)
+    .text(txt, dx + 5 * gap + 6, yBase, { width: 130, lineBreak: false });
+  return yBase + 15;
+}
+
+function dibujarComparativas(doc, informe) {
+  const comps = informe.cliente?.comparativas || [];
+  const resto = informe.cliente?.comparativas_resto || 0;
+  if (!comps.length) return;
+
+  asegurarEspacio(doc, 70);
+  doc.font('titulo').fontSize(13).fillColor(COLORES.navy)
+    .text('MARCAS QUE ENCONTRAMOS REGISTRADAS', X_MARGEN, doc.y);
+  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
+    .text(`Cruzamos "${informe._marcaConsultada || 'tu marca'}" contra la base del INPI. Esto es lo que aparece y cuánto se parece a tu marca.`,
+      X_MARGEN, doc.y + 3, { width: ANCHO_CONTENIDO });
+  doc.y += 14;
+
+  for (const c of comps) {
+    const choca = c.choca === true;
+    const color = choca ? COLORES.fail : COLORES.textoSuave;
+    const bg = choca ? '#fef2f2' : '#f1f5f9';
+    const medidores = choca
+      ? [
+        { label: 'Cómo suena', nivel: c.como_suena },
+        { label: 'Cómo se escribe', nivel: c.como_se_escribe },
+        { label: 'Qué evoca', nivel: c.que_evoca },
+      ].filter(m => m.nivel)
+      : [];
+
+    const alto = medidores.length ? (50 + medidores.length * 15) : 42;
+    asegurarEspacio(doc, alto + 10);
+    const yIni = doc.y;
+
+    doc.save();
+    doc.roundedRect(X_MARGEN, yIni, ANCHO_CONTENIDO, alto, 7).fillColor(bg).fill();
+    doc.rect(X_MARGEN, yIni, 5, alto).fillColor(color).fill();
+    doc.restore();
+
+    doc.font('titulo').fontSize(13).fillColor(COLORES.navy)
+      .text(c.marca || '—', X_MARGEN + 18, yIni + 11, { lineBreak: false, width: 300 });
+
+    const badge = choca ? 'CHOCA' : 'OTRO RUBRO';
+    const bw = doc.font('demi').fontSize(8.5).widthOfString(badge) + 18;
+    doc.save();
+    doc.roundedRect(X_MARGEN + ANCHO_CONTENIDO - bw - 14, yIni + 11, bw, 17, 8.5)
+      .fillColor(color).fill();
+    doc.fillColor('#ffffff').font('demi').fontSize(8.5)
+      .text(badge, X_MARGEN + ANCHO_CONTENIDO - bw - 14, yIni + 15, { width: bw, align: 'center', lineBreak: false });
+    doc.restore();
+
+    const sub = [
+      c.clase != null ? `Clase ${c.clase}` : null,
+      c.rubro && c.rubro !== '—' ? c.rubro : null,
+      c.titular,
+      c.estado,
+    ].filter(Boolean).join(' · ');
+    doc.font('cuerpo').fontSize(9).fillColor(COLORES.textoSuave)
+      .text(sub, X_MARGEN + 18, yIni + 29, { width: ANCHO_CONTENIDO - 36, lineBreak: false });
+
+    if (medidores.length) {
+      let y = yIni + 48;
+      for (const m of medidores) y = dibujarMedidor(doc, m.label, m.nivel, color, y);
+    }
+    doc.y = yIni + alto + 8;
+  }
+
+  if (resto > 0) {
+    doc.font('cuerpo-light').fontSize(9).fillColor(COLORES.textoSuave)
+      .text(`Y ${resto} coincidencia${resto > 1 ? 's' : ''} más de menor relevancia que no detallamos acá.`,
+        X_MARGEN, doc.y + 2, { width: ANCHO_CONTENIDO });
+    doc.y += 6;
+  }
+  doc.moveDown(0.6);
+}
+
 function dibujarBloque(doc, bloque) {
   if (!bloque) return;
   const titulo = bloque.titulo || '';
@@ -377,8 +469,11 @@ function generarPDF(informe, cliente, contexto = {}) {
       deshabilitarLigaduras(doc);
       doc.font('cuerpo');
 
+      informe._marcaConsultada = cliente.marca;
+
       dibujarHeader(doc, { cliente });
       dibujarVeredicto(doc, informe);
+      dibujarComparativas(doc, informe);
 
       const bloques = informe.cliente?.bloques || [];
       for (const b of bloques) dibujarBloque(doc, b);

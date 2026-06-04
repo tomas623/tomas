@@ -56,6 +56,14 @@ Pre-checks especiales: ninguno.`,
       alternativas_sugeridas: ['Acmétik', 'Acmélab', 'NeoAcme', 'Acmegest'],
       cliente: {
         veredicto_breve: 'Detectamos un obstáculo para registrar "Acmé": ya existe una marca casi idéntica registrada en tu mismo rubro ("Acme", con la única diferencia de la tilde). El INPI muy probablemente rechazaría la solicitud tal como está. Con un ajuste en la denominación, el registro pasa a ser viable.',
+        comparativas: [
+          {
+            marca: 'Acme', clase: 35, rubro: 'publicidad y gestión',
+            titular: 'Acme Holdings SA', estado: 'Registrada', choca: true,
+            como_suena: 'alta', como_se_escribe: 'alta', que_evoca: 'alta',
+          },
+        ],
+        comparativas_resto: 0,
         bloques: [
           {
             icono: 'fail',
@@ -127,6 +135,19 @@ Pre-checks especiales: ninguno.`,
       alternativas_sugeridas: ['Foccaly', 'Foxxa', 'Fokima', 'Foccatech'],
       cliente: {
         veredicto_breve: 'Detectamos un obstáculo importante para registrar "Focca": existe otra marca registrada en tu mismo rubro ("FOKKA") que se pronuncia idéntica. El INPI muy probablemente rechazaría la solicitud tal como está. Con un ajuste fonético al nombre, el registro pasa a ser viable.',
+        comparativas: [
+          {
+            marca: 'FOKKA', clase: 9, rubro: 'electrónica de consumo',
+            titular: 'Otro Titular SRL', estado: 'Registrada', choca: true,
+            como_suena: 'alta', como_se_escribe: 'media', que_evoca: 'media',
+          },
+          {
+            marca: 'Focca', clase: 25, rubro: 'indumentaria',
+            titular: 'Indumentaria Trendy SA', estado: 'Registrada', choca: false,
+            como_suena: null, como_se_escribe: null, que_evoca: null,
+          },
+        ],
+        comparativas_resto: 0,
         bloques: [
           {
             icono: 'fail',
@@ -196,6 +217,14 @@ Pre-checks especiales: ninguno.`,
       alternativas_sugeridas: [],
       cliente: {
         veredicto_breve: 'El registro de "Nimbus" en clase 42 (software) es viable. Encontramos una marca parecida ("Nimboes") pero está en un rubro completamente distinto — ropa e indumentaria — por lo que no genera conflicto para tu solicitud.',
+        comparativas: [
+          {
+            marca: 'Nimboes', clase: 25, rubro: 'indumentaria',
+            titular: 'Indumentaria Casual SRL', estado: 'Registrada', choca: false,
+            como_suena: null, como_se_escribe: null, que_evoca: null,
+          },
+        ],
+        comparativas_resto: 0,
         bloques: [
           {
             icono: 'ok',
@@ -263,6 +292,14 @@ Pre-checks especiales: ninguno.`,
       alternativas_sugeridas: ['Nombre desvinculado por completo del campo léxico — sugerir alternativa neutra elegida por el cliente'],
       cliente: {
         veredicto_breve: 'Detectamos un obstáculo sin salida para registrar "CocaCola Studio". Coca-Cola es una de las marcas más conocidas del mundo y tiene protección especial en todos los rubros, no solo en bebidas. Cualquier denominación que conserve "Coca" o "Cola" como elemento principal será rechazada, independientemente del rubro al que apunte.',
+        comparativas: [
+          {
+            marca: 'Coca-Cola', clase: 32, rubro: 'bebidas',
+            titular: 'The Coca-Cola Company', estado: 'Registrada', choca: true,
+            como_suena: 'alta', como_se_escribe: 'alta', que_evoca: 'alta',
+          },
+        ],
+        comparativas_resto: 0,
         bloques: [
           {
             icono: 'fail',
@@ -356,6 +393,20 @@ Devolvé UN ÚNICO JSON con esta estructura exacta. Sin texto extra, sin markdow
   },
   "cliente": {
     "veredicto_breve": "2-3 frases en lenguaje del emprendedor. SIN citas legales. Empieza con el qué (sí/no/depende) y termina con qué hacer.",
+    "comparativas": [
+      {
+        "marca": "Denominación EXACTA de la marca registrada (copiala del dato provisto, NO la inventes).",
+        "clase": number (clase Niza de la marca registrada),
+        "rubro": "Rubro en lenguaje cotidiano (ej: 'electrónica de consumo', 'indumentaria'). NO el número de clase.",
+        "titular": "Titular EXACTO provisto. Si es desconocido, 'Titular no informado'.",
+        "estado": "Registrada | Solicitada | En trámite (copialo del dato provisto).",
+        "choca": true | false,
+        "como_suena": "alta" | "media" | "baja" | "nula" | null,
+        "como_se_escribe": "alta" | "media" | "baja" | "nula" | null,
+        "que_evoca": "alta" | "media" | "baja" | "nula" | null
+      }
+    ],
+    "comparativas_resto": number,
     "bloques": [
       {
         "icono": "ok" | "warning" | "fail" | "info",
@@ -436,6 +487,26 @@ Cómo armar los bloques típicos según el caso:
 - NO crear bloques que solo valoren el nombre ("EL NOMBRE ESTÁ BUENO"
   NO va). Si la distintividad es relevante, integrala factualmente.
 
+TABLA "comparativas" (CRÍTICA — es la prueba del trabajo):
+- Incluí UNA entrada por cada marca registrada que te paso (principales Y
+  otras_clases), hasta un máximo de 20, ordenadas de mayor a menor riesgo
+  (primero las que chocan).
+- Campos factuales (marca, clase, titular, estado): copialos EXACTOS del dato
+  provisto. NUNCA los inventes ni los modifiques. "rubro" sí traducilo a
+  lenguaje cotidiano (no número de clase Niza).
+- "choca": true si la marca está en la misma clase del cliente o genera
+  conflicto directo (riesgo real de rechazo/oposición). false si está en
+  otro rubro y no choca por especialidad.
+- Medidores "como_suena" / "como_se_escribe" / "que_evoca": son la similitud
+  fonética / visual / ideológica respecto de la marca del cliente, traducidas.
+  Usá "alta" | "media" | "baja" | "nula". Completalos SIEMPRE que choca=true.
+  Para las que NO chocan (otro rubro), podés dejarlos en null: lo que importa
+  ahí es el dato de que existe, no el detalle de similitud.
+- "comparativas_resto": si la base detectó más marcas de las que listás
+  (porque superan 20 o son coincidencias menores que omitís), poné acá la
+  cantidad restante. Si listaste todas, poné 0.
+- Si no hay ninguna marca detectada, "comparativas": [] y "comparativas_resto": 0.
+
 BLOQUE INFORMATIVO sobre OTROS RUBROS (cuando aplique):
 - Si te paso candidatas en "otras clases" (candidatas_otras_clases), sumá
   un bloque tipo "info" con titulo "TAMBIÉN ENCONTRAMOS LA MARCA EN OTROS
@@ -466,7 +537,7 @@ ${JSON.stringify(ex.output, null, 2)}`).join('\n\n')}
 // ──────────────────────────────────────────────────────────────────────────────
 function formatearCandidatas(lista, etiqueta) {
   if (!lista || lista.length === 0) return `${etiqueta}: ninguna detectada.`;
-  return `${etiqueta}:\n` + lista.slice(0, 5).map((c, i) => `
+  return `${etiqueta}:\n` + lista.slice(0, 20).map((c, i) => `
   ${i + 1}. Denominación: "${c.denominacion}"
      Clase Niza: ${c.clase}
      Titular: ${c.titular || 'desconocido'}
@@ -560,6 +631,22 @@ function stubInforme(marca, candidatas_principales, candidatas_otras_clases, fla
     alternativas_sugeridas: [],
     cliente: {
       veredicto_breve: `[STUB sin GEMINI_API_KEY] Análisis aproximado: nivel ${nivel}, ${candidatas.length} marca(s) parecida(s) detectada(s) y ${flags.length} restricción(es) legal(es).`,
+      comparativas: [
+        ...candidatas.slice(0, 20).map(c => ({
+          marca: c.denominacion, clase: c.clase, rubro: c.rubro || '—',
+          titular: c.titular || 'Titular no informado', estado: c.estado || 'Registrada',
+          choca: (c.score || 0) >= 80,
+          como_suena: (c.score || 0) >= 80 ? 'alta' : 'media',
+          como_se_escribe: (c.score || 0) >= 80 ? 'media' : 'baja',
+          que_evoca: 'media',
+        })),
+        ...(candidatas_otras_clases || []).slice(0, 20).map(c => ({
+          marca: c.denominacion, clase: c.clase, rubro: c.rubro || '—',
+          titular: c.titular || 'Titular no informado', estado: c.estado || 'Registrada',
+          choca: false, como_suena: null, como_se_escribe: null, que_evoca: null,
+        })),
+      ],
+      comparativas_resto: 0,
       bloques: [
         {
           icono: nivel === 'alto' ? 'fail' : nivel === 'medio' ? 'warning' : 'ok',
