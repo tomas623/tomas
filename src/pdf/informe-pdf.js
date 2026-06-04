@@ -9,6 +9,7 @@ const fs = require('fs');
 
 const FONT_DIR = path.join(__dirname, '..', '..', 'TIPOGRAFIA');
 const LOGO_PATH = path.join(__dirname, '..', '..', 'legalpacers-logos-01.png');
+const ISOTIPO_PATH = path.join(__dirname, '..', '..', 'static', 'isotipo.png');
 
 const COLORES = {
   azul: '#1B6EF3',
@@ -120,8 +121,13 @@ function dibujarHeader(doc, { cliente }) {
 
   doc.font('cuerpo-light').fontSize(9).fillColor(COLORES.textoSuave)
     .text('MARCA CONSULTADA', X_MARGEN, doc.y);
-  doc.font('titulo').fontSize(28).fillColor(COLORES.navy)
-    .text(cliente.marca, X_MARGEN, doc.y, { lineGap: 0 });
+  const yMarca = doc.y;
+  // Isotipo como sello de marca a la derecha, alineado con la denominación.
+  if (fs.existsSync(ISOTIPO_PATH)) {
+    doc.image(ISOTIPO_PATH, X_MARGEN + ANCHO_CONTENIDO - 46, yMarca + 2, { width: 46 });
+  }
+  doc.font('titulo').fontSize(32).fillColor(COLORES.navy)
+    .text(cliente.marca, X_MARGEN, yMarca, { lineGap: 0, width: ANCHO_CONTENIDO - 60 });
   if (Array.isArray(cliente.clases) && cliente.clases.length > 0) {
     doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
       .text(
@@ -133,34 +139,74 @@ function dibujarHeader(doc, { cliente }) {
   doc.moveDown(1.2);
 }
 
+// Barra de viabilidad 0-100 con zonas (rojo/ámbar/verde) y marcador en el valor.
+function dibujarGauge(doc, x, y, w, viab, color) {
+  const h = 9;
+  const zonas = [
+    { frac: 0.40, c: COLORES.riesgoAlto },
+    { frac: 0.30, c: COLORES.riesgoMedio },
+    { frac: 0.30, c: COLORES.riesgoBajo },
+  ];
+  doc.save();
+  doc.roundedRect(x, y, w, h, h / 2).clip();
+  let zx = x;
+  for (const z of zonas) {
+    const zw = w * z.frac;
+    doc.rect(zx, y, zw, h).fillColor(z.c).fillOpacity(0.25).fill();
+    zx += zw;
+  }
+  doc.restore();
+  doc.fillOpacity(1);
+
+  const mx = x + Math.max(0, Math.min(100, viab)) / 100 * w;
+  doc.save();
+  doc.circle(mx, y + h / 2, 6.5).fillColor('#ffffff').fill();
+  doc.circle(mx, y + h / 2, 6.5).lineWidth(2).strokeColor(color).stroke();
+  doc.circle(mx, y + h / 2, 2.6).fillColor(color).fill();
+  doc.restore();
+}
+
 function dibujarVeredicto(doc, informe) {
   const nivel = informe.nivel_riesgo || 'medio';
   const viab = informe.viabilidad_estimada;
   const color = colorRiesgo(nivel);
   const veredictoBreve = informe.cliente?.veredicto_breve || informe.resumen_ejecutivo || '—';
+  const hayGauge = typeof viab === 'number';
 
   doc.font('cuerpo').fontSize(11);
-  const altoTexto = doc.heightOfString(veredictoBreve, { width: ANCHO_CONTENIDO - 40 });
-  const altoCard = altoTexto + 70;
+  const altoTexto = doc.heightOfString(veredictoBreve, { width: ANCHO_CONTENIDO - 48 });
+  const altoCard = altoTexto + (hayGauge ? 100 : 64);
 
   asegurarEspacio(doc, altoCard + 16);
   const yCard = doc.y;
 
-  // Banner superior con el riesgo
   doc.save();
-  doc.roundedRect(X_MARGEN, yCard, ANCHO_CONTENIDO, altoCard, 8)
+  doc.roundedRect(X_MARGEN, yCard, ANCHO_CONTENIDO, altoCard, 10)
     .fillColor(COLORES.cardBg).fill();
   doc.rect(X_MARGEN, yCard, 6, altoCard).fillColor(color).fill();
   doc.restore();
 
-  doc.font('titulo').fontSize(14).fillColor(color)
-    .text(etiquetaRiesgo(nivel), X_MARGEN + 24, yCard + 16);
-  if (typeof viab === 'number') {
-    doc.font('cuerpo-light').fontSize(10).fillColor(COLORES.textoSuave)
-      .text(`Viabilidad estimada: ${viab}%`, X_MARGEN + 24, yCard + 36);
+  // Etiqueta de riesgo grande (izquierda)
+  doc.font('titulo').fontSize(16).fillColor(color)
+    .text(etiquetaRiesgo(nivel), X_MARGEN + 24, yCard + 18, { lineBreak: false, width: 280 });
+
+  let yTexto = yCard + 46;
+  if (hayGauge) {
+    // Número grande de viabilidad (derecha)
+    doc.font('titulo').fontSize(22).fillColor(color)
+      .text(`${viab}%`, X_MARGEN + ANCHO_CONTENIDO - 110, yCard + 12, { width: 86, align: 'right', lineBreak: false });
+    doc.font('cuerpo-light').fontSize(7).fillColor(COLORES.textoSuave)
+      .text('VIABILIDAD ESTIMADA', X_MARGEN + ANCHO_CONTENIDO - 160, yCard + 37, { width: 136, align: 'right', lineBreak: false });
+    // Barra
+    dibujarGauge(doc, X_MARGEN + 24, yCard + 54, ANCHO_CONTENIDO - 48, viab, color);
+    doc.font('cuerpo-light').fontSize(7).fillColor(COLORES.textoSuave)
+      .text('Menos viable', X_MARGEN + 24, yCard + 66, { lineBreak: false, width: 120 });
+    doc.font('cuerpo-light').fontSize(7).fillColor(COLORES.textoSuave)
+      .text('Más viable', X_MARGEN + 24, yCard + 66, { lineBreak: false, width: ANCHO_CONTENIDO - 48, align: 'right' });
+    yTexto = yCard + 84;
   }
   doc.font('cuerpo').fontSize(11).fillColor(COLORES.textoCuerpo)
-    .text(veredictoBreve, X_MARGEN + 24, yCard + 54, { width: ANCHO_CONTENIDO - 40 });
+    .text(veredictoBreve, X_MARGEN + 24, yTexto, { width: ANCHO_CONTENIDO - 48 });
 
   doc.y = yCard + altoCard + 22;
 }
@@ -186,17 +232,26 @@ function dibujarMedidor(doc, label, nivel, color, yBase) {
   return yBase + 15;
 }
 
+// Título de sección con barra de acento azul a la izquierda.
+function dibujarTituloSeccion(doc, texto) {
+  const yT = doc.y;
+  doc.save();
+  doc.roundedRect(X_MARGEN, yT + 2, 4, 17, 2).fillColor(COLORES.azul).fill();
+  doc.restore();
+  doc.font('titulo').fontSize(15).fillColor(COLORES.navy)
+    .text(texto, X_MARGEN + 12, yT, { width: ANCHO_CONTENIDO - 12 });
+}
+
 function dibujarComparativas(doc, informe) {
   const comps = informe.cliente?.comparativas || [];
   const resto = informe.cliente?.comparativas_resto || 0;
   if (!comps.length) return;
 
   asegurarEspacio(doc, 70);
-  doc.font('titulo').fontSize(13).fillColor(COLORES.navy)
-    .text('MARCAS QUE ENCONTRAMOS REGISTRADAS', X_MARGEN, doc.y);
+  dibujarTituloSeccion(doc, 'MARCAS QUE ENCONTRAMOS REGISTRADAS');
   doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
     .text(`Cruzamos "${informe._marcaConsultada || 'tu marca'}" contra la base del INPI. Esto es lo que aparece y cuánto se parece a tu marca.`,
-      X_MARGEN, doc.y + 3, { width: ANCHO_CONTENIDO });
+      X_MARGEN + 12, doc.y + 3, { width: ANCHO_CONTENIDO - 12 });
   doc.y += 14;
 
   for (const c of comps) {
