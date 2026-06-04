@@ -405,15 +405,26 @@ function dibujarProximosPasos(doc, informe) {
   doc.y = yInicio + altoEstimado + 12;
 }
 
+// Encuadre normativo fijo: aparece en todos los informes, antes del artículo
+// puntual que el motor cita para cada caso.
+const MARCO_LEGAL = 'Este informe se elaboró conforme al marco normativo vigente en materia marcaria: '
+  + 'Ley N° 22.362 de Marcas y Designaciones y su decreto reglamentario, el Convenio de París '
+  + 'para la Protección de la Propiedad Industrial, el Acuerdo sobre los ADPIC y los criterios '
+  + 'de la práctica registral del INPI.';
+
 function dibujarApendiceLegal(doc, informe) {
   const apendice = informe.cliente?.apendice_legal_corto;
-  if (!apendice) return;
-  asegurarEspacio(doc, 50);
+  asegurarEspacio(doc, 64);
   doc.moveDown(0.5);
   doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
     .text('BASE LEGAL', X_MARGEN, doc.y);
   doc.font('italic').fontSize(8).fillColor(COLORES.textoSuave)
-    .text(apendice, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
+    .text(MARCO_LEGAL, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
+  if (apendice) {
+    doc.moveDown(0.2);
+    doc.font('italic').fontSize(8).fillColor(COLORES.textoSuave)
+      .text(apendice, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
+  }
 }
 
 function dibujarPie(doc) {
