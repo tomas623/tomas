@@ -79,9 +79,9 @@ Pre-checks especiales: ninguno.`,
         ],
         proximos_pasos: [
           'Te recomendamos no presentar "Acmé" tal como está mientras "Acme" (Acme Holdings SA) esté vigente en clase 35.',
-          'Conviene modificar la denominación con un cambio que vaya más allá de la tilde. Algunas opciones que rompen el conflicto: Acmétik, Acmélab, NeoAcme, Acmegest.',
-          'Cuando definas la variante, pasanos el nombre nuevo y la analizamos sin costo adicional. Está incluido en este informe.',
-          'Una alternativa más lenta es solicitar a Acme Holdings SA una autorización escrita para coexistir. No es lo habitual, pero existe la vía.',
+          'Conviene definir una variante que suene y se lea distinta a "Acme" — el cambio tiene que ir más allá de la tilde, que para el INPI no genera diferencia.',
+          'Cuando tengas la variante definida, pasanos el nombre nuevo y la analizamos sin costo adicional. Está incluido en este informe.',
+          'Una alternativa más lenta y compleja es solicitar a Acme Holdings SA una autorización escrita para coexistir. Antes de avanzar por esta vía, conviene consultarlo con un abogado especializado en propiedad industrial para evaluar viabilidad y términos del acuerdo.',
         ],
         apendice_legal_corto: 'Este análisis se apoya en el Art. 3 inc. a y b de la Ley 22.362 de Marcas, que prohíbe registrar marcas idénticas o casi idénticas a otras ya registradas en la misma clase.',
       },
@@ -172,9 +172,9 @@ Pre-checks especiales: ninguno.`,
         ],
         proximos_pasos: [
           'Te recomendamos no presentar "Focca" tal cual está mientras FOKKA siga vigente como marca registrada en clase 9.',
-          'Conviene definir una variante con un cambio fonético claro. Algunas opciones: Foccaly, Foxxa, Fokima o Foccatech. Cualquiera rompe la similitud con FOKKA.',
-          'Cuando definas la variante, pasanos el nombre nuevo y la analizamos sin costo adicional. Está incluido en este informe.',
-          'Una alternativa más lenta es solicitar a Otro Titular SRL una autorización escrita para coexistir. No es lo habitual, pero existe la vía.',
+          'Conviene definir una variante que suene claramente distinta a FOKKA — la diferencia fonética es la que más pesa al cotejar marcas. No alcanza con cambiar una letra si al pronunciarla se sigue escuchando igual.',
+          'Cuando tengas la variante definida, pasanos el nombre nuevo y la analizamos sin costo adicional. Está incluido en este informe.',
+          'Una alternativa más lenta y compleja es solicitar a Otro Titular SRL una autorización escrita para coexistir. Antes de avanzar por esta vía, conviene consultarlo con un abogado especializado en propiedad industrial para evaluar viabilidad y términos del acuerdo.',
         ],
         apendice_legal_corto: 'Este análisis se apoya en el Art. 3 inc. b de la Ley 22.362 de Marcas, que prohíbe registrar marcas que puedan confundirse fonéticamente aunque estén escritas distinto.',
       },
@@ -467,8 +467,21 @@ OBLIGATORIO:
 - Usá analogías cotidianas si ayudan a entender (bar, panadería, marcas
   reconocibles).
 - "proximos_pasos" deben ser accionables: usá "Te recomendamos", "Conviene",
-  "Una alternativa es". Mencioná opciones concretas (variantes, registros que
-  asegurar, decisiones que tomar).
+  "Una alternativa es". Mencioná decisiones a tomar y registros a asegurar.
+
+REGLAS DUROS de "proximos_pasos" en bloque cliente:
+- NO PROPONGAS NOMBRES CONCRETOS al cliente como alternativa de marca.
+  En lugar de "podés probar con Foccaly, Foxxa, Fokima", decí
+  "conviene definir una variante que SUENE distinta a [marca chocante]"
+  o "que se LEA y se PRONUNCIE distinta". Los nombres concretos los pensará
+  el cliente (es su marca, su decisión comercial). Los nombres concretos
+  SÍ pueden ir en el campo técnico "alternativas_sugeridas" porque ese
+  campo es para el Agente revisor, no para el cliente final.
+- Si recomendás pedir consentimiento / autorización / carta de coexistencia
+  al titular de la marca preexistente, SIEMPRE aclarar que conviene
+  consultarlo PRIMERO con un abogado especializado en propiedad industrial
+  antes de iniciar contacto. Es un trámite contractual con consecuencias
+  legales y no debe encararse solo.
 - "apendice_legal_corto" es la ÚNICA parte del bloque cliente donde podés
   citar el artículo de la ley. 1-2 frases máximo.
 - Iconos válidos para "icono": "ok" (verde, positivo), "warning" (amarillo,
