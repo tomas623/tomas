@@ -411,7 +411,7 @@ function dibujarApendiceLegal(doc, informe) {
   asegurarEspacio(doc, 50);
   doc.moveDown(0.5);
   doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
-    .text('BASE LEGAL · para los curiosos', X_MARGEN, doc.y);
+    .text('BASE LEGAL', X_MARGEN, doc.y);
   doc.font('italic').fontSize(8).fillColor(COLORES.textoSuave)
     .text(apendice, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
 }
@@ -434,7 +434,7 @@ function dibujarPie(doc) {
       .text(`Página ${i + 1} de ${pageCount}`,
         X_MARGEN, yPie + 8, { lineBreak: false, width: ANCHO_CONTENIDO, align: 'right' });
     doc.font('italic').fontSize(7).fillColor(COLORES.textoSuave)
-      .text('Análisis técnico orientativo. El INPI resuelve sobre el expediente de fondo.',
+      .text('Informe técnico de registrabilidad, de carácter orientativo. La resolución definitiva sobre la marca compete exclusivamente al INPI.',
         X_MARGEN, yPie + 24, { lineBreak: false, width: ANCHO_CONTENIDO, align: 'left' });
     // Reseteamos el cursor en cada pagina para que ningun text posterior
     // herede doc.y cerca del borde y dispare un addPage espurio.
