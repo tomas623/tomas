@@ -820,8 +820,8 @@ function generarPDF(informe, cliente, contexto = {}) {
       dibujarContextoDigital(doc, contexto);
       dibujarProximosPasos(doc, informe);
       dibujarApendiceLegal(doc, informe);
-      dibujarQueImplicaRegistro(doc);
       dibujarCTAs(doc, cliente);
+      dibujarQueImplicaRegistro(doc);
       dibujarPie(doc);
 
       doc.end();
