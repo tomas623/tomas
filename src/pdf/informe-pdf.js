@@ -341,7 +341,7 @@ function dibujarMetodologia(doc) {
     asegurarEspacio(doc, altoD + 32);
     const yE = doc.y;
     doc.circle(X_MARGEN + 6, yE + 7, 2.8).fillColor(COLORES.azul).fill();
-    doc.font('demi').fontSize(10).fillColor(COLORES.navy)
+    doc.font('cuerpo-bold').fontSize(10).fillColor(COLORES.navy)
       .text(e.t, X_MARGEN + 18, yE, { width: ANCHO_CONTENIDO - 18 });
     doc.moveDown(0.2);
     doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
@@ -368,7 +368,7 @@ function medirCardCTA(doc, { titulo, parrafos }) {
 
 // Dibuja una card de CTA con alturas medidas (sin solapamientos).
 function dibujarCardCTA(doc, opts) {
-  const { titulo, tituloColor, parrafos, etiquetaBoton, botonColor, bg, barra } = opts;
+  const { titulo, tituloColor, parrafos, etiquetaBoton, botonColor, bg, barra, link } = opts;
   const padX = 24;
   const wTexto = ANCHO_CONTENIDO - padX - 18;
   const alto = medirCardCTA(doc, opts);
@@ -395,15 +395,74 @@ function dibujarCardCTA(doc, opts) {
     doc.moveDown(0.3);
   }
 
-  const wBoton = doc.font('demi').fontSize(9).widthOfString(etiquetaBoton) + 34;
+  const wBoton = doc.font('cuerpo-bold').fontSize(9).widthOfString(etiquetaBoton) + 34;
   const yBtn = doc.y + 8;
   doc.save();
   doc.roundedRect(X_MARGEN + padX, yBtn, wBoton, 22, 11).fillColor(botonColor).fill();
-  doc.fillColor('#ffffff').font('demi').fontSize(9)
+  doc.fillColor('#ffffff').font('cuerpo-bold').fontSize(9)
     .text(etiquetaBoton, X_MARGEN + padX, yBtn + 7, { width: wBoton, align: 'center', lineBreak: false });
   doc.restore();
+  if (link) {
+    doc.link(X_MARGEN + padX, yBtn, wBoton, 22, link);
+  }
 
   doc.y = y + alto + 12;
+}
+
+// Página educativa sobre qué cubre el registro de una marca.
+// Va antes de los CTAs: educa al cliente sobre el alcance del servicio
+// que después se le ofrece registrar.
+function dibujarQueImplicaRegistro(doc) {
+  // Bloque cohesionado: si no entra entero, salta a página nueva.
+  asegurarEspacio(doc, 480);
+
+  dibujarTituloSeccion(doc, 'QUÉ IMPLICA REGISTRAR TU MARCA');
+  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
+    .text('Si después de este informe decidís avanzar, esto es lo que el registro te da concretamente:',
+      X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
+  doc.y += 22;
+
+  const bloques = [
+    {
+      t: 'Derecho exclusivo sobre la marca',
+      d: 'Sos el único que puede usar comercialmente esa denominación en las clases registradas en todo el territorio argentino. Cualquier tercero que la use sin tu autorización está infringiendo tu derecho.',
+    },
+    {
+      t: 'Vigencia de 10 años, renovable indefinidamente',
+      d: 'El registro vale por 10 años desde su concesión y se renueva por períodos iguales mientras la marca esté en uso. Para renovar es condición haber usado la marca en los últimos 5 años.',
+    },
+    {
+      t: 'Defensa frente a terceros',
+      d: 'Podés oponerte a solicitudes posteriores de marcas idénticas o confundibles, iniciar acciones civiles por infracción y solicitar medidas en frontera contra importaciones que la vulneren.',
+    },
+    {
+      t: 'Activo intangible transferible',
+      d: 'La marca registrada es un bien que se puede vender, licenciar, dar en garantía o aportar a una sociedad. Tiene valor económico autónomo y se contabiliza como activo.',
+    },
+    {
+      t: 'Plazo y trámite',
+      d: 'Desde la presentación hasta la concesión, el INPI demora habitualmente entre 12 y 18 meses si no hay oposiciones de terceros. Nosotros nos encargamos del trámite completo y te mantenemos informado en cada etapa.',
+    },
+    {
+      t: 'Cobertura del servicio LegalPacers',
+      d: 'Incluye el análisis previo de viabilidad (este informe), la redacción y presentación de la solicitud ante INPI, el seguimiento del expediente y la respuesta a observaciones u oposiciones simples. Los aranceles oficiales del INPI se facturan aparte según la cantidad de clases.',
+    },
+  ];
+
+  for (const b of bloques) {
+    doc.font('cuerpo').fontSize(9.5);
+    const altoD = doc.heightOfString(b.d, { width: ANCHO_CONTENIDO - 28, lineGap: 2 });
+    asegurarEspacio(doc, altoD + 34);
+    const yB = doc.y;
+    doc.circle(X_MARGEN + 6, yB + 7, 2.8).fillColor(COLORES.azul).fill();
+    doc.font('cuerpo-bold').fontSize(10).fillColor(COLORES.navy)
+      .text(b.t, X_MARGEN + 18, yB, { width: ANCHO_CONTENIDO - 18 });
+    doc.moveDown(0.2);
+    doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
+      .text(b.d, X_MARGEN + 18, doc.y, { width: ANCHO_CONTENIDO - 18, lineGap: 2 });
+    doc.moveDown(0.7);
+  }
+  doc.moveDown(0.3);
 }
 
 // CTAs al cierre del informe — el plan comercial del estudio.
@@ -414,10 +473,11 @@ function dibujarCTAs(doc, cliente) {
     parrafos: [
       { txt: 'Si tenés dudas puntuales sobre este informe, alternativas viables, riesgos del negocio o estrategia marcaria a largo plazo, te asistimos en una reunión 1 a 1.' },
     ],
-    etiquetaBoton: 'AGENDAR CONSULTA →',
+    etiquetaBoton: 'AGENDAR CONSULTA',
     botonColor: COLORES.navy,
     bg: { color: COLORES.cardBg },
     barra: COLORES.azul,
+    link: 'https://calendar.app.google/rx6vHWyyjFoEr7Vx9',
   };
   const card2 = {
     titulo: 'Registrá tu marca con LegalPacers',
@@ -426,7 +486,7 @@ function dibujarCTAs(doc, cliente) {
       { txt: 'Nos encargamos de la presentación, el seguimiento ante el INPI y las eventuales oposiciones.' },
       { txt: 'Descontamos íntegramente el valor de este informe del costo del registro.', bold: true },
     ],
-    etiquetaBoton: 'INICIAR EL REGISTRO →',
+    etiquetaBoton: 'INICIAR EL REGISTRO',
     botonColor: COLORES.azul,
     bg: { color: COLORES.azul, opacity: 0.08 },
     barra: COLORES.azul,
@@ -447,9 +507,9 @@ function dibujarCTAs(doc, cliente) {
   dibujarCardCTA(doc, card2);
 
   // Datos de contacto del estudio
-  doc.moveDown(0.2);
+  doc.moveDown(0.3);
   doc.font('cuerpo-light').fontSize(8.5).fillColor(COLORES.textoSuave)
-    .text('Escribinos a contacto@legalpacers.com o reservá una llamada en legalpacers.com.',
+    .text('Escribinos a contacto@legalpacers.com  ·  WhatsApp +54 9 11 2877-4200  ·  legalpacers.com',
       X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, align: 'center', lineBreak: false });
 }
 
@@ -760,6 +820,7 @@ function generarPDF(informe, cliente, contexto = {}) {
       dibujarContextoDigital(doc, contexto);
       dibujarProximosPasos(doc, informe);
       dibujarApendiceLegal(doc, informe);
+      dibujarQueImplicaRegistro(doc);
       dibujarCTAs(doc, cliente);
       dibujarPie(doc);
 
