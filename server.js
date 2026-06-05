@@ -245,7 +245,17 @@ async function procesarPago(paymentId) {
     db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
       .run(String(paymentId), lead.id);
     console.log(`[webhook] lead ${lead.id} (${lead.tipo}, ${lead.marca}) marcado pagado.`);
-    // TODO: mail al cliente y al equipo legal con Resend.
+
+    // Dispara el orquestador del informe pago en background — sin await,
+    // para no demorar el ACK al webhook de MP (que tiene timeout corto).
+    if (lead.tipo === 'informe') {
+      const { procesarInformePago } = require('./src/jobs/informe-pago');
+      setImmediate(() => {
+        procesarInformePago(lead.id).catch(err =>
+          console.error(`[webhook] orquestador informe lead ${lead.id} falló:`, err),
+        );
+      });
+    }
   } else {
     db.prepare(`UPDATE leads SET estado = ?, payment_ref = ? WHERE id = ?`)
       .run(estado || lead.estado, String(paymentId), lead.id);

@@ -159,6 +159,51 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_sesiones_user ON sesiones(usuario_id);
+
+  -- ===== Informes pagos (Sprint 2) =====
+  -- Snapshot completo del análisis pago, en cola para revisión humana
+  -- antes del envío al cliente (SLA 24hs).
+  CREATE TABLE IF NOT EXISTS informes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id INTEGER REFERENCES leads(id) ON DELETE SET NULL,
+
+    -- snapshot del solicitante al momento de generar
+    marca TEXT NOT NULL,
+    tipo TEXT NOT NULL DEFAULT 'denominativa',
+    clases TEXT,
+    rubro TEXT,
+    solicitante TEXT,
+    email TEXT,
+
+    -- resultados del análisis (JSON serializado)
+    informe_json TEXT,
+    dominios_json TEXT,
+    redes_json TEXT,
+    flags_leyes TEXT,
+
+    -- campos denormalizados para listar la cola rápido
+    nivel_riesgo TEXT,
+    viabilidad_estimada INTEGER,
+
+    -- PDF generado
+    pdf_path TEXT,
+    pdf_bytes INTEGER,
+
+    -- workflow
+    estado TEXT NOT NULL DEFAULT 'pendiente'
+      CHECK(estado IN ('pendiente','generando','borrador','revisado','enviado','error')),
+    notas_revision TEXT,
+    error_msg TEXT,
+    revisor_email TEXT,
+
+    -- timestamps
+    generado_at TEXT,
+    revisado_at TEXT,
+    enviado_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_informes_lead ON informes(lead_id);
+  CREATE INDEX IF NOT EXISTS idx_informes_estado ON informes(estado, created_at);
 `);
 
 // ===== Migraciones incrementales (post-create) =====
