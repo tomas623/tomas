@@ -124,6 +124,99 @@ app.post('/api/marca/check', (req, res) => {
   }));
 });
 
+// ===== 2.5 Captación de lead free =====
+// Se llama después del pre-check gratuito cuando el usuario elige "guardar este
+// resultado por mail" en lugar de pagar el informe. Guarda el lead para el
+// follow-up de 48h y le envía una copia del veredicto al cliente.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+app.post('/api/marca/lead-free', async (req, res) => {
+  const { marca, email, telefono, clases, rubro, veredicto, mensaje } = req.body || {};
+  if (!marca || !String(marca).trim()) return res.status(400).json(fail('Falta la marca'));
+  if (!email || !EMAIL_RE.test(String(email).trim())) return res.status(400).json(fail('Email inválido'));
+
+  const marcaLimpia = String(marca).trim();
+  const emailLimpio = String(email).trim().toLowerCase();
+  const clasesArr = Array.isArray(clases) ? clases.filter(Number.isFinite) : [];
+
+  // Dedupe: si la persona ya guardó esta misma marca, refrescamos created_at
+  // (vuelve a entrar al tope de la cola de follow-up) en vez de duplicar el lead.
+  const existente = db.prepare(`
+    SELECT id FROM leads WHERE tipo = 'free' AND email = ? AND lower(marca) = lower(?) LIMIT 1
+  `).get(emailLimpio, marcaLimpia);
+
+  let leadId;
+  if (existente) {
+    db.prepare(`
+      UPDATE leads SET
+        telefono = COALESCE(?, telefono),
+        clases = ?, rubro = ?, created_at = datetime('now')
+      WHERE id = ?
+    `).run(telefono || null, JSON.stringify(clasesArr), rubro || null, existente.id);
+    leadId = existente.id;
+  } else {
+    const externalReference = `free-${crypto.randomBytes(8).toString('hex')}`;
+    const info = db.prepare(`
+      INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, estado, external_reference)
+      VALUES ('free', ?, ?, ?, ?, ?, 'lead_free', ?)
+    `).run(marcaLimpia, emailLimpio, telefono || null, JSON.stringify(clasesArr), rubro || null, externalReference);
+    leadId = info.lastInsertRowid;
+  }
+
+  // Mail al usuario con el resumen + CTA al informe pago. No bloquea el response.
+  const { enviarMailGenerico } = require('./src/notificaciones');
+  const veredictoColor = veredicto === 'probablemente_disponible' ? '#059669'
+    : veredicto === 'no_disponible' ? '#dc2626' : '#d97706';
+  const veredictoTxt = veredicto === 'probablemente_disponible' ? 'Sin coincidencias exactas'
+    : veredicto === 'no_disponible' ? 'Coincidencia exacta detectada'
+    : 'Requiere análisis profesional';
+
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+      <h2 style="color:#1B6EF3">Guardamos tu chequeo</h2>
+      <p>Hola, te dejamos el resumen del pre-check gratuito que hiciste para
+         <strong>${marcaLimpia}</strong>.</p>
+      <div style="background:#f8fafc;border-left:4px solid ${veredictoColor};padding:14px 18px;border-radius:8px;margin:18px 0">
+        <div style="font-size:13px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;font-weight:600">Resultado preliminar</div>
+        <div style="font-size:16px;font-weight:700;color:${veredictoColor};margin-top:4px">${veredictoTxt}</div>
+        ${mensaje ? `<div style="margin-top:10px;font-size:13px">${String(mensaje).slice(0, 600)}</div>` : ''}
+      </div>
+      <p><strong>Importante:</strong> el pre-check gratuito solo busca coincidencias
+         <em>exactas</em> en la base del INPI. No analiza similitud fonética, conceptual,
+         marcas notorias ni leyes especiales — y son justamente esas verificaciones las
+         que en la práctica determinan si una marca llega a registrarse o se rechaza.</p>
+      <p style="margin-top:24px">
+        <a href="https://legalpacers.com#informe"
+           style="background:#1B6EF3;color:#fff;padding:11px 22px;border-radius:8px;
+                  text-decoration:none;display:inline-block;font-weight:600">
+          Quiero el informe completo de viabilidad
+        </a>
+      </p>
+      <p style="font-size:13px;color:#64748b;margin-top:16px">
+        Incluye análisis fonético, ideológico, choque con marcas notorias, chequeo de
+        leyes especiales, disponibilidad de dominios y redes. Lo firma un Agente de la
+        Propiedad Industrial matriculado y queda en tu poder en 24 horas hábiles.
+      </p>
+      <p style="margin-top:24px">¿Preferís contarnos tu caso primero?
+         <a href="https://calendar.app.google/rx6vHWyyjFoEr7Vx9">Agendá una llamada</a>
+         o respondé este mail.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="font-size:12px;color:#64748b">
+        LegalPacers · Consultora de Propiedad Industrial<br>
+        contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+      </p>
+    </div>`;
+
+  enviarMailGenerico({
+    to: emailLimpio,
+    subject: `Tu chequeo de "${marcaLimpia}" — guardado`,
+    html,
+    tag: 'lead_free_acuse',
+  }).catch(err => console.error('[lead-free] mail:', err.message));
+
+  res.json(ok({ id: leadId, dedup: !!existente }));
+});
+
 // ===== 2.3 / 2.4 helpers =====
 function crearLead({ tipo, marca, email, telefono, clases, rubro, monto }) {
   const externalReference = `${tipo}-${crypto.randomBytes(8).toString('hex')}`;
