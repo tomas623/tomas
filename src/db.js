@@ -220,4 +220,17 @@ db.exec(`
     WHERE boletin_id IS NOT NULL;
 `);
 
+// CRM-lite + follow-up: campos de gestión manual sobre la tabla leads.
+for (const [col, ddl] of [
+  ['pipeline_estado',     `ALTER TABLE leads ADD COLUMN pipeline_estado TEXT NOT NULL DEFAULT 'nuevo'`],
+  ['notas',               `ALTER TABLE leads ADD COLUMN notas TEXT`],
+  ['proximo_contacto_at', `ALTER TABLE leads ADD COLUMN proximo_contacto_at TEXT`],
+  ['asignado_a',          `ALTER TABLE leads ADD COLUMN asignado_a INTEGER REFERENCES usuarios(id)`],
+  ['follow_up_at',        `ALTER TABLE leads ADD COLUMN follow_up_at TEXT`],
+]) {
+  if (!columnExists('leads', col)) db.exec(ddl);
+}
+db.exec(`CREATE INDEX IF NOT EXISTS idx_leads_pipeline ON leads(pipeline_estado, created_at)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_leads_proximo ON leads(proximo_contacto_at) WHERE proximo_contacto_at IS NOT NULL`);
+
 module.exports = db;

@@ -5,6 +5,7 @@
 const cron = require('node-cron');
 const audit = require('../audit');
 const { correr } = require('./monitoreo-semanal');
+const followUp = require('./follow-up');
 const puentePython = require('./puente-python');
 
 const state = { tasks: [] };
@@ -39,7 +40,21 @@ function iniciar() {
     }
   });
 
-  // 2) Puente Python — sólo si PYTHON_DB_PATH está seteado. Default cada hora.
+  // 2) Follow-up diario — recordatorios a leads tibios sin pagar/contactar.
+  // Default 10:00 hora local; se desactiva con CRON_FOLLOWUP_ENABLED=false.
+  if ((process.env.CRON_FOLLOWUP_ENABLED || 'true').toLowerCase() !== 'false') {
+    programar('follow-up', (process.env.CRON_FOLLOWUP || '0 10 * * *').trim(), async () => {
+      try {
+        const s = await followUp.correr({});
+        if (s.total > 0) console.log(`[cron] follow-up: ${s.total} mail(s) enviados`);
+      } catch (err) {
+        console.error('[cron] follow-up ERROR:', err.message);
+        audit.log(null, 'cron.follow_up.error', { detalle: { error: err.message } });
+      }
+    });
+  }
+
+  // 3) Puente Python — sólo si PYTHON_DB_PATH está seteado. Default cada hora.
   if ((process.env.PYTHON_DB_PATH || '').trim()) {
     programar('puente-python', (process.env.CRON_PUENTE_PYTHON || '0 * * * *').trim(), async () => {
       try {

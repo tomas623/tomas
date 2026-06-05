@@ -32,14 +32,87 @@ function mountAdminRoutes(app) {
     }));
   });
 
-  // ===== Leads (de la Parte 1) =====
+  // ===== Leads + CRM-lite =====
+  // Filtros por query: ?tipo=, ?pipeline=, ?accion_pendiente=1
   app.get('/api/admin/leads', guard, (req, res) => {
-    const rows = db.prepare(`
-      SELECT id, tipo, marca, email, telefono, clases, rubro, monto, estado,
-             payment_ref, external_reference, pagado_at, created_at
-      FROM leads ORDER BY id DESC LIMIT 500
-    `).all();
-    res.json(ok({ leads: rows }));
+    const { tipo, pipeline, accion_pendiente } = req.query;
+    const where = [];
+    const params = [];
+    if (tipo) { where.push('l.tipo = ?'); params.push(tipo); }
+    if (pipeline) { where.push('l.pipeline_estado = ?'); params.push(pipeline); }
+    if (accion_pendiente === '1') {
+      where.push(`(l.proximo_contacto_at IS NOT NULL AND l.proximo_contacto_at <= datetime('now'))`);
+    }
+    const sql = `
+      SELECT l.id, l.tipo, l.marca, l.email, l.telefono, l.clases, l.rubro, l.monto, l.estado,
+             l.payment_ref, l.external_reference, l.pagado_at, l.created_at,
+             l.pipeline_estado, l.notas, l.proximo_contacto_at, l.asignado_a, l.follow_up_at,
+             u.email AS asignado_email
+      FROM leads l
+      LEFT JOIN usuarios u ON u.id = l.asignado_a
+      ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
+      ORDER BY l.id DESC LIMIT 500
+    `;
+    res.json(ok({ leads: db.prepare(sql).all(...params) }));
+  });
+
+  // Detalle de un lead — incluye historial del audit log y eventual informe.
+  app.get('/api/admin/leads/:id', guard, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const lead = db.prepare(`
+      SELECT l.*, u.email AS asignado_email
+      FROM leads l LEFT JOIN usuarios u ON u.id = l.asignado_a
+      WHERE l.id = ?
+    `).get(id);
+    if (!lead) return res.status(404).json(fail('Lead no encontrado'));
+    const informe = db.prepare(`
+      SELECT id, estado, nivel_riesgo, viabilidad_estimada, enviado_at, created_at
+      FROM informes WHERE lead_id = ? ORDER BY id DESC LIMIT 1
+    `).get(id);
+    const historial = db.prepare(`
+      SELECT id, accion, detalle, created_at FROM audit_log
+      WHERE entidad = 'leads' AND entidad_id = ? ORDER BY id DESC LIMIT 50
+    `).all(id);
+    res.json(ok({ lead, informe, historial }));
+  });
+
+  // CRM: editar campos manuales (pipeline, notas, próximo contacto, asignación).
+  app.patch('/api/admin/leads/:id', guard, express.json(), (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const exists = db.prepare('SELECT id FROM leads WHERE id = ?').get(id);
+    if (!exists) return res.status(404).json(fail('Lead no encontrado'));
+
+    const { pipeline_estado, notas, proximo_contacto_at, asignado_a } = req.body || {};
+    const validos = ['nuevo', 'contactado', 'calificado', 'propuesta', 'ganado', 'perdido'];
+    const sets = [];
+    const vals = [];
+    if (pipeline_estado !== undefined) {
+      if (!validos.includes(pipeline_estado)) return res.status(400).json(fail('pipeline_estado inválido'));
+      sets.push('pipeline_estado = ?'); vals.push(pipeline_estado);
+    }
+    if (notas !== undefined)                { sets.push('notas = ?');               vals.push(notas || null); }
+    if (proximo_contacto_at !== undefined)  { sets.push('proximo_contacto_at = ?'); vals.push(proximo_contacto_at || null); }
+    if (asignado_a !== undefined)           { sets.push('asignado_a = ?');          vals.push(asignado_a || null); }
+    if (!sets.length) return res.status(400).json(fail('Nada que actualizar'));
+    vals.push(id);
+    db.prepare(`UPDATE leads SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+    audit.log(req.user.id, 'lead.editado', {
+      entidad: 'leads', entidad_id: id,
+      detalle: { pipeline_estado, notas: notas ? '[texto]' : undefined, proximo_contacto_at, asignado_a },
+    });
+    res.json(ok({ id }));
+  });
+
+  // Disparar el follow-up a demanda (útil para probar antes del cron diario).
+  app.post('/api/admin/follow-up/run', guard, async (req, res) => {
+    try {
+      const { correr } = require('./jobs/follow-up');
+      const s = await correr({ dryRun: !!req.body?.dry_run });
+      audit.log(req.user.id, 'follow_up.manual', { detalle: s });
+      res.json(ok(s));
+    } catch (err) {
+      res.status(500).json(fail(err.message));
+    }
   });
 
   // ===== Usuarios =====

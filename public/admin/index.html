@@ -97,6 +97,10 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .field input,.field textarea{width:100%;padding:11px 14px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
 .field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
 .field textarea{resize:vertical;line-height:1.5}
+
+.filter-sel{padding:7px 12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
+.filter-sel:focus{outline:none;border-color:var(--blue)}
+.pago-vencido{color:#fca5a5;font-weight:600}
 .error-msg{color:#fca5a5;font-size:13px;margin-top:8px}
 .hint{font-size:12px;color:var(--text-dim);margin-top:14px;text-align:center;line-height:1.5}
 .hint code{background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px}
@@ -497,24 +501,173 @@ async function reintentarInforme(id) {
   loadInformes();
 }
 
+// ===== Leads + CRM-lite =====
+const LEAD_FILTROS = { tipo: '', pipeline: '', accion_pendiente: false };
+const PIPELINE_CHIP = {
+  nuevo:       { txt: 'Nuevo',       cls: 'blue' },
+  contactado:  { txt: 'Contactado',  cls: 'yellow' },
+  calificado:  { txt: 'Calificado',  cls: 'yellow' },
+  propuesta:   { txt: 'Propuesta',   cls: 'yellow' },
+  ganado:      { txt: 'Ganado',      cls: 'green' },
+  perdido:     { txt: 'Perdido',     cls: 'red' },
+};
+
+function leadsQuery() {
+  const q = new URLSearchParams();
+  if (LEAD_FILTROS.tipo) q.set('tipo', LEAD_FILTROS.tipo);
+  if (LEAD_FILTROS.pipeline) q.set('pipeline', LEAD_FILTROS.pipeline);
+  if (LEAD_FILTROS.accion_pendiente) q.set('accion_pendiente', '1');
+  const s = q.toString();
+  return s ? '?' + s : '';
+}
+
 async function loadLeads() {
-  const r = await api('/api/admin/leads');
+  const r = await api('/api/admin/leads' + leadsQuery());
   if (!r.ok) return;
-  if (!r.data.leads.length) { $('#panel-leads').innerHTML = '<div class="empty">Sin leads.</div>'; return; }
-  $('#panel-leads').innerHTML = tabla(
-    ['#','Tipo','Marca','Email','Tel','Monto','Estado','Ref pago','Creado'],
-    r.data.leads.map(l => [
-      `<span class="mono">${l.id}</span>`,
-      `<span class="chip blue">${esc(l.tipo)}</span>`,
-      esc(l.marca),
-      esc(l.email || '—'),
-      esc(l.telefono || '—'),
-      `$${(l.monto || 0).toLocaleString('es-AR')}`,
-      `<span class="chip ${l.estado === 'pagado' ? 'green' : l.estado === 'rechazado' ? 'red' : 'yellow'}">${esc(l.estado)}</span>`,
-      `<span class="mono">${esc(l.payment_ref || '—')}</span>`,
-      fmtDate(l.created_at),
-    ])
-  );
+  const filtros = `
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <select id="fltTipo" onchange="LEAD_FILTROS.tipo=this.value;loadLeads()" class="filter-sel">
+        <option value="">Todos los tipos</option>
+        <option value="free" ${LEAD_FILTROS.tipo==='free'?'selected':''}>Free</option>
+        <option value="informe" ${LEAD_FILTROS.tipo==='informe'?'selected':''}>Informe</option>
+        <option value="registro" ${LEAD_FILTROS.tipo==='registro'?'selected':''}>Registro</option>
+        <option value="suscripcion" ${LEAD_FILTROS.tipo==='suscripcion'?'selected':''}>Suscripción</option>
+      </select>
+      <select id="fltPipe" onchange="LEAD_FILTROS.pipeline=this.value;loadLeads()" class="filter-sel">
+        <option value="">Todos los estados</option>
+        <option value="nuevo" ${LEAD_FILTROS.pipeline==='nuevo'?'selected':''}>Nuevo</option>
+        <option value="contactado" ${LEAD_FILTROS.pipeline==='contactado'?'selected':''}>Contactado</option>
+        <option value="calificado" ${LEAD_FILTROS.pipeline==='calificado'?'selected':''}>Calificado</option>
+        <option value="propuesta" ${LEAD_FILTROS.pipeline==='propuesta'?'selected':''}>Propuesta</option>
+        <option value="ganado" ${LEAD_FILTROS.pipeline==='ganado'?'selected':''}>Ganado</option>
+        <option value="perdido" ${LEAD_FILTROS.pipeline==='perdido'?'selected':''}>Perdido</option>
+      </select>
+      <label style="display:flex;gap:6px;align-items:center;color:var(--text-muted);font-size:13px;cursor:pointer">
+        <input type="checkbox" ${LEAD_FILTROS.accion_pendiente?'checked':''}
+               onchange="LEAD_FILTROS.accion_pendiente=this.checked;loadLeads()"> Con próximo contacto vencido
+      </label>
+      <button class="btn tiny outline" onclick="dispararFollowUp()">Disparar follow-up manual</button>
+    </div>
+  `;
+
+  if (!r.data.leads.length) {
+    $('#panel-leads').innerHTML = filtros + '<div class="muted" style="padding:24px;text-align:center">Sin leads para los filtros aplicados.</div>';
+    return;
+  }
+  const rows = r.data.leads.map(l => {
+    const pipe = PIPELINE_CHIP[l.pipeline_estado] || { txt: l.pipeline_estado || '—', cls: '' };
+    const proximoVencido = l.proximo_contacto_at && l.proximo_contacto_at <= new Date().toISOString().slice(0, 19).replace('T', ' ');
+    return `<tr>
+      <td><span class="mono">${l.id}</span></td>
+      <td><span class="chip blue">${esc(l.tipo)}</span></td>
+      <td><strong>${esc(l.marca)}</strong></td>
+      <td>${esc(l.email || '—')}${l.telefono ? `<div class="muted" style="font-size:11.5px">${esc(l.telefono)}</div>` : ''}</td>
+      <td><span class="chip ${pipe.cls}">${pipe.txt}</span></td>
+      <td><span class="chip ${l.estado === 'pagado' ? 'green' : l.estado === 'rechazado' ? 'red' : 'muted'}">${esc(l.estado)}</span></td>
+      <td>${l.proximo_contacto_at
+        ? `<span class="${proximoVencido ? 'pago-vencido' : ''}" style="font-size:12px">${fmtDate(l.proximo_contacto_at)}</span>`
+        : '<span class="muted">—</span>'}</td>
+      <td class="muted" style="font-size:11.5px">${fmtDate(l.created_at)}</td>
+      <td><button class="btn tiny primary" onclick="abrirLead(${l.id})">Abrir</button></td>
+    </tr>`;
+  }).join('');
+  $('#panel-leads').innerHTML = filtros + `
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Tipo</th><th>Marca</th><th>Contacto</th>
+        <th>Pipeline</th><th>Pago</th><th>Próx. contacto</th><th>Creado</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div id="leadDetalle" style="margin-top:18px"></div>
+  `;
+}
+
+async function abrirLead(id) {
+  const r = await api(`/api/admin/leads/${id}`);
+  if (!r.ok) return alert(r.error || 'Error');
+  const l = r.data.lead;
+  const informe = r.data.informe;
+  const hist = r.data.historial || [];
+
+  const informeBox = informe
+    ? `<div class="muted" style="font-size:13px;margin-bottom:14px">
+         Informe asociado: <a href="#" onclick="event.preventDefault();selectTab('informes');setTimeout(()=>abrirInforme(${informe.id}),100)">#${informe.id}</a>
+         · estado <strong>${esc(informe.estado)}</strong>
+         ${informe.nivel_riesgo ? `· riesgo ${esc(informe.nivel_riesgo)}` : ''}
+       </div>`
+    : '';
+
+  const histHtml = hist.length
+    ? `<details style="margin-top:14px"><summary style="cursor:pointer;color:var(--text-muted);font-size:13px">Historial (${hist.length})</summary>
+       <ul style="margin-top:10px;font-size:12.5px;color:var(--text-soft);list-style:none">
+         ${hist.map(h => `<li style="padding:4px 0;border-bottom:1px solid var(--border-soft)">
+           <code style="color:var(--text-muted)">${esc(h.accion)}</code>
+           <span class="muted" style="float:right">${fmtDate(h.created_at)}</span>
+         </li>`).join('')}
+       </ul></details>`
+    : '';
+
+  $('#leadDetalle').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div>
+          <h2 style="font-size:18px">Lead #${l.id} · ${esc(l.marca)}</h2>
+          <div class="muted" style="font-size:12.5px;margin-top:4px">
+            ${esc(l.tipo)} · ${esc(l.email || '—')}${l.telefono ? ' · ' + esc(l.telefono) : ''}
+            · creado ${fmtDate(l.created_at)}${l.pagado_at ? ' · pagado ' + fmtDate(l.pagado_at) : ''}
+          </div>
+        </div>
+        <button class="btn outline tiny" onclick="$('#leadDetalle').innerHTML=''">Cerrar</button>
+      </div>
+
+      ${informeBox}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <label class="field"><span>Estado del pipeline</span>
+          <select id="lPipeline" class="filter-sel" style="width:100%">
+            ${['nuevo','contactado','calificado','propuesta','ganado','perdido'].map(s =>
+              `<option value="${s}" ${l.pipeline_estado===s?'selected':''}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}
+          </select>
+        </label>
+        <label class="field"><span>Próximo contacto</span>
+          <input id="lProximo" type="datetime-local" value="${esc((l.proximo_contacto_at || '').replace(' ','T').slice(0,16))}">
+        </label>
+      </div>
+
+      <label class="field" style="margin-bottom:14px"><span>Notas internas</span>
+        <textarea id="lNotas" rows="4" placeholder="Última conversación, próximos pasos, contexto del lead…">${esc(l.notas || '')}</textarea></label>
+
+      ${histHtml}
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px">
+        <button class="btn primary" onclick="guardarLead(${l.id})">Guardar cambios</button>
+      </div>
+    </div>
+  `;
+  $('#leadDetalle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function guardarLead(id) {
+  const prox = $('#lProximo').value;
+  const body = {
+    pipeline_estado: $('#lPipeline').value,
+    notas: $('#lNotas').value.trim(),
+    proximo_contacto_at: prox ? prox.replace('T', ' ') + ':00' : null,
+  };
+  const r = await api(`/api/admin/leads/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  if (!r.ok) return alert(r.error || 'Error');
+  loadLeads();
+  $('#leadDetalle').innerHTML = '';
+}
+
+async function dispararFollowUp() {
+  if (!confirm('Dispara el follow-up ahora a todos los leads elegibles (creados hace más de 48h, sin follow-up previo). ¿Continuar?')) return;
+  const r = await api('/api/admin/follow-up/run', { method: 'POST', body: JSON.stringify({}) });
+  if (!r.ok) return alert(r.error || 'Error');
+  const s = r.data;
+  alert(`Follow-up ejecutado. Enviados: ${s.total} (free=${s.free}, checkout pendiente=${s.checkout_pendiente}, errores=${s.errores}).`);
+  loadLeads();
 }
 
 async function loadUsuarios() {
