@@ -217,6 +217,100 @@ app.post('/api/marca/lead-free', async (req, res) => {
   res.json(ok({ id: leadId, dedup: !!existente }));
 });
 
+// ===== 2.6 Captación de lead de suscripción (vigilancia) =====
+// El visitante de la landing elige un pack (3/10/20 marcas) y nos deja sus
+// datos. Lo encolamos como lead 'suscripcion' para que el equipo legal lo
+// contacte en 24h con el link de pago de MP. Sin self-signup todavía.
+const PACKS_VALIDOS = new Set(['vigilancia_3', 'vigilancia_10', 'vigilancia_20']);
+
+app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
+  const { pack_codigo, email, nombre, telefono, marcas_a_vigilar } = req.body || {};
+  if (!PACKS_VALIDOS.has(String(pack_codigo))) return res.status(400).json(fail('Pack inválido'));
+  if (!email || !EMAIL_RE.test(String(email).trim())) return res.status(400).json(fail('Email inválido'));
+  if (!nombre || !String(nombre).trim()) return res.status(400).json(fail('Falta tu nombre'));
+
+  const pack = db.prepare('SELECT * FROM packs WHERE codigo = ?').get(pack_codigo);
+  if (!pack) return res.status(404).json(fail('Pack no encontrado'));
+
+  const emailLimpio = String(email).trim().toLowerCase();
+  const nombreLimpio = String(nombre).trim();
+  const telefonoLimpio = telefono ? String(telefono).trim() : null;
+  const marcasTxt = marcas_a_vigilar ? String(marcas_a_vigilar).trim().slice(0, 1000) : null;
+  const externalReference = `vig-${crypto.randomBytes(8).toString('hex')}`;
+
+  const info = db.prepare(`
+    INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, estado, external_reference, notas)
+    VALUES ('suscripcion', ?, ?, ?, '[]', NULL, ?, 'lead_suscripcion', ?, ?)
+  `).run(
+    pack.codigo,
+    emailLimpio,
+    telefonoLimpio,
+    pack.precio_mensual,
+    externalReference,
+    [
+      `Solicitante: ${nombreLimpio}`,
+      `Pack solicitado: ${pack.nombre} ($${pack.precio_mensual.toLocaleString('es-AR')}/mes)`,
+      marcasTxt ? `Marcas a vigilar:\n${marcasTxt}` : null,
+    ].filter(Boolean).join('\n\n'),
+  );
+  const leadId = info.lastInsertRowid;
+
+  const { enviarMailGenerico } = require('./src/notificaciones');
+  const mailEquipo = (process.env.MAIL_EQUIPO_LEGAL || 'contacto@legalpacers.com').trim();
+  const calendly = 'https://calendar.app.google/rx6vHWyyjFoEr7Vx9';
+
+  // Mail al usuario.
+  enviarMailGenerico({
+    to: emailLimpio,
+    subject: `Recibimos tu solicitud de monitoreo — ${pack.nombre}`,
+    html: `
+      <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+        <h2 style="color:#1B6EF3">Recibimos tu solicitud</h2>
+        <p>Hola ${nombreLimpio}, gracias por confiar en LegalPacers para el monitoreo
+           semanal de tus marcas.</p>
+        <p><strong>Pack solicitado:</strong> ${pack.nombre}
+           — $${pack.precio_mensual.toLocaleString('es-AR')}/mes.</p>
+        <p>Un Agente de la Propiedad Industrial te contacta dentro de las próximas
+           24 horas hábiles para confirmar las marcas a vigilar y enviarte el link
+           de pago de Mercado Pago.</p>
+        ${marcasTxt ? `<p style="background:#f8fafc;border-left:3px solid #1B6EF3;padding:10px 14px;border-radius:6px;font-size:13px"><strong>Marcas que nos pasaste:</strong><br>${esc(marcasTxt).replace(/\n/g, '<br>')}</p>` : ''}
+        <p>Si querés adelantar la conversación,
+           <a href="${calendly}">agendá una llamada</a>
+           o respondé este mail.</p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+        <p style="font-size:12px;color:#64748b">
+          LegalPacers · Consultora de Propiedad Industrial<br>
+          contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+        </p>
+      </div>`,
+    tag: 'lead_suscripcion_acuse',
+  }).catch(err => console.error('[vigilancia/iniciar] mail cliente:', err.message));
+
+  // Mail al equipo.
+  enviarMailGenerico({
+    to: mailEquipo,
+    subject: `[Lead vigilancia] ${pack.nombre} · ${nombreLimpio}`,
+    html: `
+      <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+        <h2>Nuevo lead de suscripción</h2>
+        <p><strong>Solicitante:</strong> ${nombreLimpio} &lt;${emailLimpio}&gt;
+           ${telefonoLimpio ? '· tel. ' + esc(telefonoLimpio) : ''}</p>
+        <p><strong>Pack:</strong> ${pack.nombre} ($${pack.precio_mensual.toLocaleString('es-AR')}/mes)</p>
+        ${marcasTxt ? `<p><strong>Marcas a vigilar:</strong><br>${esc(marcasTxt).replace(/\n/g, '<br>')}</p>` : ''}
+        <p style="margin-top:18px">Crear el usuario en el panel y enviar link de pago de MP.</p>
+        <p style="font-size:12px;color:#64748b">Lead #${leadId}</p>
+      </div>`,
+    tag: 'lead_suscripcion_equipo',
+  }).catch(err => console.error('[vigilancia/iniciar] mail equipo:', err.message));
+
+  res.json(ok({ id: leadId, pack: pack.codigo }));
+});
+
+// helper de escape para HTML inline (usado solo en plantillas de mail server-side).
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 // ===== 2.3 / 2.4 helpers =====
 function crearLead({ tipo, marca, email, telefono, clases, rubro, monto }) {
   const externalReference = `${tipo}-${crypto.randomBytes(8).toString('hex')}`;

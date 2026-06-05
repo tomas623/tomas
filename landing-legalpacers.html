@@ -171,6 +171,8 @@
     .nav-links{display:flex;gap:24px;align-items:center;font-size:14px;font-weight:600}
     .nav-links a{color:var(--text-soft)}
     .nav-links a:hover{color:#fff}
+    .nav-portal{padding:7px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px}
+    .nav-portal:hover{background:var(--surface);border-color:var(--blue)}
 
     .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
          display:inline-block;transition:all .15s;cursor:pointer;letter-spacing:.01em;text-align:center}
@@ -274,6 +276,21 @@
     .ciclo-card h4{font-size:16px;color:#fff;margin-bottom:8px}
     .ciclo-card p{font-size:13.5px;color:var(--text-muted);line-height:1.5}
     .ciclo-price{font-size:12.5px;color:var(--text-soft);margin-top:12px;font-weight:700;border-top:1px dashed var(--border-soft);padding-top:12px}
+
+    /* Planes de vigilancia */
+    .planes-vig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+    .plan-vig{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px;position:relative;display:flex;flex-direction:column;text-align:left}
+    .plan-vig.destacado{border-color:var(--blue);box-shadow:0 8px 30px -10px rgba(27,110,243,.4)}
+    .plan-vig.corporate{background:linear-gradient(180deg,rgba(34,197,94,.06),var(--surface));border-color:rgba(34,197,94,.35)}
+    .plan-vig-tag{position:absolute;top:-10px;left:22px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em}
+    .plan-vig-badge{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+    .plan-vig-precio{font-size:26px;font-weight:800;color:#fff;margin:6px 0 4px}
+    .plan-vig-precio span{font-size:13px;color:var(--text-muted);font-weight:500;margin-left:4px}
+    .plan-vig-desc{font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:14px}
+    .plan-vig-list{list-style:none;padding:0;margin:0 0 18px;flex:1}
+    .plan-vig-list li{font-size:13px;color:var(--text-soft);padding:5px 0 5px 18px;position:relative}
+    .plan-vig-list li::before{content:"✓";color:var(--blue);position:absolute;left:0;font-weight:700}
+    .plan-vig .btn{width:100%}
 
     /* NEGOCIO / ABOUT SECTION */
     .about-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:32px;display:grid;grid-template-columns:1.2fr 1fr;gap:32px;text-align:left;align-items:center}
@@ -408,6 +425,7 @@
       <a href="#comparativa">Comparativa</a>
       <a href="#somos">Quiénes somos</a>
       <a href="#faq">FAQ</a>
+      <a href="/cliente" class="nav-portal">Mi cuenta</a>
     </nav>
   </div>
 </header>
@@ -561,6 +579,59 @@
         <h4>Renovación de Propiedad</h4>
         <p>La exclusividad comercial concedida por el INPI vence a los 10 años exactos. Gestionamos la prórroga técnica de tus derechos de marca para extender tu blindaje legal por otra década consecutiva.</p>
         <div class="ciclo-price">Se presupuesta de forma independiente al llegar al Año 10</div>
+      </div>
+    </div>
+
+    <!-- Planes de monitoreo: 3 packs + cotización corporativa -->
+    <div style="margin-top:48px">
+      <h3 style="font-size:20px;color:#fff;margin-bottom:8px">Planes de Monitoreo Semanal</h3>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:24px">Cuántas marcas necesitás proteger. Elegí un plan y nuestro equipo te contacta dentro de 24 horas hábiles para activarlo.</p>
+      <div class="planes-vig-grid">
+        <div class="plan-vig">
+          <div class="plan-vig-badge">3 marcas</div>
+          <div class="plan-vig-precio">$4.900<span>/mes</span></div>
+          <div class="plan-vig-desc">Ideal para emprendedores con una marca principal y variantes.</div>
+          <ul class="plan-vig-list">
+            <li>Vigilancia semanal en el boletín del INPI</li>
+            <li>Alerta por WhatsApp si detectamos un riesgo</li>
+            <li>Asistencia para preparar la oposición</li>
+          </ul>
+          <button class="btn btn-primary" @click="abrirVigilancia('vigilancia_3')">Activar monitoreo</button>
+        </div>
+        <div class="plan-vig destacado">
+          <div class="plan-vig-tag">Más elegido</div>
+          <div class="plan-vig-badge">10 marcas</div>
+          <div class="plan-vig-precio">$12.900<span>/mes</span></div>
+          <div class="plan-vig-desc">Para PyMEs y estudios con cartera mediana de activos intangibles.</div>
+          <ul class="plan-vig-list">
+            <li>Todo lo del plan anterior</li>
+            <li>Reporte mensual del estado de la cartera</li>
+            <li>Soporte prioritario por WhatsApp</li>
+          </ul>
+          <button class="btn btn-primary" @click="abrirVigilancia('vigilancia_10')">Activar monitoreo</button>
+        </div>
+        <div class="plan-vig">
+          <div class="plan-vig-badge">20 marcas</div>
+          <div class="plan-vig-precio">$19.900<span>/mes</span></div>
+          <div class="plan-vig-desc">Carteras corporativas con marcas en múltiples clases.</div>
+          <ul class="plan-vig-list">
+            <li>Todo lo del plan anterior</li>
+            <li>Reporte trimestral del estado de la cartera</li>
+            <li>Asignación de un Agente de PI dedicado</li>
+          </ul>
+          <button class="btn btn-primary" @click="abrirVigilancia('vigilancia_20')">Activar monitoreo</button>
+        </div>
+        <div class="plan-vig corporate">
+          <div class="plan-vig-badge">+20 marcas</div>
+          <div class="plan-vig-precio">A medida</div>
+          <div class="plan-vig-desc">Plan corporativo para holdings y carteras con más de 20 activos.</div>
+          <ul class="plan-vig-list">
+            <li>Cotización personalizada</li>
+            <li>Estructura legal dedicada</li>
+            <li>SLA y reportes a medida</li>
+          </ul>
+          <a class="btn btn-primary" :href="waCorporativo" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Cotizar plan corporativo</a>
+        </div>
       </div>
     </div>
   </div>
@@ -805,6 +876,11 @@
   </div>
   <div class="footer-bottom" style="margin-top:20px; border-top:1px solid var(--border-soft); padding-top:20px; font-size:12px; color:var(--text-dim)">
     © 2026 LegalPacers — consultora de propiedad intelectual fundada y dirigida por el Dr. Tomás Rodríguez. El patrocinio jurídico se brinda en partnership con el Estudio Rodríguez y Asociados. El uso de este sitio no constituye asesoramiento legal vinculante hasta la formalización del expediente técnico.
+    <div style="margin-top:14px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
+      <a href="/cliente" style="color:var(--text-muted)">Portal cliente</a>
+      <a href="/admin" style="color:var(--text-muted)">Equipo</a>
+      <a href="mailto:contacto@legalpacers.com" style="color:var(--text-muted)">contacto@legalpacers.com</a>
+    </div>
   </div>
 </footer>
 
@@ -896,6 +972,60 @@
   </div>
 </div>
 
+<!-- Modal de activación de monitoreo (vigilancia) -->
+<div x-show="modalVigilancia" x-cloak class="modal-bg" @click.self="modalVigilancia=false">
+  <div class="modal-card">
+    <button @click="modalVigilancia=false" class="modal-close">&times;</button>
+    <span class="modal-eyebrow">Activación de Monitoreo Semanal</span>
+    <h3 class="modal-title" x-text="vigForm.packNombre"></h3>
+
+    <div class="price-block" x-show="vigForm.packPrecio > 0">
+      <div class="num" x-text="'$' + vigForm.packPrecio.toLocaleString('es-AR') + ' /mes'"></div>
+      <div class="meta">Suscripción mensual · Cancelás cuando quieras · Activación en 24 hs hábiles</div>
+    </div>
+
+    <div class="entregables">
+      <h4>📡 Qué incluye:</h4>
+      <ul>
+        <li><strong>Escaneo semanal del Boletín del INPI</strong> contra las marcas de tu cartera.</li>
+        <li><strong>Alerta inmediata por WhatsApp</strong> si detectamos un riesgo en alguna acta nueva.</li>
+        <li><strong>Asistencia para preparar la oposición</strong> dentro del plazo legal.</li>
+        <li><strong>Reporte mensual del estado</strong> de tu cartera (en planes 10 y 20).</li>
+      </ul>
+    </div>
+
+    <div style="margin-top:14px"><label class="modal-label">Tu nombre o razón social</label>
+      <input type="text" x-model="vigForm.nombre" class="modal-input" placeholder="Ej: Martín García / Empresa SA"></div>
+    <div><label class="modal-label">Email de contacto</label>
+      <input type="email" x-model="vigForm.email" class="modal-input" placeholder="nombre@empresa.com"></div>
+    <div><label class="modal-label">WhatsApp (opcional, para alertas)</label>
+      <input type="tel" x-model="vigForm.telefono" class="modal-input" placeholder="+54 9 11 1234 5678"></div>
+    <div><label class="modal-label">Marcas que querés vigilar (opcional)</label>
+      <textarea x-model="vigForm.marcas" class="modal-input" rows="3" placeholder="Una por línea. Si todavía no las tenés, dejalo vacío y lo coordinamos en la llamada."></textarea></div>
+    <div x-show="vigForm.error" class="modal-error" x-text="vigForm.error"></div>
+
+    <button class="btn btn-primary btn-full" @click="confirmarVigilancia()" :disabled="vigForm.enviando">
+      <span x-show="!vigForm.enviando">Solicitar activación</span>
+      <span x-show="vigForm.enviando" x-cloak>Enviando…</span>
+    </button>
+    <p style="font-size:12px;color:var(--text-dim);margin-top:10px;text-align:center">
+      Un Agente de PI te contacta en 24h hábiles con el link de pago de Mercado Pago.
+    </p>
+  </div>
+</div>
+
+<!-- Modal de éxito post-solicitud -->
+<div x-show="vigForm.exito" x-cloak class="modal-bg" @click.self="vigForm.exito=false">
+  <div class="modal-card" style="text-align:center">
+    <button @click="vigForm.exito=false" class="modal-close">&times;</button>
+    <div style="font-size:48px;margin:12px 0">✓</div>
+    <h3 class="modal-title">Recibimos tu solicitud</h3>
+    <p style="color:var(--text-soft);line-height:1.6">Un Agente de la Propiedad Industrial de LegalPacers se va a contactar con vos dentro de las próximas 24 horas hábiles con el link de pago y los detalles de activación.</p>
+    <p style="color:var(--text-muted);font-size:13px;margin-top:16px">Si querés adelantar la conversación, <a :href="waLink" style="color:#60a5fa">escribinos por WhatsApp</a>.</p>
+    <button class="btn btn-primary btn-full" @click="vigForm.exito=false" style="margin-top:18px">Listo</button>
+  </div>
+</div>
+
 <script>
 const NIZA_TITLES = {
   1:"Productos químicos", 2:"Pinturas y barnices", 3:"Cosméticos y limpieza",
@@ -932,11 +1062,17 @@ function landing() {
     informeEmail: '', informeEmailError: '', promoCode: _params.get('promo') || '', precioInforme: null,
     resultado: null, cargando: false, iniciandoPago: false, iniciandoRegistro: false, errorMsg: '', rateLimited: false,
     modalInforme: false, modalRegistro: false, regForm: {marca:'', email:'', telefono:''}, regError: '',
+    modalVigilancia: false,
+    vigForm: { pack: '', packNombre: '', packPrecio: 0, nombre: '', email: '', telefono: '', marcas: '', error: '', enviando: false, exito: false },
     faqAbierto: -1,
 
     get waLink() {
       let msg = "Hola LegalPacers, quiero hacer una consulta sobre el registro de mi marca.";
       if (this.form.marca) msg = `Hola LegalPacers, quiero consultar sobre la marca "${this.form.marca}".`;
+      return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
+    },
+    get waCorporativo() {
+      const msg = 'Hola LegalPacers, necesito vigilar más de 20 marcas. ¿Pueden cotizarme un plan corporativo?';
       return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
     },
     get precioFinalInforme() { return (this.precioInforme && this.precioInforme.precio) || PRECIO_INFORME_BASE; },
@@ -1007,6 +1143,48 @@ function landing() {
       }
     },
     openInforme() { this.modalInforme = true; },
+    abrirVigilancia(pack) {
+      const info = {
+        vigilancia_3:  { nombre: 'Plan Monitoreo · 3 marcas',  precio: 4900 },
+        vigilancia_10: { nombre: 'Plan Monitoreo · 10 marcas', precio: 12900 },
+        vigilancia_20: { nombre: 'Plan Monitoreo · 20 marcas', precio: 19900 },
+      }[pack];
+      if (!info) return;
+      this.vigForm = { ...this.vigForm, pack, packNombre: info.nombre, packPrecio: info.precio, error: '', exito: false };
+      this.modalVigilancia = true;
+      trackEvent('lp:vigilancia_open', { pack });
+    },
+    async confirmarVigilancia() {
+      this.vigForm.error = '';
+      if (!this.vigForm.nombre.trim()) { this.vigForm.error = 'Necesitamos tu nombre.'; return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.vigForm.email.trim())) {
+        this.vigForm.error = 'Email inválido.'; return;
+      }
+      this.vigForm.enviando = true;
+      try {
+        const r = await fetch('/api/cliente/vigilancia/iniciar', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pack_codigo: this.vigForm.pack,
+            nombre: this.vigForm.nombre.trim(),
+            email: this.vigForm.email.trim(),
+            telefono: this.vigForm.telefono.trim() || undefined,
+            marcas_a_vigilar: this.vigForm.marcas.trim() || undefined,
+          }),
+        }).then(res => res.json());
+        if (r.ok) {
+          this.modalVigilancia = false;
+          this.vigForm.exito = true;
+          trackEvent('lp:vigilancia_lead', { pack: this.vigForm.pack });
+        } else {
+          this.vigForm.error = r.error || 'No pudimos enviar tu solicitud.';
+        }
+      } catch (e) {
+        this.vigForm.error = 'Error de red. Probá de nuevo.';
+      } finally {
+        this.vigForm.enviando = false;
+      }
+    },
     abrirCheckoutInformeDirecto() { this.openInforme(); },
     async iniciarConsultaCompleta() {
       this.iniciandoPago = true;
