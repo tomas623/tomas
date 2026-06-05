@@ -242,6 +242,177 @@ function dibujarTituloSeccion(doc, texto) {
     .text(texto, X_MARGEN + 12, yT, { width: ANCHO_CONTENIDO - 12 });
 }
 
+// Ficha técnica del caso — tabla de pares clave/valor con borde formal.
+// Va después del header, antes del veredicto. Le da el "qué te estoy entregando"
+// que distingue un informe profesional de un mensaje.
+function dibujarFichaCaso(doc, cliente) {
+  const tipo = cliente.tipo || 'Denominativa';
+  const tipoLower = tipo.toLowerCase();
+  const objeto = `Análisis de viabilidad de registro ante el Instituto Nacional de la Propiedad Industrial (INPI) de la marca ${tipoLower} "${cliente.marca}".`;
+
+  const filas = [
+    ['Solicitante', cliente.solicitante || cliente.email || '—'],
+    ['Marca solicitada', cliente.marca],
+    ['Tipo de marca', tipo],
+    ['Clase(s) Niza', Array.isArray(cliente.clases) && cliente.clases.length ? cliente.clases.join(', ') : '—'],
+    ['Productos / servicios', cliente.rubro || '—'],
+    ['Objeto del informe', objeto],
+  ];
+
+  // Calculamos alto total midiendo cada valor.
+  const colLabel = 130;
+  const colVal = ANCHO_CONTENIDO - colLabel - 28;
+  doc.font('cuerpo').fontSize(9.5);
+  let altoFilas = 0;
+  const altosFila = filas.map(([, val]) => {
+    const h = Math.max(14, doc.heightOfString(val, { width: colVal }) + 4);
+    altoFilas += h;
+    return h;
+  });
+
+  const altoTotal = altoFilas + 36;
+  asegurarEspacio(doc, altoTotal + 12);
+  const yIni = doc.y;
+
+  dibujarTituloSeccion(doc, 'DATOS DEL CASO');
+  const yCard = doc.y + 4;
+
+  doc.save();
+  doc.roundedRect(X_MARGEN, yCard, ANCHO_CONTENIDO, altoFilas + 14, 7)
+    .lineWidth(0.7).strokeColor(COLORES.separador).stroke();
+  doc.restore();
+
+  let y = yCard + 8;
+  filas.forEach(([label, val], i) => {
+    doc.font('demi').fontSize(8.5).fillColor(COLORES.textoSuave)
+      .text(label.toUpperCase(), X_MARGEN + 14, y + 2, { width: colLabel, lineBreak: false });
+    doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
+      .text(val, X_MARGEN + 14 + colLabel, y, { width: colVal });
+    y += altosFila[i];
+    if (i < filas.length - 1) {
+      doc.moveTo(X_MARGEN + 14, y).lineTo(X_MARGEN + ANCHO_CONTENIDO - 14, y)
+        .lineWidth(0.3).strokeColor(COLORES.separador).stroke();
+    }
+  });
+
+  doc.y = yCard + altoFilas + 14 + 14;
+}
+
+// Metodología — los ejes que el motor cruzó. Justifica el trabajo y diferencia
+// el informe de una opinión rápida.
+function dibujarMetodologia(doc) {
+  asegurarEspacio(doc, 180);
+  dibujarTituloSeccion(doc, 'METODOLOGÍA APLICADA');
+  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
+    .text('Este informe se elaboró cruzando la marca solicitada contra los siguientes ejes de análisis:',
+      X_MARGEN + 12, doc.y + 3, { width: ANCHO_CONTENIDO - 12 });
+  doc.y += 16;
+
+  const ejes = [
+    {
+      t: 'Búsqueda de marcas idénticas y similares',
+      d: 'Cruce contra la base del INPI en las clases solicitadas y en clases conexas con potencial afinidad.',
+    },
+    {
+      t: 'Análisis fonético',
+      d: 'Evaluación de la pronunciación en español rioplatense respecto de las marcas preexistentes detectadas.',
+    },
+    {
+      t: 'Análisis visual y ortográfico',
+      d: 'Comparación gráfica entre la denominación solicitada y las marcas registradas.',
+    },
+    {
+      t: 'Análisis conceptual',
+      d: 'Evaluación del significado y la carga simbólica de la marca y su grado de superposición con otras.',
+    },
+    {
+      t: 'Marcas notorias y renombradas',
+      d: 'Verificación de potencial conflicto con marcas que gocen de protección reforzada por su reconocimiento público.',
+    },
+    {
+      t: 'Leyes especiales aplicables',
+      d: 'Chequeo de restricciones por Leyes 25.127 (eco/orgánico), 24.664 (símbolos olímpicos), 26.687 (tabaco) y normas sectoriales.',
+    },
+  ];
+
+  for (const e of ejes) {
+    doc.font('cuerpo').fontSize(9.5);
+    const altoD = doc.heightOfString(e.d, { width: ANCHO_CONTENIDO - 28 });
+    asegurarEspacio(doc, altoD + 24);
+    const yE = doc.y;
+    // Punto de bullet
+    doc.circle(X_MARGEN + 6, yE + 6, 2.8).fillColor(COLORES.azul).fill();
+    doc.font('demi').fontSize(10).fillColor(COLORES.navy)
+      .text(e.t, X_MARGEN + 18, yE, { width: ANCHO_CONTENIDO - 18 });
+    doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
+      .text(e.d, X_MARGEN + 18, doc.y, { width: ANCHO_CONTENIDO - 18 });
+    doc.moveDown(0.4);
+  }
+  doc.moveDown(0.3);
+}
+
+// CTAs al cierre del informe — el plan comercial del estudio.
+function dibujarCTAs(doc, cliente) {
+  asegurarEspacio(doc, 280);
+  dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGALPACERS');
+  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
+    .text('Te acompañamos en lo que sigue. Estas son las dos vías habituales a partir de este informe:',
+      X_MARGEN + 12, doc.y + 3, { width: ANCHO_CONTENIDO - 12 });
+  doc.y += 18;
+
+  // Card 1 — Consultar con abogado
+  const yC1 = doc.y;
+  const altoC1 = 88;
+  doc.save();
+  doc.roundedRect(X_MARGEN, yC1, ANCHO_CONTENIDO, altoC1, 10)
+    .fillColor(COLORES.cardBg).fill();
+  doc.rect(X_MARGEN, yC1, 6, altoC1).fillColor(COLORES.azul).fill();
+  doc.restore();
+  doc.font('titulo').fontSize(13).fillColor(COLORES.navy)
+    .text('Consultá con un abogado de propiedad industrial', X_MARGEN + 24, yC1 + 14, { width: ANCHO_CONTENIDO - 48 });
+  doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
+    .text('Si tenés dudas puntuales sobre este informe, alternativas viables, riesgos del negocio o estrategia marcaria a largo plazo, te asistimos en una reunión 1 a 1.',
+      X_MARGEN + 24, yC1 + 36, { width: ANCHO_CONTENIDO - 48 });
+  // Botón simulado
+  const yBtn1 = yC1 + altoC1 - 26;
+  doc.save();
+  doc.roundedRect(X_MARGEN + 24, yBtn1, 165, 20, 10).fillColor(COLORES.navy).fill();
+  doc.fillColor('#ffffff').font('demi').fontSize(9)
+    .text('AGENDAR CONSULTA →', X_MARGEN + 24, yBtn1 + 6, { width: 165, align: 'center', lineBreak: false });
+  doc.restore();
+  doc.y = yC1 + altoC1 + 12;
+
+  // Card 2 — Registrar marca con descuento
+  const yC2 = doc.y;
+  const altoC2 = 100;
+  doc.save();
+  doc.roundedRect(X_MARGEN, yC2, ANCHO_CONTENIDO, altoC2, 10)
+    .fillColor(COLORES.azul).fillOpacity(0.08).fill();
+  doc.rect(X_MARGEN, yC2, 6, altoC2).fillColor(COLORES.azul).fill();
+  doc.restore();
+  doc.fillOpacity(1);
+  doc.font('titulo').fontSize(13).fillColor(COLORES.azul)
+    .text('Registrá tu marca con LegalPacers', X_MARGEN + 24, yC2 + 14, { width: ANCHO_CONTENIDO - 48 });
+  doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
+    .text('Nosotros nos encargamos de la presentación, el seguimiento ante el INPI y las eventuales oposiciones.',
+      X_MARGEN + 24, yC2 + 36, { width: ANCHO_CONTENIDO - 48 });
+  doc.font('demi').fontSize(10).fillColor(COLORES.navy)
+    .text('Descontamos íntegramente el valor de este informe del costo del registro.',
+      X_MARGEN + 24, doc.y + 2, { width: ANCHO_CONTENIDO - 48 });
+  const yBtn2 = yC2 + altoC2 - 26;
+  doc.save();
+  doc.roundedRect(X_MARGEN + 24, yBtn2, 195, 20, 10).fillColor(COLORES.azul).fill();
+  doc.fillColor('#ffffff').font('demi').fontSize(9)
+    .text('INICIAR EL REGISTRO →', X_MARGEN + 24, yBtn2 + 6, { width: 195, align: 'center', lineBreak: false });
+  doc.restore();
+  doc.y = yC2 + altoC2 + 14;
+
+  // Datos de contacto del estudio
+  doc.font('cuerpo-light').fontSize(8.5).fillColor(COLORES.textoSuave)
+    .text(`Escribinos a contacto@legalpacers.com o reservá una llamada en legalpacers.com.`,
+      X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, align: 'center', lineBreak: false });
+}
+
 function dibujarComparativas(doc, informe) {
   const comps = informe.cliente?.comparativas || [];
   const resto = informe.cliente?.comparativas_resto || 0;
@@ -538,6 +709,7 @@ function generarPDF(informe, cliente, contexto = {}) {
       informe._marcaConsultada = cliente.marca;
 
       dibujarHeader(doc, { cliente });
+      dibujarFichaCaso(doc, cliente);
       dibujarVeredicto(doc, informe);
       dibujarComparativas(doc, informe);
 
@@ -546,7 +718,9 @@ function generarPDF(informe, cliente, contexto = {}) {
 
       dibujarContextoDigital(doc, contexto);
       dibujarProximosPasos(doc, informe);
+      dibujarMetodologia(doc);
       dibujarApendiceLegal(doc, informe);
+      dibujarCTAs(doc, cliente);
       dibujarPie(doc);
 
       doc.end();
