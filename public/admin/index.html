@@ -91,10 +91,12 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:36px;max-width:400px;width:100%;box-shadow:0 20px 60px -20px rgba(0,0,0,.6)}
 .login-card h2{font-size:22px;margin-bottom:24px;color:#fff}
-.field{margin-bottom:16px}
+.field{margin-bottom:16px;display:block}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
-.field input{width:100%;padding:11px 14px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px}
-.field input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+.field>span{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
+.field input,.field textarea{width:100%;padding:11px 14px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+.field textarea{resize:vertical;line-height:1.5}
 .error-msg{color:#fca5a5;font-size:13px;margin-top:8px}
 .hint{font-size:12px;color:var(--text-dim);margin-top:14px;text-align:center;line-height:1.5}
 .hint code{background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px}
@@ -142,6 +144,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
   <nav class="tabs">
     <button class="tab active" data-tab="resumen">Resumen</button>
     <button class="tab" data-tab="alertas">Alertas <span class="badge" id="badgeAlertas" hidden></span></button>
+    <button class="tab" data-tab="informes">Informes <span class="badge" id="badgeInformes" hidden></span></button>
     <button class="tab" data-tab="leads">Leads</button>
     <button class="tab" data-tab="usuarios">Usuarios</button>
     <button class="tab" data-tab="marcas">Marcas vigiladas</button>
@@ -155,6 +158,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
     <div class="muted" style="font-size:13px">Slice 2 entregado: bandeja de revisión, leads, usuarios, marcas vigiladas, auditoría. Próximo: ingesta de boletines + scheduler + alertas reales.</div>
   </div>
   <div id="panel-alertas" class="panel" hidden></div>
+  <div id="panel-informes" class="panel" hidden></div>
   <div id="panel-leads" class="panel" hidden></div>
   <div id="panel-usuarios" class="panel" hidden></div>
   <div id="panel-marcas" class="panel" hidden></div>
@@ -224,8 +228,8 @@ $$('.tab').forEach(t => t.addEventListener('click', () => selectTab(t.dataset.ta
 function selectTab(name) {
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   $$('.panel').forEach(p => p.hidden = p.id !== `panel-${name}`);
-  const fn = { resumen: loadResumen, alertas: loadAlertas, leads: loadLeads,
-    usuarios: loadUsuarios, marcas: loadMarcas, packs: loadPacks,
+  const fn = { resumen: loadResumen, alertas: loadAlertas, informes: loadInformes,
+    leads: loadLeads, usuarios: loadUsuarios, marcas: loadMarcas, packs: loadPacks,
     boletines: loadBoletines, audit: loadAudit }[name];
   if (fn) fn();
 }
@@ -237,6 +241,8 @@ async function loadResumen() {
   const d = r.data;
   const m = (lbl, num, cls = '') => `<div class="metric"><div class="lbl">${esc(lbl)}</div><div class="num ${cls}">${num}</div></div>`;
   $('#metricsGrid').innerHTML =
+    m('Informes en cola', d.informes_cola || 0, d.informes_cola > 0 ? 'warn' : 'ok') +
+    m('Informes enviados', d.informes_enviados || 0, 'ok') +
     m('Alertas nuevas', d.alertas_nuevas, d.alertas_nuevas > 0 ? 'alert' : 'ok') +
     m('Leads pagados', d.leads_pagados, 'ok') +
     m('Leads pendientes', d.leads_pendientes, d.leads_pendientes > 0 ? 'warn' : '') +
@@ -247,6 +253,8 @@ async function loadResumen() {
     m('Alertas totales', d.alertas_total);
   if (d.alertas_nuevas > 0) { $('#badgeAlertas').textContent = d.alertas_nuevas; $('#badgeAlertas').hidden = false; }
   else $('#badgeAlertas').hidden = true;
+  if (d.informes_cola > 0) { $('#badgeInformes').textContent = d.informes_cola; $('#badgeInformes').hidden = false; }
+  else $('#badgeInformes').hidden = true;
 
   if (sch.ok) {
     const s = sch.data;
@@ -328,6 +336,165 @@ function candidatoCard(c) {
 async function cambiarEstado(id, estado) {
   const r = await api(`/api/admin/alertas/${id}`, { method: 'PATCH', body: JSON.stringify({ estado }) });
   if (r.ok) { loadAlertas(); loadResumen(); } else alert(r.error);
+}
+
+// ===== Informes (cola de revisión y envío al cliente) =====
+const ESTADO_CHIP = {
+  generando: { txt: 'GENERANDO', cls: 'warn' },
+  borrador:  { txt: 'BORRADOR',  cls: 'alert' },
+  error:     { txt: 'ERROR',     cls: 'red' },
+  revisado:  { txt: 'REVISADO',  cls: '' },
+  enviado:   { txt: 'ENVIADO',   cls: 'ok' },
+  pendiente: { txt: 'PENDIENTE', cls: '' },
+};
+
+async function loadInformes() {
+  const r = await api('/api/admin/informes');
+  if (!r.ok) {
+    $('#panel-informes').innerHTML = `<div class="muted">Error: ${esc(r.error || 'sin datos')}</div>`;
+    return;
+  }
+  const lista = r.data.informes || [];
+  if (!lista.length) {
+    $('#panel-informes').innerHTML = `<div class="muted" style="padding:24px;text-align:center">Sin informes todavía. Cuando se acredite un pago, el orquestador genera el borrador acá.</div>`;
+    return;
+  }
+  const rowsHtml = lista.map(i => {
+    const chip = ESTADO_CHIP[i.estado] || { txt: i.estado, cls: '' };
+    const clases = (() => { try { return JSON.parse(i.clases || '[]').join(', '); } catch { return i.clases || ''; } })();
+    const nivel = i.nivel_riesgo
+      ? `<span class="chip ${i.nivel_riesgo === 'alto' ? 'red' : i.nivel_riesgo === 'medio' ? 'yellow' : 'green'}">${esc(i.nivel_riesgo)}</span>`
+      : '<span class="muted">—</span>';
+    return `<tr>
+      <td>#${i.id}</td>
+      <td><strong>${esc(i.marca)}</strong>${i.rubro ? `<div class="muted" style="font-size:11.5px">${esc(i.rubro)}</div>` : ''}</td>
+      <td>${esc(clases || '—')}</td>
+      <td>${esc(i.email || '—')}</td>
+      <td>${nivel}${i.viabilidad_estimada != null ? ` <span class="muted">${i.viabilidad_estimada}%</span>` : ''}</td>
+      <td><span class="chip ${chip.cls}">${chip.txt}</span></td>
+      <td class="muted" style="font-size:11.5px">${fmtDate(i.created_at)}</td>
+      <td><button class="btn tiny primary" onclick="abrirInforme(${i.id})">Abrir</button></td>
+    </tr>`;
+  }).join('');
+  $('#panel-informes').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Marca</th><th>Clases</th><th>Cliente</th>
+        <th>Riesgo</th><th>Estado</th><th>Creado</th><th></th>
+      </tr></thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div id="informeDetalle" style="margin-top:18px"></div>
+  `;
+}
+
+async function abrirInforme(id) {
+  const r = await api(`/api/admin/informes/${id}`);
+  if (!r.ok) return alert(r.error || 'Error');
+  const i = r.data.informe;
+  const cli = i.informe_json?.cliente || {};
+  const veredicto = cli.veredicto_breve || i.informe_json?.resumen_ejecutivo || '';
+  const pasos = (cli.proximos_pasos || []).join('\n');
+  const clasesArr = (() => { try { return JSON.parse(i.clases || '[]'); } catch { return []; } })();
+
+  const errorBox = i.estado === 'error'
+    ? `<div style="background:var(--red-soft);border:1px solid var(--red);border-radius:8px;padding:12px;margin-bottom:14px">
+         <strong style="color:#fca5a5">Falló la generación.</strong>
+         <div class="muted" style="margin-top:4px">${esc(i.error_msg || 'sin detalle')}</div>
+         <button class="btn tiny red" style="margin-top:10px" onclick="reintentarInforme(${i.id})">Reintentar</button>
+       </div>`
+    : '';
+
+  const acciones = i.estado === 'borrador' || i.estado === 'revisado'
+    ? `<button class="btn green" onclick="aprobarYEnviar(${i.id})">Aprobar y enviar al cliente</button>
+       <button class="btn" onclick="regenerarPDF(${i.id})">Guardar y regenerar PDF</button>`
+    : i.estado === 'enviado'
+      ? `<span class="muted">Enviado al cliente${i.enviado_at ? ' el ' + fmtDate(i.enviado_at) : ''}.</span>`
+      : '';
+
+  $('#informeDetalle').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div>
+          <h2 style="font-size:18px">Informe #${i.id} · ${esc(i.marca)}</h2>
+          <div class="muted" style="font-size:12.5px;margin-top:4px">Lead #${i.lead_id || '—'} · ${esc(i.email || '—')}</div>
+        </div>
+        <div>
+          ${i.pdf_path ? `<a class="btn primary" href="/api/admin/informes/${i.id}/pdf" target="_blank">Ver PDF</a>` : ''}
+        </div>
+      </div>
+
+      ${errorBox}
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <label class="field"><span>Solicitante (nombre)</span>
+          <input id="fSolicitante" value="${esc(i.solicitante || '')}" placeholder="Nombre completo o razón social"></label>
+        <label class="field"><span>Email del cliente</span>
+          <input id="fEmail" value="${esc(i.email || '')}"></label>
+        <label class="field" style="grid-column:1/-1"><span>Descripción de productos/servicios</span>
+          <input id="fRubro" value="${esc(i.rubro || '')}"></label>
+      </div>
+
+      <details style="margin-bottom:14px">
+        <summary style="cursor:pointer;color:var(--text-muted);font-size:13px">Editar contenido del informe (avanzado · JSON)</summary>
+        <textarea id="fInformeJson" rows="14" style="width:100%;margin-top:10px;font-family:'Menlo','Monaco',monospace;font-size:11.5px;background:var(--bg-soft);color:var(--text-soft);border:1px solid var(--border);border-radius:8px;padding:10px">${esc(JSON.stringify(i.informe_json || {}, null, 2))}</textarea>
+        <div class="muted" style="font-size:11.5px;margin-top:6px">Si modificás el JSON, hacé clic en "Guardar y regenerar PDF" para reemplazar el archivo enviado al cliente.</div>
+      </details>
+
+      <label class="field" style="margin-bottom:14px"><span>Notas internas de revisión (no se envían al cliente)</span>
+        <textarea id="fNotas" rows="3">${esc(i.notas_revision || '')}</textarea></label>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn outline" onclick="$('#informeDetalle').innerHTML=''">Cerrar</button>
+        ${acciones}
+      </div>
+    </div>
+  `;
+  $('#informeDetalle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function guardarEdiciones(id, { regenerar = false } = {}) {
+  const body = {
+    solicitante: $('#fSolicitante').value.trim(),
+    email: $('#fEmail').value.trim(),
+    rubro: $('#fRubro').value.trim(),
+    notas_revision: $('#fNotas').value.trim(),
+  };
+  const jsonTxt = $('#fInformeJson')?.value;
+  if (jsonTxt) {
+    try { body.informe_json = JSON.parse(jsonTxt); }
+    catch (e) { alert('JSON inválido en el contenido del informe.'); return false; }
+  }
+  const r = await api(`/api/admin/informes/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  if (!r.ok) { alert(r.error || 'Error guardando'); return false; }
+  if (regenerar) {
+    const rg = await api(`/api/admin/informes/${id}/regenerar-pdf`, { method: 'POST' });
+    if (!rg.ok) { alert(rg.error || 'Error regenerando PDF'); return false; }
+  }
+  return true;
+}
+
+async function regenerarPDF(id) {
+  if (!(await guardarEdiciones(id, { regenerar: true }))) return;
+  alert('PDF regenerado.');
+  abrirInforme(id);
+}
+
+async function aprobarYEnviar(id) {
+  if (!confirm('¿Mandar el informe al cliente? Esta acción no se puede deshacer.')) return;
+  if (!(await guardarEdiciones(id, { regenerar: true }))) return;
+  const r = await api(`/api/admin/informes/${id}/aprobar-y-enviar`, { method: 'POST' });
+  if (!r.ok) return alert(r.error || 'Error');
+  alert(r.data.stub ? 'Enviado en modo STUB (sin Resend API key).' : 'Enviado al cliente.');
+  loadInformes(); loadResumen();
+}
+
+async function reintentarInforme(id) {
+  if (!confirm('¿Reintentar la generación del informe?')) return;
+  const r = await api(`/api/admin/informes/${id}/reintentar`, { method: 'POST' });
+  if (!r.ok) return alert(r.error || 'Error');
+  alert('Reintento disparado. Refrescá en unos segundos.');
+  loadInformes();
 }
 
 async function loadLeads() {
