@@ -174,7 +174,7 @@ function dibujarVeredicto(doc, informe) {
   const hayGauge = typeof viab === 'number';
 
   doc.font('cuerpo').fontSize(11);
-  const altoTexto = doc.heightOfString(veredictoBreve, { width: ANCHO_CONTENIDO - 48 });
+  const altoTexto = doc.heightOfString(veredictoBreve, { width: ANCHO_CONTENIDO - 48, lineGap: 2.5 });
   const altoCard = altoTexto + (hayGauge ? 100 : 64);
 
   asegurarEspacio(doc, altoCard + 16);
@@ -206,7 +206,7 @@ function dibujarVeredicto(doc, informe) {
     yTexto = yCard + 84;
   }
   doc.font('cuerpo').fontSize(11).fillColor(COLORES.textoCuerpo)
-    .text(veredictoBreve, X_MARGEN + 24, yTexto, { width: ANCHO_CONTENIDO - 48 });
+    .text(veredictoBreve, X_MARGEN + 24, yTexto, { width: ANCHO_CONTENIDO - 48, lineGap: 2.5 });
 
   doc.y = yCard + altoCard + 22;
 }
@@ -265,7 +265,7 @@ function dibujarFichaCaso(doc, cliente) {
   doc.font('cuerpo').fontSize(9.5);
   let altoFilas = 0;
   const altosFila = filas.map(([, val]) => {
-    const h = Math.max(14, doc.heightOfString(val, { width: colVal }) + 4);
+    const h = Math.max(14, doc.heightOfString(val, { width: colVal, lineGap: 2 }) + 6);
     altoFilas += h;
     return h;
   });
@@ -287,7 +287,7 @@ function dibujarFichaCaso(doc, cliente) {
     doc.font('demi').fontSize(8.5).fillColor(COLORES.textoSuave)
       .text(label.toUpperCase(), X_MARGEN + 14, y + 2, { width: colLabel, lineBreak: false });
     doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
-      .text(val, X_MARGEN + 14 + colLabel, y, { width: colVal });
+      .text(val, X_MARGEN + 14 + colLabel, y, { width: colVal, lineGap: 2 });
     y += altosFila[i];
     if (i < filas.length - 1) {
       doc.moveTo(X_MARGEN + 14, y).lineTo(X_MARGEN + ANCHO_CONTENIDO - 14, y)
@@ -305,8 +305,8 @@ function dibujarMetodologia(doc) {
   dibujarTituloSeccion(doc, 'METODOLOGÍA APLICADA');
   doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
     .text('Este informe se elaboró cruzando la marca solicitada contra los siguientes ejes de análisis:',
-      X_MARGEN + 12, doc.y + 3, { width: ANCHO_CONTENIDO - 12 });
-  doc.y += 16;
+      X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
+  doc.y += 20;
 
   const ejes = [
     {
@@ -337,38 +337,41 @@ function dibujarMetodologia(doc) {
 
   for (const e of ejes) {
     doc.font('cuerpo').fontSize(9.5);
-    const altoD = doc.heightOfString(e.d, { width: ANCHO_CONTENIDO - 28 });
-    asegurarEspacio(doc, altoD + 24);
+    const altoD = doc.heightOfString(e.d, { width: ANCHO_CONTENIDO - 28, lineGap: 2 });
+    asegurarEspacio(doc, altoD + 32);
     const yE = doc.y;
-    // Punto de bullet
-    doc.circle(X_MARGEN + 6, yE + 6, 2.8).fillColor(COLORES.azul).fill();
+    doc.circle(X_MARGEN + 6, yE + 7, 2.8).fillColor(COLORES.azul).fill();
     doc.font('demi').fontSize(10).fillColor(COLORES.navy)
       .text(e.t, X_MARGEN + 18, yE, { width: ANCHO_CONTENIDO - 18 });
+    doc.moveDown(0.2);
     doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
-      .text(e.d, X_MARGEN + 18, doc.y, { width: ANCHO_CONTENIDO - 18 });
-    doc.moveDown(0.4);
+      .text(e.d, X_MARGEN + 18, doc.y, { width: ANCHO_CONTENIDO - 18, lineGap: 2 });
+    doc.moveDown(0.7);
   }
   doc.moveDown(0.3);
 }
 
-// Dibuja una card de CTA con alturas medidas (sin solapamientos).
-// Devuelve la Y siguiente. Las líneas de texto se apilan de a una.
-function dibujarCardCTA(doc, { titulo, tituloColor, parrafos, etiquetaBoton, botonColor, bg, barra }) {
+// Mide el alto total que ocupará una card de CTA (sin dibujarla todavía).
+function medirCardCTA(doc, { titulo, parrafos }) {
   const padX = 24;
   const wTexto = ANCHO_CONTENIDO - padX - 18;
-
-  // Medición previa para conocer el alto total.
-  let alto = 16; // padding top
+  let alto = 18;
   doc.font('titulo').fontSize(13);
-  alto += doc.heightOfString(titulo, { width: wTexto }) + 6;
+  alto += doc.heightOfString(titulo, { width: wTexto, lineGap: 2 }) + 10;
   for (const p of parrafos) {
     doc.font(p.bold ? 'demi' : 'cuerpo').fontSize(10);
-    alto += doc.heightOfString(p.txt, { width: wTexto }) + 5;
+    alto += doc.heightOfString(p.txt, { width: wTexto, lineGap: 2.5 }) + 8;
   }
-  alto += 8 + 22; // gap + botón
-  alto += 14; // padding bottom
+  alto += 10 + 22 + 16;
+  return alto;
+}
 
-  asegurarEspacio(doc, alto + 12);
+// Dibuja una card de CTA con alturas medidas (sin solapamientos).
+function dibujarCardCTA(doc, opts) {
+  const { titulo, tituloColor, parrafos, etiquetaBoton, botonColor, bg, barra } = opts;
+  const padX = 24;
+  const wTexto = ANCHO_CONTENIDO - padX - 18;
+  const alto = medirCardCTA(doc, opts);
   const y = doc.y;
 
   doc.save();
@@ -384,17 +387,16 @@ function dibujarCardCTA(doc, { titulo, tituloColor, parrafos, etiquetaBoton, bot
   doc.restore();
 
   doc.font('titulo').fontSize(13).fillColor(tituloColor)
-    .text(titulo, X_MARGEN + padX, y + 16, { width: wTexto });
-  doc.moveDown(0.2);
+    .text(titulo, X_MARGEN + padX, y + 18, { width: wTexto, lineGap: 2 });
+  doc.moveDown(0.35);
   for (const p of parrafos) {
     doc.font(p.bold ? 'demi' : 'cuerpo').fontSize(10).fillColor(p.bold ? COLORES.navy : COLORES.textoCuerpo)
-      .text(p.txt, X_MARGEN + padX, doc.y, { width: wTexto });
-    doc.moveDown(0.15);
+      .text(p.txt, X_MARGEN + padX, doc.y, { width: wTexto, lineGap: 2.5 });
+    doc.moveDown(0.3);
   }
 
-  // Botón
   const wBoton = doc.font('demi').fontSize(9).widthOfString(etiquetaBoton) + 34;
-  const yBtn = doc.y + 6;
+  const yBtn = doc.y + 8;
   doc.save();
   doc.roundedRect(X_MARGEN + padX, yBtn, wBoton, 22, 11).fillColor(botonColor).fill();
   doc.fillColor('#ffffff').font('demi').fontSize(9)
@@ -406,14 +408,7 @@ function dibujarCardCTA(doc, { titulo, tituloColor, parrafos, etiquetaBoton, bot
 
 // CTAs al cierre del informe — el plan comercial del estudio.
 function dibujarCTAs(doc, cliente) {
-  asegurarEspacio(doc, 120);
-  dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGALPACERS');
-  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
-    .text('Te acompañamos en lo que sigue. Estas son las dos vías habituales a partir de este informe:',
-      X_MARGEN + 12, doc.y + 3, { width: ANCHO_CONTENIDO - 12 });
-  doc.y += 18;
-
-  dibujarCardCTA(doc, {
+  const card1 = {
     titulo: 'Consultá con un abogado de propiedad industrial',
     tituloColor: COLORES.navy,
     parrafos: [
@@ -423,9 +418,8 @@ function dibujarCTAs(doc, cliente) {
     botonColor: COLORES.navy,
     bg: { color: COLORES.cardBg },
     barra: COLORES.azul,
-  });
-
-  dibujarCardCTA(doc, {
+  };
+  const card2 = {
     titulo: 'Registrá tu marca con LegalPacers',
     tituloColor: COLORES.azul,
     parrafos: [
@@ -436,7 +430,21 @@ function dibujarCTAs(doc, cliente) {
     botonColor: COLORES.azul,
     bg: { color: COLORES.azul, opacity: 0.08 },
     barra: COLORES.azul,
-  });
+  };
+
+  // Reservar espacio del bloque completo (título + intro + 2 cards + contacto)
+  // para evitar que la card 2 se vaya sola a una página nueva.
+  const altoBloque = 56 + medirCardCTA(doc, card1) + 12 + medirCardCTA(doc, card2) + 30;
+  asegurarEspacio(doc, altoBloque);
+
+  dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGALPACERS');
+  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
+    .text('Te acompañamos en lo que sigue. Estas son las dos vías habituales a partir de este informe:',
+      X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
+  doc.y += 22;
+
+  dibujarCardCTA(doc, card1);
+  dibujarCardCTA(doc, card2);
 
   // Datos de contacto del estudio
   doc.moveDown(0.2);
@@ -454,8 +462,8 @@ function dibujarComparativas(doc, informe) {
   dibujarTituloSeccion(doc, 'MARCAS QUE ENCONTRAMOS REGISTRADAS');
   doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
     .text(`Cruzamos "${informe._marcaConsultada || 'tu marca'}" contra la base del INPI. Esto es lo que aparece y cuánto se parece a tu marca.`,
-      X_MARGEN + 12, doc.y + 3, { width: ANCHO_CONTENIDO - 12 });
-  doc.y += 14;
+      X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
+  doc.y += 16;
 
   for (const c of comps) {
     const choca = c.choca === true;
@@ -524,12 +532,12 @@ function dibujarBloque(doc, bloque) {
 
   // Calculamos alto aproximado para ver si entra en la página actual.
   doc.font('cuerpo').fontSize(10);
-  const altoMsg = doc.heightOfString(mensaje, { width: ANCHO_CONTENIDO - 30 });
-  let altoEstimado = 24 + altoMsg + 10;
+  const altoMsg = doc.heightOfString(mensaje, { width: ANCHO_CONTENIDO - 30, lineGap: 2.5 });
+  let altoEstimado = 24 + altoMsg + 12;
   if (Array.isArray(bloque.subbloques)) {
     for (const sb of bloque.subbloques) {
       doc.font('cuerpo').fontSize(9);
-      altoEstimado += 12 + doc.heightOfString(sb.mensaje || '', { width: ANCHO_CONTENIDO - 45 });
+      altoEstimado += 14 + doc.heightOfString(sb.mensaje || '', { width: ANCHO_CONTENIDO - 45, lineGap: 2 });
     }
   }
   asegurarEspacio(doc, altoEstimado);
@@ -550,23 +558,23 @@ function dibujarBloque(doc, bloque) {
     .text(titulo, X_MARGEN + iconoSize + 8, yInicio + 5,
       { width: ANCHO_CONTENIDO - iconoSize - 8, lineBreak: false });
 
-  doc.y = yInicio + 24;
+  doc.y = yInicio + 26;
   doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
-    .text(mensaje, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
+    .text(mensaje, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, lineGap: 2.5 });
 
-  // Subbloques (preguntas/respuestas tipo FAQ)
   if (Array.isArray(bloque.subbloques) && bloque.subbloques.length) {
-    doc.moveDown(0.3);
+    doc.moveDown(0.5);
     for (const sb of bloque.subbloques) {
       doc.font('demi').fontSize(9).fillColor(COLORES.navy)
         .text(sb.titulo || '', X_MARGEN + 12, doc.y, { width: ANCHO_CONTENIDO - 12 });
+      doc.moveDown(0.15);
       doc.font('cuerpo').fontSize(9).fillColor(COLORES.textoCuerpo)
-        .text(sb.mensaje || '', X_MARGEN + 12, doc.y, { width: ANCHO_CONTENIDO - 12 });
-      doc.moveDown(0.2);
+        .text(sb.mensaje || '', X_MARGEN + 12, doc.y, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
+      doc.moveDown(0.35);
     }
   }
 
-  doc.moveDown(0.6);
+  doc.moveDown(0.7);
 }
 
 function dibujarContextoDigital(doc, contexto) {
@@ -636,8 +644,8 @@ function dibujarProximosPasos(doc, informe) {
   if (!pasos.length) return;
 
   doc.font('cuerpo').fontSize(10);
-  const altoEstimado = 40 + pasos.reduce(
-    (acc, p) => acc + doc.heightOfString(p, { width: ANCHO_CONTENIDO - 30 }) + 6,
+  const altoEstimado = 44 + pasos.reduce(
+    (acc, p) => acc + doc.heightOfString(p, { width: ANCHO_CONTENIDO - 50, lineGap: 2.5 }) + 10,
     0,
   );
   asegurarEspacio(doc, altoEstimado);
@@ -657,31 +665,31 @@ function dibujarProximosPasos(doc, informe) {
     doc.font('cuerpo-bold').fontSize(10).fillColor(COLORES.azul)
       .text(`${i + 1}.`, X_MARGEN + 18, yPaso, { width: 16, lineBreak: false });
     doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
-      .text(paso, X_MARGEN + 36, yPaso, { width: ANCHO_CONTENIDO - 50 });
-    doc.moveDown(0.3);
+      .text(paso, X_MARGEN + 36, yPaso, { width: ANCHO_CONTENIDO - 50, lineGap: 2.5 });
+    doc.moveDown(0.45);
   });
   doc.y = yInicio + altoEstimado + 12;
 }
 
 // Encuadre normativo fijo: aparece en todos los informes, antes del artículo
 // puntual que el motor cita para cada caso.
-const MARCO_LEGAL = 'Este informe se elaboró conforme al marco normativo vigente en materia marcaria: '
-  + 'Ley N° 22.362 de Marcas y Designaciones y su decreto reglamentario, el Convenio de París '
-  + 'para la Protección de la Propiedad Industrial, el Acuerdo sobre los ADPIC y los criterios '
-  + 'de la práctica registral del INPI.';
+const MARCO_LEGAL = 'El presente informe se elaboró sobre la base de la Ley de Marcas y '
+  + 'Designaciones, las leyes especiales aplicables, las resoluciones del INPI '
+  + 'y la doctrina vigente en materia marcaria.';
 
 function dibujarApendiceLegal(doc, informe) {
   const apendice = informe.cliente?.apendice_legal_corto;
-  asegurarEspacio(doc, 64);
-  doc.moveDown(0.5);
+  asegurarEspacio(doc, 80);
+  doc.moveDown(0.6);
   doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
     .text('BASE LEGAL', X_MARGEN, doc.y);
+  doc.moveDown(0.15);
   doc.font('italic').fontSize(8).fillColor(COLORES.textoSuave)
-    .text(MARCO_LEGAL, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
+    .text(MARCO_LEGAL, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, lineGap: 2 });
   if (apendice) {
-    doc.moveDown(0.2);
+    doc.moveDown(0.35);
     doc.font('italic').fontSize(8).fillColor(COLORES.textoSuave)
-      .text(apendice, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO });
+      .text(apendice, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, lineGap: 2 });
   }
 }
 
