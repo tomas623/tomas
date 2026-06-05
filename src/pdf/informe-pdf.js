@@ -351,65 +351,97 @@ function dibujarMetodologia(doc) {
   doc.moveDown(0.3);
 }
 
+// Dibuja una card de CTA con alturas medidas (sin solapamientos).
+// Devuelve la Y siguiente. Las líneas de texto se apilan de a una.
+function dibujarCardCTA(doc, { titulo, tituloColor, parrafos, etiquetaBoton, botonColor, bg, barra }) {
+  const padX = 24;
+  const wTexto = ANCHO_CONTENIDO - padX - 18;
+
+  // Medición previa para conocer el alto total.
+  let alto = 16; // padding top
+  doc.font('titulo').fontSize(13);
+  alto += doc.heightOfString(titulo, { width: wTexto }) + 6;
+  for (const p of parrafos) {
+    doc.font(p.bold ? 'demi' : 'cuerpo').fontSize(10);
+    alto += doc.heightOfString(p.txt, { width: wTexto }) + 5;
+  }
+  alto += 8 + 22; // gap + botón
+  alto += 14; // padding bottom
+
+  asegurarEspacio(doc, alto + 12);
+  const y = doc.y;
+
+  doc.save();
+  if (bg.opacity) {
+    doc.roundedRect(X_MARGEN, y, ANCHO_CONTENIDO, alto, 10).fillColor(bg.color).fillOpacity(bg.opacity).fill();
+  } else {
+    doc.roundedRect(X_MARGEN, y, ANCHO_CONTENIDO, alto, 10).fillColor(bg.color).fill();
+  }
+  doc.restore();
+  doc.fillOpacity(1);
+  doc.save();
+  doc.rect(X_MARGEN, y, 6, alto).fillColor(barra).fill();
+  doc.restore();
+
+  doc.font('titulo').fontSize(13).fillColor(tituloColor)
+    .text(titulo, X_MARGEN + padX, y + 16, { width: wTexto });
+  doc.moveDown(0.2);
+  for (const p of parrafos) {
+    doc.font(p.bold ? 'demi' : 'cuerpo').fontSize(10).fillColor(p.bold ? COLORES.navy : COLORES.textoCuerpo)
+      .text(p.txt, X_MARGEN + padX, doc.y, { width: wTexto });
+    doc.moveDown(0.15);
+  }
+
+  // Botón
+  const wBoton = doc.font('demi').fontSize(9).widthOfString(etiquetaBoton) + 34;
+  const yBtn = doc.y + 6;
+  doc.save();
+  doc.roundedRect(X_MARGEN + padX, yBtn, wBoton, 22, 11).fillColor(botonColor).fill();
+  doc.fillColor('#ffffff').font('demi').fontSize(9)
+    .text(etiquetaBoton, X_MARGEN + padX, yBtn + 7, { width: wBoton, align: 'center', lineBreak: false });
+  doc.restore();
+
+  doc.y = y + alto + 12;
+}
+
 // CTAs al cierre del informe — el plan comercial del estudio.
 function dibujarCTAs(doc, cliente) {
-  asegurarEspacio(doc, 280);
+  asegurarEspacio(doc, 120);
   dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGALPACERS');
   doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
     .text('Te acompañamos en lo que sigue. Estas son las dos vías habituales a partir de este informe:',
       X_MARGEN + 12, doc.y + 3, { width: ANCHO_CONTENIDO - 12 });
   doc.y += 18;
 
-  // Card 1 — Consultar con abogado
-  const yC1 = doc.y;
-  const altoC1 = 88;
-  doc.save();
-  doc.roundedRect(X_MARGEN, yC1, ANCHO_CONTENIDO, altoC1, 10)
-    .fillColor(COLORES.cardBg).fill();
-  doc.rect(X_MARGEN, yC1, 6, altoC1).fillColor(COLORES.azul).fill();
-  doc.restore();
-  doc.font('titulo').fontSize(13).fillColor(COLORES.navy)
-    .text('Consultá con un abogado de propiedad industrial', X_MARGEN + 24, yC1 + 14, { width: ANCHO_CONTENIDO - 48 });
-  doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
-    .text('Si tenés dudas puntuales sobre este informe, alternativas viables, riesgos del negocio o estrategia marcaria a largo plazo, te asistimos en una reunión 1 a 1.',
-      X_MARGEN + 24, yC1 + 36, { width: ANCHO_CONTENIDO - 48 });
-  // Botón simulado
-  const yBtn1 = yC1 + altoC1 - 26;
-  doc.save();
-  doc.roundedRect(X_MARGEN + 24, yBtn1, 165, 20, 10).fillColor(COLORES.navy).fill();
-  doc.fillColor('#ffffff').font('demi').fontSize(9)
-    .text('AGENDAR CONSULTA →', X_MARGEN + 24, yBtn1 + 6, { width: 165, align: 'center', lineBreak: false });
-  doc.restore();
-  doc.y = yC1 + altoC1 + 12;
+  dibujarCardCTA(doc, {
+    titulo: 'Consultá con un abogado de propiedad industrial',
+    tituloColor: COLORES.navy,
+    parrafos: [
+      { txt: 'Si tenés dudas puntuales sobre este informe, alternativas viables, riesgos del negocio o estrategia marcaria a largo plazo, te asistimos en una reunión 1 a 1.' },
+    ],
+    etiquetaBoton: 'AGENDAR CONSULTA →',
+    botonColor: COLORES.navy,
+    bg: { color: COLORES.cardBg },
+    barra: COLORES.azul,
+  });
 
-  // Card 2 — Registrar marca con descuento
-  const yC2 = doc.y;
-  const altoC2 = 100;
-  doc.save();
-  doc.roundedRect(X_MARGEN, yC2, ANCHO_CONTENIDO, altoC2, 10)
-    .fillColor(COLORES.azul).fillOpacity(0.08).fill();
-  doc.rect(X_MARGEN, yC2, 6, altoC2).fillColor(COLORES.azul).fill();
-  doc.restore();
-  doc.fillOpacity(1);
-  doc.font('titulo').fontSize(13).fillColor(COLORES.azul)
-    .text('Registrá tu marca con LegalPacers', X_MARGEN + 24, yC2 + 14, { width: ANCHO_CONTENIDO - 48 });
-  doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
-    .text('Nosotros nos encargamos de la presentación, el seguimiento ante el INPI y las eventuales oposiciones.',
-      X_MARGEN + 24, yC2 + 36, { width: ANCHO_CONTENIDO - 48 });
-  doc.font('demi').fontSize(10).fillColor(COLORES.navy)
-    .text('Descontamos íntegramente el valor de este informe del costo del registro.',
-      X_MARGEN + 24, doc.y + 2, { width: ANCHO_CONTENIDO - 48 });
-  const yBtn2 = yC2 + altoC2 - 26;
-  doc.save();
-  doc.roundedRect(X_MARGEN + 24, yBtn2, 195, 20, 10).fillColor(COLORES.azul).fill();
-  doc.fillColor('#ffffff').font('demi').fontSize(9)
-    .text('INICIAR EL REGISTRO →', X_MARGEN + 24, yBtn2 + 6, { width: 195, align: 'center', lineBreak: false });
-  doc.restore();
-  doc.y = yC2 + altoC2 + 14;
+  dibujarCardCTA(doc, {
+    titulo: 'Registrá tu marca con LegalPacers',
+    tituloColor: COLORES.azul,
+    parrafos: [
+      { txt: 'Nos encargamos de la presentación, el seguimiento ante el INPI y las eventuales oposiciones.' },
+      { txt: 'Descontamos íntegramente el valor de este informe del costo del registro.', bold: true },
+    ],
+    etiquetaBoton: 'INICIAR EL REGISTRO →',
+    botonColor: COLORES.azul,
+    bg: { color: COLORES.azul, opacity: 0.08 },
+    barra: COLORES.azul,
+  });
 
   // Datos de contacto del estudio
+  doc.moveDown(0.2);
   doc.font('cuerpo-light').fontSize(8.5).fillColor(COLORES.textoSuave)
-    .text(`Escribinos a contacto@legalpacers.com o reservá una llamada en legalpacers.com.`,
+    .text('Escribinos a contacto@legalpacers.com o reservá una llamada en legalpacers.com.',
       X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, align: 'center', lineBreak: false });
 }
 
@@ -710,6 +742,7 @@ function generarPDF(informe, cliente, contexto = {}) {
 
       dibujarHeader(doc, { cliente });
       dibujarFichaCaso(doc, cliente);
+      dibujarMetodologia(doc);
       dibujarVeredicto(doc, informe);
       dibujarComparativas(doc, informe);
 
@@ -718,7 +751,6 @@ function generarPDF(informe, cliente, contexto = {}) {
 
       dibujarContextoDigital(doc, contexto);
       dibujarProximosPasos(doc, informe);
-      dibujarMetodologia(doc);
       dibujarApendiceLegal(doc, informe);
       dibujarCTAs(doc, cliente);
       dibujarPie(doc);
