@@ -409,60 +409,51 @@ function dibujarCardCTA(doc, opts) {
   doc.y = y + alto + 12;
 }
 
-// Página educativa sobre qué cubre el registro de una marca.
-// Va antes de los CTAs: educa al cliente sobre el alcance del servicio
-// que después se le ofrece registrar.
+// "Qué implica registrar tu marca" — versión compacta en grilla 2x3.
+// Pensada para entrar junto a los CTAs en la misma página, sin sumar una más.
 function dibujarQueImplicaRegistro(doc) {
-  // Bloque cohesionado: si no entra entero, salta a página nueva.
-  asegurarEspacio(doc, 480);
-
-  dibujarTituloSeccion(doc, 'QUÉ IMPLICA REGISTRAR TU MARCA');
-  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
-    .text('Si después de este informe decidís avanzar, esto es lo que el registro te da concretamente:',
-      X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
-  doc.y += 22;
-
-  const bloques = [
-    {
-      t: 'Derecho exclusivo sobre la marca',
-      d: 'Sos el único que puede usar comercialmente esa denominación en las clases registradas en todo el territorio argentino. Cualquier tercero que la use sin tu autorización está infringiendo tu derecho.',
-    },
-    {
-      t: 'Vigencia de 10 años, renovable indefinidamente',
-      d: 'El registro vale por 10 años desde su concesión y se renueva por períodos iguales mientras la marca esté en uso. Para renovar es condición haber usado la marca en los últimos 5 años.',
-    },
-    {
-      t: 'Defensa frente a terceros',
-      d: 'Podés oponerte a solicitudes posteriores de marcas idénticas o confundibles, iniciar acciones civiles por infracción y solicitar medidas en frontera contra importaciones que la vulneren.',
-    },
-    {
-      t: 'Activo intangible transferible',
-      d: 'La marca registrada es un bien que se puede vender, licenciar, dar en garantía o aportar a una sociedad. Tiene valor económico autónomo y se contabiliza como activo.',
-    },
-    {
-      t: 'Plazo y trámite',
-      d: 'Desde la presentación hasta la concesión, el INPI demora habitualmente entre 12 y 18 meses si no hay oposiciones de terceros. Nosotros nos encargamos del trámite completo y te mantenemos informado en cada etapa.',
-    },
-    {
-      t: 'Cobertura del servicio LegalPacers',
-      d: 'Incluye el análisis previo de viabilidad (este informe), la redacción y presentación de la solicitud ante INPI, el seguimiento del expediente y la respuesta a observaciones u oposiciones simples. Los aranceles oficiales del INPI se facturan aparte según la cantidad de clases.',
-    },
+  const items = [
+    { t: 'Derecho exclusivo',         d: 'Sos el único que puede usar la marca en las clases registradas.' },
+    { t: 'Vigencia 10 años',          d: 'Renovable indefinidamente mientras la marca esté en uso.' },
+    { t: 'Defensa frente a terceros', d: 'Oposiciones a marcas posteriores y acciones por infracción.' },
+    { t: 'Activo transferible',       d: 'La marca se vende, licencia o aporta como activo intangible.' },
+    { t: 'Trámite 12-18 meses',       d: 'Plazo habitual ante INPI si no hay oposiciones de terceros.' },
+    { t: 'Cobertura LegalPacers',     d: 'Análisis, presentación, seguimiento y respuesta a oposiciones.' },
   ];
 
-  for (const b of bloques) {
-    doc.font('cuerpo').fontSize(9.5);
-    const altoD = doc.heightOfString(b.d, { width: ANCHO_CONTENIDO - 28, lineGap: 2 });
-    asegurarEspacio(doc, altoD + 34);
-    const yB = doc.y;
-    doc.circle(X_MARGEN + 6, yB + 7, 2.8).fillColor(COLORES.azul).fill();
-    doc.font('cuerpo-bold').fontSize(10).fillColor(COLORES.navy)
-      .text(b.t, X_MARGEN + 18, yB, { width: ANCHO_CONTENIDO - 18 });
-    doc.moveDown(0.2);
-    doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
-      .text(b.d, X_MARGEN + 18, doc.y, { width: ANCHO_CONTENIDO - 18, lineGap: 2 });
-    doc.moveDown(0.7);
-  }
-  doc.moveDown(0.3);
+  const colW = (ANCHO_CONTENIDO - 14) / 2;
+  const rowH = 48;
+  const filas = Math.ceil(items.length / 2);
+
+  asegurarEspacio(doc, filas * rowH + 60);
+  dibujarTituloSeccion(doc, 'QUÉ INCLUYE EL REGISTRO');
+  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
+    .text('Lo que obtenés cuando avanzás con el registro de marca:',
+      X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
+  doc.y += 20;
+
+  const yStart = doc.y;
+  items.forEach((item, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = X_MARGEN + col * (colW + 14);
+    const y = yStart + row * rowH;
+
+    // Check verde
+    doc.save();
+    doc.circle(x + 9, y + 9, 8).fillColor(COLORES.ok).fillOpacity(0.15).fill();
+    doc.fillOpacity(1).restore();
+    doc.font('cuerpo').fontSize(11).fillColor(COLORES.ok)
+      .text('✓', x, y + 3, { width: 18, align: 'center', lineBreak: false });
+    // Título
+    doc.font('cuerpo-bold').fontSize(9.5).fillColor(COLORES.navy)
+      .text(item.t, x + 24, y + 2, { width: colW - 26, lineBreak: false });
+    // Descripción (puede ocupar 2 líneas)
+    doc.font('cuerpo').fontSize(8.5).fillColor(COLORES.textoCuerpo)
+      .text(item.d, x + 24, y + 16, { width: colW - 26, lineGap: 1.5 });
+  });
+
+  doc.y = yStart + filas * rowH;
 }
 
 // CTAs al cierre del informe — el plan comercial del estudio.
