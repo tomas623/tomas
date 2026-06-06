@@ -117,7 +117,7 @@
       {
         "@type": "Question",
         "name": "¿Cuándo y cómo me avisan si alguien intenta copiar mi marca?",
-        "acceptedAnswer": { "@type": "Answer", "text": "El Boletín de marcas en Argentina se publica una vez por semana, los miércoles. Por eso el monitoreo es semanal, no 24/7: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas y, si hay riesgo, te avisamos por WhatsApp para preparar la oposición dentro del plazo legal." }
+        "acceptedAnswer": { "@type": "Answer", "text": "El Boletín de marcas en Argentina se publica una vez por semana, los miércoles. Por eso el monitoreo es semanal, no 24/7: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas y, si hay riesgo, te avisamos por mail para preparar la oposición dentro del plazo legal." }
       }
     ]
   }
@@ -277,20 +277,13 @@
     .ciclo-card p{font-size:13.5px;color:var(--text-muted);line-height:1.5}
     .ciclo-price{font-size:12.5px;color:var(--text-soft);margin-top:12px;font-weight:700;border-top:1px dashed var(--border-soft);padding-top:12px}
 
-    /* Planes de vigilancia */
-    .planes-vig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
-    .plan-vig{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px;position:relative;display:flex;flex-direction:column;text-align:left}
-    .plan-vig.destacado{border-color:var(--blue);box-shadow:0 8px 30px -10px rgba(27,110,243,.4)}
-    .plan-vig.corporate{background:linear-gradient(180deg,rgba(34,197,94,.06),var(--surface));border-color:rgba(34,197,94,.35)}
-    .plan-vig-tag{position:absolute;top:-10px;left:22px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em}
-    .plan-vig-badge{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
-    .plan-vig-precio{font-size:26px;font-weight:800;color:#fff;margin:6px 0 4px}
-    .plan-vig-precio span{font-size:13px;color:var(--text-muted);font-weight:500;margin-left:4px}
-    .plan-vig-desc{font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:14px}
-    .plan-vig-list{list-style:none;padding:0;margin:0 0 18px;flex:1}
-    .plan-vig-list li{font-size:13px;color:var(--text-soft);padding:5px 0 5px 18px;position:relative}
-    .plan-vig-list li::before{content:"✓";color:var(--blue);position:absolute;left:0;font-weight:700}
-    .plan-vig .btn{width:100%}
+    /* Selector de pack en modal de vigilancia */
+    .vig-pack-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    .vig-pack-opt{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:10px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;color:var(--text-soft)}
+    .vig-pack-opt strong{font-size:14px;color:#fff;font-weight:700}
+    .vig-pack-opt span{font-size:11.5px;color:var(--text-muted)}
+    .vig-pack-opt:hover{border-color:var(--blue)}
+    .vig-pack-opt.activo{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 1px var(--blue)}
 
     /* NEGOCIO / ABOUT SECTION */
     .about-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:32px;display:grid;grid-template-columns:1.2fr 1fr;gap:32px;text-align:left;align-items:center}
@@ -308,8 +301,9 @@
     .step{padding:30px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px}
     .step-num{width:40px;height:40px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;margin-bottom:16px}
 
-    .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:900px;margin:0 auto}
-    @media(max-width:760px){.plans-grid{grid-template-columns:1fr}}
+    .plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:1180px;margin:0 auto}
+    @media(max-width:1024px){.plans-grid{grid-template-columns:repeat(2,1fr);max-width:760px}}
+    @media(max-width:600px){.plans-grid{grid-template-columns:1fr}}
     .plan{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:28px 24px;display:flex;flex-direction:column}
     .plan.featured{border-color:rgba(27,110,243,.5);box-shadow:0 20px 40px -20px var(--blue-glow)}
     .plan h3{font-size:18px;margin-bottom:4px}
@@ -317,6 +311,13 @@
     .plan-price{font-size:32px;font-weight:800;margin:8px 0;line-height:1.1}
     .plan-price small{font-size:12px;color:var(--text-muted);display:block;font-weight:500;margin-top:4px;line-height:1.4}
     .plan-desc{font-size:13px;color:var(--text-muted);margin-bottom:18px;line-height:1.45}
+    .plan-step{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;color:#60a5fa;letter-spacing:.07em;margin-bottom:10px;padding:4px 9px;background:var(--blue-soft);border-radius:6px;border:1px solid rgba(27,110,243,.25)}
+    .plan-step.green{color:#6ee7b7;background:var(--green-soft);border-color:rgba(16,185,129,.3)}
+    .plan-step.amber{color:#fcd34d;background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3)}
+    .plan-step.gray{color:var(--text-muted);background:var(--surface-2);border-color:var(--border)}
+    .plan-ideal{background:var(--bg-soft);border-left:3px solid var(--blue);padding:10px 12px;border-radius:0 8px 8px 0;font-size:12.5px;color:var(--text-soft);line-height:1.5;margin-bottom:14px}
+    .plan-ideal strong{color:#7eb1ff;font-weight:700;display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+    .plan-note{font-size:11.5px;color:#fcd34d;background:rgba(245,158,11,.08);border-left:3px solid rgba(245,158,11,.5);padding:7px 10px;border-radius:0 6px 6px 0;margin-bottom:14px;line-height:1.45}
     .plan ul{list-style:none;font-size:13.5px;margin-bottom:22px;flex-grow:1}
     .plan ul li{padding:6px 0;display:flex;gap:8px;line-height:1.4}
     .plan ul li::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0}
@@ -420,8 +421,7 @@
   <div class="header-inner">
     <div class="logo">LEGAL<span class="accent">PACERS</span></div>
     <nav class="nav-links">
-      <a href="#planes">Precios</a>
-      <a href="#custodia">Ciclo de la marca</a>
+      <a href="#planes">Servicios</a>
       <a href="#comparativa">Comparativa</a>
       <a href="#somos">Quiénes somos</a>
       <a href="#faq">FAQ</a>
@@ -555,160 +555,74 @@
   </div>
 </section>
 
-<section id="custodia" style="border-top:1px solid var(--border-soft); background:var(--bg-soft)">
-  <div class="container">
-    <div class="section-eyebrow">Mantenimiento y Vigilancia de Marcas</div>
-    <h2 class="section-title">El ciclo de vida de tu propiedad intelectual</h2>
-    <p class="section-sub">Registrar tu marca es solo el nacimiento de tu activo patrimonial. Para protegerla de plagios y evitar que el Estado la dé de baja de oficio, estructuramos un seguimiento cronológico profesional.</p>
-    
-    <div class="ciclo-grid">
-      <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:var(--blue-soft); color:#60a5fa">Mes 1 al 120 (Suscripción)</div>
-        <h4>Monitoreo Semanal de Boletines</h4>
-        <p>Todas las semanas se presentan miles de nombres nuevos ante el INPI. Escaneamos la base de datos oficial cada miércoles y te alertamos directo por WhatsApp si algún competidor intenta registrar algo similar para interponer la oposición a tiempo.</p>
-        <div class="ciclo-price">Desde $4.900/mes (Opcional post-trámite)</div>
-      </div>
-      <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:rgba(245,158,11,.15); color:#fcd34d">Año 5 (Obligatorio por Ley)</div>
-        <h4>Declaración Jurada de Uso (DJU)</h4>
-        <p>Un hito legal mandatorio en Argentina. Al llegar al quinto año, es obligatorio declarar bajo firma que la marca está comercialmente activa. Si no se presenta, el organismo oficial aplica multas y la da de baja.</p>
-        <div class="ciclo-price">Se presupuesta de forma independiente al llegar al Año 5</div>
-      </div>
-      <div class="ciclo-card">
-        <div class="ciclo-badge" style="background:var(--green-soft); color:#6ee7b7">Año 10 (Renovación)</div>
-        <h4>Renovación de Propiedad</h4>
-        <p>La exclusividad comercial concedida por el INPI vence a los 10 años exactos. Gestionamos la prórroga técnica de tus derechos de marca para extender tu blindaje legal por otra década consecutiva.</p>
-        <div class="ciclo-price">Se presupuesta de forma independiente al llegar al Año 10</div>
-      </div>
-    </div>
-
-    <!-- Planes de monitoreo: 3 packs + cotización corporativa -->
-    <div style="margin-top:48px">
-      <h3 style="font-size:20px;color:#fff;margin-bottom:8px">Planes de Monitoreo Semanal</h3>
-      <p style="font-size:14px;color:var(--text-muted);margin-bottom:24px">Cuántas marcas necesitás proteger. Elegí un plan y nuestro equipo te contacta dentro de 24 horas hábiles para activarlo.</p>
-      <div class="planes-vig-grid">
-        <div class="plan-vig">
-          <div class="plan-vig-badge">3 marcas</div>
-          <div class="plan-vig-precio">$4.900<span>/mes</span></div>
-          <div class="plan-vig-desc">Ideal para emprendedores con una marca principal y variantes.</div>
-          <ul class="plan-vig-list">
-            <li>Vigilancia semanal en el boletín del INPI</li>
-            <li>Alerta por WhatsApp si detectamos un riesgo</li>
-            <li>Asistencia para preparar la oposición</li>
-          </ul>
-          <button class="btn btn-primary" @click="abrirVigilancia('vigilancia_3')">Activar monitoreo</button>
-        </div>
-        <div class="plan-vig destacado">
-          <div class="plan-vig-tag">Más elegido</div>
-          <div class="plan-vig-badge">10 marcas</div>
-          <div class="plan-vig-precio">$12.900<span>/mes</span></div>
-          <div class="plan-vig-desc">Para PyMEs y estudios con cartera mediana de activos intangibles.</div>
-          <ul class="plan-vig-list">
-            <li>Todo lo del plan anterior</li>
-            <li>Reporte mensual del estado de la cartera</li>
-            <li>Soporte prioritario por WhatsApp</li>
-          </ul>
-          <button class="btn btn-primary" @click="abrirVigilancia('vigilancia_10')">Activar monitoreo</button>
-        </div>
-        <div class="plan-vig">
-          <div class="plan-vig-badge">20 marcas</div>
-          <div class="plan-vig-precio">$19.900<span>/mes</span></div>
-          <div class="plan-vig-desc">Carteras corporativas con marcas en múltiples clases.</div>
-          <ul class="plan-vig-list">
-            <li>Todo lo del plan anterior</li>
-            <li>Reporte trimestral del estado de la cartera</li>
-            <li>Asignación de un Agente de PI dedicado</li>
-          </ul>
-          <button class="btn btn-primary" @click="abrirVigilancia('vigilancia_20')">Activar monitoreo</button>
-        </div>
-        <div class="plan-vig corporate">
-          <div class="plan-vig-badge">+20 marcas</div>
-          <div class="plan-vig-precio">A medida</div>
-          <div class="plan-vig-desc">Plan corporativo para holdings y carteras con más de 20 activos.</div>
-          <ul class="plan-vig-list">
-            <li>Cotización personalizada</li>
-            <li>Estructura legal dedicada</li>
-            <li>SLA y reportes a medida</li>
-          </ul>
-          <a class="btn btn-primary" :href="waCorporativo" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Cotizar plan corporativo</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="como">
-  <div class="container">
-    <div class="section-eyebrow">Protección LegalTech</div>
-    <h2 class="section-title">Cómo es el registro de tu marca, paso a paso</h2>
-    <div class="steps-grid">
-      <div class="step">
-        <div class="step-num">1</div>
-        <h3>Filtro de Coincidencias</h3>
-        <p>Barremos de forma gratuita bloqueos idénticos existentes en la base del INPI vinculados a tus actividades comerciales.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <h3>Auditoría de Viabilidad</h3>
-        <p>Analizamos de manera exhaustiva el entorno fonético (sonido) e ideológico (significado por IA) para asegurar que el expediente no sea rechazado.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <h3>Carga Jurídica Oficial</h3>
-        <p>Un Agente de la Propiedad Industrial habilitado configura y presenta tu expediente ante el INPI. Tu marca queda en custodia frente a intentos de copia de terceros.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
 <section id="planes" style="background:var(--bg)">
   <div class="container">
-    <div class="section-eyebrow">Aranceles y Honorarios Fijos</div>
-    <h2 class="section-title">Elegí tu nivel de seguridad jurídica</h2>
-    <p class="section-sub">Precios transparentes para registrar tu marca en Argentina: emprendedores, pymes y startups. Sin costos ocultos.</p>
+    <div class="section-eyebrow">El journey de tu marca</div>
+    <h2 class="section-title">Cuatro servicios, uno para cada etapa</h2>
+    <p class="section-sub">Antes de registrar, durante el trámite, para protegerla en el tiempo y cuando hay que renovarla. Cada servicio es independiente: contratá solo el que te corresponde ahora.</p>
 
     <div class="plans-grid">
       <div class="plan">
-        <span class="plan-tag">Free</span>
-        <h3>Consulta Básica</h3>
-        <div class="plan-price">$0</div>
-        <p class="plan-desc">Filtro inmediato en pantalla para descartar marcas idénticas registradas en Argentina.</p>
-        <ul>
-          <li>Chequeo de coincidencias exactas</li>
-          <li>Identificación de clase sugerida</li>
-          <li>Visualización de marcas bloqueantes</li>
-        </ul>
-        <button class="btn btn-outline" @click="window.scrollTo({top:0,behavior:'smooth'})">Consultar gratis</button>
-      </div>
-
-      <div class="plan featured">
-        <span class="plan-tag">Recomendado para Startups/Pymes</span>
-        <h3>Auditoría de Viabilidad</h3>
+        <span class="plan-step">Etapa 1 · Antes de registrar</span>
+        <h3>Chequeo de viabilidad</h3>
         <div class="plan-price">$19.900</div>
-        <p class="plan-desc">El mapa de riesgo total de sonido, significado e identidad digital antes de abonar aranceles públicos.</p>
+        <p class="plan-desc">Análisis profesional de riesgo fonético, conceptual y digital antes de invertir en branding o pagar tasas oficiales.</p>
+        <div class="plan-ideal"><strong>Ideal si…</strong>Ya tenés un nombre en mente y querés evaluar el riesgo real de rechazo antes de avanzar.</div>
         <ul>
-          <li>Análisis Fonético y Léxico</li>
-          <li>Análisis Conceptual con IA</li>
-          <li>Disponibilidad de dominios y usuarios</li>
-          <li>Garantía de Re-intento gratis si da ROJO</li>
+          <li>Análisis fonético y léxico con IA</li>
+          <li>Análisis conceptual e ideológico</li>
+          <li>Disponibilidad de dominios y redes</li>
+          <li>Garantía: re-auditoría gratis si da ROJO</li>
           <li style="color:#6ee7b7">🎁 +10% OFF en honorarios de Registro</li>
         </ul>
         <button class="btn btn-primary" @click="openInforme()">Comprar informe</button>
       </div>
 
-      <div class="plan">
-        <span class="plan-tag">Gestión Profesional Completa</span>
-        <h3>Registro de Marca</h3>
+      <div class="plan featured">
+        <span class="plan-step">Etapa 2 · Registrar</span>
+        <h3>Inicio del registro</h3>
         <div class="plan-price">$120.000<small>+ Tasa oficial INPI por clase a precio de costo (~$36.000 = 100 UMAPI). Desde mayo 2026 el INPI cobra en UMAPI y la actualiza por IPC cada mes: se cotiza el valor exacto el día de la presentación.</small></div>
-        <p class="plan-desc">Tramitación legal llave en mano efectuada y firmada por Agentes de la Propiedad Industrial.</p>
+        <p class="plan-desc">Tramitación legal llave en mano firmada por un Agente de la Propiedad Industrial matriculado.</p>
+        <div class="plan-ideal"><strong>Ideal si…</strong>Ya decidiste tu marca y querés presentarla ante el INPI sin pelearte con burocracia.</div>
         <ul>
           <li>Armado técnico de categorías del expediente</li>
           <li>Presentación formal ante el Registro Nacional</li>
           <li>Contestación de vistas de forma incluidas</li>
-          <li style="color:#6ee7b7">🎁 2 meses de Vigilancia de boletín incluidos</li>
-          <li>Vigilancia semanal post-mes 2 y DJU año 5 independientes</li>
+          <li style="color:#6ee7b7">🎁 2 meses de Protección continua incluidos</li>
         </ul>
-        <button class="btn btn-primary" @click="iniciarRegistroDirecto()" style="background:var(--surface-3); border:1px solid var(--border)">Iniciar registro</button>
+        <div class="plan-note">⚠️ <strong>Sin oposiciones de terceros incluidas.</strong> Si alguien se opone a tu marca durante el trámite, se cotiza por separado.</div>
+        <button class="btn btn-primary" @click="iniciarRegistroDirecto()">Iniciar registro</button>
+      </div>
+
+      <div class="plan" style="border-color:rgba(16,185,129,0.35)">
+        <span class="plan-step green">Etapa 3 · Protegerla</span>
+        <h3>Protección continua</h3>
+        <div class="plan-price">desde $4.900<small>por mes · cancelás cuando quieras</small></div>
+        <p class="plan-desc">Monitoreo semanal del Boletín del INPI con alertas por mail si alguien intenta registrar algo similar a tu marca.</p>
+        <div class="plan-ideal" style="border-left-color:#10b981"><strong style="color:#6ee7b7">Ideal si…</strong>Tu marca está <strong style="display:inline">registrada o en trámite</strong> y querés que te avisemos cuando aparezca una posible copia.</div>
+        <ul>
+          <li>Pack 3 marcas — $4.900/mes</li>
+          <li>Pack 10 marcas — $12.900/mes</li>
+          <li>Pack 20 marcas — $19.900/mes</li>
+          <li>Escaneo cada miércoles + alertas por mail</li>
+        </ul>
+        <button class="btn btn-primary" style="background:#10b981" @click="abrirVigilancia()">Suscribirme</button>
+        <a :href="waCorporativo" target="_blank" style="display:block;text-align:center;margin-top:8px;font-size:12px;color:var(--text-muted)">+20 marcas? Cotización a medida</a>
+      </div>
+
+      <div class="plan">
+        <span class="plan-step amber">Etapa 4 · Mantenerla vigente</span>
+        <h3>DJU y Renovación</h3>
+        <div class="plan-price">a cotizar<small>al acercarse el hito legal</small></div>
+        <p class="plan-desc">Declaración Jurada de Uso al año 5 (obligatoria por ley) y renovación de la marca al año 10. Trámites firmados por el Agente.</p>
+        <div class="plan-ideal"><strong>Ideal si…</strong>Tu marca cumple 5 años (DJU obligatoria) o 10 años (renovación o pierde la exclusividad).</div>
+        <ul>
+          <li><strong>Año 5</strong> — DJU obligatoria por ley</li>
+          <li><strong>Año 10</strong> — renovación de propiedad</li>
+          <li>Sin sorpresas: cotizamos antes de presentar</li>
+          <li>Te avisamos cuando se acerca el hito</li>
+        </ul>
+        <a :href="waLink" target="_blank" class="btn btn-outline" style="text-decoration:none">Consultar por WhatsApp</a>
       </div>
     </div>
   </div>
@@ -738,7 +652,7 @@
       <div class="compare-row">
         <div><strong>Custodia de marcas</strong></div>
         <div class="col-bad">Obligación de revisar manualmente los listados del Boletín Oficial de marcas.</div>
-        <div class="col-good">Monitoreo semanal: escaneamos el boletín cada miércoles y te avisamos por WhatsApp si hay riesgo de plagio.</div>
+        <div class="col-good">Monitoreo semanal: escaneamos el boletín cada miércoles y te avisamos por mail si hay riesgo de plagio.</div>
       </div>
     </div>
   </div>
@@ -862,7 +776,7 @@
 
     <details class="faq-item">
       <summary class="faq-q">¿Cuándo y cómo me avisan si alguien intenta copiar mi nombre?</summary>
-      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos directo por WhatsApp para preparar la oposición formal dentro del plazo legal. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles.</div>
+      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos por mail para preparar la oposición formal dentro del plazo legal. Las alertas también quedan registradas en tu portal cliente para que decidas cómo seguir. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles.</div>
     </details>
   </div>
 </section>
@@ -977,7 +891,21 @@
   <div class="modal-card">
     <button @click="modalVigilancia=false" class="modal-close">&times;</button>
     <span class="modal-eyebrow">Activación de Monitoreo Semanal</span>
-    <h3 class="modal-title" x-text="vigForm.packNombre"></h3>
+    <h3 class="modal-title">Suscribirme al monitoreo</h3>
+
+    <label class="modal-label" style="margin-top:4px">¿Cuántas marcas querés vigilar?</label>
+    <div class="vig-pack-picker">
+      <button type="button" class="vig-pack-opt" :class="{ activo: vigForm.pack === 'vigilancia_3' }"  @click="seleccionarPack('vigilancia_3')">
+        <strong>3 marcas</strong><span>$4.900/mes</span>
+      </button>
+      <button type="button" class="vig-pack-opt" :class="{ activo: vigForm.pack === 'vigilancia_10' }" @click="seleccionarPack('vigilancia_10')">
+        <strong>10 marcas</strong><span>$12.900/mes</span>
+      </button>
+      <button type="button" class="vig-pack-opt" :class="{ activo: vigForm.pack === 'vigilancia_20' }" @click="seleccionarPack('vigilancia_20')">
+        <strong>20 marcas</strong><span>$19.900/mes</span>
+      </button>
+    </div>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px">¿Más de 20? <a :href="waCorporativo" target="_blank" style="color:#60a5fa">Cotizá un plan corporativo</a>.</p>
 
     <div class="price-block" x-show="vigForm.packPrecio > 0">
       <div class="num" x-text="'$' + vigForm.packPrecio.toLocaleString('es-AR') + ' /mes'"></div>
@@ -1143,16 +1071,30 @@ function landing() {
       }
     },
     openInforme() { this.modalInforme = true; },
+    vigPacks: {
+      vigilancia_3:  { nombre: 'Plan Monitoreo · 3 marcas',  precio: 4900 },
+      vigilancia_10: { nombre: 'Plan Monitoreo · 10 marcas', precio: 12900 },
+      vigilancia_20: { nombre: 'Plan Monitoreo · 20 marcas', precio: 19900 },
+    },
     abrirVigilancia(pack) {
-      const info = {
-        vigilancia_3:  { nombre: 'Plan Monitoreo · 3 marcas',  precio: 4900 },
-        vigilancia_10: { nombre: 'Plan Monitoreo · 10 marcas', precio: 12900 },
-        vigilancia_20: { nombre: 'Plan Monitoreo · 20 marcas', precio: 19900 },
-      }[pack];
-      if (!info) return;
-      this.vigForm = { ...this.vigForm, pack, packNombre: info.nombre, packPrecio: info.precio, error: '', exito: false };
+      const info = pack ? this.vigPacks[pack] : null;
+      this.vigForm = {
+        ...this.vigForm,
+        pack: pack || 'vigilancia_10',
+        packNombre: info ? info.nombre : 'Activar monitoreo',
+        packPrecio: info ? info.precio : 0,
+        error: '',
+        exito: false,
+      };
       this.modalVigilancia = true;
-      trackEvent('lp:vigilancia_open', { pack });
+      trackEvent('lp:vigilancia_open', { pack: pack || 'sin_preset' });
+    },
+    seleccionarPack(code) {
+      const info = this.vigPacks[code];
+      if (!info) return;
+      this.vigForm.pack = code;
+      this.vigForm.packNombre = info.nombre;
+      this.vigForm.packPrecio = info.precio;
     },
     async confirmarVigilancia() {
       this.vigForm.error = '';
@@ -1251,7 +1193,7 @@ function landing() {
       },
       {
         q: "¿Cuándo y cómo me avisan si alguien intenta copiar mi nombre?",
-        a: "El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos directo por WhatsApp para preparar la oposición formal dentro del plazo legal. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles."
+        a: "El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos por mail para preparar la oposición formal dentro del plazo legal. Las alertas también quedan registradas en tu portal cliente para que decidas cómo seguir. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles."
       }
     ]
   };

@@ -426,6 +426,50 @@ function mountAdminRoutes(app) {
     res.json(ok({ audit: rows }));
   });
 
+  // ===== Upload one-shot de marcas.db (DB de la app Python heredada) =====
+  // Protegido con ADMIN_TOKEN para que nadie pise el archivo. Recibe el .db
+  // crudo en el body, lo guarda en /app/data/marcas.db y dispara import-python
+  // en background. Pensado para uso UNA vez por instalación; conviene
+  // remover el endpoint después de usar.
+  app.post('/api/admin/upload-db', express.raw({ type: '*/*', limit: '500mb' }), async (req, res) => {
+    const adminToken = (process.env.ADMIN_TOKEN || '').trim();
+    if (!adminToken) return res.status(503).json(fail('ADMIN_TOKEN no configurado en el server'));
+    const provided = req.headers['x-admin-token'] || req.query.token;
+    if (provided !== adminToken) return res.status(401).json(fail('admin token inválido'));
+
+    if (!req.body || !req.body.length) return res.status(400).json(fail('body vacío'));
+
+    const fs = require('fs');
+    const path = require('path');
+    const target = process.env.PYTHON_DB_PATH || '/app/data/marcas.db';
+    const dir = path.dirname(target);
+    try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+    try {
+      fs.writeFileSync(target, req.body);
+    } catch (err) {
+      return res.status(500).json(fail(`No pude escribir en ${target}: ${err.message}`));
+    }
+    const sizeMB = (req.body.length / (1024 * 1024)).toFixed(1);
+    console.log(`[upload-db] recibido ${sizeMB} MB en ${target}`);
+
+    audit.log(null, 'upload-db', { detalle: { target, size_bytes: req.body.length } });
+
+    // Disparar el import en background, no bloqueamos la respuesta HTTP.
+    res.json(ok({
+      saved: target,
+      size_mb: parseFloat(sizeMB),
+      import_started: true,
+      nota: 'El import corre en background (~30s). Mirá los Deploy Logs para ver el progreso.',
+    }));
+
+    setImmediate(() => {
+      const { spawn } = require('child_process');
+      const env = { ...process.env, PYTHON_DB_PATH: target };
+      const child = spawn('node', [path.join(__dirname, 'import-python-db.js')], { env, stdio: 'inherit' });
+      child.on('exit', (code) => console.log(`[upload-db] import-python terminó con código ${code}`));
+    });
+  });
+
   // ===== Boletines =====
   app.get('/api/admin/boletines', guard, (req, res) => {
     const rows = db.prepare(`

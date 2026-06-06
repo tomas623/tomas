@@ -53,53 +53,11 @@ async function enviarMail({ alertaId, to, marca, nivel, fundamento, panel_url })
 }
 
 async function enviarWhatsApp({ alertaId, to, marca, nivel, panel_url }) {
-  const token = (process.env.WA_TOKEN || '').trim();
-  const phoneId = (process.env.WA_PHONE_NUMBER_ID || '').trim();
-  const template = (process.env.WA_TEMPLATE_ALERTA || 'alerta_marca').trim();
-
-  if (!to) { registrar(alertaId, 'wa', 'sin_telefono'); return { ok: false, error: 'sin telefono' }; }
-
-  if (!token || !phoneId) {
-    console.log(`[wa/STUB] → ${to} · alerta de "${marca}" nivel ${nivel}`);
-    registrar(alertaId, 'wa', 'enviada_stub');
-    return { ok: true, stub: true };
-  }
-  try {
-    const body = {
-      messaging_product: 'whatsapp',
-      to: String(to).replace(/\D/g, ''),
-      type: 'template',
-      template: {
-        name: template,
-        language: { code: 'es_AR' },
-        components: [{
-          type: 'body',
-          parameters: [
-            { type: 'text', text: marca },
-            { type: 'text', text: nivel },
-            { type: 'text', text: panel_url },
-          ],
-        }],
-      },
-    };
-    const res = await fetch(`https://graph.facebook.com/v20.0/${phoneId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => '');
-      registrar(alertaId, 'wa', 'error', { error: `HTTP ${res.status}: ${txt.slice(0, 200)}` });
-      return { ok: false, error: `HTTP ${res.status}` };
-    }
-    const data = await res.json();
-    const pid = data?.messages?.[0]?.id;
-    registrar(alertaId, 'wa', 'enviada', { proveedor_id: pid });
-    return { ok: true, id: pid };
-  } catch (err) {
-    registrar(alertaId, 'wa', 'error', { error: err.message });
-    return { ok: false, error: err.message };
-  }
+  // Desactivado por decisión de producto — todas las alertas salen por mail.
+  // El botón verde de WhatsApp de la landing y el contacto manual siguen
+  // funcionando, pero el sistema NO inicia chats automáticos.
+  registrar(alertaId, 'wa', 'desactivado');
+  return { ok: true, disabled: true };
 }
 
 module.exports = { enviarMail, enviarWhatsApp, enviarMailGenerico };

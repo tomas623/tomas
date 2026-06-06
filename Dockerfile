@@ -2,7 +2,8 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Dependencias del sistema para compilar better-sqlite3 con node-gyp.
+# Dependencias del sistema para compilar better-sqlite3 con node-gyp si la
+# precompiled binary no está disponible para esta arquitectura.
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
       ca-certificates curl python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
@@ -18,8 +19,10 @@ COPY public ./public
 COPY data ./data
 COPY landing-legalpacers.html ./
 
-# El volumen persistente del PaaS debe montarse en /app/data
-# (donde vive `legalpacers.db`). En Railway: Volume → mountPath /app/data.
+# El volumen persistente del PaaS se configura desde su UI (Railway: Volume con
+# mountPath /app/data). Railway rechaza la directiva VOLUME del Dockerfile —
+# por eso queda sólo como comentario.
+RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 ENV PORT=3000

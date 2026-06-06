@@ -3,34 +3,26 @@ Legal Pacers - Brand Monitoring & Trademark Verification Flask App
 """
 
 import os
-import re
 import json
 import uuid
 import logging
 import smtplib
-import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import wraps
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email import encoders
 
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
 from posiciones_data import POSICIONES
 from inpi_scraper import search_inpi, batch_search
-from pdf_generator import LegalPacersPDF, build_disponibilidad_report
-from database import (
-    init_db, search_marcas, count_marcas,
-    verificar_denominacion, upsert_user, is_user_premium,
-    set_subscription, update_subscription_status, apply_payment,
-    grant_premium, bump_user_search, get_or_set_risk_cache,
-    _normalize, get_session, User,
-)
+from pdf_generator import LegalPacersPDF
+from database import init_db, search_marcas, count_marcas
 
 # Load environment
 load_dotenv()
@@ -41,96 +33,14 @@ logger = logging.getLogger(__name__)
 
 # Flask app
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-key-change-in-production")
-app.config.update(
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "true").lower() == "true",
-    PERMANENT_SESSION_LIFETIME=timedelta(days=30),
-)
-
-# Premium pricing / MP config
-PREMIUM_PRICE_ARS = float(os.getenv("PREMIUM_PRICE_ARS", "9900"))
-PREMIUM_DAYS = int(os.getenv("PREMIUM_DAYS", "30"))
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://marcas.legalpacers.com").rstrip("/")
-
-# Simple in-process cache of the last verification batch per session, keyed by batch_id.
-# Used by /api/reporte/email to regenerate the PDF without re-running the fuzzy search.
-_batch_cache: dict = {}
 
 # Init DB on startup
 try:
     init_db()
 except Exception as e:
     logger.warning(f"DB init warning: {e}")
-
-# Background import thread state
-_import_running = False
-
-
-def _trigger_bulk_import(years=10, from_override=None, to_override=None, limit=None, force=False) -> bool:
-    """Start the bulk import background thread. Returns False if already running."""
-    global _import_running
-    if _import_running and not force:
-        return False
-
-    def _run():
-        global _import_running
-        _import_running = True
-        try:
-            from database import init_db, set_import_state, get_last_imported_boletin
-            from bulk_importer import bulk_import, detect_latest_bulletin, BULLETINS_PER_YEAR
-            init_db()
-            set_import_state(running=True)
-            to_num = int(to_override) if to_override else detect_latest_bulletin()
-            from_num = int(from_override) if from_override else max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
-            if limit:
-                to_num = min(to_num, from_num + int(limit) - 1)
-            # Clamp to valid INPI bulletin range
-            from_num = max(1, min(from_num, 10000))
-            to_num   = max(1, min(to_num,   10000))
-            if from_num > to_num:
-                raise ValueError(f"Invalid range: {from_num}–{to_num}")
-            # Resume logic: skip past both already-imported AND error-logged bulletins.
-            # last_ok: highest bulletin with real records (don't go back before this)
-            # last_attempted: highest bulletin we've touched at all (skip permanently-failing ones)
-            # We resume from max(last_ok, last_attempted) + 1.
-            if not from_override:
-                from database import get_last_attempted_boletin
-                last_ok = get_last_imported_boletin()
-                last_attempted = get_last_attempted_boletin()
-                resume_from = max(last_ok, last_attempted) + 1
-                if resume_from <= to_num and (last_ok or last_attempted):
-                    logger.info(
-                        f"Resuming from bulletin {resume_from} "
-                        f"(last OK: {last_ok}, last attempted: {last_attempted})"
-                    )
-                    from_num = resume_from
-            logger.info(f"Bulk import: {from_num}–{to_num}")
-            bulk_import(from_num, to_num)
-            logger.info("Bulk import complete")
-        except Exception as e:
-            logger.error(f"Bulk import error: {e}")
-            try:
-                from database import set_import_state
-                set_import_state(running=False, last_error=str(e))
-            except Exception:
-                pass
-        finally:
-            _import_running = False
-
-    threading.Thread(target=_run, daemon=True).start()
-    return True
-
-
-# Auto-start import on every deploy — resume logic skips already-imported bulletins quickly
-try:
-    logger.info("Startup: auto-starting import (will skip already-imported bulletins)")
-    _trigger_bulk_import()
-except Exception as _e:
-    logger.warning(f"Auto-start failed: {_e}")
-
 
 # Global state
 search_cache = {}  # {search_id: {data}}
@@ -159,44 +69,6 @@ def require_env(*keys):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
-
-
-def require_email(f):
-    """Decorator: require a valid email in session (set by /api/gate)."""
-    @wraps(f)
-    def wrapped(*args, **kwargs):
-        email = (session.get("email") or "").strip().lower()
-        if not email:
-            return error_response("Email gate required", 401)
-        return f(*args, **kwargs)
-    return wrapped
-
-
-EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
-
-def _get_current_user() -> "User | None":
-    email = (session.get("email") or "").strip().lower()
-    if not email:
-        return None
-    with get_session() as s:
-        u = s.query(User).filter(User.email == email).first()
-        if u:
-            s.expunge(u)
-        return u
-
-
-def _get_mp_sdk():
-    """Return a Mercado Pago SDK instance, or None if unconfigured."""
-    token = os.getenv("MP_ACCESS_TOKEN")
-    if not token:
-        return None
-    try:
-        import mercadopago
-        return mercadopago.SDK(token)
-    except Exception as e:
-        logger.error(f"MP SDK init failed: {e}")
-        return None
 
 def send_email(to: str, subject: str, body: str, attachment_bytes: bytes = None, 
                filename: str = None) -> bool:
@@ -295,15 +167,13 @@ def verificar_marca():
 
         classes = [int(clase)] if clase else list(range(1, 46))
 
-        # Use local DB only if it has enough records to be reliable (>= 50,000)
-        # A partial/incomplete DB will show false "available" results for famous marks
-        DB_MIN_RECORDS = 50_000
+        # Try local DB first (fast)
         db_count = count_marcas()
-        if db_count >= DB_MIN_RECORDS:
+        if db_count > 0:
             results = search_marcas(marca, classes, limit=50)
             source = "db"
         else:
-            # DB is empty or incomplete — use live INPI scraping for accurate results
+            # Fallback to live INPI scraping
             results = search_inpi(marca, classes)
             source = "inpi_live"
 
@@ -319,512 +189,6 @@ def verificar_marca():
     except Exception as e:
         logger.error(f"Verification error: {e}")
         return error_response(str(e), 500)
-
-@app.route("/api/gate", methods=["POST"])
-def api_gate():
-    """Email gate. Stores email in session + upserts User row."""
-    try:
-        data = request.json or {}
-        email = (data.get("email") or "").strip().lower()
-        if not EMAIL_RE.match(email):
-            return error_response("Email inválido")
-        u = upsert_user(email)
-        session.permanent = True
-        session["email"] = email
-        return success_response({
-            "ok": True,
-            "email": email,
-            "is_premium": is_user_premium(email),
-            "premium_until": u.premium_until.isoformat() if u.premium_until else None,
-        })
-    except Exception as e:
-        logger.error(f"Gate error: {e}")
-        return error_response(str(e), 500)
-
-
-@app.route("/api/session", methods=["GET"])
-def api_session():
-    """Return current session state (email + premium flag + pricing)."""
-    email = (session.get("email") or "").strip().lower()
-    base = {
-        "premium_price_ars": PREMIUM_PRICE_ARS,
-        "premium_days": PREMIUM_DAYS,
-    }
-    if not email:
-        return success_response({"email": None, "is_premium": False, **base})
-    u = _get_current_user()
-    return success_response({
-        "email": email,
-        "is_premium": is_user_premium(email),
-        "premium_until": u.premium_until.isoformat() if (u and u.premium_until) else None,
-        "subscription_status": u.subscription_status if u else None,
-        **base,
-    })
-
-
-RATE_LIMIT_WINDOW_MIN = 10
-RATE_LIMIT_MAX = 30
-
-
-def _rate_limit_ok(email: str) -> bool:
-    """Basic DB-backed rate limit: max RATE_LIMIT_MAX bumps in the last window."""
-    from sqlalchemy import func as _func
-    # Cheap approximation: use user.searches + last_search_at. If last_search_at is stale
-    # (older than the window), allow; otherwise, if searches grew a lot in the window, deny.
-    with get_session() as s:
-        u = s.query(User).filter(User.email == email).first()
-        if not u or not u.last_search_at:
-            return True
-        if datetime.utcnow() - u.last_search_at > timedelta(minutes=RATE_LIMIT_WINDOW_MIN):
-            # reset window
-            u.searches = 0
-            s.commit()
-            return True
-        return (u.searches or 0) < RATE_LIMIT_MAX
-
-
-@app.route("/api/verificar-batch", methods=["POST"])
-@require_email
-def verificar_batch():
-    """
-    Verify up to 3 denominations under one or more Nice classes.
-    Free users: exactly 1 class. Premium: up to 10 classes (or 'all' = 1..45).
-    """
-    try:
-        email = session["email"]
-        if not _rate_limit_ok(email):
-            return error_response("Demasiadas búsquedas. Esperá unos minutos.", 429)
-
-        data = request.json or {}
-        denoms = [d.strip() for d in (data.get("denominaciones") or []) if d and d.strip()]
-        denoms = denoms[:3]
-        premium = is_user_premium(email)
-
-        # Accept either a single `clase` (int) or a list `clases` (ints).
-        raw_clases = data.get("clases")
-        if not raw_clases:
-            raw_clases = [data.get("clase")] if data.get("clase") else []
-
-        clases = []
-        for c in raw_clases:
-            try:
-                ci = int(c)
-                if 1 <= ci <= 45:
-                    clases.append(ci)
-            except (TypeError, ValueError):
-                continue
-        clases = sorted(set(clases))
-
-        if not denoms:
-            return error_response("Ingresá al menos una denominación")
-        if not clases:
-            return error_response("Seleccioná al menos una clase de Niza")
-
-        # Enforce plan limits
-        if not premium and len(clases) > 1:
-            return error_response(
-                "El plan gratuito solo permite una clase. Suscribite a Premium para buscar en varias.",
-                402,
-            )
-        if premium and len(clases) > 10:
-            return error_response("Máximo 10 clases por búsqueda", 400)
-
-        full = []
-        results = []
-        for d in denoms:
-            for c in clases:
-                r = verificar_denominacion(d, c)
-                full.append({"marca": d, "clase": c, **r})
-                item = {
-                    "marca": d,
-                    "clase": c,
-                    "disponible": r["disponible"],
-                    "similares_count": r["similares_count"],
-                    "exactas_count": len(r["exactas"]),
-                }
-                if premium:
-                    item["similares"] = r["similares"]
-                    item["exactas"] = r["exactas"]
-                results.append(item)
-
-        bump_user_search(email)
-
-        batch_id = str(uuid.uuid4())
-        _batch_cache[batch_id] = {
-            "email": email,
-            "clases": clases,
-            "results_full": full,
-            "created_at": datetime.utcnow().isoformat(),
-        }
-        session["last_batch_id"] = batch_id
-
-        return success_response({
-            "batch_id": batch_id,
-            "clases": clases,
-            "is_premium": premium,
-            "results": results,
-            "premium_price_ars": PREMIUM_PRICE_ARS,
-            "premium_days": PREMIUM_DAYS,
-        })
-    except Exception as e:
-        logger.error(f"verificar-batch error: {e}")
-        return error_response(str(e), 500)
-
-
-def _ai_risk_analysis(denom: str, clase: int, similares: list[dict]) -> dict:
-    """Ask Claude for risk level + suggested classes for a denomination."""
-    sample = "\n".join([
-        f"- {s.get('denominacion','')[:60]} | clase {s.get('clase')} | {s.get('titulares','')[:40]}"
-        for s in similares[:20]
-    ]) or "(sin similares)"
-
-    prompt = f"""Sos experto en propiedad intelectual argentina (INPI).
-
-Denominación solicitada: "{denom}"
-Clase Nice consultada: {clase}
-Marcas similares encontradas (top 20):
-{sample}
-
-Devolvé SOLO un JSON válido con esta forma exacta:
-{{"riesgo": "bajo"|"medio"|"alto",
-  "justificacion": "1-2 oraciones sobre el riesgo de rechazo/oposicion",
-  "clases_sugeridas": [{{"clase": N, "motivo": "por qué"}}, ...]}}
-
-"clases_sugeridas" debe tener entre 3 y 5 clases Nice (1-45) adicionales a la consultada {clase},
-relevantes para proteger el rubro inferido de la denominación.
-NO incluyas texto fuera del JSON."""
-
-    try:
-        resp = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=500,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        txt = (resp.content[0].text or "").strip()
-        # strip code fences if any
-        txt = re.sub(r"^```(?:json)?\s*|\s*```$", "", txt, flags=re.IGNORECASE | re.MULTILINE).strip()
-        return json.loads(txt)
-    except Exception as e:
-        logger.warning(f"AI risk analysis failed for {denom}/{clase}: {e}")
-        return {"riesgo": "medio",
-                "justificacion": "No se pudo generar análisis automático; revisá los similares manualmente.",
-                "clases_sugeridas": []}
-
-
-def _enrich_with_ai(batch: dict) -> list[dict]:
-    """Produce enriched results including cached risk analysis (for the PDF)."""
-    enriched = []
-    for item in batch["results_full"]:
-        denom = item["marca"]
-        clase = int(item["clase"])
-        similares = item.get("similares") or []
-        denom_norm = _normalize(denom)
-        ai = get_or_set_risk_cache(
-            denom_norm, clase,
-            lambda d=denom, c=clase, s=similares: _ai_risk_analysis(d, c, s),
-        )
-        enriched.append({
-            "marca": denom,
-            "clase": clase,
-            "disponible": item.get("disponible", False),
-            "exactas": item.get("exactas", []),
-            "similares": similares,
-            "similares_count": len(similares),
-            "ai_riesgo": ai.get("riesgo"),
-            "ai_justificacion": ai.get("justificacion"),
-            "ai_clases_sugeridas": ai.get("clases_sugeridas", []),
-        })
-    return enriched
-
-
-@app.route("/api/reporte/email", methods=["POST"])
-@require_email
-def reporte_email():
-    """Send the premium PDF report (with AI risk + suggested classes) to the user's email."""
-    try:
-        email = session["email"]
-        if not is_user_premium(email):
-            return error_response("Requiere suscripción premium", 402)
-
-        batch_id = (request.json or {}).get("batch_id") or session.get("last_batch_id")
-        if not batch_id or batch_id not in _batch_cache:
-            return error_response("Batch no encontrado — volvé a verificar las marcas", 404)
-
-        batch = _batch_cache[batch_id]
-        if batch.get("email") != email:
-            return error_response("Batch pertenece a otro usuario", 403)
-
-        enriched = _enrich_with_ai(batch)
-        clases = batch.get("clases") or ([batch["clase"]] if batch.get("clase") else [])
-        pdf_bytes = build_disponibilidad_report(email, clases, enriched)
-
-        subject = f"Reporte de disponibilidad — {len(enriched)} resultado(s)"
-        body = ("Hola,\n\nAdjuntamos tu reporte completo de disponibilidad de marca con análisis "
-                "de riesgo y clases de Niza sugeridas por IA.\n\nLegal Pacers\nhttps://legalpacers.com\n")
-        ok = send_email(email, subject, body,
-                        attachment_bytes=pdf_bytes,
-                        filename="Reporte_Disponibilidad.pdf")
-        if not ok:
-            return error_response("No se pudo enviar el email", 500)
-        return success_response({"ok": True})
-    except Exception as e:
-        logger.error(f"reporte/email error: {e}")
-        return error_response(str(e), 500)
-
-
-# ─────────────────────────────────────────────────────────────────────
-# MERCADO PAGO — subscription (preapproval)
-# ─────────────────────────────────────────────────────────────────────
-
-@app.route("/api/mp/create-subscription", methods=["POST"])
-@require_email
-def mp_create_subscription():
-    """Create an MP preapproval (recurring monthly subscription). Returns init_point."""
-    try:
-        sdk = _get_mp_sdk()
-        if not sdk:
-            return error_response("Pagos no configurados (MP_ACCESS_TOKEN missing)", 500)
-
-        email = session["email"]
-        u = _get_current_user()
-        if not u:
-            return error_response("Usuario no encontrado", 404)
-
-        payload = {
-            "reason": "Legal Pacers — Disponibilidad Premium",
-            "auto_recurring": {
-                "frequency": 1,
-                "frequency_type": "months",
-                "transaction_amount": PREMIUM_PRICE_ARS,
-                "currency_id": "ARS",
-            },
-            "payer_email": email,
-            "back_url": f"{PUBLIC_BASE_URL}/premium/success",
-            "external_reference": str(u.id),
-            "notification_url": f"{PUBLIC_BASE_URL}/api/mp/webhook",
-            "status": "pending",
-        }
-        resp = sdk.preapproval().create(payload)
-        body = resp.get("response") or {}
-        if resp.get("status") not in (200, 201):
-            logger.error(f"MP preapproval failed: {resp}")
-            return error_response(f"Mercado Pago: {body.get('message','error')}", 502)
-
-        preapproval_id = body.get("id")
-        init_point = body.get("init_point") or body.get("sandbox_init_point")
-        set_subscription(u.id, preapproval_id, status="pending")
-        return success_response({"init_point": init_point, "preapproval_id": preapproval_id})
-    except Exception as e:
-        logger.error(f"mp/create-subscription error: {e}")
-        return error_response(str(e), 500)
-
-
-@app.route("/api/mp/cancel-subscription", methods=["POST"])
-@require_email
-def mp_cancel_subscription():
-    """Cancel the user's active MP preapproval. Existing premium_until is preserved."""
-    try:
-        sdk = _get_mp_sdk()
-        u = _get_current_user()
-        if not u or not u.mp_preapproval_id:
-            return error_response("No hay suscripción activa", 404)
-        if sdk:
-            try:
-                sdk.preapproval().update(u.mp_preapproval_id, {"status": "cancelled"})
-            except Exception as e:
-                logger.warning(f"MP cancel call failed (will still mark cancelled): {e}")
-        update_subscription_status(u.mp_preapproval_id, "cancelled")
-        return success_response({"ok": True})
-    except Exception as e:
-        logger.error(f"mp/cancel error: {e}")
-        return error_response(str(e), 500)
-
-
-@app.route("/api/mp/webhook", methods=["POST", "GET"])
-def mp_webhook():
-    """Mercado Pago webhook. Handles preapproval status and authorized_payment events."""
-    try:
-        sdk = _get_mp_sdk()
-        if not sdk:
-            return jsonify({"ok": False, "reason": "MP not configured"}), 200
-
-        # MP sends info both as query string and JSON body depending on topic
-        topic = (request.args.get("topic") or request.args.get("type")
-                 or (request.json or {}).get("type") or (request.json or {}).get("topic") or "")
-        resource_id = (request.args.get("id") or request.args.get("data.id")
-                       or ((request.json or {}).get("data") or {}).get("id"))
-
-        logger.info(f"MP webhook: topic={topic} id={resource_id}")
-
-        if not resource_id:
-            return jsonify({"ok": True}), 200
-
-        if topic == "preapproval":
-            r = sdk.preapproval().get(resource_id)
-            body = r.get("response") or {}
-            status = body.get("status")  # authorized/paused/cancelled
-            if status:
-                update_subscription_status(str(resource_id), status)
-
-        elif topic in ("authorized_payment", "subscription_authorized_payment", "payment"):
-            # Fetch payment to get amount + external_reference
-            r = sdk.payment().get(resource_id)
-            body = r.get("response") or {}
-            status = body.get("status")
-            amount = float(body.get("transaction_amount") or 0)
-            preapproval_id = (body.get("metadata") or {}).get("preapproval_id")
-            # external_reference can come on payment or on the parent preapproval
-            ext_ref = body.get("external_reference") or ""
-            user_id = None
-            try:
-                user_id = int(ext_ref)
-            except (TypeError, ValueError):
-                # Resolve through preapproval_id if we have it
-                if preapproval_id:
-                    with get_session() as s:
-                        u = s.query(User).filter(User.mp_preapproval_id == str(preapproval_id)).first()
-                        if u:
-                            user_id = u.id
-            if user_id:
-                apply_payment(
-                    user_id=user_id,
-                    mp_payment_id=str(resource_id),
-                    mp_preapproval_id=str(preapproval_id or ""),
-                    status=status or "unknown",
-                    amount=amount,
-                    raw=json.dumps(body)[:10000],
-                    extend_days=PREMIUM_DAYS,
-                )
-
-        return jsonify({"ok": True}), 200
-    except Exception as e:
-        logger.error(f"mp/webhook error: {e}")
-        # Always 200 so MP doesn't retry endlessly on transient errors
-        return jsonify({"ok": False, "error": str(e)}), 200
-
-
-@app.route("/premium/success")
-def premium_success():
-    """Landing page after MP checkout. Redirects back to /."""
-    return """<!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8"><title>Activando premium…</title>
-<style>body{font-family:system-ui,sans-serif;background:#F7F9FC;color:#0D1B4B;
-text-align:center;padding:4rem 1rem}h1{color:#16A34A}.card{max-width:480px;margin:0 auto;
-background:#fff;padding:2rem;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06)}</style>
-</head><body><div class="card"><div style="font-size:3rem">✓</div>
-<h1>¡Listo!</h1>
-<p>Estamos activando tu acceso premium. Puede tardar unos segundos mientras Mercado Pago
-nos confirma el pago.</p>
-<p><a href="/" style="color:#1B6EF3;font-weight:600">Volver a verificar marcas →</a></p>
-</div><script>setTimeout(()=>location.href='/',4000);</script></body></html>"""
-
-
-# ─────────────────────────────────────────────────────────────────────
-# ADMIN — users / manual premium grant
-# ─────────────────────────────────────────────────────────────────────
-
-@app.route("/admin/users")
-def admin_users_page():
-    """Admin view of users + premium status. Query param ?key=ADMIN_KEY."""
-    key = request.args.get("key", "")
-    if key != os.getenv("ADMIN_KEY", ""):
-        return error_response("Unauthorized", 401)
-    with get_session() as s:
-        rows = s.query(User).order_by(User.created_at.desc()).limit(500).all()
-        out = []
-        for u in rows:
-            out.append({
-                "id": u.id,
-                "email": u.email,
-                "created_at": u.created_at.isoformat() if u.created_at else None,
-                "searches": u.searches or 0,
-                "subscription_status": u.subscription_status,
-                "premium_until": u.premium_until.isoformat() if u.premium_until else None,
-                "is_premium": bool(u.premium_until and u.premium_until > datetime.utcnow()),
-            })
-    return jsonify({"users": out}), 200
-
-
-@app.route("/api/admin/check-marca")
-def admin_check_marca():
-    """
-    Diagnostic endpoint: show what the DB has for a given denomination.
-    Query: ?key=ADMIN_KEY&q=adidas&clase=25(optional)
-    Returns: {total_matches, by_clase, exact_matches, fuzzy_from_verificar}
-    """
-    if request.args.get("key", "") != os.getenv("ADMIN_KEY", ""):
-        return error_response("Unauthorized", 401)
-
-    q = (request.args.get("q") or "").strip()
-    if not q:
-        return error_response("q param required")
-
-    clase_filter = request.args.get("clase")
-    try:
-        clase_filter = int(clase_filter) if clase_filter else None
-    except ValueError:
-        clase_filter = None
-
-    from database import Marca, _normalize as _norm
-    q_norm = _norm(q)
-
-    with get_session() as s:
-        # ILIKE search (partial) — shows if the DB has ANY marca with that substring
-        sql = s.query(Marca).filter(Marca.denominacion.ilike(f"%{q}%"))
-        if clase_filter:
-            sql = sql.filter(Marca.clase == clase_filter)
-        rows = sql.limit(200).all()
-
-        # Bucket by clase
-        by_clase = {}
-        exact_matches = []
-        for m in rows:
-            by_clase.setdefault(m.clase, 0)
-            by_clase[m.clase] += 1
-            if _norm(m.denominacion or "") == q_norm:
-                exact_matches.append(m.to_dict())
-
-        sample = [r.to_dict() for r in rows[:20]]
-
-    out = {
-        "query": q,
-        "query_norm": q_norm,
-        "clase_filter": clase_filter,
-        "total_ilike_matches": len(rows),
-        "by_clase": by_clase,
-        "exact_matches_by_norm": exact_matches,
-        "sample_first_20": sample,
-    }
-
-    # Also run the actual verificar_denominacion to see what our fuzzy returns
-    if clase_filter:
-        v = verificar_denominacion(q, clase_filter)
-        out["verificar_denominacion_result"] = {
-            "disponible": v["disponible"],
-            "exactas_count": len(v["exactas"]),
-            "similares_count": v["similares_count"],
-            "exactas_sample": v["exactas"][:5],
-            "similares_sample": v["similares"][:10],
-        }
-
-    return jsonify(out), 200
-
-
-@app.route("/api/admin/grant-premium", methods=["POST"])
-def admin_grant_premium():
-    """Manually extend a user's premium by N days. Body: {key, user_id, days?}."""
-    data = request.json or {}
-    if data.get("key") != os.getenv("ADMIN_KEY", ""):
-        return error_response("Unauthorized", 401)
-    user_id = data.get("user_id")
-    days = int(data.get("days") or PREMIUM_DAYS)
-    if not user_id:
-        return error_response("user_id requerido")
-    ok = grant_premium(int(user_id), days=days)
-    if not ok:
-        return error_response("Usuario no encontrado", 404)
-    return success_response({"ok": True, "days_added": days})
-
 
 @app.route("/api/lead", methods=["POST"])
 def crear_lead():
@@ -965,16 +329,15 @@ def search_inpi_api():
         if not variants or not classes:
             return error_response("Variants and classes required")
 
-        DB_MIN_RECORDS = 50_000
         db_count = count_marcas()
 
-        if db_count >= DB_MIN_RECORDS:
+        if db_count > 0:
             # Fast local DB search for all variants
             all_results = {}
             for v in variants:
                 all_results[v] = search_marcas(v, classes, limit=100)
         else:
-            # DB incomplete — use live INPI portal scraping
+            # Fallback to live INPI portal scraping
             all_results = batch_search(variants, classes, delay=1.0)
 
         # Update cache
@@ -1119,7 +482,7 @@ https://legalpacers.com
 
 @app.route("/api/db/status", methods=["GET"])
 def db_status():
-    """Return database stats. Auto-fixes stale import state."""
+    """Return database stats."""
     try:
         from database import get_last_imported_boletin, get_import_state, set_import_state
         total = count_marcas()
@@ -1128,7 +491,6 @@ def db_status():
 
         # Auto-fix stale state: DB says running but in-memory thread is not
         if state.get("running") and not _import_running:
-            logger.info(f"Auto-fix: DB said running but thread is dead, resetting state")
             set_import_state(running=False, current_boletin=state.get("current_boletin", 0))
             state["running"] = False
 
@@ -1141,14 +503,18 @@ def db_status():
             "import_error": state.get("last_error"),
         })
     except Exception as e:
-        logger.warning(f"Status check error: {e}")
         return success_response({"total_marcas": 0, "db_ready": False, "error": str(e)})
 
 
 # ── Admin: bulk import trigger ──
+import threading
+_import_running = False
+
 @app.route("/api/admin/import", methods=["POST"])
 def admin_import():
     """Trigger bulk import in background. Protected by ADMIN_KEY env var."""
+    global _import_running
+
     admin_key = os.getenv("ADMIN_KEY", "")
     provided_key = request.json.get("key", "") if request.json else ""
     if not admin_key or provided_key != admin_key:
@@ -1158,14 +524,43 @@ def admin_import():
         return success_response({"ok": False, "message": "Import already running"})
 
     years = request.json.get("years", 10)
-    limit = request.json.get("limit")
-    from_override = request.json.get("from_num")
-    to_override = request.json.get("to_num")
+    limit = request.json.get("limit")          # optional: max bulletins to process
+    from_override = request.json.get("from_num")  # optional: start from this bulletin
+    to_override = request.json.get("to_num")      # optional: end at this bulletin
 
-    started = _trigger_bulk_import(years=years, from_override=from_override,
-                                    to_override=to_override, limit=limit)
-    if not started:
-        return success_response({"ok": False, "message": "Import already running"})
+    def run_import():
+        global _import_running
+        _import_running = True
+        try:
+            from database import init_db, set_import_state
+            from bulk_importer import bulk_import, detect_latest_bulletin, BULLETINS_PER_YEAR
+            init_db()
+            set_import_state(running=True)
+            if to_override:
+                to_num = int(to_override)
+            else:
+                to_num = detect_latest_bulletin()
+            if from_override:
+                from_num = int(from_override)
+            else:
+                from_num = max(1, to_num - (int(years) * BULLETINS_PER_YEAR))
+            if limit:
+                to_num = min(to_num, from_num + int(limit) - 1)
+            logger.info(f"Admin bulk import started: {from_num}–{to_num}")
+            bulk_import(from_num, to_num)
+            logger.info("Admin bulk import complete")
+        except Exception as e:
+            logger.error(f"Admin bulk import error: {e}")
+            try:
+                from database import set_import_state
+                set_import_state(running=False, last_error=str(e))
+            except Exception:
+                pass
+        finally:
+            _import_running = False
+
+    thread = threading.Thread(target=run_import, daemon=True)
+    thread.start()
 
     return success_response({
         "ok": True,
@@ -1186,55 +581,10 @@ def admin_reset():
         return error_response("Unauthorized", 401)
     try:
         from database import set_import_state
-        logger.warning("ADMIN: Forcing import state reset")
-        set_import_state(running=False, current_boletin=0, last_error=None)
+        set_import_state(running=False, current_boletin=0)
         _import_running = False
         return success_response({"ok": True, "message": "Import state reset. Ahora podés iniciar una nueva importación."})
     except Exception as e:
-        return error_response(str(e), 500)
-
-
-@app.route("/api/admin/restart-import", methods=["POST"])
-def admin_restart_import():
-    """Force restart import even if one is supposedly running. Kills old process if needed."""
-    global _import_running
-    admin_key = os.getenv("ADMIN_KEY", "")
-    provided = (request.json or {}).get("key", "")
-    if not admin_key or provided != admin_key:
-        return error_response("Unauthorized", 401)
-
-    try:
-        from database import set_import_state
-        from bulk_importer import detect_latest_bulletin, BULLETINS_PER_YEAR
-
-        logger.warning("ADMIN: Force restarting import")
-
-        # Kill any supposedly-running import
-        _import_running = False
-        set_import_state(running=False, current_boletin=0, last_error=None)
-
-        # Small delay to let cleanup happen
-        import time
-        time.sleep(0.5)
-
-        # Start fresh import
-        years = (request.json or {}).get("years", 10)
-        from_override = (request.json or {}).get("from_num")
-        to_override = (request.json or {}).get("to_num")
-        limit = (request.json or {}).get("limit")
-
-        started = _trigger_bulk_import(years=years, from_override=from_override,
-                                      to_override=to_override, limit=limit, force=True)
-
-        if not started:
-            return error_response("Could not start import", 500)
-
-        return success_response({
-            "ok": True,
-            "message": f"Import forcefully restarted. Check /api/db/status for progress."
-        })
-    except Exception as e:
-        logger.error(f"Restart import error: {e}")
         return error_response(str(e), 500)
 
 
@@ -1312,100 +662,6 @@ def admin_test_download():
         return success_response({"url": url, "error": str(e)})
 
 
-@app.route("/api/admin/show-pages")
-def admin_show_pages():
-    """Show raw extracted text from specific pages of a bulletin PDF."""
-    import httpx, pdfplumber, io
-    num = request.args.get("num", 5494, type=int)
-    start = request.args.get("start", 5, type=int)
-    end = request.args.get("end", 15, type=int)
-    url = f"https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_3_.pdf"
-    try:
-        with httpx.Client(timeout=30, follow_redirects=True) as hc:
-            r = hc.get(url, headers={"User-Agent": "Mozilla/5.0", "Accept": "application/pdf,*/*"})
-        if r.status_code != 200 or b'%PDF' not in r.content[:10]:
-            return success_response({"error": f"HTTP {r.status_code}"})
-        pages_text = {}
-        with pdfplumber.open(io.BytesIO(r.content)) as pdf:
-            total = len(pdf.pages)
-            for i in range(min(start, total), min(end + 1, total)):
-                t = pdf.pages[i].extract_text() or ""
-                pages_text[f"page_{i+1}"] = t[:1500]  # first 1500 chars per page
-        return success_response({"bulletin": num, "total_pages": total, "pages": pages_text})
-    except Exception as e:
-        return success_response({"error": str(e)})
-
-
-@app.route("/api/admin/probe-suffixes")
-def admin_probe_suffixes():
-    """Try all known URL suffix variants for a bulletin number to find the right type."""
-    import httpx
-    from bulletin_parser import parse_bulletin_bytes
-    num = request.args.get("num", 5494, type=int)
-    headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
-        "Accept": "application/pdf,*/*",
-    }
-    results = {}
-    # INPI uses Tipo_Item 1-6 for different bulletin types
-    for suffix in ["1", "2", "3", "4", "5", "6"]:
-        url = f"https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_{suffix}_.pdf"
-        try:
-            with httpx.Client(timeout=10, follow_redirects=True) as hc:
-                r = hc.get(url, headers=headers)
-            if r.status_code == 200 and b'%PDF' in r.content[:10]:
-                # Quick parse to see how many records
-                recs = parse_bulletin_bytes(r.content, num)
-                results[f"_{suffix}_"] = {
-                    "status": 200,
-                    "size_kb": round(len(r.content) / 1024),
-                    "records": len(recs),
-                    "sample": recs[0].denominacion[:50] if recs else None,
-                }
-            else:
-                results[f"_{suffix}_"] = {"status": r.status_code}
-        except Exception as e:
-            results[f"_{suffix}_"] = {"error": str(e)[:80]}
-    return success_response({"bulletin": num, "suffixes": results})
-
-
-@app.route("/api/admin/skip-bulletin", methods=["POST"])
-def admin_skip_bulletin():
-    """Mark a problematic bulletin as skipped so import can continue."""
-    admin_key = os.getenv("ADMIN_KEY", "")
-    provided = (request.json or {}).get("key", "")
-    if not admin_key or provided != admin_key:
-        return error_response("Unauthorized", 401)
-
-    try:
-        from database import get_session, BoletinLog
-        from datetime import datetime
-
-        num = (request.json or {}).get("num")
-        if not num or not isinstance(num, int):
-            return error_response("Bulletin number required", 400)
-
-        with get_session() as s:
-            existing = s.query(BoletinLog).filter_by(numero=num).first()
-            if existing:
-                existing.status = "skip"
-                existing.error_msg = "Manually skipped by admin"
-                existing.imported_at = datetime.utcnow()
-            else:
-                s.add(BoletinLog(
-                    numero=num,
-                    status="skip",
-                    registros=0,
-                    error_msg="Manually skipped by admin"
-                ))
-            s.commit()
-            logger.info(f"ADMIN: Manually skipped bulletin {num}")
-
-        return success_response({"ok": True, "message": f"Bulletin {num} marked as skipped"})
-    except Exception as e:
-        return error_response(str(e), 500)
-
-
 @app.route("/api/admin/logs")
 def admin_logs():
     """Return last 20 bulletin log entries to diagnose import issues."""
@@ -1422,106 +678,6 @@ def admin_logs():
             } for r in rows])
     except Exception as e:
         return error_response(str(e), 500)
-
-
-@app.route("/api/admin/diag")
-def admin_diag():
-    """Deep diagnostic: test DB write, check constraint, show recent logs."""
-    key = request.args.get("key", "")
-    if key != os.getenv("ADMIN_KEY", ""):
-        return error_response("Unauthorized", 401)
-
-    from database import engine, get_session, BoletinLog, Marca
-    from sqlalchemy import text, insert as sql_insert
-    out = {}
-
-    # 1. Check if uq_acta_clase constraint exists
-    try:
-        with engine.connect() as conn:
-            n = conn.execute(text(
-                "SELECT COUNT(*) FROM pg_constraint WHERE conname = 'uq_acta_clase'"
-            )).scalar()
-            out["constraint_uq_acta_clase"] = "EXISTS" if n else "MISSING"
-    except Exception as e:
-        out["constraint_check_error"] = str(e)
-
-    # 2. List all unique indexes on marcas
-    try:
-        with engine.connect() as conn:
-            rows = conn.execute(text(
-                "SELECT indexname, indexdef FROM pg_indexes WHERE tablename='marcas'"
-            )).fetchall()
-            out["marcas_indexes"] = [{"name": r[0], "def": r[1]} for r in rows]
-    except Exception as e:
-        out["indexes_error"] = str(e)
-
-    # 3. Test a plain INSERT
-    try:
-        test_acta = "DIAGTEST001"
-        with engine.begin() as conn:
-            conn.execute(sql_insert(Marca).values(
-                acta=test_acta, denominacion="DIAG TEST", tipo="Test",
-                clase=1, titular="Test", estado="test", estado_code="tramite",
-            ))
-        # Clean up
-        with engine.begin() as conn:
-            conn.execute(text(f"DELETE FROM marcas WHERE acta='{test_acta}'"))
-        out["plain_insert_test"] = "OK"
-    except Exception as e:
-        out["plain_insert_error"] = str(e)
-
-    # 4. Test a batch pg_insert ON CONFLICT DO NOTHING
-    try:
-        from sqlalchemy.dialects.postgresql import insert as pg_insert
-        test_acta2 = "DIAGTEST002"
-        with engine.begin() as conn:
-            stmt = pg_insert(Marca).values(
-                acta=test_acta2, denominacion="DIAG TEST2", tipo="Test",
-                clase=1, titular="Test", estado="test", estado_code="tramite",
-            ).on_conflict_do_nothing()
-            conn.execute(stmt)
-        with engine.begin() as conn:
-            conn.execute(text(f"DELETE FROM marcas WHERE acta='{test_acta2}'"))
-        out["pg_upsert_test"] = "OK"
-    except Exception as e:
-        out["pg_upsert_error"] = str(e)
-
-    # 5. Last 10 boletin_log entries
-    try:
-        with get_session() as s:
-            rows = s.query(BoletinLog).order_by(BoletinLog.numero.desc()).limit(10).all()
-            out["last_bolетines"] = [{
-                "num": r.numero, "status": r.status,
-                "records": r.registros, "error": r.error_msg,
-                "at": r.imported_at.isoformat() if r.imported_at else None,
-            } for r in rows]
-            # Show entries for the ACTUAL import range (5000-7000), ordered by most recently imported
-            range_rows = s.query(BoletinLog).filter(
-                BoletinLog.numero.between(5000, 7000)
-            ).order_by(BoletinLog.imported_at.desc()).limit(10).all()
-            out["recent_imports_in_range"] = [{
-                "num": r.numero, "status": r.status,
-                "records": r.registros, "error": r.error_msg,
-                "at": r.imported_at.isoformat() if r.imported_at else None,
-            } for r in range_rows]
-            # Count how many bulletins in range have records > 0
-            with_records = s.query(BoletinLog).filter(
-                BoletinLog.numero.between(5000, 7000),
-                BoletinLog.registros > 0,
-            ).count()
-            out["bolетines_with_records_in_range"] = with_records
-    except Exception as e:
-        out["boletin_log_error"] = str(e)
-
-    # 6. Current import state
-    try:
-        from database import get_import_state
-        out["import_state"] = get_import_state()
-        out["import_thread_running"] = _import_running
-    except Exception as e:
-        out["import_state_error"] = str(e)
-
-    return success_response(out)
 
 
 @app.route("/admin")
@@ -1567,24 +723,20 @@ def admin_page():
   <label>Clave de administrador</label>
   <input type="password" id="key" placeholder="ADMIN_KEY">
   <label>Importación completa (años de historial)</label>
-  <input type="number" id="years" value="10" min="1" max="20" placeholder="Años" style="margin-bottom:8px">
-  <button id="btn" onclick="startImport()">Importar últimos N años</button>
-  <label style="margin-top:20px">— o importar rango específico (para probar) —</label>
-  <input type="number" id="from_num" placeholder="Desde (ej: 5489)" style="margin-bottom:8px">
-  <input type="number" id="to_num" placeholder="Hasta (ej: 5510)" style="margin-bottom:8px">
-  <button onclick="startRange()" style="background:#4B5563">Probar rango</button>
+  <div class="row">
+    <input type="number" id="years" value="10" min="1" max="20" placeholder="Años">
+    <button id="btn" onclick="startImport()" style="margin-top:0">Importar</button>
+  </div>
+  <label>— o importar rango específico (para probar) —</label>
+  <div class="row">
+    <input type="number" id="from_num" placeholder="Desde (ej: 5989)">
+    <input type="number" id="to_num" placeholder="Hasta (ej: 5990)">
+    <button onclick="startRange()" style="margin-top:0;background:#4B5563">Probar</button>
+  </div>
   <button class="sec" onclick="resetImport()">⚠ Forzar reset del estado</button>
   <div id="msg"></div>
 </div>
-<div class="card" id="diagcard" style="display:none">
-  <strong>Diagnóstico DB</strong>
-  <pre id="diagout" style="font-size:12px;white-space:pre-wrap;margin-top:8px;background:#F7F9FC;padding:8px;border-radius:6px;max-height:300px;overflow:auto"></pre>
-</div>
-<p style="font-size:13px;text-align:center">
-  <a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver boletin log (JSON) →</a>
-  &nbsp;|&nbsp;
-  <a href="#" onclick="runDiag()" style="color:#DC2626">🔍 Diagnosticar DB</a>
-</p>
+<p style="font-size:13px;text-align:center"><a href="/api/admin/logs" target="_blank" style="color:#1B6EF3">Ver log de errores (JSON) →</a></p>
 <script>
 async function loadStatus(){
   try{
@@ -1633,17 +785,6 @@ function startRange(){
   if(!key){document.getElementById('msg').className='err';document.getElementById('msg').textContent='Ingresá la clave.';return;}
   if(!from_num||!to_num){document.getElementById('msg').className='err';document.getElementById('msg').textContent='Ingresá el rango.';return;}
   doImport({key,from_num,to_num});
-}
-async function runDiag(){
-  const key=document.getElementById('key').value.trim();
-  if(!key){alert('Ingresá la clave primero');return;}
-  document.getElementById('diagcard').style.display='block';
-  document.getElementById('diagout').textContent='Ejecutando diagnóstico…';
-  try{
-    const r=await fetch('/api/admin/diag?key='+encodeURIComponent(key));
-    const d=await r.json();
-    document.getElementById('diagout').textContent=JSON.stringify(d.data||d,null,2);
-  }catch(e){document.getElementById('diagout').textContent='Error: '+e;}
 }
 async function resetImport(){
   const key=document.getElementById('key').value.trim();

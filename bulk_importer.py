@@ -21,14 +21,8 @@ import gc
 import time
 import logging
 import argparse
-import socket
-import subprocess
-import tempfile
-import urllib.request
-import urllib.error
 from datetime import date, datetime
 from typing import Optional
-import signal
 
 import httpx
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -40,14 +34,6 @@ from database import (
     Marca, BoletinLog, engine
 )
 from bulletin_parser import parse_bulletin_bytes, MarcaRecord
-
-# Optional Selenium support for avoiding anti-bot detection
-try:
-    from selenium import webdriver
-    from selenium.webdriver.chrome.options import Options as ChromeOptions
-    SELENIUM_AVAILABLE = True
-except ImportError:
-    SELENIUM_AVAILABLE = False
 
 logging.basicConfig(
     level=logging.INFO,
@@ -61,26 +47,13 @@ BULLETIN_BASE_URL = "https://portaltramites.inpi.gob.ar/Uploads/Boletines/{num}_
 LATEST_BULLETIN = 6009       # Update this or auto-detect
 BULLETINS_PER_YEAR = 52
 HTTP_DELAY = 1.0             # seconds between requests
-MAX_RETRIES = 3              # retries with aggressive timeout handling
-BULLETIN_TIMEOUT = 90        # absolute timeout per bulletin (download + parse + import)
+MAX_RETRIES = 2              # fewer retries to avoid long hangs
 
 
 def get_headers() -> dict:
     return {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "es-AR,es;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache",
-        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Windows"',
-        "Sec-Fetch-Dest": "document",
-        "Sec-Fetch-Mode": "navigate",
-        "Sec-Fetch-Site": "none",
-        "Sec-Fetch-User": "?1",
-        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
+        "Accept": "application/pdf,*/*",
         "Referer": "https://portaltramites.inpi.gob.ar/Boletines?Tipo_Item=3",
     }
 
@@ -106,287 +79,89 @@ def detect_latest_bulletin() -> int:
         return LATEST_BULLETIN
 
 
-CURL_TIMEOUT = 20        # seconds: curl's absolute --max-time wall-clock limit (more aggressive)
-CURL_CONNECT_TIMEOUT = 10  # seconds: timeout for establishing connection
-_curl_ok: Optional[bool] = None  # cached availability check
-_selenium_driver: Optional[object] = None  # cached driver instance
-
-
-def _curl_available() -> bool:
-    global _curl_ok
-    if _curl_ok is None:
-        try:
-            subprocess.run(["curl", "--version"], capture_output=True, timeout=5, check=True)
-            _curl_ok = True
-        except Exception:
-            _curl_ok = False
-    return _curl_ok
-
-
-def _download_selenium(num: int, retries: int) -> Optional[bytes]:
-    """Download using Selenium (real browser) to avoid anti-bot detection."""
-    if not SELENIUM_AVAILABLE:
-        return None
-
-    global _selenium_driver
-    url = BULLETIN_BASE_URL.format(num=num)
-
-    for attempt in range(1, retries + 1):
-        try:
-            # Initialize driver if needed
-            if _selenium_driver is None:
-                opts = ChromeOptions()
-                opts.add_argument('--headless')
-                opts.add_argument('--no-sandbox')
-                opts.add_argument('--disable-dev-shm-usage')
-                opts.add_argument('--disable-blink-features=AutomationControlled')
-                opts.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-                try:
-                    _selenium_driver = webdriver.Chrome(options=opts)
-                except Exception as e:
-                    logger.warning(f"Could not init Selenium: {e}")
-                    return None
-
-            # Download with timeout
-            _selenium_driver.set_page_load_timeout(CURL_TIMEOUT)
-            _selenium_driver.get(url)
-
-            # Check if we got redirected to error page
-            if '403' in _selenium_driver.page_source or 'not found' in _selenium_driver.page_source.lower():
-                logger.debug(f"Bulletin {num}: 404 or 403 via Selenium")
-                return None
-
-            # Get PDF via JavaScript execution
-            script = f"""
-            const url = '{url}';
-            const response = await fetch(url);
-            const blob = await response.arrayBuffer();
-            return new Uint8Array(blob);
-            """
-
-            content = _selenium_driver.execute_script(f"""
-            return fetch('{url}').then(r => r.arrayBuffer()).then(b => Array.from(new Uint8Array(b)));
-            """)
-
-            if content and len(content) > 100:
-                pdf_bytes = bytes(content)
-                if b'%PDF' in pdf_bytes[:10]:
-                    logger.debug(f"Bulletin {num}: downloaded via Selenium ({len(pdf_bytes)} bytes)")
-                    return pdf_bytes
-
-        except Exception as e:
-            logger.warning(f"Bulletin {num}: Selenium failed - {e} (attempt {attempt}/{retries})")
-            if attempt < retries:
-                time.sleep(1)
-
-    return None
-
-
 def download_bulletin(num: int, retries: int = MAX_RETRIES) -> Optional[bytes]:
-    """Download bulletin PDF.
-
-    Priority:
-    1. Selenium (real browser - avoids anti-bot detection)
-    2. curl subprocess (curl's --max-time is absolute wall-clock limit)
-    3. urllib (fallback)
-
-    Set env var SKIP_SELENIUM=1 to bypass Selenium (faster when HTTP fallback works).
-    """
-    if SELENIUM_AVAILABLE and not os.getenv("SKIP_SELENIUM"):
-        result = _download_selenium(num, retries)
-        if result:
-            return result
-    if _curl_available():
-        return _download_curl(num, retries)
-    return _download_urllib(num, retries)
-
-
-def _download_curl(num: int, retries: int) -> Optional[bytes]:
+    """Download bulletin PDF bytes. Returns None on failure."""
     url = BULLETIN_BASE_URL.format(num=num)
-    for attempt in range(1, retries + 1):
-        tmp_path = None
-        try:
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-                tmp_path = tmp.name
 
-            # Use connect-timeout + max-time for redundant protection
-            result = subprocess.run(
-                [
-                    "curl", "-sL",
-                    "--connect-timeout", str(CURL_CONNECT_TIMEOUT),
-                    "--max-time", str(CURL_TIMEOUT),
-                    "--retry", "0",
-                    "-H", "User-Agent: Mozilla/5.0 (compatible; LegalPacers-research/1.0)",
-                    "-H", "Accept: application/pdf,*/*",
-                    "-H", "Referer: https://portaltramites.inpi.gob.ar/Boletines?Tipo_Item=3",
-                    "-o", tmp_path,
-                    "-w", "%{http_code}",
-                    url,
-                ],
-                capture_output=True,
-                timeout=CURL_TIMEOUT + 15,  # subprocess timeout > curl timeout
-            )
-
-            http_code = result.stdout.decode("ascii", errors="ignore").strip()
-
-            if result.returncode == 28:  # CURLE_OPERATION_TIMEDOUT
-                logger.warning(f"Bulletin {num}: curl timeout {CURL_TIMEOUT}s (attempt {attempt}/{retries})")
-                if attempt < retries:
-                    time.sleep(1)
-                continue
-
-            if result.returncode == 7:  # CURLE_COULDNT_CONNECT
-                logger.warning(f"Bulletin {num}: connection failed (attempt {attempt}/{retries})")
-                if attempt < retries:
-                    time.sleep(1)
-                continue
-
-            if http_code == "404":
-                logger.debug(f"Bulletin {num}: 404")
-                return None
-
-            if http_code != "200":
-                logger.warning(f"Bulletin {num}: HTTP {http_code} (attempt {attempt}/{retries})")
-                if attempt < retries:
-                    time.sleep(1)
-                continue
-
-            with open(tmp_path, "rb") as f:
-                content = f.read()
-
-            if not content or b'%PDF' not in content[:10]:
-                logger.warning(f"Bulletin {num}: not a valid PDF (size={len(content) if content else 0})")
-                if attempt < retries:
-                    time.sleep(1)
-                continue
-
-            return content
-
-        except subprocess.TimeoutExpired:
-            logger.warning(f"Bulletin {num}: subprocess timeout exceeded (attempt {attempt}/{retries})")
-        except Exception as e:
-            logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
-        finally:
-            if tmp_path:
-                try:
-                    os.unlink(tmp_path)
-                except Exception:
-                    pass
-
-        if attempt < retries:
-            time.sleep(1)
-
-    return None
-
-
-def _download_urllib(num: int, retries: int) -> Optional[bytes]:
-    """urllib fallback when curl is unavailable."""
-    url = BULLETIN_BASE_URL.format(num=num)
-    headers = get_headers()
     for attempt in range(1, retries + 1):
         try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=20) as resp:
-                if resp.status == 404:
+            with httpx.Client(timeout=25, follow_redirects=True) as client:
+                r = client.get(url, headers=get_headers())
+
+                if r.status_code == 404:
+                    logger.debug(f"Bulletin {num}: not found (404)")
                     return None
-                if resp.status != 200:
-                    break
-                content = resp.read()
-            if b'%PDF' not in content[:10]:
-                return None
-            return content
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                return None
-            logger.warning(f"Bulletin {num}: HTTP {e.code} (attempt {attempt}/{retries})")
+                if r.status_code == 200:
+                    if b'%PDF' in r.content[:10]:
+                        return r.content
+                    else:
+                        logger.warning(f"Bulletin {num}: response not a PDF")
+                        return None
+                logger.warning(f"Bulletin {num}: HTTP {r.status_code}")
+
+        except httpx.TimeoutException:
+            logger.warning(f"Bulletin {num}: timeout (attempt {attempt}/{retries})")
         except Exception as e:
-            logger.warning(f"Bulletin {num}: {e} (attempt {attempt}/{retries})")
+            logger.warning(f"Bulletin {num}: error {e} (attempt {attempt}/{retries})")
+
         if attempt < retries:
-            time.sleep(2)
+            time.sleep(2 ** attempt)  # exponential backoff
+
     return None
 
 
-def import_bulletin(num: int, dry_run: bool = False, timeout: int = 90) -> dict:
+def import_bulletin(num: int, dry_run: bool = False) -> dict:
     """
-    Download, parse and import a single bulletin with absolute timeout.
+    Download, parse and import a single bulletin.
 
     Returns: {num, status, records_imported, error}
     """
     result = {"num": num, "status": "ok", "records": 0, "error": None}
 
-    # Check if already imported with actual records
-    # (skip only if registros > 0 — bulletins with registros=0 may have had a failed upsert)
+    # Check if already imported
     with get_session() as s:
-        existing = s.query(BoletinLog).filter(
-            BoletinLog.numero == num,
-            BoletinLog.status == "ok",
-            BoletinLog.registros > 0,
-        ).first()
+        existing = s.query(BoletinLog).filter_by(numero=num, status="ok").first()
         if existing:
-            logger.debug(f"Bulletin {num}: already imported ({existing.registros} records), skipping")
+            logger.info(f"Bulletin {num}: already imported ({existing.registros} records)")
             result["status"] = "skip"
             result["records"] = existing.registros
             return result
 
-    start_time = time.time()
-    def timeout_handler(signum, frame):
-        elapsed = time.time() - start_time
-        raise TimeoutError(f"Bulletin {num} processing exceeded {timeout}s (elapsed: {elapsed:.1f}s)")
-
-    # Set absolute timeout (Unix only — Windows has no SIGALRM, relies on httpx/curl timeouts inside download_bulletin)
-    has_sigalrm = hasattr(signal, "SIGALRM")
-    old_handler = None
-    if has_sigalrm:
-        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout)
-
-    try:
-        # Download
-        pdf_bytes = download_bulletin(num)
-        if pdf_bytes is None:
-            result["status"] = "error"
-            result["error"] = "Download failed or not found"
-            _log_bulletin(num, 0, "error", result["error"])
-            return result
-
-        # Parse
-        try:
-            records = parse_bulletin_bytes(pdf_bytes, num)
-        except Exception as e:
-            logger.error(f"Bulletin {num}: parse error — {e}")
-            result["status"] = "error"
-            result["error"] = str(e)
-            _log_bulletin(num, 0, "error", str(e))
-            return result
-
-        if not records:
-            logger.info(f"Bulletin {num}: parsed OK but 0 records extracted")
-            _log_bulletin(num, 0, "ok")
-            result["records"] = 0
-            return result
-
-        # Import into DB
-        if not dry_run:
-            imported = _upsert_records(records)
-            _log_bulletin(num, imported, "ok")
-            result["records"] = imported
-            logger.info(f"Bulletin {num}: {imported} records imported")
-        else:
-            result["records"] = len(records)
-            logger.info(f"[DRY RUN] Bulletin {num}: would import {len(records)} records")
-
+    # Download
+    pdf_bytes = download_bulletin(num)
+    if pdf_bytes is None:
+        result["status"] = "error"
+        result["error"] = "Download failed or not found"
+        _log_bulletin(num, 0, "error", result["error"])
         return result
 
-    except TimeoutError as e:
-        logger.error(f"Bulletin {num}: {e}")
+    # Parse
+    try:
+        records = parse_bulletin_bytes(pdf_bytes, num)
+    except Exception as e:
+        logger.error(f"Bulletin {num}: parse error — {e}")
         result["status"] = "error"
         result["error"] = str(e)
         _log_bulletin(num, 0, "error", str(e))
         return result
-    finally:
-        if has_sigalrm:
-            signal.alarm(0)
-            signal.signal(signal.SIGALRM, old_handler)
+
+    if not records:
+        logger.info(f"Bulletin {num}: parsed OK but 0 records extracted")
+        _log_bulletin(num, 0, "ok")
+        result["records"] = 0
+        return result
+
+    # Import into DB
+    if not dry_run:
+        imported = _upsert_records(records)
+        _log_bulletin(num, imported, "ok")
+        result["records"] = imported
+        logger.info(f"Bulletin {num}: {imported} records imported")
+    else:
+        result["records"] = len(records)
+        logger.info(f"[DRY RUN] Bulletin {num}: would import {len(records)} records")
+
+    return result
 
 
 def _upsert_records(records: list[MarcaRecord]) -> int:
@@ -418,13 +193,14 @@ def _upsert_records(records: list[MarcaRecord]) -> int:
     if not rows:
         return 0
 
-    dialect = engine.dialect.name
-    if dialect == "postgresql":
-        try:
-            with engine.begin() as conn:
+    try:
+        with engine.begin() as conn:
+            # Use upsert to avoid duplicates
+            dialect = engine.dialect.name
+            if dialect == "postgresql":
                 stmt = pg_insert(Marca).values(rows)
                 stmt = stmt.on_conflict_do_update(
-                    index_elements=["acta", "clase"],
+                    constraint="uq_acta_clase",
                     set_={
                         "estado": stmt.excluded.estado,
                         "estado_code": stmt.excluded.estado_code,
@@ -433,31 +209,17 @@ def _upsert_records(records: list[MarcaRecord]) -> int:
                     }
                 )
                 conn.execute(stmt)
-            return len(rows)
-        except Exception as ue:
-            # PostgreSQL aborts the entire transaction on error — the original conn is dead.
-            # Use a fresh engine.begin() per row so one failure doesn't block the rest.
-            logger.warning(f"Batch upsert failed ({ue}), falling back to row-by-row insert")
-            count = 0
-            for row in rows:
-                try:
-                    with engine.begin() as c:
-                        c.execute(sql_insert(Marca).values(row))
-                    count += 1
-                except Exception:
-                    pass
-            return count
-    else:
-        # SQLite
-        count = 0
-        for row in rows:
-            try:
-                with engine.begin() as c:
-                    c.execute(sql_insert(Marca).values(row))
-                count += 1
-            except Exception:
-                pass
-        return count
+            else:
+                # SQLite — insert or ignore, then update
+                for row in rows:
+                    try:
+                        conn.execute(sql_insert(Marca).values(row))
+                    except Exception:
+                        pass  # skip duplicates
+        return len(rows)
+    except Exception as e:
+        logger.error(f"DB upsert error: {e}")
+        return 0
 
 
 def _log_bulletin(num: int, records: int, status: str, error: str = None):
@@ -490,10 +252,6 @@ def bulk_import(from_num: int, to_num: int, dry_run: bool = False):
 
     try:
         for num in range(from_num, to_num + 1):
-            # Update before processing so the admin panel shows the current bulletin
-            # even while a slow download is in progress
-            set_import_state(running=True, current_boletin=num)
-
             result = import_bulletin(num, dry_run=dry_run)
 
             if result["status"] == "ok":
@@ -502,6 +260,10 @@ def bulk_import(from_num: int, to_num: int, dry_run: bool = False):
                 skipped += 1
             elif result["status"] == "error":
                 errors += 1
+
+            # Update DB state every 5 bulletins
+            if num % 5 == 0:
+                set_import_state(running=True, current_boletin=num)
 
             # Progress log
             done = num - from_num + 1
