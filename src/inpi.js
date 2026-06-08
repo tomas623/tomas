@@ -44,4 +44,17 @@ function enmascararActa(acta) {
   return `${s.slice(0, 2)}${'X'.repeat(Math.max(4, s.length - 2))}`;
 }
 
-module.exports = { buscarEnINPI, listaCorta, normalizar, enmascararActa };
+// Enmascara la denominación para los teasers del pre-check gratis: deja visible
+// la primera y la última letra y reemplaza el medio por • para que el usuario
+// vea que hay algo similar pero el detalle quede para el informe pago.
+function enmascararDenominacion(denom) {
+  if (!denom) return '•••';
+  const palabras = String(denom).split(/\s+/).filter(Boolean);
+  return palabras.map(p => {
+    if (p.length <= 2) return '••';
+    if (p.length <= 4) return `${p[0]}${'•'.repeat(p.length - 1)}`;
+    return `${p[0]}${'•'.repeat(p.length - 2)}${p[p.length - 1]}`;
+  }).join(' ');
+}
+
+module.exports = { buscarEnINPI, listaCorta, normalizar, enmascararActa, enmascararDenominacion };

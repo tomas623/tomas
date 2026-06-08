@@ -242,7 +242,7 @@
     .teaser-box{margin-top:18px;border:1px solid var(--border-soft);border-radius:12px;overflow:hidden;text-align:left;background:var(--bg-soft)}
     .teaser-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-soft)}
     .teaser-row:last-child{border:none}
-    .teaser-mask{font-family:ui-monospace,monospace;font-size:15px;color:var(--text-dim);filter:blur(4px);letter-spacing:2px}
+    .teaser-mask{font-family:ui-monospace,monospace;font-size:14px;color:var(--text-soft);letter-spacing:2px;font-weight:600}
 
     .garantia-pill{display:inline-flex;align-items:center;gap:8px;background:var(--green-soft);
                    border:1px solid rgba(16,185,129,.35);color:#6ee7b7;padding:9px 16px;border-radius:99px;
@@ -505,18 +505,42 @@
             </div>
           </template>
 
+          <!-- Preview de marcas similares + barra de riesgo. Se muestra siempre que
+               el chequeo dio veredicto: o con muestras reales encontradas en el INPI,
+               o con un placeholder que explica qué cubre el informe pago. -->
           <div class="teaser-box">
-            <div style="background:var(--bg-soft); padding:12px 16px; font-size:13px; color:var(--text-muted); border-bottom:1px solid var(--border-soft); font-weight:700">
-              ¿Querés mitigar riesgos de copia? El pre-check básico no mide parecidos sonoros o fonéticos. Detectamos alarmas en:
-            </div>
-            <div class="teaser-row">
-              <span class="teaser-mask">XXXXXXXXXX</span>
-              <span style="background:var(--red-soft); color:var(--red); font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:6px">RIESGO FONÉTICO</span>
-            </div>
-            <div class="teaser-row">
-              <span class="teaser-mask">XXXXXXXXXX</span>
-              <span style="background:rgba(245,158,11,.15); color:#fcd34d; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:6px">RIESGO CONCEPTUAL</span>
-            </div>
+            <div style="background:var(--bg-soft); padding:12px 16px; font-size:13px; color:var(--text-muted); border-bottom:1px solid var(--border-soft); font-weight:700" x-text="tituloPreview"></div>
+            <template x-for="m in muestrasPreview" :key="m.acta + '-' + m.clase">
+              <div class="teaser-row">
+                <span class="teaser-mask" x-text="m.denominacion"></span>
+                <span style="font-size:11.5px; color:var(--text-muted)" x-text="'Clase ' + m.clase"></span>
+                <span :style="badgeRiesgoStyle(m.similitud)" x-text="etiquetaRiesgo(m.similitud)"></span>
+              </div>
+            </template>
+            <template x-if="muestrasPreview.length === 0">
+              <div class="teaser-row" style="flex-direction:column;align-items:flex-start;gap:6px;padding:14px 16px">
+                <div style="font-size:13px;color:var(--text-soft)">El pre-check gratuito no detectó <strong>coincidencias exactas</strong>, pero <strong>no descarta riesgos</strong>:</div>
+                <ul style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-muted);line-height:1.65">
+                  <li>Parecidos fonéticos (cómo suena la marca)</li>
+                  <li>Similitud conceptual o ideológica</li>
+                  <li>Choque con marcas notorias (Coca-Cola, Adidas, etc.)</li>
+                  <li>Leyes especiales (vino, alimentos, salud)</li>
+                </ul>
+                <div style="font-size:12px;color:var(--text-dim)">El informe completo cubre los 4 ejes en 24 hs.</div>
+              </div>
+            </template>
+            <template x-if="resultado.tease?.riesgo_estimado != null && muestrasPreview.length > 0">
+              <div style="padding:12px 16px;background:var(--bg-soft);border-top:1px solid var(--border-soft);font-size:12.5px;color:var(--text-muted)">
+                <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--text);margin-bottom:6px">
+                  <span>Riesgo estimado de rechazo</span>
+                  <span x-text="resultado.tease.riesgo_estimado + ' / 100'"></span>
+                </div>
+                <div style="height:6px;border-radius:99px;background:var(--surface);overflow:hidden">
+                  <div :style="`width:${Math.min(100, resultado.tease.riesgo_estimado)}%; height:100%; background:${colorRiesgo(resultado.tease.riesgo_estimado)}`"></div>
+                </div>
+                <p style="margin-top:8px;font-size:11.5px">El informe completo confirma si estos parecidos son un riesgo real frente al INPI y propone variantes viables si lo son.</p>
+              </div>
+            </template>
           </div>
 
           <div class="garantia-pill">
@@ -526,7 +550,7 @@
           <!-- Captación de lead free: guardamos el chequeo y lo mandamos por mail -->
           <div class="save-check-box" x-show="!emailGuardado" x-cloak>
             <div class="save-check-title">📬 Guardá este resultado en tu mail</div>
-            <div class="save-check-sub">Te enviamos una copia del veredicto + recordatorios sobre la disponibilidad del nombre. Sin spam.</div>
+            <div class="save-check-sub">Te enviamos una copia del veredicto para que lo tengas a mano cuando lo necesites. Sin spam.</div>
             <div class="save-check-form">
               <input type="email" x-model="seguimientoEmail" placeholder="tu@email.com"
                      @keyup.enter="guardarSeguimiento()" :disabled="guardandoEmail">
@@ -1011,6 +1035,41 @@ function landing() {
       const muestras = this.resultado?.tease?.muestras || [];
       if (this.resultado?.veredicto !== 'no_disponible') return muestras;
       return muestras.filter(m => m !== this.colisionPrincipal);
+    },
+    // Las muestras que entran al preview varían según el veredicto:
+    //  - "probablemente_disponible": marcas similares fonéticamente. Sirve como tease.
+    //  - "no_disponible" / "necesita_analisis": las muestras secundarias (no la colisión principal).
+    get muestrasPreview() {
+      if (!this.resultado) return [];
+      if (this.resultado.veredicto === 'probablemente_disponible') {
+        return this.resultado?.tease?.muestras || [];
+      }
+      return this.muestrasSecundarias || [];
+    },
+    get tituloPreview() {
+      if (this.resultado?.veredicto === 'probablemente_disponible') {
+        return 'Marcas similares en la base del INPI. El pre-check gratis no analiza el riesgo real — lo confirma el informe completo:';
+      }
+      return '¿Querés mitigar riesgos de copia? El pre-check básico no mide parecidos sonoros o fonéticos. Detectamos alarmas en:';
+    },
+    etiquetaRiesgo(score) {
+      const s = Number(score || 0);
+      if (s >= 80) return 'RIESGO ALTO';
+      if (s >= 60) return 'RIESGO MEDIO';
+      return 'A REVISAR';
+    },
+    badgeRiesgoStyle(score) {
+      const s = Number(score || 0);
+      const base = 'font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:6px;';
+      if (s >= 80) return base + 'background:var(--red-soft);color:var(--red)';
+      if (s >= 60) return base + 'background:rgba(245,158,11,.15);color:#fcd34d';
+      return base + 'background:var(--blue-soft);color:#60a5fa';
+    },
+    colorRiesgo(score) {
+      const s = Number(score || 0);
+      if (s >= 80) return '#dc2626';
+      if (s >= 60) return '#d97706';
+      return '#1B6EF3';
     },
     detectarClases(text) {
       const q = (text || '').toLowerCase().trim();

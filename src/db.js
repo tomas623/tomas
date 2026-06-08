@@ -227,6 +227,7 @@ for (const [col, ddl] of [
   ['proximo_contacto_at', `ALTER TABLE leads ADD COLUMN proximo_contacto_at TEXT`],
   ['asignado_a',          `ALTER TABLE leads ADD COLUMN asignado_a INTEGER REFERENCES usuarios(id)`],
   ['follow_up_at',        `ALTER TABLE leads ADD COLUMN follow_up_at TEXT`],
+  ['follow_up_count',     `ALTER TABLE leads ADD COLUMN follow_up_count INTEGER NOT NULL DEFAULT 0`],
 ]) {
   if (!columnExists('leads', col)) db.exec(ddl);
 }

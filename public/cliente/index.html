@@ -73,6 +73,8 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 .alerta-title{font-weight:700;color:#fff;font-size:14.5px}
 .alerta-fund{font-size:13px;color:var(--text-soft);margin-top:8px;line-height:1.55}
 .alerta-cands{margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.65}
+.alerta-cta{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.alerta-cta .btn{padding:8px 14px;font-size:13px;text-decoration:none}
 
 .chip{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .chip.green{background:var(--green-soft);color:#6ee7b7}
@@ -346,7 +348,7 @@ async function loadAlertas() {
   const r = await api('/api/cliente/alertas');
   if (!r.ok) return;
   if (!r.data.alertas.length) {
-    $('#alertasList').innerHTML = '<div class="empty">Sin alertas todavía. Te avisamos por mail y WhatsApp si detectamos una coincidencia.</div>';
+    $('#alertasList').innerHTML = '<div class="empty">Sin alertas todavía. Te avisamos por mail y dejamos el detalle acá si detectamos una coincidencia.</div>';
     return;
   }
   $('#alertasList').innerHTML = r.data.alertas.map(a => alertaRow(a)).join('');
@@ -372,8 +374,24 @@ function alertaRow(a) {
       </div>
       ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
       ${cands ? `<div class="alerta-cands"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Marcas detectadas en el boletín</div>${cands}</div>` : ''}
+      <div class="alerta-cta">
+        <a class="btn primary" target="_blank" rel="noopener" href="${linkOposicionWA(a)}">Consultar para presentar oposición</a>
+        <span class="muted" style="font-size:11.5px">Te derivamos a WhatsApp con un Agente de PI. La oposición se cotiza aparte.</span>
+      </div>
     </div>
   `;
+}
+
+// Construye el link de WhatsApp para que el cliente consulte la presentación de
+// una oposición a partir de la alerta. El mensaje arranca con la marca propia
+// y la denominación que disparó la alerta para que el equipo legal abra el caso
+// en contexto.
+function linkOposicionWA(a) {
+  const top = (a.candidatos || [])[0];
+  const denom = top?.denominacion || '—';
+  const clase = top?.clase || a.marca_clases || '—';
+  const msg = `Hola LegalPacers, quiero consultar por una posible oposición. Mi marca registrada es "${a.marca}" y detectaron una solicitud similar: "${denom}" (clase ${clase}). ¿Pueden cotizarme la presentación?`;
+  return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
 }
 
 async function loadPack() {

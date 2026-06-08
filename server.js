@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const express = require('express');
 
 const db = require('./src/db');
-const { buscarEnINPI, enmascararActa } = require('./src/inpi');
+const { buscarEnINPI, listaCorta, enmascararActa, enmascararDenominacion } = require('./src/inpi');
 const { crearPreferencia, obtenerPago } = require('./src/pagos');
 const { mountAuthRoutes } = require('./src/auth');
 const { mountAdminRoutes } = require('./src/admin');
@@ -101,14 +101,33 @@ app.post('/api/marca/check', (req, res) => {
     mensaje = `No encontramos coincidencias exactas en la${clasesUsuario.length === 1 ? '' : 's'} clase${clasesUsuario.length === 1 ? '' : 's'} ${clasesUsuario.join(', ') || 'consultada'} del INPI. El pre-check no analiza similitud fonética ni conceptual.`;
   }
 
+  // Tease siempre — incluso cuando el veredicto es "probablemente disponible".
+  // Cuando no hay match exacto, corremos la búsqueda más amplia (fonética +
+  // ortográfica + trigramas) para mostrar al usuario marcas similares que un
+  // examinador del INPI podría detectar. Sirve como prueba de valor del informe pago.
+  let similares = muestras;
+  let riesgoEstimado = null;
+  if (veredicto === 'probablemente_disponible') {
+    const cercanos = listaCorta(marca, clasesUsuario.length ? clasesUsuario : null, { minScore: 55 });
+    similares = cercanos.slice(0, 5);
+    riesgoEstimado = similares.length ? similares[0].score : 0;
+  } else if (muestras.length) {
+    riesgoEstimado = Math.max(...muestras.map(m => m.score || 0));
+  }
+
+  // En el preview de "probablemente disponible" enmascaramos parcialmente la
+  // denominación para que el valor del informe pago no se diluya en el chequeo gratis.
+  const enmascarar = veredicto === 'probablemente_disponible';
   const tease = {
-    muestras: muestras.map(m => ({
-      denominacion: m.denominacion,
+    muestras: similares.map(m => ({
+      denominacion: enmascarar ? enmascararDenominacion(m.denominacion) : m.denominacion,
       clase: m.clase,
       acta: enmascararActa(m.acta),
       estado: m.estado || 'Concedida',
-      titular: m.titular || '—',
+      titular: enmascarar ? '—' : (m.titular || '—'),
+      similitud: m.score || null,
     })),
+    riesgo_estimado: riesgoEstimado,
   };
 
   res.json(ok({
