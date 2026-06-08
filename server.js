@@ -24,18 +24,65 @@ mountAdminRoutes(app);
 mountClienteRoutes(app);
 
 // Detectar clases Niza por rubro — espejo de la lógica del front (detectarClases).
+// Mapeo declarativo rubro → clases del nomenclador de Niza. Cada entrada lista
+// palabras clave (lowercase, sin acentos) y las clases más típicas para ese rubro.
+// Cuando ningún patrón machea, devolvemos [] y dejamos que el frontend pida
+// "necesita análisis" en vez de inventar una clase 35 por defecto (que era el
+// bug de "gaseosa" → 35 en lugar de 32).
+const RUBRO_CLASES = [
+  // Bebidas
+  { re: /(gaseosa|bebida|agua mineral|jugo|refresco|smoothie|isotonica)/, clases: [32] },
+  { re: /(cerveza|sidra)/,                                                clases: [32] },
+  { re: /(vino|champagne|espumante|licor|whisky|aguardiente|gin|vermut)/, clases: [33] },
+  // Alimentación
+  { re: /(restaurante|delivery|gastronom|comida|catering|food truck|bar\b)/, clases: [43] },
+  { re: /(cafe|café|pasteler|panader|conf?iter|helader|chocolater)/,      clases: [30, 43] },
+  { re: /(carne|fiambre|embutid|pescado|lacte|lácteo|queso|yogur)/,        clases: [29] },
+  { re: /(pan |harina|fideo|pasta|arroz|cereal|galletit|snack|condiment|salsa)/, clases: [30] },
+  { re: /(verdura|hortaliza|fruta|granos|semilla|forraje)/,                clases: [31] },
+  // Indumentaria y accesorios
+  { re: /(ropa|indumentaria|remera|jean|pantalon|moda|vestido|abrig|camis)/, clases: [25, 35] },
+  { re: /(calzado|zapatilla|zapato|botin|sandalia)/,                       clases: [25] },
+  { re: /(joyer|reloj|bijou|accesorio)/,                                   clases: [14] },
+  { re: /(cartera|mochila|valija|marroquin|bolso)/,                        clases: [18] },
+  // Cosmética y salud
+  { re: /(cosmetic|cosmética|skincare|maquillaje|perfume|fragancia|jabon)/, clases: [3, 44] },
+  { re: /(peluquer|barber|estetic|spa|masaje|salon de belleza)/,            clases: [44] },
+  { re: /(medicamento|farmaceut|suplemento|vitamina|salud)/,                clases: [5] },
+  { re: /(clinica|consultorio|odontolog|medico|kinesi|psicolog|terapia)/,   clases: [44] },
+  // Tecnología
+  { re: /(app|software|saas|tecnologi|tecnología|web|sistema|plataforma|aplicacion)/, clases: [9, 42] },
+  { re: /(consultor|asesor|servicio profesional|gestor)/,                   clases: [35, 42] },
+  { re: /(educacion|educación|curso|capacitacion|colegio|instituto|escuela|talleres)/, clases: [41] },
+  // Comercio y servicios
+  { re: /(tienda online|ecommerce|marketplace|reventa|venta minorista|comercio)/, clases: [35] },
+  { re: /(logistic|transporte|cadeter|distribu|courier|mudanza)/,           clases: [39] },
+  { re: /(inmobiliari|alquiler|hospedaje|hotel|hosteler|hostel|airbnb)/,    clases: [36, 43] },
+  { re: /(financier|banco|seguro|inversi|fintech|criptomoneda)/,            clases: [36] },
+  { re: /(construc|albañiler|reforma|pintur)/,                              clases: [37] },
+  // Industria y materiales
+  { re: /(automotor|auto |moto |vehiculo|bici|repuestos)/,                  clases: [12] },
+  { re: /(juguet|juego de mesa|peluche)/,                                   clases: [28] },
+  { re: /(libro|editorial|revista|imprenta)/,                               clases: [16] },
+  { re: /(mueble|colchon|decoracion|hogar)/,                                clases: [20] },
+  { re: /(mascota|petshop|veterinari|alimento balanceado)/,                 clases: [31, 44] },
+];
+
 function detectarClasesPorRubro(rubro) {
-  const q = (rubro || '').toLowerCase().trim();
+  const q = (rubro || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (!q) return [];
-  if (/(ropa|indumentaria|remera|moda)/.test(q)) return [25, 35];
-  if (/(cafe|café|pasteleria|pastelería|comida)/.test(q)) return [30, 43];
-  if (/(app|software|tecnologia|tecnología|web)/.test(q)) return [9, 42];
-  if (/(cosmetica|cosmética|skincare)/.test(q)) return [3, 44];
-  if (/(restaurante|delivery|gastronom)/.test(q)) return [43];
-  return [35];
+  for (const r of RUBRO_CLASES) {
+    if (r.re.test(q)) return r.clases;
+  }
+  return [];
 }
 
-const RUBROS_CONOCIDOS_RE = /(ropa|indumentaria|remera|moda|cafe|café|pasteleria|pastelería|comida|app|software|tecnologia|tecnología|web|cosmetica|cosmética|skincare|restaurante|delivery|gastronom)/i;
+// Predicado: ¿el rubro ingresado matchea alguno de los patrones conocidos?
+// Si no, el backend marca el chequeo como "necesita_analisis" para no devolver
+// un falso "LIBRE" en una clase equivocada.
+function rubroEsConocido(rubro) {
+  return detectarClasesPorRubro(rubro).length > 0;
+}
 
 function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400) { return { ok: false, error: msg, code }; }
@@ -74,7 +121,7 @@ app.post('/api/marca/check', (req, res) => {
   // Búsqueda global (cualquier clase) para detectar coincidencias fuera de las clases buscadas.
   const hitsTodos = buscarEnINPI(marca, null);
 
-  const rubroConocido = !!rubro && RUBROS_CONOCIDOS_RE.test(rubro);
+  const rubroConocido = !!rubro && rubroEsConocido(rubro);
   const rubroIngresado = !!(rubro && String(rubro).trim());
   const clasesNoMatchean = rubroIngresado && !rubroConocido;
 

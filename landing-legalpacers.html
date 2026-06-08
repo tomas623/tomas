@@ -117,7 +117,7 @@
       {
         "@type": "Question",
         "name": "¿Cuándo y cómo me avisan si alguien intenta copiar mi marca?",
-        "acceptedAnswer": { "@type": "Answer", "text": "El Boletín de marcas en Argentina se publica una vez por semana, los miércoles. Por eso el monitoreo es semanal, no 24/7: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas y, si hay riesgo, te avisamos por mail para preparar la oposición dentro del plazo legal." }
+        "acceptedAnswer": { "@type": "Answer", "text": "El Boletín de marcas en Argentina se publica de forma quincenal, los jueves. Por eso el monitoreo es quincenal: cada jueves escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas y, si hay riesgo, te avisamos por mail y en tu portal cliente para reaccionar dentro del plazo legal." }
       }
     ]
   }
@@ -622,13 +622,13 @@
         <span class="plan-step green">Etapa 3 · Protegerla</span>
         <h3>Protección continua</h3>
         <div class="plan-price">desde $4.900<small>por mes · cancelás cuando quieras</small></div>
-        <p class="plan-desc">Monitoreo semanal del Boletín del INPI con alertas por mail si alguien intenta registrar algo similar a tu marca.</p>
+        <p class="plan-desc">Monitoreo quincenal del Boletín del INPI con alertas por mail si alguien intenta registrar algo similar a tu marca.</p>
         <div class="plan-ideal" style="border-left-color:#10b981"><strong style="color:#6ee7b7">Ideal si…</strong>Tu marca está <strong style="display:inline">registrada o en trámite</strong> y querés que te avisemos cuando aparezca una posible copia.</div>
         <ul>
           <li>Pack 3 marcas — $4.900/mes</li>
           <li>Pack 10 marcas — $12.900/mes</li>
           <li>Pack 20 marcas — $19.900/mes</li>
-          <li>Escaneo cada miércoles + alertas por mail</li>
+          <li>Escaneo cada jueves + alertas por mail y portal</li>
         </ul>
         <button class="btn btn-primary" style="background:#10b981" @click="abrirVigilancia()">Suscribirme</button>
         <a :href="waCorporativo" target="_blank" style="display:block;text-align:center;margin-top:8px;font-size:12px;color:var(--text-muted)">+20 marcas? Cotización a medida</a>
@@ -676,7 +676,7 @@
       <div class="compare-row">
         <div><strong>Custodia de marcas</strong></div>
         <div class="col-bad">Obligación de revisar manualmente los listados del Boletín Oficial de marcas.</div>
-        <div class="col-good">Monitoreo semanal: escaneamos el boletín cada miércoles y te avisamos por mail si hay riesgo de plagio.</div>
+        <div class="col-good">Monitoreo quincenal: escaneamos el boletín cada jueves y te avisamos por mail y portal cliente si hay riesgo de plagio.</div>
       </div>
     </div>
   </div>
@@ -759,6 +759,21 @@
     <p class="section-sub">Información técnica indispensable para directores de empresas y emprendedores argentinos.</p>
 
     <details class="faq-item" open>
+      <summary class="faq-q">¿Qué es una marca?</summary>
+      <div class="faq-a">Una <strong>marca</strong> es un signo distintivo —una palabra, un logo, una combinación de ambos— que identifica los productos o servicios de una empresa y los diferencia de los del resto. Registrarla ante el INPI te da el <strong>derecho exclusivo</strong> de usarla en el rubro donde está concedida y de prohibirles a terceros usar nombres iguales o confundibles. Hasta tanto no se registre, el nombre comercial es solo de hecho: cualquiera puede pedirlo y, si llega primero al INPI, te obliga a salir del mercado con ese nombre.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">¿Qué tipos de marcas existen?</summary>
+      <div class="faq-a">El INPI argentino reconoce, principalmente, tres tipos: <strong>denominativa</strong> (solo el texto, sin diseño — protege el nombre en cualquier tipografía), <strong>figurativa</strong> (solo el logo, sin texto — protege el diseño visual) y <strong>mixta</strong> (texto + logo combinados, en una composición específica). Lo más conservador suele ser registrar la <strong>denominativa</strong> primero, porque protege el nombre por encima del diseño, y eventualmente sumar la mixta o figurativa según evolucione la identidad visual. La estrategia se define en el onboarding.</div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">¿Por qué es importante registrar una marca?</summary>
+      <div class="faq-a">Tres razones concretas: <strong>(1) exclusividad legal</strong> — solo el titular registrado puede usar la marca en su clase, y puede oponerse o demandar a quien la copie; <strong>(2) defensa frente a terceros</strong> — si alguien registra primero un nombre igual o confundible al tuyo, te obliga a cambiar de identidad comercial, perdiendo posicionamiento, publicidad y dominios; <strong>(3) activo patrimonial</strong> — la marca registrada se puede licenciar, vender o usar como garantía. Sin registro, la marca es solo un nombre de uso: no es tuya en términos legales.</div>
+    </details>
+
+    <details class="faq-item">
       <summary class="faq-q">¿Por qué hacer el pre-check antes de registrar e invertir en branding?</summary>
       <div class="faq-a">Si presentás una marca que colisiona con otra ya registrada, el INPI <strong>rechaza la solicitud y las tasas oficiales se pierden definitivamente</strong>, ya que el Estado no realiza reembolsos. Además, verificar la disponibilidad legal <em>antes</em> de diseñar logos, etiquetas o packaging te evita el riesgo de recibir intimaciones legales de terceros que te obliguen a cambiar de nombre de un día para el otro.</div>
     </details>
@@ -775,7 +790,7 @@
 
     <details class="faq-item">
       <summary class="faq-q">¿Cuánto cuesta el registro de marca y qué aranceles estatales aplican?</summary>
-      <div class="faq-a">El trámite inicial tiene un costo de <strong>$120.000 en concepto de honorarios profesionales fijos de gestión legal</strong> (que cubren el armado del expediente, la presentación y la contestación de vistas de forma). Al momento de presentar se abona aparte, a precio de costo, la <strong>tasa oficial del INPI por clase</strong>: desde mayo de 2026 el organismo dejó de cobrar montos fijos y la expresa en <strong>UMAPI</strong>, una unidad que se reajusta por IPC cada mes. Hoy una clase equivale a 100 UMAPI (~$36.000), pero el valor exacto se confirma el día de la presentación porque cambia mensualmente. Una aclaración honesta sobre el honorario: cubre el <strong>trabajo de gestión</strong> (armar y presentar el expediente y defender las vistas de forma). Si tras presentar, y meses después, el INPI rechaza la marca por criterio propio del examinador o por una oposición sorpresiva de un tercero, ese honorario de gestión <strong>no se reintegra</strong>, porque el trabajo profesional ya fue ejecutado. Por eso el filtro preventivo <em>antes</em> de presentar es tan importante. Los servicios posteriores de monitoreo semanal post-mes 2, la DJU del año 5 y la renovación del año 10 se presupuestan por separado.</div>
+      <div class="faq-a">El trámite inicial tiene un costo de <strong>$120.000 en concepto de honorarios profesionales fijos de gestión legal</strong> (que cubren el armado del expediente, la presentación y la contestación de vistas de forma). Al momento de presentar se abona aparte, a precio de costo, la <strong>tasa oficial del INPI por clase</strong>: los valores se expresan en <strong>UMAPI</strong>, una unidad que el organismo actualiza periódicamente, por lo que el valor exacto se confirma el día de la presentación. Una aclaración honesta sobre el honorario: cubre el <strong>trabajo de gestión</strong> (armar y presentar el expediente y defender las vistas de forma). Si tras presentar, y meses después, el INPI rechaza la marca por criterio propio del examinador o por una oposición sorpresiva de un tercero, ese honorario de gestión <strong>no se reintegra</strong>, porque el trabajo profesional ya fue ejecutado. Por eso el filtro preventivo <em>antes</em> de presentar es tan importante. Los servicios posteriores de monitoreo, la DJU del año 5 y la renovación del año 10 se presupuestan por separado.</div>
     </details>
 
     <details class="faq-item">
@@ -795,12 +810,12 @@
 
     <details class="faq-item">
       <summary class="faq-q">¿LegalPacers me representa si hay una oposición o un juicio?</summary>
-      <div class="faq-a">Conviene distinguir dos instancias. Una <strong>oposición</strong> es un procedimiento <strong>administrativo</strong> ante el propio INPI: esa etapa la gestionamos nosotros como parte del trámite. Un <strong>juicio</strong> es la instancia <strong>judicial</strong>, y ahí sí se requiere patrocinio letrado: lo cubrimos en <em>partnership</em>, con el respaldo del Estudio Rodríguez y Asociados. En criollo: la consultora resuelve lo administrativo y le pone velocidad; la representación judicial la aporta el estudio. Nunca te quedás sin cobertura.</div>
+      <div class="faq-a">Conviene distinguir dos instancias. Una <strong>oposición</strong> es un procedimiento <strong>administrativo</strong> ante el propio INPI: esa etapa la gestionamos nosotros como parte del trámite. Un <strong>juicio</strong> es la instancia <strong>judicial</strong>, donde se requiere patrocinio letrado: trabajamos en <em>partnership</em> con el Estudio Rodríguez y Asociados para los clientes que prefieren que un mismo equipo cubra todo el recorrido, <strong>pero podés optar por el abogado o estudio que prefieras</strong> — no es obligatorio que tomes el partner. La consultora resuelve lo administrativo y le pone velocidad; la representación judicial la elegís vos.</div>
     </details>
 
     <details class="faq-item">
       <summary class="faq-q">¿Cuándo y cómo me avisan si alguien intenta copiar mi nombre?</summary>
-      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos por mail para preparar la oposición formal dentro del plazo legal. Las alertas también quedan registradas en tu portal cliente para que decidas cómo seguir. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles.</div>
+      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica de forma <strong>quincenal, los jueves</strong>. Por eso nuestro monitoreo es <strong>quincenal, no 24/7</strong>: cada jueves escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a las marcas de tu cartera. Si detectamos un riesgo, te avisamos por <strong>mail y en tu portal cliente</strong>, con el detalle de la coincidencia y el plazo legal para reaccionar. Desde el portal podés derivar el caso a WhatsApp para que cotizemos la presentación de la oposición. Ningún sistema honesto puede 'avisarte al instante': el dato recién existe cuando el INPI lo publica.</div>
     </details>
   </div>
 </section>
@@ -885,7 +900,7 @@
         <li>Pre-análisis e informe de riesgo previo firmado por un Agente de la Propiedad Industrial matriculado</li>
         <li>Configuración de categorías Niza y presentación oficial en el día</li>
         <li>Contestación técnica de vistas de forma y oposiciones básicas de estructura</li>
-        <li><strong>🎁 2 meses de monitoreo semanal de boletines oficiales gratis</strong></li>
+        <li><strong>🎁 2 meses de monitoreo quincenal de boletines oficiales gratis</strong></li>
       </ul>
     </div>
 
@@ -1071,14 +1086,45 @@ function landing() {
       if (s >= 60) return '#d97706';
       return '#1B6EF3';
     },
+    // Cobertura de rubros sincronizada con detectarClasesPorRubro() en server.js.
+    // Si ningún patrón machea devolvemos [] para que el back marque
+    // "necesita_analisis" en vez de sugerir clase 35 por defecto.
     detectarClases(text) {
-      const q = (text || '').toLowerCase().trim();
+      const q = (text || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (!q) return [];
-      if (q.includes('ropa') || q.includes('indumentaria') || q.includes('remera') || q.includes('moda')) return [25, 35];
-      if (q.includes('cafe') || q.includes('café') || q.includes('pasteleria') || q.includes('comida')) return [30, 43];
-      if (q.includes('app') || q.includes('software') || q.includes('tecnologia') || q.includes('web')) return [9, 42];
-      if (q.includes('cosmetica') || q.includes('cosmética') || q.includes('skincare')) return [3, 44];
-      return [35];
+      const tabla = [
+        [/(gaseosa|bebida|agua mineral|jugo|refresco|smoothie|isotonica)/, [32]],
+        [/(cerveza|sidra)/,                                                [32]],
+        [/(vino|champagne|espumante|licor|whisky|aguardiente|gin|vermut)/, [33]],
+        [/(restaurante|delivery|gastronom|comida|catering|food truck|bar\b)/, [43]],
+        [/(cafe|pasteler|panader|conf?iter|helader|chocolater)/,           [30, 43]],
+        [/(carne|fiambre|embutid|pescado|lacte|queso|yogur)/,              [29]],
+        [/(pan |harina|fideo|pasta|arroz|cereal|galletit|snack|condiment|salsa)/, [30]],
+        [/(verdura|hortaliza|fruta|granos|semilla|forraje)/,               [31]],
+        [/(ropa|indumentaria|remera|jean|pantalon|moda|vestido|abrig|camis)/, [25, 35]],
+        [/(calzado|zapatilla|zapato|botin|sandalia)/,                      [25]],
+        [/(joyer|reloj|bijou|accesorio)/,                                  [14]],
+        [/(cartera|mochila|valija|marroquin|bolso)/,                       [18]],
+        [/(cosmetic|skincare|maquillaje|perfume|fragancia|jabon)/,         [3, 44]],
+        [/(peluquer|barber|estetic|spa|masaje|salon de belleza)/,          [44]],
+        [/(medicamento|farmaceut|suplemento|vitamina|salud)/,              [5]],
+        [/(clinica|consultorio|odontolog|medico|kinesi|psicolog|terapia)/, [44]],
+        [/(app|software|saas|tecnologi|web|sistema|plataforma|aplicacion)/, [9, 42]],
+        [/(consultor|asesor|servicio profesional|gestor)/,                 [35, 42]],
+        [/(educacion|curso|capacitacion|colegio|instituto|escuela|talleres)/, [41]],
+        [/(tienda online|ecommerce|marketplace|reventa|venta minorista|comercio)/, [35]],
+        [/(logistic|transporte|cadeter|distribu|courier|mudanza)/,         [39]],
+        [/(inmobiliari|alquiler|hospedaje|hotel|hosteler|hostel|airbnb)/,  [36, 43]],
+        [/(financier|banco|seguro|inversi|fintech|criptomoneda)/,          [36]],
+        [/(construc|albañiler|reforma|pintur)/,                            [37]],
+        [/(automotor|auto |moto |vehiculo|bici|repuestos)/,                [12]],
+        [/(juguet|juego de mesa|peluche)/,                                 [28]],
+        [/(libro|editorial|revista|imprenta)/,                             [16]],
+        [/(mueble|colchon|decoracion|hogar)/,                              [20]],
+        [/(mascota|petshop|veterinari|alimento balanceado)/,               [31, 44]],
+      ];
+      for (const [re, clases] of tabla) if (re.test(q)) return clases;
+      return [];
     },
     detectarClasesLive() { this.clasesDetectadas = this.detectarClases(this.form.rubro); },
     async fetchPrecioInforme() {
@@ -1231,7 +1277,7 @@ function landing() {
       },
       {
         q: "¿Cuánto cuesta el registro de marca y qué aranceles estatales aplican?",
-        a: "El trámite inicial tiene un costo de <strong>$120.000 en concepto de honorarios profesionales fijos de gestión legal</strong> (que cubren el armado del expediente, la presentación y la contestación de vistas de forma). Al momento de presentar se abona aparte, a precio de costo, la <strong>tasa oficial del INPI por clase</strong>: desde mayo de 2026 el organismo dejó de cobrar montos fijos y la expresa en <strong>UMAPI</strong>, una unidad que se reajusta por IPC cada mes. Hoy una clase equivale a 100 UMAPI (~$36.000), pero el valor exacto se confirma el día de la presentación porque cambia mensualmente. Una aclaración honesta sobre el honorario: cubre el <strong>trabajo de gestión</strong> (armar y presentar el expediente y defender las vistas de forma). Si tras presentar, y meses después, el INPI rechaza la marca por criterio propio del examinador o por una oposición sorpresiva de un tercero, ese honorario de gestión <strong>no se reintegra</strong>, porque el trabajo profesional ya fue ejecutado. Por eso el filtro preventivo <em>antes</em> de presentar es tan importante. Los servicios posteriores de monitoreo semanal post-mes 2, la DJU del año 5 y la renovación del año 10 se presupuestan por separado."
+        a: "El trámite inicial tiene un costo de <strong>$120.000 en concepto de honorarios profesionales fijos de gestión legal</strong> (que cubren el armado del expediente, la presentación y la contestación de vistas de forma). Al momento de presentar se abona aparte, a precio de costo, la <strong>tasa oficial del INPI por clase</strong>: los valores se expresan en <strong>UMAPI</strong>, una unidad que el organismo actualiza periódicamente, por lo que el valor exacto se confirma el día de la presentación. Una aclaración honesta sobre el honorario: cubre el <strong>trabajo de gestión</strong> (armar y presentar el expediente y defender las vistas de forma). Si tras presentar, y meses después, el INPI rechaza la marca por criterio propio del examinador o por una oposición sorpresiva de un tercero, ese honorario de gestión <strong>no se reintegra</strong>, porque el trabajo profesional ya fue ejecutado. Por eso el filtro preventivo <em>antes</em> de presentar es tan importante. Los servicios posteriores de monitoreo, la DJU del año 5 y la renovación del año 10 se presupuestan por separado."
       },
       {
         q: "¿Cuánto tarda el registro de una marca en el INPI?",
@@ -1251,7 +1297,7 @@ function landing() {
       },
       {
         q: "¿Cuándo y cómo me avisan si alguien intenta copiar mi nombre?",
-        a: "El Boletín Oficial de marcas en Argentina se publica <strong>una vez por semana, los miércoles</strong>. Por eso nuestro monitoreo es <strong>semanal, no 24/7</strong>: cada miércoles escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a la tuya. Si detectamos un riesgo de plagio, te avisamos por mail para preparar la oposición formal dentro del plazo legal. Las alertas también quedan registradas en tu portal cliente para que decidas cómo seguir. Ningún sistema honesto puede 'avisarte al instante', porque el dato recién existe cuando el INPI lo publica el miércoles."
+        a: "El Boletín Oficial de marcas en Argentina se publica de forma <strong>quincenal, los jueves</strong>. Por eso nuestro monitoreo es <strong>quincenal, no 24/7</strong>: cada jueves escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a las marcas de tu cartera. Si detectamos un riesgo, te avisamos por <strong>mail y en tu portal cliente</strong>, con el detalle de la coincidencia y el plazo legal para reaccionar. Desde el portal podés derivar el caso a WhatsApp para que cotizemos la presentación de la oposición. Ningún sistema honesto puede 'avisarte al instante': el dato recién existe cuando el INPI lo publica."
       }
     ]
   };

@@ -220,6 +220,17 @@ db.exec(`
     WHERE boletin_id IS NOT NULL;
 `);
 
+// Marca vigilada: nro de acta/registro y fecha de concesión para calcular
+// hitos de DJU (año 5) y renovación (año 10). Idempotentes.
+for (const [col, ddl] of [
+  ['numero_acta',     `ALTER TABLE marcas_vigiladas ADD COLUMN numero_acta TEXT`],
+  ['fecha_concesion', `ALTER TABLE marcas_vigiladas ADD COLUMN fecha_concesion TEXT`],
+]) {
+  if (!columnExists('marcas_vigiladas', col)) db.exec(ddl);
+}
+db.exec(`CREATE INDEX IF NOT EXISTS idx_marcas_fecha_concesion
+         ON marcas_vigiladas(fecha_concesion) WHERE fecha_concesion IS NOT NULL`);
+
 // CRM-lite + follow-up: campos de gestión manual sobre la tabla leads.
 for (const [col, ddl] of [
   ['pipeline_estado',     `ALTER TABLE leads ADD COLUMN pipeline_estado TEXT NOT NULL DEFAULT 'nuevo'`],

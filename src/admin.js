@@ -23,8 +23,10 @@ function mountAdminRoutes(app) {
       usuarios_total:     count(`SELECT COUNT(*) AS n FROM usuarios`),
       clientes:           count(`SELECT COUNT(*) AS n FROM usuarios WHERE rol='cliente'`),
       marcas_vigiladas:   count(`SELECT COUNT(*) AS n FROM marcas_vigiladas WHERE estado='activa'`),
-      alertas_nuevas:     count(`SELECT COUNT(*) AS n FROM alertas WHERE estado='nueva'`),
+      alertas_nuevas:     count(`SELECT COUNT(*) AS n FROM alertas WHERE estado IN ('nueva','pendiente_revision')`),
+      alertas_pendientes: count(`SELECT COUNT(*) AS n FROM alertas WHERE estado='pendiente_revision'`),
       alertas_total:      count(`SELECT COUNT(*) AS n FROM alertas`),
+      hitos_proximos:     count(`SELECT COUNT(*) AS n FROM marcas_vigiladas WHERE fecha_concesion IS NOT NULL AND (date(fecha_concesion,'+5 years') <= date('now','+180 days') OR date(fecha_concesion,'+10 years') <= date('now','+180 days'))`),
       boletines:          count(`SELECT COUNT(*) AS n FROM boletines`),
       marcas_inpi:        count(`SELECT COUNT(*) AS n FROM marcas_inpi`),
       informes_cola:      count(`SELECT COUNT(*) AS n FROM informes WHERE estado IN ('borrador','generando','error')`),
@@ -136,11 +138,44 @@ function mountAdminRoutes(app) {
   app.get('/api/admin/marcas-vigiladas', guard, (req, res) => {
     const rows = db.prepare(`
       SELECT mv.id, mv.denominacion, mv.clases, mv.tipo, mv.estado, mv.created_at,
+             mv.numero_acta, mv.fecha_concesion,
+             CASE WHEN mv.fecha_concesion IS NOT NULL
+                  THEN date(mv.fecha_concesion, '+5 years') END  AS dju_due_at,
+             CASE WHEN mv.fecha_concesion IS NOT NULL
+                  THEN date(mv.fecha_concesion, '+10 years') END AS renovacion_due_at,
              u.id AS usuario_id, u.email AS usuario_email, u.nombre AS usuario_nombre
       FROM marcas_vigiladas mv JOIN usuarios u ON u.id = mv.usuario_id
       ORDER BY mv.id DESC LIMIT 500
     `).all();
     res.json(ok({ marcas: rows }));
+  });
+
+  // ===== Hitos legales: próximas DJU y renovaciones =====
+  // Devuelve solo marcas con fecha_concesion cargada, ordenadas por el próximo
+  // vencimiento (cualquiera de los dos). Sirve para que el equipo legal arme la
+  // agenda de avisos al cliente sin tener que filtrar manualmente la tabla.
+  app.get('/api/admin/hitos-legales', guard, (req, res) => {
+    const dias = parseInt(req.query.dias_max, 10) || 365;
+    const rows = db.prepare(`
+      SELECT mv.id, mv.denominacion, mv.clases, mv.numero_acta, mv.fecha_concesion,
+             mv.estado,
+             date(mv.fecha_concesion, '+5 years')  AS dju_due_at,
+             date(mv.fecha_concesion, '+10 years') AS renovacion_due_at,
+             u.email AS usuario_email, u.nombre AS usuario_nombre, u.telefono AS usuario_telefono
+      FROM marcas_vigiladas mv JOIN usuarios u ON u.id = mv.usuario_id
+      WHERE mv.fecha_concesion IS NOT NULL
+        AND mv.estado != 'baja'
+        AND (
+          date(mv.fecha_concesion, '+5 years')  <= date('now', '+' || ? || ' days')
+          OR date(mv.fecha_concesion, '+10 years') <= date('now', '+' || ? || ' days')
+        )
+      ORDER BY MIN(
+        date(mv.fecha_concesion, '+5 years'),
+        date(mv.fecha_concesion, '+10 years')
+      ) ASC
+      LIMIT 500
+    `).all(dias, dias);
+    res.json(ok({ hitos: rows, dias_max: dias }));
   });
 
   // ===== Alertas — bandeja de revisión =====
@@ -184,7 +219,7 @@ function mountAdminRoutes(app) {
   app.patch('/api/admin/alertas/:id', guard, express.json(), (req, res) => {
     const id = parseInt(req.params.id, 10);
     const { estado } = req.body || {};
-    const validos = ['nueva', 'revisada', 'accion_tomada', 'descartada'];
+    const validos = ['pendiente_revision', 'nueva', 'aprobada', 'revisada', 'accion_tomada', 'descartada'];
     if (!validos.includes(estado)) return res.status(400).json(fail('estado inválido'));
     const exists = db.prepare('SELECT id FROM alertas WHERE id = ?').get(id);
     if (!exists) return res.status(404).json(fail('alerta no encontrada'));
@@ -193,6 +228,86 @@ function mountAdminRoutes(app) {
     `).run(estado, req.user.id, id);
     audit.log(req.user.id, 'alerta.cambio_estado', { entidad: 'alertas', entidad_id: id, detalle: { estado } });
     res.json(ok({ id, estado }));
+  });
+
+  // ===== Aprobar y enviar alerta al cliente =====
+  // Disparado por un humano del equipo legal después de revisar el dictamen de
+  // Gemini en /api/admin/alertas. La alerta pasa a estado 'aprobada' y se le
+  // manda al cliente un mail con el detalle. Idempotente: si ya está aprobada,
+  // se rechaza el reintento para no duplicar el mail.
+  app.post('/api/admin/alertas/:id/aprobar', guard, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const row = db.prepare(`
+      SELECT a.*, mv.denominacion AS marca, mv.clases AS marca_clases,
+             u.email AS cliente_email, u.nombre AS cliente_nombre
+      FROM alertas a
+      JOIN marcas_vigiladas mv ON mv.id = a.marca_vigilada_id
+      JOIN usuarios u          ON u.id  = a.usuario_id
+      WHERE a.id = ?
+    `).get(id);
+    if (!row) return res.status(404).json(fail('Alerta no encontrada'));
+    if (row.estado === 'aprobada' || row.estado === 'accion_tomada') {
+      return res.status(409).json(fail('La alerta ya fue aprobada/enviada antes'));
+    }
+
+    const cands = db.prepare(`
+      SELECT mb.denominacion, mb.clase, mb.acta
+      FROM alerta_candidatos ac
+      LEFT JOIN marcas_boletin mb ON mb.id = ac.marca_boletin_id
+      WHERE ac.alerta_id = ?
+      ORDER BY ac.score DESC LIMIT 5
+    `).all(id);
+
+    const baseUrl = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+    const colorNivel = row.nivel === 'alto' ? '#dc2626'
+                     : row.nivel === 'medio' ? '#d97706' : '#059669';
+    const candsHtml = cands.map(c =>
+      `<li><strong>${(c.denominacion || '—')}</strong> · clase ${c.clase || '?'}${c.acta ? ' · acta ' + c.acta : ''}</li>`
+    ).join('');
+
+    const html = `
+      <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+        <h2 style="color:${colorNivel}">Detectamos una posible coincidencia con "${row.marca}"</h2>
+        <p>Hola${row.cliente_nombre ? ' ' + row.cliente_nombre : ''},</p>
+        <p>En el último escaneo del Boletín del INPI encontramos solicitudes que
+           podrían estar relacionadas con tu marca <strong>${row.marca}</strong>
+           (clases ${row.marca_clases}).</p>
+        <p><strong>Nivel de riesgo:</strong>
+           <span style="color:${colorNivel};font-weight:600">${(row.nivel || 'medio').toUpperCase()}</span></p>
+        ${row.fundamento ? `<div style="background:#f8fafc;border-left:3px solid ${colorNivel};padding:10px 14px;border-radius:6px;font-size:13px;margin:12px 0">${row.fundamento}</div>` : ''}
+        ${candsHtml ? `<p><strong>Marcas detectadas:</strong></p><ul>${candsHtml}</ul>` : ''}
+        <p>El detalle completo y el botón para iniciar la consulta de oposición
+           están en tu portal cliente:</p>
+        <p style="margin-top:24px">
+          <a href="${baseUrl}/cliente/"
+             style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
+                    text-decoration:none;display:inline-block;font-weight:600">
+            Ver alerta en mi portal
+          </a>
+        </p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+        <p style="font-size:12px;color:#64748b">
+          LegalPacers · Consultora de Propiedad Industrial<br>
+          contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+        </p>
+      </div>`;
+
+    const { enviarMailGenerico } = require('./notificaciones');
+    const r = await enviarMailGenerico({
+      to: row.cliente_email,
+      subject: `Posible coincidencia con tu marca "${row.marca}" — alerta de monitoreo`,
+      html, tag: 'alerta_aprobada',
+    });
+    if (!r.ok) {
+      audit.log(req.user.id, 'alerta.aprobar_fallo', { entidad: 'alertas', entidad_id: id, detalle: r.error });
+      return res.status(502).json(fail(`No se pudo enviar el mail: ${r.error}`));
+    }
+
+    db.prepare(`
+      UPDATE alertas SET estado = 'aprobada', revisada_por = ?, revisada_en = datetime('now') WHERE id = ?
+    `).run(req.user.id, id);
+    audit.log(req.user.id, 'alerta.aprobada', { entidad: 'alertas', entidad_id: id, detalle: { email: row.cliente_email } });
+    res.json(ok({ id, estado: 'aprobada', stub: !!r.stub }));
   });
 
   // ===== Audit log =====

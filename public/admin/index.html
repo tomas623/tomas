@@ -78,6 +78,8 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .alerta-marca{font-size:18px;font-weight:800;color:#fff}
 .alerta-meta{font-size:12px;color:var(--text-muted);margin-top:4px}
 .alerta-fund{font-size:13px;color:var(--text-soft);background:var(--bg-soft);border-radius:8px;padding:10px 12px;margin:12px 0;line-height:1.55}
+.alerta-aviso{font-size:13px;color:#fcd34d;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:10px 12px;margin:12px 0;line-height:1.55}
+.alerta-card.pendiente{border-color:rgba(245,158,11,.55);background:linear-gradient(180deg,rgba(245,158,11,.04),var(--surface))}
 .candidato{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-top:8px;font-size:13px}
 .candidato-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .cand-name{font-weight:700;color:#fff;font-size:14px;letter-spacing:.02em}
@@ -152,6 +154,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
     <button class="tab" data-tab="leads">Leads</button>
     <button class="tab" data-tab="usuarios">Usuarios</button>
     <button class="tab" data-tab="marcas">Marcas vigiladas</button>
+    <button class="tab" data-tab="hitos">Hitos legales <span class="badge" id="badgeHitos" hidden></span></button>
     <button class="tab" data-tab="packs">Packs</button>
     <button class="tab" data-tab="boletines">Boletines</button>
     <button class="tab" data-tab="audit">Auditoría</button>
@@ -166,6 +169,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
   <div id="panel-leads" class="panel" hidden></div>
   <div id="panel-usuarios" class="panel" hidden></div>
   <div id="panel-marcas" class="panel" hidden></div>
+  <div id="panel-hitos" class="panel" hidden></div>
   <div id="panel-packs" class="panel" hidden></div>
   <div id="panel-boletines" class="panel" hidden></div>
   <div id="panel-audit" class="panel" hidden></div>
@@ -233,7 +237,7 @@ function selectTab(name) {
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   $$('.panel').forEach(p => p.hidden = p.id !== `panel-${name}`);
   const fn = { resumen: loadResumen, alertas: loadAlertas, informes: loadInformes,
-    leads: loadLeads, usuarios: loadUsuarios, marcas: loadMarcas, packs: loadPacks,
+    leads: loadLeads, usuarios: loadUsuarios, marcas: loadMarcas, hitos: loadHitos, packs: loadPacks,
     boletines: loadBoletines, audit: loadAudit }[name];
   if (fn) fn();
 }
@@ -247,7 +251,8 @@ async function loadResumen() {
   $('#metricsGrid').innerHTML =
     m('Informes en cola', d.informes_cola || 0, d.informes_cola > 0 ? 'warn' : 'ok') +
     m('Informes enviados', d.informes_enviados || 0, 'ok') +
-    m('Alertas nuevas', d.alertas_nuevas, d.alertas_nuevas > 0 ? 'alert' : 'ok') +
+    m('Alertas pend. revisión', d.alertas_pendientes || 0, d.alertas_pendientes > 0 ? 'alert' : 'ok') +
+    m('Hitos legales próximos', d.hitos_proximos || 0, d.hitos_proximos > 0 ? 'warn' : '') +
     m('Leads pagados', d.leads_pagados, 'ok') +
     m('Leads pendientes', d.leads_pendientes, d.leads_pendientes > 0 ? 'warn' : '') +
     m('Clientes', d.clientes) +
@@ -257,6 +262,8 @@ async function loadResumen() {
     m('Alertas totales', d.alertas_total);
   if (d.alertas_nuevas > 0) { $('#badgeAlertas').textContent = d.alertas_nuevas; $('#badgeAlertas').hidden = false; }
   else $('#badgeAlertas').hidden = true;
+  if (d.hitos_proximos > 0) { $('#badgeHitos').textContent = d.hitos_proximos; $('#badgeHitos').hidden = false; }
+  else $('#badgeHitos').hidden = true;
   if (d.informes_cola > 0) { $('#badgeInformes').textContent = d.informes_cola; $('#badgeInformes').hidden = false; }
   else $('#badgeInformes').hidden = true;
 
@@ -286,7 +293,8 @@ async function loadAlertas() {
 }
 
 function alertaCard(a) {
-  const estadoChip = { nueva:'red', revisada:'blue', accion_tomada:'green', descartada:'muted' }[a.estado] || 'muted';
+  const estadoChip = { pendiente_revision:'warn', nueva:'red', aprobada:'green', revisada:'blue', accion_tomada:'green', descartada:'muted' }[a.estado] || 'muted';
+  const pendiente = a.estado === 'pendiente_revision';
   const nivelChip = { alto:'red', medio:'yellow', bajo:'green' }[a.nivel] || 'muted';
   const cands = (a.candidatos || []).map(c => candidatoCard(c)).join('');
   return `
@@ -303,16 +311,30 @@ function alertaCard(a) {
           <span class="chip ${estadoChip}">${esc(a.estado)}</span>
         </div>
       </div>
+      ${pendiente ? `
+        <div class="alerta-aviso">
+          <strong>Pendiente de revisión.</strong> Esta alerta fue generada por la IA pero todavía no se envió al cliente. Si el dictamen es legítimo, aprobá y se manda el mail. Si no, descartala.
+        </div>` : ''}
       ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
       ${cands}
       <div class="alerta-actions">
-        <button class="btn tiny" onclick="cambiarEstado(${a.id}, 'revisada')">Marcar revisada</button>
-        <button class="btn tiny green" onclick="cambiarEstado(${a.id}, 'accion_tomada')">Acción tomada</button>
-        <button class="btn tiny outline" onclick="cambiarEstado(${a.id}, 'descartada')">Descartar</button>
+        ${pendiente
+          ? `<button class="btn tiny green" onclick="aprobarAlerta(${a.id})">✓ Aprobar y enviar al cliente</button>
+             <button class="btn tiny outline" onclick="cambiarEstado(${a.id}, 'descartada')">Descartar</button>`
+          : `<button class="btn tiny" onclick="cambiarEstado(${a.id}, 'revisada')">Marcar revisada</button>
+             <button class="btn tiny green" onclick="cambiarEstado(${a.id}, 'accion_tomada')">Acción tomada</button>
+             <button class="btn tiny outline" onclick="cambiarEstado(${a.id}, 'descartada')">Descartar</button>`}
         ${a.revisada_por_email ? `<span class="muted" style="font-size:12px;align-self:center">Última revisión: ${esc(a.revisada_por_email)} · ${fmtDate(a.revisada_en)}</span>` : ''}
       </div>
     </div>
   `;
+}
+
+async function aprobarAlerta(id) {
+  if (!confirm('¿Aprobar y enviar mail al cliente con esta alerta?')) return;
+  const r = await api(`/api/admin/alertas/${id}/aprobar`, { method: 'POST' });
+  if (r.ok) { loadAlertas(); loadResumen(); }
+  else alert(r.error || 'No se pudo aprobar');
 }
 
 function candidatoCard(c) {
@@ -693,17 +715,59 @@ async function loadMarcas() {
   if (!r.ok) return;
   if (!r.data.marcas.length) { $('#panel-marcas').innerHTML = '<div class="empty">Ningún cliente cargó marcas todavía.</div>'; return; }
   $('#panel-marcas').innerHTML = tabla(
-    ['#','Denominación','Clases','Tipo','Estado','Cliente','Creado'],
+    ['#','Denominación','Clases','Tipo','Acta','Concesión','Estado','Cliente','Creado'],
     r.data.marcas.map(m => [
       `<span class="mono">${m.id}</span>`,
       `<strong>${esc(m.denominacion)}</strong>`,
       esc(m.clases),
       esc(m.tipo || '—'),
+      esc(m.numero_acta || '—'),
+      m.fecha_concesion ? fmtDate(m.fecha_concesion) : '<span class="muted">—</span>',
       `<span class="chip ${m.estado === 'activa' ? 'green' : m.estado === 'pausada' ? 'yellow' : 'blue'}">${esc(m.estado)}</span>`,
       `${esc(m.usuario_email)}`,
       fmtDate(m.created_at),
     ])
   );
+}
+
+// ===== Hitos legales: DJU (año 5) y renovación (año 10) =====
+async function loadHitos() {
+  const r = await api('/api/admin/hitos-legales?dias_max=365');
+  if (!r.ok) return;
+  if (!r.data.hitos.length) {
+    $('#panel-hitos').innerHTML = `
+      <div class="empty">
+        No hay marcas con fecha de concesión cargada que tengan DJU o renovación
+        en los próximos 365 días. A medida que los clientes carguen la fecha de
+        concesión de sus marcas, vas a ver acá quiénes necesitan aviso.
+      </div>`;
+    return;
+  }
+  const hoy = new Date().toISOString().slice(0, 10);
+  const semaforo = (fecha) => {
+    if (!fecha) return '';
+    const dias = Math.round((new Date(fecha) - new Date(hoy)) / 86400000);
+    if (dias < 0)    return `<span class="chip red">vencido hace ${-dias}d</span>`;
+    if (dias <= 90)  return `<span class="chip red">en ${dias}d</span>`;
+    if (dias <= 180) return `<span class="chip yellow">en ${dias}d</span>`;
+    return `<span class="chip blue">en ${dias}d</span>`;
+  };
+  $('#panel-hitos').innerHTML = `
+    <div class="muted" style="margin-bottom:12px;font-size:13px">
+      Marcas con fecha de concesión cargada y un hito (DJU o renovación) en los próximos 365 días.
+      Usá esta vista para mandar avisos a los clientes con anticipación.
+    </div>
+    ${tabla(
+      ['Cliente','Marca','Acta','Concesión','DJU (año 5)','Renovación (año 10)'],
+      r.data.hitos.map(h => [
+        `<div><strong>${esc(h.usuario_nombre || h.usuario_email)}</strong><div class="muted" style="font-size:11.5px">${esc(h.usuario_email)}${h.usuario_telefono ? ' · ' + esc(h.usuario_telefono) : ''}</div></div>`,
+        `<strong>${esc(h.denominacion)}</strong><div class="muted" style="font-size:11.5px">Clase ${esc(h.clases)}</div>`,
+        esc(h.numero_acta || '—'),
+        fmtDate(h.fecha_concesion),
+        `${fmtDate(h.dju_due_at)} ${semaforo(h.dju_due_at)}`,
+        `${fmtDate(h.renovacion_due_at)} ${semaforo(h.renovacion_due_at)}`,
+      ])
+    )}`;
 }
 
 async function loadPacks() {

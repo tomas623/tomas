@@ -64,6 +64,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 .marca-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:14px 18px;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;margin-bottom:8px}
 .marca-name{font-weight:700;font-size:15px;color:#fff;letter-spacing:.02em}
 .marca-meta{font-size:12px;color:var(--text-muted);margin-top:2px}
+.marca-hitos{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
 .marca-actions{display:flex;gap:6px}
 
 .alerta-row{padding:14px 18px;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;margin-bottom:8px}
@@ -157,11 +158,11 @@ main{max-width:1100px;margin:0 auto;padding:24px}
       <form id="altaForm">
         <div class="alta-form">
           <div class="field">
-            <label>Denominación</label>
+            <label>Denominación *</label>
             <input type="text" id="newDenom" required placeholder="Ej: Focca, Acme, Brio…">
           </div>
           <div class="field">
-            <label>Clase(s) Niza (coma)</label>
+            <label>Clase(s) Niza (coma) *</label>
             <input type="text" id="newClases" required placeholder="9, 42">
           </div>
           <div class="field">
@@ -172,8 +173,22 @@ main{max-width:1100px;margin:0 auto;padding:24px}
               <option value="figurativa">Figurativa</option>
             </select>
           </div>
+          <div class="field">
+            <label>Número de acta o registro <span class="muted">(opcional)</span></label>
+            <input type="text" id="newActa" placeholder="Ej: 4500123 o 3.987.456">
+          </div>
+          <div class="field">
+            <label>Fecha de concesión <span class="muted">(opcional)</span></label>
+            <input type="date" id="newFecha">
+          </div>
           <button type="submit" class="btn primary" id="altaBtn">Cargar</button>
         </div>
+        <p class="muted" style="font-size:11.5px;margin-top:8px;line-height:1.5">
+          La fecha de concesión nos permite avisarte cuando se acerquen los hitos
+          legales: <strong>DJU</strong> al año 5 (obligatoria por ley) y
+          <strong>renovación</strong> al año 10. Si todavía no la tenés, dejá los
+          campos vacíos y los cargamos cuando esté.
+        </p>
       </form>
     </div>
 
@@ -299,11 +314,14 @@ function marcaRow(m) {
   const chip = m.estado === 'activa' ? '<span class="chip green">activa</span>'
     : m.estado === 'pausada' ? '<span class="chip yellow">pausada</span>'
     : '<span class="chip blue">en trámite</span>';
+  const hitos = hitosLegales(m);
+  const acta = m.numero_acta ? ` · Acta ${esc(m.numero_acta)}` : '';
   return `
     <div class="marca-row">
       <div>
         <div class="marca-name">${esc(m.denominacion)} ${chip}</div>
-        <div class="marca-meta">Clases ${esc(m.clases)} · ${esc(m.tipo || 'denominativa')} · alta ${fmtDate(m.created_at)}</div>
+        <div class="marca-meta">Clases ${esc(m.clases)} · ${esc(m.tipo || 'denominativa')}${acta} · alta ${fmtDate(m.created_at)}</div>
+        ${hitos}
       </div>
       <div class="marca-actions">
         ${m.estado === 'activa'
@@ -317,16 +335,43 @@ function marcaRow(m) {
   `;
 }
 
+// Render de los próximos hitos legales (DJU y renovación) cuando hay fecha de
+// concesión. Si la fecha está vencida, lo decimos en rojo.
+function hitosLegales(m) {
+  if (!m.dju_due_at && !m.renovacion_due_at) return '';
+  const hoy = new Date().toISOString().slice(0, 10);
+  const chip = (label, fecha) => {
+    if (!fecha) return '';
+    const vencido = fecha < hoy;
+    const cerca = !vencido && diasHasta(fecha) <= 180;
+    const cls = vencido ? 'red' : cerca ? 'yellow' : 'blue';
+    const txt = vencido ? `${label}: VENCIÓ ${fmtDate(fecha)}`
+      : `${label}: ${fmtDate(fecha)}`;
+    return `<span class="chip ${cls}" style="margin-right:6px">${txt}</span>`;
+  };
+  return `<div class="marca-hitos">${chip('DJU', m.dju_due_at)}${chip('Renovación', m.renovacion_due_at)}</div>`;
+}
+
+function diasHasta(fechaIso) {
+  const hoy = new Date(); hoy.setUTCHours(0, 0, 0, 0);
+  return Math.round((new Date(fechaIso) - hoy) / 86400000);
+}
+
 $('#altaForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const denom = $('#newDenom').value.trim();
   const clases = $('#newClases').value;
   const tipo = $('#newTipo').value;
+  const numero_acta = $('#newActa').value.trim() || null;
+  const fecha_concesion = $('#newFecha').value || null;
   if (!denom || !clases) return;
-  const r = await api('/api/cliente/marcas', { method: 'POST', body: JSON.stringify({ denominacion: denom, clases, tipo }) });
+  const r = await api('/api/cliente/marcas', { method: 'POST', body: JSON.stringify({
+    denominacion: denom, clases, tipo, numero_acta, fecha_concesion,
+  })});
   if (r.ok) {
     flash(`"${denom}" agregada a vigilancia.`, 'ok');
     $('#newDenom').value = ''; $('#newClases').value = '';
+    $('#newActa').value = ''; $('#newFecha').value = '';
     loadMarcas();
   } else {
     flash(r.error || 'Error', 'bad');

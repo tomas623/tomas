@@ -9,7 +9,6 @@ const db = require('../db');
 const audit = require('../audit');
 const { matching } = require('../matching/etapa1');
 const { analizar, nivelDesdeScore } = require('../matching/etapa2');
-const { enviarMail, enviarWhatsApp } = require('../notificaciones');
 
 const MIN_SCORE_LISTA_CORTA = 55;       // Etapa 1: cualquier candidato ≥ 55 va a Etapa 2.
 const MIN_NIVEL_PARA_ALERTAR = 'medio'; // Generamos alerta si Etapa 2 dice medio o alto.
@@ -19,7 +18,7 @@ function nivelGte(a, b) {
   return orden[a] >= orden[b];
 }
 
-async function correr({ boletinId, actorId, notificar = true } = {}) {
+async function correr({ boletinId, actorId } = {}) {
   // Targets: si no se pasa boletín, tomamos el último procesado.
   let boletines;
   if (boletinId) {
@@ -36,7 +35,6 @@ async function correr({ boletinId, actorId, notificar = true } = {}) {
   `).all();
 
   let totalAlertas = 0, candidatosTotal = 0;
-  const baseUrl = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
   for (const bol of boletines) {
     const actas = db.prepare(`
@@ -67,14 +65,18 @@ async function correr({ boletinId, actorId, notificar = true } = {}) {
 
       if (!nivelGte(peor.nivel, MIN_NIVEL_PARA_ALERTAR)) continue;
 
-      // Insert idempotente (UNIQUE en usuario+marca+boletin)
+      // Insert idempotente (UNIQUE en usuario+marca+boletin).
+      // IMPORTANTE: las alertas se crean en estado 'pendiente_revision'. El
+      // dictamen de Gemini es bueno como primer filtro pero a veces dispara
+      // falsos positivos; por eso un humano del equipo legal las revisa antes
+      // de notificar al cliente desde el panel admin (botón "Aprobar y enviar").
       let alertaId;
       try {
         const fund = peor.c?.gemini?.fundamento
           || `Detectamos ${evaluados.length} candidato(s) con similitud relevante a "${mv.denominacion}" en el boletín ${bol.numero || bol.id}.`;
         const ins = db.prepare(`
           INSERT INTO alertas (usuario_id, marca_vigilada_id, boletin_id, nivel, notoria, estado, canal, fundamento)
-          VALUES (?, ?, ?, ?, ?, 'nueva', 'mail+wa', ?)
+          VALUES (?, ?, ?, ?, ?, 'pendiente_revision', 'mail', ?)
         `).run(mv.usuario_id, mv.id, bol.id, peor.nivel, peor.c?.gemini?.notoria ? 1 : 0, fund);
         alertaId = ins.lastInsertRowid;
         totalAlertas++;
@@ -91,18 +93,9 @@ async function correr({ boletinId, actorId, notificar = true } = {}) {
       for (const c of evaluados) {
         insC.run(alertaId, c.id, c.score, (c.motivos || []).join(','), JSON.stringify(c.gemini));
       }
-
-      if (notificar) {
-        const panelUrl = `${baseUrl}/cliente/`;
-        await enviarMail({
-          alertaId, to: mv.u_email, marca: mv.denominacion,
-          nivel: peor.nivel, fundamento: peor.c?.gemini?.fundamento || '', panel_url: panelUrl,
-        });
-        await enviarWhatsApp({
-          alertaId, to: mv.u_telefono, marca: mv.denominacion,
-          nivel: peor.nivel, panel_url: panelUrl,
-        });
-      }
+      // Las notificaciones al cliente se disparan desde /api/admin/alertas/:id/aprobar
+      // cuando un humano revisa y aprueba la alerta. El cron no le manda mail al
+      // cliente directamente.
     }
   }
 

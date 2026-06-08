@@ -12,6 +12,16 @@ const { linkPackSuscripcion } = require('./pagos');
 function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400, extra) { return { ok: false, error: msg, code, ...(extra || {}) }; }
 
+// Devuelve la fecha en formato AAAA-MM-DD si es válida; null si no.
+function validarFechaIso(s) {
+  if (!s) return null;
+  const str = String(s).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+  const d = new Date(str);
+  if (Number.isNaN(d.getTime())) return null;
+  return str;
+}
+
 function packInfo(usuarioId) {
   const u = db.prepare(`
     SELECT u.id, u.email, u.nombre, u.rol, p.id AS pack_id, p.codigo AS pack_codigo,
@@ -38,9 +48,16 @@ function mountClienteRoutes(app) {
   });
 
   // ===== Mis marcas vigiladas =====
+  // Devolvemos también dju_due_at y renovacion_due_at calculados a partir de
+  // fecha_concesion para que el front pueda mostrar los próximos hitos legales.
   app.get('/api/cliente/marcas', guard, (req, res) => {
     const rows = db.prepare(`
-      SELECT id, denominacion, clases, tipo, logo_path, estado, created_at
+      SELECT id, denominacion, clases, tipo, logo_path, estado, numero_acta,
+             fecha_concesion, created_at,
+             CASE WHEN fecha_concesion IS NOT NULL
+                  THEN date(fecha_concesion, '+5 years') END AS dju_due_at,
+             CASE WHEN fecha_concesion IS NOT NULL
+                  THEN date(fecha_concesion, '+10 years') END AS renovacion_due_at
       FROM marcas_vigiladas WHERE usuario_id = ? ORDER BY id DESC
     `).all(req.user.id);
     res.json(ok({ marcas: rows, pack: packInfo(req.user.id) }));
@@ -48,7 +65,10 @@ function mountClienteRoutes(app) {
 
   // ===== Alta de marca a vigilancia =====
   app.post('/api/cliente/marcas', guard, (req, res) => {
-    const { denominacion, clases, tipo = 'denominativa', logo_path = null } = req.body || {};
+    const {
+      denominacion, clases, tipo = 'denominativa', logo_path = null,
+      numero_acta = null, fecha_concesion = null,
+    } = req.body || {};
     if (!denominacion || !String(denominacion).trim()) {
       return res.status(400).json(fail('Falta la denominación'));
     }
@@ -59,6 +79,12 @@ function mountClienteRoutes(app) {
     if (!clasesArr.length) return res.status(400).json(fail('Indicá al menos una clase Niza'));
     if (!['denominativa', 'mixta', 'figurativa'].includes(tipo)) {
       return res.status(400).json(fail('Tipo inválido'));
+    }
+    const den = String(denominacion).trim();
+    const numAct = numero_acta ? String(numero_acta).trim().slice(0, 50) : null;
+    const fechaCon = validarFechaIso(fecha_concesion);
+    if (fecha_concesion && !fechaCon) {
+      return res.status(400).json(fail('Fecha de concesión inválida (formato AAAA-MM-DD)'));
     }
 
     const info = packInfo(req.user.id);
@@ -74,20 +100,37 @@ function mountClienteRoutes(app) {
       ));
     }
 
-    const den = String(denominacion).trim();
+    // Evitamos que el mismo cliente cargue la misma marca dos veces (por
+    // denominación normalizada). Mejor un mensaje claro que dos filas dup.
+    const denNorm = normalizar(den);
+    const dup = db.prepare(`
+      SELECT id FROM marcas_vigiladas
+      WHERE usuario_id = ? AND denominacion_norm = ? AND estado != 'baja'
+    `).get(req.user.id, denNorm);
+    if (dup) {
+      return res.status(409).json(fail(
+        `Ya tenés a "${den}" en vigilancia. Editala en lugar de crearla otra vez.`,
+        409, { duplicada: true, id: dup.id }
+      ));
+    }
+
     const info2 = db.prepare(`
-      INSERT INTO marcas_vigiladas (usuario_id, denominacion, denominacion_norm, clases, tipo, logo_path, estado)
-      VALUES (?, ?, ?, ?, ?, ?, 'activa')
-    `).run(req.user.id, den, normalizar(den), JSON.stringify(clasesArr), tipo, logo_path);
+      INSERT INTO marcas_vigiladas
+        (usuario_id, denominacion, denominacion_norm, clases, tipo, logo_path,
+         estado, numero_acta, fecha_concesion)
+      VALUES (?, ?, ?, ?, ?, ?, 'activa', ?, ?)
+    `).run(req.user.id, den, denNorm, JSON.stringify(clasesArr), tipo, logo_path,
+           numAct, fechaCon);
 
     audit.log(req.user.id, 'vigilancia.alta', {
       entidad: 'marcas_vigiladas', entidad_id: info2.lastInsertRowid,
-      detalle: { denominacion: den, clases: clasesArr, tipo },
+      detalle: { denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon },
     });
 
     res.json(ok({
       id: info2.lastInsertRowid,
       denominacion: den, clases: clasesArr, tipo, estado: 'activa',
+      numero_acta: numAct, fecha_concesion: fechaCon,
       pack: packInfo(req.user.id),
     }));
   });
@@ -140,6 +183,8 @@ function mountClienteRoutes(app) {
              mv.denominacion AS marca, mv.clases AS marca_clases
       FROM alertas a JOIN marcas_vigiladas mv ON mv.id = a.marca_vigilada_id
       WHERE a.usuario_id = ?
+        AND a.estado != 'pendiente_revision'
+        AND a.estado != 'descartada'
       ORDER BY a.created_at DESC LIMIT 200
     `).all(req.user.id);
 
