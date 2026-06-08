@@ -173,6 +173,38 @@
     .nav-links a:hover{color:#fff}
     .nav-portal{padding:7px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px}
     .nav-portal:hover{background:var(--surface);border-color:var(--blue)}
+    .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px;color:var(--text);width:40px;height:40px}
+    .nav-toggle svg{width:24px;height:24px}
+
+    @media(max-width:760px){
+      /* Reemplazamos el inline nav por un menú hamburguesa desplegable */
+      .nav-toggle{display:inline-flex;align-items:center;justify-content:center}
+      .nav-links{position:absolute;top:100%;right:16px;left:16px;
+                 flex-direction:column;align-items:stretch;gap:0;
+                 background:var(--surface);border:1px solid var(--border-soft);
+                 border-radius:12px;padding:8px;margin-top:6px;
+                 box-shadow:0 12px 40px -10px rgba(0,0,0,.4);
+                 display:none}
+      .nav-links.open{display:flex}
+      .nav-links a{padding:12px 14px;border-radius:8px}
+      .nav-links a:hover{background:var(--bg-soft)}
+      .nav-portal{border:1px solid var(--blue);color:#fff;text-align:center;margin-top:4px}
+      /* Punto 1: ocultamos el banner del !!! sobre las tasas — la idea ya
+         está en el hero y en el FAQ. En mobile el banner agrega ruido. */
+      .risk-banner{display:none}
+      /* Punto 3 y 4: stats y sección "Sistema LegalTech" ocupan demasiado
+         scroll en mobile sin aportar info nueva. */
+      #stats, #somos{display:none}
+      /* Punto 2: cards lado a lado (2 por fila). Aplica a planes, ciclo,
+         steps y testimonios. Las 4 cards del journey quedan 2x2. */
+      .plans-grid{grid-template-columns:repeat(2,1fr) !important;gap:10px}
+      .plan{padding:18px 14px}
+      .plan h3{font-size:16px}
+      .plan-price{font-size:18px}
+      .ciclo-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+      .steps-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+      .testi-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    }
 
     .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
          display:inline-block;transition:all .15s;cursor:pointer;letter-spacing:.01em;text-align:center}
@@ -418,9 +450,12 @@
 <body x-data="landing()" x-init="fetchPrecioInforme()">
 
 <header>
-  <div class="header-inner">
+  <div class="header-inner" style="position:relative">
     <div class="logo">LEGAL<span class="accent">PACERS</span></div>
-    <nav class="nav-links">
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <nav class="nav-links" id="navLinks">
       <a href="#planes">Servicios</a>
       <a href="#comparativa">Comparativa</a>
       <a href="#somos">Quiénes somos</a>
@@ -1302,6 +1337,23 @@ function landing() {
     ]
   };
 }
+
+// Menú hamburguesa (mobile). Vive fuera de Alpine porque el header es estático.
+(function () {
+  const btn = document.getElementById('navToggle');
+  const nav = document.getElementById('navLinks');
+  if (!btn || !nav) return;
+  const cerrar = () => { nav.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); };
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const abierto = nav.classList.toggle('open');
+    btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  });
+  nav.addEventListener('click', (e) => { if (e.target.tagName === 'A') cerrar(); });
+  document.addEventListener('click', (e) => {
+    if (!nav.contains(e.target) && !btn.contains(e.target)) cerrar();
+  });
+})();
 </script>
 </body>
 </html>
