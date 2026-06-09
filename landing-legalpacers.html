@@ -240,6 +240,13 @@
     /* En desktop los dots no se muestran nunca, aunque el JS los inyecte */
     .carousel-dots{display:none}
 
+    /* Modo lectura: cuando la URL trae ?seccion=X (pestaña nueva en mobile),
+       solo se muestra esa sección. Anulamos el display:none del @media
+       mobile para que se vea aunque sea Comparativa o Quiénes somos. */
+    html.modo-lectura #comparativa,
+    html.modo-lectura #somos{display:block !important}
+    html.modo-lectura header{position:static}
+
     .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
          display:inline-block;transition:all .15s;cursor:pointer;letter-spacing:.01em;text-align:center}
     .btn-primary{background:var(--blue);color:#fff;box-shadow:0 4px 18px -4px var(--blue-glow)}
@@ -1390,26 +1397,36 @@ function landing() {
 })();
 
 // Dots de carrusel para los grids con scroll horizontal en mobile. Por cada
-// grid: inyecta un <div.carousel-dots> con un botón por card. Usa
-// IntersectionObserver sobre las cards (con root = el propio grid) para
-// detectar cuál está visible y marcarla como activa. Click en un dot
-// scrollea esa card al centro. Solo se activa cuando el grid efectivamente
-// es horizontal (computed display === flex), así no estorba en desktop.
+// grid inyectamos un <div.carousel-dots> con un botón por card. Click en un
+// dot scrollea esa card al centro. IntersectionObserver mantiene el dot
+// activo sincronizado con el scroll.
+//
+// La detección de "estoy en mobile" usa matchMedia en vez de computedStyle:
+// hay celulares (y tablets en landscape) donde getComputedStyle devolvía
+// 'grid' antes de que la cascada @media reflowease, así que los dots no
+// aparecían en la primera carga.
 (function () {
   const grids = document.querySelectorAll('.plans-grid, .ciclo-grid, .steps-grid, .testi-grid');
+  const mq = window.matchMedia('(max-width:900px)');
+  const observers = new WeakMap();
+
+  function limpiar(grid) {
+    const obs = observers.get(grid);
+    if (obs) { obs.disconnect(); observers.delete(grid); }
+    const sib = grid.nextElementSibling;
+    if (sib && sib.classList.contains('carousel-dots')) sib.remove();
+  }
 
   function setupGrid(grid) {
-    const esCarrusel = getComputedStyle(grid).display === 'flex';
-    let dotsHost = grid.nextElementSibling;
-    if (!dotsHost || !dotsHost.classList.contains('carousel-dots')) {
-      dotsHost = document.createElement('div');
-      dotsHost.className = 'carousel-dots';
-      grid.after(dotsHost);
-    }
-    dotsHost.innerHTML = '';
-    if (!esCarrusel) return; // En desktop no hace falta poblarlos.
+    limpiar(grid);
+    if (!mq.matches) return;
+    const cards = Array.from(grid.children);
+    if (cards.length < 2) return;
 
-    const cards = Array.from(grid.children).filter(el => !el.classList.contains('carousel-dots'));
+    const dotsHost = document.createElement('div');
+    dotsHost.className = 'carousel-dots';
+    grid.after(dotsHost);
+
     cards.forEach((card, i) => {
       const dot = document.createElement('button');
       dot.type = 'button';
@@ -1422,23 +1439,69 @@ function landing() {
     });
     const dots = dotsHost.querySelectorAll('button');
     const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          const idx = cards.indexOf(e.target);
-          if (idx >= 0) dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-        }
-      });
-    }, { root: grid, threshold: 0.6 });
+      const visible = entries
+        .filter(e => e.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!visible) return;
+      const idx = cards.indexOf(visible.target);
+      if (idx >= 0) dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+    }, { root: grid, threshold: [0.5, 0.8, 1] });
     cards.forEach(c => obs.observe(c));
+    observers.set(grid, obs);
   }
 
-  grids.forEach(setupGrid);
-  // Recalcular si el viewport cruza el breakpoint (rotación o resize).
-  let t;
-  window.addEventListener('resize', () => {
-    clearTimeout(t);
-    t = setTimeout(() => grids.forEach(setupGrid), 150);
-  });
+  function aplicar() { grids.forEach(setupGrid); }
+  aplicar();
+  // Recalcular al cruzar el breakpoint (rotación, resize).
+  if (mq.addEventListener) mq.addEventListener('change', aplicar);
+  else mq.addListener(aplicar);
+})();
+
+// En mobile, "Comparativa" y "Quiénes somos" no aparecen en la landing (las
+// ocultamos por scroll). Pero seguimos queriendo ofrecerlas: el menú las
+// abre en una pestaña nueva con la página filtrada (modo lectura) gracias a
+// ?seccion=X. En desktop los links del menú son anclas normales — la
+// experiencia que aprobaste no cambia.
+(function () {
+  const SECCIONES = { comparativa: '#comparativa', somos: '#somos' };
+  const mq = window.matchMedia('(max-width:900px)');
+
+  // 1) Modo lectura cuando la URL trae ?seccion=X. Ocultamos todas las
+  //    <section> excepto la indicada (el header y el footer quedan).
+  const params = new URLSearchParams(location.search);
+  const seccion = params.get('seccion');
+  if (seccion && SECCIONES[seccion]) {
+    const target = document.querySelector(SECCIONES[seccion]);
+    document.querySelectorAll('section').forEach(el => {
+      el.style.display = (el === target) ? '' : 'none';
+    });
+    // En modo lectura el target debe verse aunque sea mobile.
+    if (target) target.style.setProperty('display', 'block', 'important');
+    document.documentElement.classList.add('modo-lectura');
+  }
+
+  // 2) En mobile, reescribir los hrefs del menú para abrir esas dos
+  //    secciones en pestaña nueva apuntando a /?seccion=...
+  function aplicarMobile() {
+    document.querySelectorAll('#navLinks a').forEach(a => {
+      const orig = a.dataset.originalHref || a.getAttribute('href');
+      if (!a.dataset.originalHref) a.dataset.originalHref = orig;
+      const key = { '#comparativa': 'comparativa', '#somos': 'somos' }[orig];
+      if (!key) return; // los demás links quedan como están.
+      if (mq.matches) {
+        a.setAttribute('href', `/?seccion=${key}`);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener');
+      } else {
+        a.setAttribute('href', orig);
+        a.removeAttribute('target');
+        a.removeAttribute('rel');
+      }
+    });
+  }
+  aplicarMobile();
+  if (mq.addEventListener) mq.addEventListener('change', aplicarMobile);
+  else mq.addListener(aplicarMobile);
 })();
 </script>
 </body>
