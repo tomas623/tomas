@@ -224,7 +224,21 @@
         max-width:380px;
         scroll-snap-align:center;
       }
+
+      /* Indicador de dots debajo de cada carrusel: una pildora alargada azul
+         marca la card visible, los círculos grises el resto. Click en un dot
+         scrollea a esa card. Generados en JS solo cuando el carrusel está
+         activo (mobile). */
+      .carousel-dots{display:flex;justify-content:center;gap:8px;margin-top:14px}
+      .carousel-dots button{
+        width:8px;height:8px;border-radius:99px;border:none;
+        background:var(--border);cursor:pointer;padding:0;
+        transition:background .2s,width .2s;
+      }
+      .carousel-dots button.active{background:var(--blue);width:22px}
     }
+    /* En desktop los dots no se muestran nunca, aunque el JS los inyecte */
+    .carousel-dots{display:none}
 
     .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
          display:inline-block;transition:all .15s;cursor:pointer;letter-spacing:.01em;text-align:center}
@@ -1372,6 +1386,58 @@ function landing() {
   nav.addEventListener('click', (e) => { if (e.target.tagName === 'A') cerrar(); });
   document.addEventListener('click', (e) => {
     if (!nav.contains(e.target) && !btn.contains(e.target)) cerrar();
+  });
+})();
+
+// Dots de carrusel para los grids con scroll horizontal en mobile. Por cada
+// grid: inyecta un <div.carousel-dots> con un botón por card. Usa
+// IntersectionObserver sobre las cards (con root = el propio grid) para
+// detectar cuál está visible y marcarla como activa. Click en un dot
+// scrollea esa card al centro. Solo se activa cuando el grid efectivamente
+// es horizontal (computed display === flex), así no estorba en desktop.
+(function () {
+  const grids = document.querySelectorAll('.plans-grid, .ciclo-grid, .steps-grid, .testi-grid');
+
+  function setupGrid(grid) {
+    const esCarrusel = getComputedStyle(grid).display === 'flex';
+    let dotsHost = grid.nextElementSibling;
+    if (!dotsHost || !dotsHost.classList.contains('carousel-dots')) {
+      dotsHost = document.createElement('div');
+      dotsHost.className = 'carousel-dots';
+      grid.after(dotsHost);
+    }
+    dotsHost.innerHTML = '';
+    if (!esCarrusel) return; // En desktop no hace falta poblarlos.
+
+    const cards = Array.from(grid.children).filter(el => !el.classList.contains('carousel-dots'));
+    cards.forEach((card, i) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.setAttribute('aria-label', `Ir a card ${i + 1}`);
+      if (i === 0) dot.classList.add('active');
+      dot.addEventListener('click', () => {
+        card.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      });
+      dotsHost.appendChild(dot);
+    });
+    const dots = dotsHost.querySelectorAll('button');
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const idx = cards.indexOf(e.target);
+          if (idx >= 0) dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+      });
+    }, { root: grid, threshold: 0.6 });
+    cards.forEach(c => obs.observe(c));
+  }
+
+  grids.forEach(setupGrid);
+  // Recalcular si el viewport cruza el breakpoint (rotación o resize).
+  let t;
+  window.addEventListener('resize', () => {
+    clearTimeout(t);
+    t = setTimeout(() => grids.forEach(setupGrid), 150);
   });
 })();
 </script>
