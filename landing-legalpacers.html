@@ -195,32 +195,35 @@
       .risk-banner, #stats, #somos, #comparativa{display:none !important}
       /* El ⚠️ chico dentro de la card "Iniciar registro" tampoco aporta en mobile */
       .plan-note{display:none}
-      /* Cards más compactas y lado a lado (2 por fila) */
       section{padding:48px 0}
       .section-title{font-size:24px}
       .section-sub{font-size:14px;margin-bottom:24px}
-      .plans-grid{grid-template-columns:repeat(2,1fr) !important;gap:8px;max-width:none}
-      .plan{padding:14px 12px;border-radius:12px}
-      .plan-step{font-size:9.5px;padding:2px 7px;margin-bottom:6px}
-      .plan h3{font-size:14px;margin-bottom:6px}
-      .plan-price{font-size:18px;margin-bottom:6px}
-      .plan-price small{font-size:10.5px;line-height:1.35}
-      .plan-desc{font-size:11.5px;line-height:1.4;margin-bottom:8px}
-      .plan-ideal{font-size:11px;padding:6px 8px;margin-bottom:8px;line-height:1.35}
-      .plan ul{margin:0 0 10px;padding-left:14px}
-      .plan ul li{font-size:11.5px;line-height:1.4;margin-bottom:3px}
-      .plan .btn{padding:9px 10px;font-size:12.5px;width:100%}
-      .ciclo-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-      .ciclo-card{padding:14px 12px}
-      .ciclo-card h4{font-size:14px}
-      .ciclo-card p{font-size:11.5px;line-height:1.45}
-      .ciclo-badge{font-size:10px;padding:2px 7px}
-      .ciclo-price{font-size:11px;padding-top:8px;margin-top:8px}
-      .steps-grid{grid-template-columns:repeat(2,1fr);gap:8px}
-      .step{padding:14px 12px}
-      .step h3{font-size:14px}
-      .step p{font-size:11.5px;line-height:1.45}
-      .testi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+
+      /* Carrusel horizontal en mobile para las grids de cards.
+         Cada card ocupa ~85vw para que se vea casi entera + un anticipo de
+         la siguiente, así el usuario entiende que puede desplazar.
+         scroll-snap hace que el swipe "se pegue" a la próxima card. */
+      .plans-grid, .ciclo-grid, .steps-grid, .testi-grid{
+        display:flex !important;
+        grid-template-columns:none !important;
+        gap:14px;
+        overflow-x:auto;
+        scroll-snap-type:x mandatory;
+        scroll-padding:0 24px;
+        padding:6px 24px 18px;
+        margin-left:-24px; margin-right:-24px;
+        -webkit-overflow-scrolling:touch;
+        max-width:none;
+      }
+      .plans-grid::-webkit-scrollbar,
+      .ciclo-grid::-webkit-scrollbar,
+      .steps-grid::-webkit-scrollbar,
+      .testi-grid::-webkit-scrollbar{display:none}
+      .plans-grid > *, .ciclo-grid > *, .steps-grid > *, .testi-grid > *{
+        flex:0 0 85vw;
+        max-width:380px;
+        scroll-snap-align:center;
+      }
     }
 
     .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:600;
