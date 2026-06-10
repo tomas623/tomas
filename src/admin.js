@@ -264,6 +264,47 @@ function mountAdminRoutes(app) {
     res.json(ok({ packs: rows }));
   });
 
+  // Editar precio mensual y/o nombre de un pack. Acepta cupo_marcas también,
+  // por si en el futuro se cambia (raro). Para que el cambio se refleje en MP
+  // hay que editar el plan ahí también — esta tabla es solo lo que ve la UI.
+  app.patch('/api/admin/packs/:codigo', guard, express.json(), (req, res) => {
+    const codigo = String(req.params.codigo);
+    const pack = db.prepare('SELECT * FROM packs WHERE codigo = ?').get(codigo);
+    if (!pack) return res.status(404).json(fail('Pack no encontrado'));
+
+    const { precio_mensual, nombre, cupo_marcas } = req.body || {};
+    const sets = [];
+    const vals = [];
+    if (precio_mensual !== undefined) {
+      const n = Number(precio_mensual);
+      if (!Number.isFinite(n) || n < 0 || n > 10_000_000) {
+        return res.status(400).json(fail('precio_mensual inválido'));
+      }
+      sets.push('precio_mensual = ?'); vals.push(Math.round(n));
+    }
+    if (nombre !== undefined) {
+      const s = String(nombre).trim();
+      if (!s) return res.status(400).json(fail('nombre no puede ser vacío'));
+      sets.push('nombre = ?'); vals.push(s);
+    }
+    if (cupo_marcas !== undefined) {
+      const n = parseInt(cupo_marcas, 10);
+      if (!Number.isInteger(n) || n < 1 || n > 1000) {
+        return res.status(400).json(fail('cupo_marcas inválido'));
+      }
+      sets.push('cupo_marcas = ?'); vals.push(n);
+    }
+    if (!sets.length) return res.status(400).json(fail('Nada que actualizar'));
+    vals.push(codigo);
+    db.prepare(`UPDATE packs SET ${sets.join(', ')} WHERE codigo = ?`).run(...vals);
+    const after = db.prepare('SELECT * FROM packs WHERE codigo = ?').get(codigo);
+    audit.log(req.user.id, 'pack.editado', {
+      entidad: 'packs', entidad_id: pack.id,
+      detalle: { codigo, antes: { precio_mensual: pack.precio_mensual, nombre: pack.nombre, cupo_marcas: pack.cupo_marcas }, despues: { precio_mensual: after.precio_mensual, nombre: after.nombre, cupo_marcas: after.cupo_marcas } },
+    });
+    res.json(ok({ pack: after }));
+  });
+
   // ===== Marcas vigiladas (cartera) =====
   app.get('/api/admin/marcas-vigiladas', guard, (req, res) => {
     const rows = db.prepare(`

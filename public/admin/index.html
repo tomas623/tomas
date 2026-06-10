@@ -778,13 +778,20 @@ async function loadPacks() {
   const por30dias = new Date(hoy.getTime() + 30 * 86400000).toISOString().slice(0, 10);
 
   $('#panel-packs').innerHTML = `
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px">
+      Editá los importes acá <strong>después</strong> de actualizarlos en Mercado Pago. Lo que está en esta tabla es lo que se muestra en la landing y en el portal cliente; MP cobra según su propio plan.
+    </div>
     ${tabla(
-      ['Código','Nombre','Cupo','Precio mensual'],
+      ['Código','Nombre','Cupo','Precio mensual','Acción'],
       r.data.packs.map(p => [
         `<span class="mono">${esc(p.codigo)}</span>`,
-        esc(p.nombre),
-        p.cupo_marcas,
-        `$${(p.precio_mensual || 0).toLocaleString('es-AR')}`,
+        `<input id="pack-nombre-${esc(p.codigo)}" type="text" value="${esc(p.nombre)}" style="width:100%;padding:6px 10px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:13px">`,
+        `<input id="pack-cupo-${esc(p.codigo)}" type="number" min="1" value="${p.cupo_marcas}" style="width:80px;padding:6px 10px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:13px;text-align:center">`,
+        `<div style="display:flex;align-items:center;gap:4px">
+          <span style="color:var(--text-muted)">$</span>
+          <input id="pack-precio-${esc(p.codigo)}" type="number" min="0" step="100" value="${p.precio_mensual || 0}" style="width:110px;padding:6px 10px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:13px;text-align:right">
+         </div>`,
+        `<button class="btn tiny" onclick="guardarPack('${esc(p.codigo)}')">Guardar</button>`,
       ])
     )}
     <div class="card" style="margin-top:24px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px">
@@ -816,6 +823,26 @@ async function loadPacks() {
       </div>
       <div id="ajusteResult" class="muted" style="margin-top:12px;font-size:13px"></div>
     </div>`;
+}
+
+async function guardarPack(codigo) {
+  const precio_mensual = parseInt(document.getElementById('pack-precio-' + codigo).value, 10);
+  const nombre = document.getElementById('pack-nombre-' + codigo).value.trim();
+  const cupo_marcas = parseInt(document.getElementById('pack-cupo-' + codigo).value, 10);
+  const r = await api(`/api/admin/packs/${encodeURIComponent(codigo)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ precio_mensual, nombre, cupo_marcas }),
+  });
+  if (r.ok) {
+    flash(`Pack "${codigo}" actualizado.`, 'ok');
+  } else {
+    alert(r.error || 'No se pudo guardar');
+  }
+}
+
+function flash(msg, tipo) {
+  // Si la pantalla no tiene un slot de toast, caemos a alert nativo.
+  alert(msg);
 }
 
 async function comunicadoAjuste(dryRun) {
