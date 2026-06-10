@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const express = require('express');
 
 const db = require('./src/db');
+const audit = require('./src/audit');
 const { buscarEnINPI, listaCorta, enmascararActa, enmascararDenominacion } = require('./src/inpi');
 const { crearPreferencia, obtenerPago } = require('./src/pagos');
 const { mountAuthRoutes } = require('./src/auth');
@@ -559,24 +560,160 @@ async function procesarSuscripcion(preapprovalId) {
 
   const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'suscripcion'")
     .get(ref);
-  if (!lead) return;
+  if (!lead) {
+    console.log(`[webhook] suscripción ${preapprovalId} ref=${ref}: lead no encontrado.`);
+    return;
+  }
 
-  // El external_reference de packs viene como "pack-<userId>-<codigoPack>-<rand>"
-  const partes = ref.split('-');
-  const usuarioId = parseInt(partes[1], 10);
-  const codigoPack = partes[2] + '_' + partes[3]; // vigilancia_3
+  // Dos formatos de external_reference posibles:
+  //   - "pack-<userId>-<vigilancia>-<3|10|20>-<rand>" → cliente ya existente (legacy).
+  //   - "vig-<rand>" → lead público del nuevo flow. Hay que self-signup.
+  let usuarioId = null;
+  let codigoPack = lead.marca; // en este tipo de lead guardamos el pack en lead.marca
+
+  if (ref.startsWith('pack-')) {
+    const partes = ref.split('-');
+    usuarioId = parseInt(partes[1], 10);
+    codigoPack = partes[2] + '_' + partes[3];
+  }
+
   const pack = db.prepare('SELECT id FROM packs WHERE codigo = ?').get(codigoPack);
+  if (!pack) {
+    console.warn(`[webhook] pack ${codigoPack} no encontrado para lead ${lead.id}.`);
+    return;
+  }
 
-  if (estado === 'authorized' && pack) {
-    db.prepare('UPDATE usuarios SET pack_id = ? WHERE id = ?').run(pack.id, usuarioId);
+  if (estado === 'authorized') {
+    // Self-signup: si todavía no hay usuario asociado, lo creamos con el email
+    // del lead y le mandamos las credenciales por mail. Si ya existía
+    // (re-suscripción o reactivación), solo asignamos el pack.
+    if (!usuarioId) {
+      usuarioId = await activarCuentaSuscriptor(lead, pack);
+      if (!usuarioId) return; // Hubo error: el helper ya logueó.
+    } else {
+      db.prepare('UPDATE usuarios SET pack_id = ? WHERE id = ?').run(pack.id, usuarioId);
+    }
+
     db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
       .run(String(preapprovalId), lead.id);
-    console.log(`[webhook] suscripción autorizada · user ${usuarioId} → pack ${codigoPack}`);
+    console.log(`[webhook] suscripción autorizada · user ${usuarioId} → pack ${codigoPack} (lead ${lead.id})`);
   } else {
     db.prepare(`UPDATE leads SET estado = ?, payment_ref = ? WHERE id = ?`)
       .run(estado || lead.estado, String(preapprovalId), lead.id);
     console.log(`[webhook] suscripción ${preapprovalId} estado: ${estado}`);
   }
+}
+
+// Crea (o reutiliza) la cuenta del cliente cuando MP confirma la suscripción.
+// Si el email ya existe como cliente, solo le asigna el pack. Si es nuevo,
+// genera una contraseña aleatoria y le manda mail con las credenciales.
+async function activarCuentaSuscriptor(lead, pack) {
+  const email = lead.email;
+  if (!email) {
+    console.warn(`[webhook] lead ${lead.id} sin email — no puedo crear cuenta.`);
+    return null;
+  }
+
+  // ¿Ya existe el usuario? Si ya es cliente, asignamos el pack y listo.
+  const existente = db.prepare('SELECT id, rol FROM usuarios WHERE email = ?').get(email);
+  if (existente) {
+    if (existente.rol !== 'cliente') {
+      console.warn(`[webhook] lead ${lead.id} email=${email} ya existe como ${existente.rol}, no se toca.`);
+      return existente.id;
+    }
+    db.prepare('UPDATE usuarios SET pack_id = ? WHERE id = ?').run(pack.id, existente.id);
+    avisarSuscripcionActiva({ email, leadId: lead.id, pack, esNuevo: false }).catch(err =>
+      console.error('[webhook] aviso reactivación:', err.message),
+    );
+    return existente.id;
+  }
+
+  // Self-signup: nombre/teléfono del lead (los pedimos en el modal).
+  const { hashPassword } = require('./src/auth');
+  const nombreLead = (lead.notas || '').match(/Solicitante:\s*([^\n]+)/)?.[1]?.trim() || null;
+  const tempPass = crypto.randomBytes(9).toString('base64url'); // 12 chars, urlsafe
+  const hash = await hashPassword(tempPass);
+  const info = db.prepare(`
+    INSERT INTO usuarios (email, password_hash, rol, nombre, telefono, pack_id, activo)
+    VALUES (?, ?, 'cliente', ?, ?, ?, 1)
+  `).run(email, hash, nombreLead, lead.telefono, pack.id);
+  const usuarioId = info.lastInsertRowid;
+
+  audit.log(null, 'usuario.self_signup', {
+    entidad: 'usuarios', entidad_id: usuarioId,
+    detalle: { lead_id: lead.id, pack_codigo: pack.codigo, source: 'webhook_mp' },
+  });
+
+  avisarSuscripcionActiva({ email, leadId: lead.id, pack, esNuevo: true, tempPass, nombre: nombreLead })
+    .catch(err => console.error('[webhook] aviso bienvenida:', err.message));
+  return usuarioId;
+}
+
+// Mail post-pago. Si es nuevo cliente, manda credenciales temporales y le
+// pide cambiar la contraseña al primer login. Si es reactivación, solo confirma.
+async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass, nombre }) {
+  const { enviarMailGenerico } = require('./src/notificaciones');
+  const baseUrl = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+  const saludo = nombre ? `Hola ${esc(nombre)},` : 'Hola,';
+
+  const html = esNuevo ? `
+    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+      <h2 style="color:#1B6EF3">¡Listo! Tu suscripción está activa.</h2>
+      <p>${saludo} gracias por confiar en LegalPacers para el monitoreo de tus marcas.</p>
+      <p><strong>Pack activado:</strong> ${esc(pack.nombre)}.</p>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:18px 0">
+        <div style="font-size:13px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Acceso al portal cliente</div>
+        <div style="font-size:14px;line-height:1.7">
+          <strong>URL:</strong> <a href="${baseUrl}/cliente/">${baseUrl}/cliente/</a><br>
+          <strong>Email:</strong> ${esc(email)}<br>
+          <strong>Contraseña temporal:</strong> <code style="background:#fff;padding:2px 8px;border-radius:4px;border:1px solid #e2e8f0;font-family:ui-monospace,monospace">${esc(tempPass)}</code>
+        </div>
+        <p style="font-size:12.5px;color:#64748b;margin-top:10px;margin-bottom:0">
+          Por seguridad, cambiala la primera vez que entres.
+        </p>
+      </div>
+
+      <p>Desde el portal podés cargar las marcas a vigilar, ver las alertas que
+         generamos en cada boletín y descargar tus reportes.</p>
+
+      <p style="margin-top:24px">
+        <a href="${baseUrl}/cliente/"
+           style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
+                  text-decoration:none;display:inline-block;font-weight:600">
+          Entrar a mi portal
+        </a>
+      </p>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="font-size:12px;color:#64748b">
+        LegalPacers · Consultora de Propiedad Industrial<br>
+        contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+      </p>
+    </div>` : `
+    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+      <h2 style="color:#1B6EF3">Tu suscripción está activa otra vez</h2>
+      <p>${saludo} confirmamos que tu plan <strong>${esc(pack.nombre)}</strong> quedó activo.</p>
+      <p>Entrá al portal cuando quieras para ver el estado de tu cartera:</p>
+      <p style="margin-top:18px">
+        <a href="${baseUrl}/cliente/"
+           style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
+                  text-decoration:none;display:inline-block;font-weight:600">
+          Ir al portal
+        </a>
+      </p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="font-size:12px;color:#64748b">
+        LegalPacers · Consultora de Propiedad Industrial
+      </p>
+    </div>`;
+
+  await enviarMailGenerico({
+    to: email,
+    subject: esNuevo ? '¡Bienvenido! Tu cuenta y tu suscripción están listas' : 'Suscripción reactivada — LegalPacers',
+    html,
+    tag: esNuevo ? 'suscripcion_bienvenida' : 'suscripcion_reactivacion',
+  });
 }
 
 // ===== Endpoints stub para Mercado Pago en modo sin credenciales =====
