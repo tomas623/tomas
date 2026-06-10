@@ -773,15 +773,89 @@ async function loadHitos() {
 async function loadPacks() {
   const r = await api('/api/admin/packs');
   if (!r.ok) return;
-  $('#panel-packs').innerHTML = tabla(
-    ['Código','Nombre','Cupo','Precio mensual'],
-    r.data.packs.map(p => [
-      `<span class="mono">${esc(p.codigo)}</span>`,
-      esc(p.nombre),
-      p.cupo_marcas,
-      `$${(p.precio_mensual || 0).toLocaleString('es-AR')}`,
-    ])
-  );
+  // Fecha por defecto del comunicado: 30 días desde hoy.
+  const hoy = new Date();
+  const por30dias = new Date(hoy.getTime() + 30 * 86400000).toISOString().slice(0, 10);
+
+  $('#panel-packs').innerHTML = `
+    ${tabla(
+      ['Código','Nombre','Cupo','Precio mensual'],
+      r.data.packs.map(p => [
+        `<span class="mono">${esc(p.codigo)}</span>`,
+        esc(p.nombre),
+        p.cupo_marcas,
+        `$${(p.precio_mensual || 0).toLocaleString('es-AR')}`,
+      ])
+    )}
+    <div class="card" style="margin-top:24px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px">
+      <h3 style="font-size:15px;color:#fff;margin-bottom:6px">🔔 Comunicado de ajuste de precios</h3>
+      <p class="muted" style="font-size:13px;line-height:1.55;margin-bottom:16px">
+        Manda un mail a todos los suscriptos activos con el nuevo precio y la fecha de vigencia.
+        Hacelo después de editar los importes en Mercado Pago. Política: avisar con 30 días de antelación.
+      </p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px">
+        <div class="field">
+          <span>Porcentaje de aumento</span>
+          <input id="ajustePct" type="number" min="1" max="50" step="0.5" value="10">
+        </div>
+        <div class="field">
+          <span>Fecha de vigencia</span>
+          <input id="ajusteFecha" type="date" value="${por30dias}" min="${hoy.toISOString().slice(0,10)}">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <span>Mensaje extra (opcional)</span>
+        <textarea id="ajusteExtra" rows="2" placeholder="Ej: contexto del aumento, agradecimiento especial, etc."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn outline" onclick="comunicadoAjuste(true)">🧪 Simular (ver destinatarios)</button>
+        <button class="btn primary" onclick="comunicadoAjuste(false)">📨 Enviar comunicado</button>
+        <button class="btn outline" onclick="dispararAvisoInterno()" style="margin-left:auto" title="Disparar el mail al equipo legal recordando que es momento de revisar precios">
+          🔁 Disparar aviso interno
+        </button>
+      </div>
+      <div id="ajusteResult" class="muted" style="margin-top:12px;font-size:13px"></div>
+    </div>`;
+}
+
+async function comunicadoAjuste(dryRun) {
+  const porcentaje = parseFloat(document.getElementById('ajustePct').value);
+  const fecha_vigencia = document.getElementById('ajusteFecha').value;
+  const mensaje_extra = document.getElementById('ajusteExtra').value.trim() || undefined;
+  const out = document.getElementById('ajusteResult');
+  out.textContent = dryRun ? 'Simulando…' : 'Enviando…';
+
+  if (!dryRun) {
+    if (!confirm(`¿Confirmás mandar el comunicado a TODOS los suscriptos? Aumento ${porcentaje}% desde ${fecha_vigencia}. No se puede deshacer.`)) {
+      out.textContent = '';
+      return;
+    }
+  }
+
+  const r = await api('/api/admin/comunicados/ajuste-precios', {
+    method: 'POST',
+    body: JSON.stringify({ porcentaje, fecha_vigencia, mensaje_extra, dry_run: dryRun }),
+  });
+  if (!r.ok) {
+    out.innerHTML = `<span style="color:#fca5a5">${esc(r.error || 'Error')}</span>`;
+    return;
+  }
+  if (dryRun) {
+    out.innerHTML = `Destinatarios: <strong>${r.data.destinatarios}</strong> · Días de anticipación: <strong>${r.data.dias_anticipacion}</strong>`;
+  } else {
+    out.innerHTML = `<span style="color:#6ee7b7">✓ Enviados: ${r.data.enviados}/${r.data.total}${r.data.errores ? ` · ${r.data.errores} error(es)` : ''}</span>`;
+  }
+}
+
+async function dispararAvisoInterno() {
+  const out = document.getElementById('ajusteResult');
+  out.textContent = 'Disparando aviso interno…';
+  const r = await api('/api/admin/aviso-ajuste/run', { method: 'POST', body: JSON.stringify({}) });
+  if (r.ok) {
+    out.innerHTML = `<span style="color:#6ee7b7">✓ Aviso enviado al equipo (${r.data.suscriptos} suscripto/s)</span>`;
+  } else {
+    out.innerHTML = `<span style="color:#fca5a5">${esc(r.error || 'Error')}</span>`;
+  }
 }
 
 async function loadBoletines() {

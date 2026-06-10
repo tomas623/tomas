@@ -7,6 +7,7 @@ const audit = require('../audit');
 const { correr } = require('./monitoreo-semanal');
 const followUp = require('./follow-up');
 const puentePython = require('./puente-python');
+const avisoAjuste = require('./aviso-ajuste-trimestral');
 
 const state = { tasks: [] };
 const TZ = process.env.TZ || 'America/Argentina/Buenos_Aires';
@@ -54,7 +55,24 @@ function iniciar() {
     });
   }
 
-  // 3) Puente Python — sólo si PYTHON_DB_PATH está seteado. Default cada hora.
+  // 3) Aviso de ajuste de precios — trimestral.
+  // Default: 9:00 del día 1 de febrero, mayo, agosto y noviembre.
+  // Manda mail al equipo legal con el detalle de planes mensuales y suscriptos
+  // afectados. NO sube precios automáticamente: el equipo edita en MP y dispara
+  // el comunicado masivo desde el panel admin cuando esté listo.
+  if ((process.env.CRON_AVISO_AJUSTE_ENABLED || 'true').toLowerCase() !== 'false') {
+    programar('aviso-ajuste-trimestral', (process.env.CRON_AVISO_AJUSTE || '0 9 1 2,5,8,11 *').trim(), async () => {
+      try {
+        const s = await avisoAjuste.correr({});
+        console.log(`[cron] aviso-ajuste: ${s.ok ? 'OK' : 'FAIL'} · ${s.suscriptos} suscriptos`);
+      } catch (err) {
+        console.error('[cron] aviso-ajuste ERROR:', err.message);
+        audit.log(null, 'cron.aviso_ajuste.error', { detalle: { error: err.message } });
+      }
+    });
+  }
+
+  // 4) Puente Python — sólo si PYTHON_DB_PATH está seteado. Default cada hora.
   if ((process.env.PYTHON_DB_PATH || '').trim()) {
     programar('puente-python', (process.env.CRON_PUENTE_PYTHON || '0 * * * *').trim(), async () => {
       try {

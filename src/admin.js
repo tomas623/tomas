@@ -117,6 +117,136 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // Disparar el aviso interno de ajuste de precios (el cron trimestral) a mano.
+  app.post('/api/admin/aviso-ajuste/run', guard, async (req, res) => {
+    try {
+      const { correr } = require('./jobs/aviso-ajuste-trimestral');
+      const s = await correr({ dryRun: !!req.body?.dry_run });
+      audit.log(req.user.id, 'aviso_ajuste.manual', { detalle: s });
+      res.json(ok(s));
+    } catch (err) {
+      res.status(500).json(fail(err.message));
+    }
+  });
+
+  // ===== Comunicado masivo de ajuste de precios al cliente =====
+  // Manda mail a todos los suscriptos activos (usuarios con pack_id != null y
+  // rol=cliente) avisando el nuevo precio con anticipación. Idempotente: se puede
+  // disparar varias veces sin duplicar (cada envío queda registrado en audit).
+  //
+  // Body: { porcentaje, fecha_vigencia: 'AAAA-MM-DD', mensaje_extra?: string,
+  //         dry_run?: true }
+  //   - porcentaje: número 1-50 (ej. 12 = subimos 12%)
+  //   - fecha_vigencia: cuándo empieza el nuevo precio (debe ser futuro)
+  //   - mensaje_extra: opcional, se agrega al final del mail
+  //   - dry_run: solo cuenta destinatarios, no envía nada
+  app.post('/api/admin/comunicados/ajuste-precios', guard, async (req, res) => {
+    const { porcentaje, fecha_vigencia, mensaje_extra, dry_run } = req.body || {};
+    const pct = Number(porcentaje);
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 50) {
+      return res.status(400).json(fail('porcentaje debe ser un número entre 1 y 50'));
+    }
+    if (!fecha_vigencia || !/^\d{4}-\d{2}-\d{2}$/.test(String(fecha_vigencia))) {
+      return res.status(400).json(fail('fecha_vigencia debe ser AAAA-MM-DD'));
+    }
+    const hoy = new Date(); hoy.setUTCHours(0, 0, 0, 0);
+    const vig = new Date(fecha_vigencia);
+    if (Number.isNaN(vig.getTime()) || vig <= hoy) {
+      return res.status(400).json(fail('fecha_vigencia debe ser futura'));
+    }
+    const diasAnticipacion = Math.round((vig - hoy) / 86400000);
+
+    // Suscriptos activos con pack mensual asignado.
+    const suscriptos = db.prepare(`
+      SELECT u.id, u.email, u.nombre, p.nombre AS pack_nombre, p.precio_mensual
+      FROM usuarios u
+      JOIN packs p ON p.id = u.pack_id
+      WHERE u.rol = 'cliente' AND u.activo = 1 AND u.pack_id IS NOT NULL
+      ORDER BY u.id ASC
+    `).all();
+
+    if (dry_run) {
+      return res.json(ok({ dry_run: true, destinatarios: suscriptos.length, dias_anticipacion: diasAnticipacion }));
+    }
+
+    const { enviarMailGenerico } = require('./notificaciones');
+    const baseUrl = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+    const fechaTxt = vig.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const stats = { enviados: 0, errores: 0, total: suscriptos.length };
+    for (const s of suscriptos) {
+      const precioViejo = s.precio_mensual;
+      const precioNuevo = Math.round(precioViejo * (1 + pct / 100));
+      const html = `
+        <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+          <h2 style="color:#1B6EF3;margin-bottom:6px">Ajuste de precios — aviso anticipado</h2>
+          <p>Hola${s.nombre ? ' ' + s.nombre : ''},</p>
+          <p>Te escribimos con anticipación para avisarte que, a partir del
+             <strong>${fechaTxt}</strong>, el precio del plan <strong>${s.pack_nombre}</strong>
+             se ajusta un <strong>${pct}%</strong> por la evolución del costo operativo
+             (inflación). Lo hacemos cada 3 meses para mantener el servicio estable.</p>
+
+          <div style="background:#f8fafc;border-left:4px solid #1B6EF3;padding:14px 18px;border-radius:8px;margin:18px 0">
+            <div style="font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;font-weight:700">Tu plan: ${s.pack_nombre}</div>
+            <div style="display:flex;gap:24px;margin-top:8px;align-items:baseline">
+              <div>
+                <div style="font-size:11.5px;color:#64748b">Precio actual</div>
+                <div style="font-size:18px;font-weight:700;color:#64748b;text-decoration:line-through">$${precioViejo.toLocaleString('es-AR')}/mes</div>
+              </div>
+              <div>
+                <div style="font-size:11.5px;color:#1B6EF3">Nuevo (desde ${fechaTxt})</div>
+                <div style="font-size:22px;font-weight:800;color:#1B6EF3">$${precioNuevo.toLocaleString('es-AR')}/mes</div>
+              </div>
+            </div>
+          </div>
+
+          <p><strong>¿Querés bloquear el precio actual por 12 meses?</strong>
+             Si pasás a plan anual antes del ${fechaTxt}, te respetamos el importe
+             vigente <em>y</em> te bonificamos 2 meses (pagás 10, usás 12).
+             Respondé este mail y te mandamos el link.</p>
+
+          <p>Si no querés continuar, podés <strong>cancelar la suscripción sin penalidad</strong>
+             en cualquier momento antes de la fecha de ajuste. Sin letra chica.</p>
+
+          ${mensaje_extra ? `<p style="background:#fef3c7;border-left:3px solid #d97706;padding:10px 14px;border-radius:6px;font-size:13px">${mensaje_extra.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))}</p>` : ''}
+
+          <p style="margin-top:24px">
+            <a href="${baseUrl}/cliente/"
+               style="background:#1B6EF3;color:#fff;padding:11px 22px;border-radius:8px;
+                      text-decoration:none;display:inline-block;font-weight:600">
+              Ver mi cuenta
+            </a>
+          </p>
+
+          <p style="font-size:13px;color:#64748b;margin-top:18px">
+            Gracias por confiar en nosotros. Cualquier duda, respondé este mail.
+          </p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+          <p style="font-size:12px;color:#64748b">
+            LegalPacers · Consultora de Propiedad Industrial<br>
+            contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+          </p>
+        </div>`;
+
+      try {
+        const r = await enviarMailGenerico({
+          to: s.email,
+          subject: `Aviso de ajuste de precios — ${fechaTxt}`,
+          html, tag: 'comunicado_ajuste_precios',
+        });
+        if (r.ok) stats.enviados++; else { stats.errores++; console.error(`[comunicado] ${s.email}: ${r.error}`); }
+      } catch (err) {
+        stats.errores++;
+        console.error(`[comunicado] ${s.email} excepción: ${err.message}`);
+      }
+    }
+
+    audit.log(req.user.id, 'comunicado.ajuste_precios', {
+      detalle: { porcentaje: pct, fecha_vigencia, dias_anticipacion: diasAnticipacion, ...stats },
+    });
+    res.json(ok({ ...stats, porcentaje: pct, fecha_vigencia }));
+  });
+
   // ===== Usuarios =====
   app.get('/api/admin/usuarios', guard, (req, res) => {
     const rows = db.prepare(`
