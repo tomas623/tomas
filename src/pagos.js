@@ -19,14 +19,21 @@ function linkRegistroUnico(externalReference) {
   return linkConRef((process.env.MP_LINK_REGISTRO || '').trim(), externalReference);
 }
 
-// Planes de suscripción (preapproval): un link fijo por pack. La activación del
-// pack del cliente la hace el webhook al recibir un preapproval_authorized.
-function linkPackSuscripcion(codigoPack, externalReference) {
-  const map = {
+// Planes de suscripción (preapproval): un link fijo por pack + ciclo
+// (mensual o anual). La activación del pack del cliente la hace el webhook
+// al recibir un preapproval_authorized.
+function linkPackSuscripcion(codigoPack, externalReference, ciclo = 'mensual') {
+  const mapMensual = {
     vigilancia_3:  (process.env.MP_PLAN_VIG_3 || '').trim(),
     vigilancia_10: (process.env.MP_PLAN_VIG_10 || '').trim(),
     vigilancia_20: (process.env.MP_PLAN_VIG_20 || '').trim(),
   };
+  const mapAnual = {
+    vigilancia_3:  (process.env.MP_PLAN_VIG_3_ANUAL  || '').trim(),
+    vigilancia_10: (process.env.MP_PLAN_VIG_10_ANUAL || '').trim(),
+    vigilancia_20: (process.env.MP_PLAN_VIG_20_ANUAL || '').trim(),
+  };
+  const map = ciclo === 'anual' ? mapAnual : mapMensual;
   return linkConRef(map[codigoPack], externalReference);
 }
 

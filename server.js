@@ -289,14 +289,25 @@ app.post('/api/marca/lead-free', async (req, res) => {
 // contacte en 24h con el link de pago de MP. Sin self-signup todavía.
 const PACKS_VALIDOS = new Set(['vigilancia_3', 'vigilancia_10', 'vigilancia_20']);
 
+const CICLOS_VALIDOS = new Set(['mensual', 'anual']);
+
 app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
-  const { pack_codigo, email, nombre, telefono, marcas_a_vigilar } = req.body || {};
+  const { pack_codigo, email, nombre, telefono, marcas_a_vigilar, ciclo: cicloRaw } = req.body || {};
   if (!PACKS_VALIDOS.has(String(pack_codigo))) return res.status(400).json(fail('Pack inválido'));
   if (!email || !EMAIL_RE.test(String(email).trim())) return res.status(400).json(fail('Email inválido'));
   if (!nombre || !String(nombre).trim()) return res.status(400).json(fail('Falta tu nombre'));
 
+  const ciclo = CICLOS_VALIDOS.has(String(cicloRaw)) ? String(cicloRaw) : 'mensual';
   const pack = db.prepare('SELECT * FROM packs WHERE codigo = ?').get(pack_codigo);
   if (!pack) return res.status(404).json(fail('Pack no encontrado'));
+
+  // Política anual: 10× el mensual (2 meses bonificados).
+  const precioMensual = pack.precio_mensual;
+  const precioAnual = precioMensual * 10;
+  const precioCobrado = ciclo === 'anual' ? precioAnual : precioMensual;
+  const periodoTxt = ciclo === 'anual'
+    ? `$${precioAnual.toLocaleString('es-AR')}/año (10 meses, 2 bonificados)`
+    : `$${precioMensual.toLocaleString('es-AR')}/mes`;
 
   const emailLimpio = String(email).trim().toLowerCase();
   const nombreLimpio = String(nombre).trim();
@@ -304,20 +315,28 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
   const marcasTxt = marcas_a_vigilar ? String(marcas_a_vigilar).trim().slice(0, 1000) : null;
   const externalReference = `vig-${crypto.randomBytes(8).toString('hex')}`;
 
+  // Si hay link de MP para el pack + ciclo, lo redirigimos directo al
+  // checkout (flujo más limpio). Si no, queda como lead manual y el equipo
+  // legal arma la cuenta a mano.
+  const { linkPackSuscripcion } = require('./src/pagos');
+  const initPoint = linkPackSuscripcion(pack.codigo, externalReference, ciclo);
+
   const info = db.prepare(`
-    INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, estado, external_reference, notas)
-    VALUES ('suscripcion', ?, ?, ?, '[]', NULL, ?, 'lead_suscripcion', ?, ?)
+    INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, estado, external_reference, notas, init_point)
+    VALUES ('suscripcion', ?, ?, ?, '[]', NULL, ?, 'lead_suscripcion', ?, ?, ?)
   `).run(
     pack.codigo,
     emailLimpio,
     telefonoLimpio,
-    pack.precio_mensual,
+    precioCobrado,
     externalReference,
     [
       `Solicitante: ${nombreLimpio}`,
-      `Pack solicitado: ${pack.nombre} ($${pack.precio_mensual.toLocaleString('es-AR')}/mes)`,
+      `Pack solicitado: ${pack.nombre} — ciclo ${ciclo.toUpperCase()} (${periodoTxt})`,
       marcasTxt ? `Marcas a vigilar:\n${marcasTxt}` : null,
+      initPoint ? `Init point MP: ${initPoint}` : 'Sin link MP configurado — coordinar manualmente.',
     ].filter(Boolean).join('\n\n'),
+    initPoint,
   );
   const leadId = info.lastInsertRowid;
 
@@ -325,20 +344,31 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
   const mailEquipo = (process.env.MAIL_EQUIPO_LEGAL || 'contacto@legalpacers.com').trim();
   const calendly = 'https://calendar.app.google/rx6vHWyyjFoEr7Vx9';
 
-  // Mail al usuario.
+  // Mail al usuario. Si tenemos el init_point del plan, le mandamos el link
+  // de pago directo para que pueda activarlo solo, sin esperar 24h.
+  const ctaPago = initPoint
+    ? `<p style="margin-top:24px">
+         <a href="${initPoint}"
+            style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
+                   text-decoration:none;display:inline-block;font-weight:600">
+           Activar mi suscripción ahora
+         </a>
+       </p>
+       <p style="font-size:13px;color:#64748b">El cobro se hace por Mercado Pago.
+       Cancelás cuando quieras desde tu cuenta de MP.</p>`
+    : `<p>Un Agente de la Propiedad Industrial te contacta dentro de las próximas
+          24 horas hábiles para confirmar las marcas a vigilar y enviarte el link
+          de pago de Mercado Pago.</p>`;
+
   enviarMailGenerico({
     to: emailLimpio,
-    subject: `Recibimos tu solicitud de monitoreo — ${pack.nombre}`,
+    subject: `Tu solicitud de monitoreo — ${pack.nombre} (${ciclo})`,
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
-        <h2 style="color:#1B6EF3">Recibimos tu solicitud</h2>
-        <p>Hola ${nombreLimpio}, gracias por confiar en LegalPacers para el monitoreo
-           semanal de tus marcas.</p>
-        <p><strong>Pack solicitado:</strong> ${pack.nombre}
-           — $${pack.precio_mensual.toLocaleString('es-AR')}/mes.</p>
-        <p>Un Agente de la Propiedad Industrial te contacta dentro de las próximas
-           24 horas hábiles para confirmar las marcas a vigilar y enviarte el link
-           de pago de Mercado Pago.</p>
+        <h2 style="color:#1B6EF3">${initPoint ? '¡Estás a un paso!' : 'Recibimos tu solicitud'}</h2>
+        <p>Hola ${nombreLimpio}, gracias por confiar en LegalPacers.</p>
+        <p><strong>Pack:</strong> ${pack.nombre} — ${periodoTxt}.</p>
+        ${ctaPago}
         ${marcasTxt ? `<p style="background:#f8fafc;border-left:3px solid #1B6EF3;padding:10px 14px;border-radius:6px;font-size:13px"><strong>Marcas que nos pasaste:</strong><br>${esc(marcasTxt).replace(/\n/g, '<br>')}</p>` : ''}
         <p>Si querés adelantar la conversación,
            <a href="${calendly}">agendá una llamada</a>
@@ -355,21 +385,25 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
   // Mail al equipo.
   enviarMailGenerico({
     to: mailEquipo,
-    subject: `[Lead vigilancia] ${pack.nombre} · ${nombreLimpio}`,
+    subject: `[Lead vigilancia ${ciclo.toUpperCase()}] ${pack.nombre} · ${nombreLimpio}`,
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
         <h2>Nuevo lead de suscripción</h2>
         <p><strong>Solicitante:</strong> ${nombreLimpio} &lt;${emailLimpio}&gt;
            ${telefonoLimpio ? '· tel. ' + esc(telefonoLimpio) : ''}</p>
-        <p><strong>Pack:</strong> ${pack.nombre} ($${pack.precio_mensual.toLocaleString('es-AR')}/mes)</p>
+        <p><strong>Pack:</strong> ${pack.nombre} — ciclo ${ciclo.toUpperCase()} (${periodoTxt})</p>
         ${marcasTxt ? `<p><strong>Marcas a vigilar:</strong><br>${esc(marcasTxt).replace(/\n/g, '<br>')}</p>` : ''}
-        <p style="margin-top:18px">Crear el usuario en el panel y enviar link de pago de MP.</p>
-        <p style="font-size:12px;color:#64748b">Lead #${leadId}</p>
+        <p style="margin-top:18px">
+          ${initPoint
+            ? 'El cliente recibió el link de pago directo. Esperar webhook MP para crear cuenta y asignar pack.'
+            : 'Crear el usuario en el panel y enviar link de pago de MP manualmente.'}
+        </p>
+        <p style="font-size:12px;color:#64748b">Lead #${leadId} · external_ref ${externalReference}</p>
       </div>`,
     tag: 'lead_suscripcion_equipo',
   }).catch(err => console.error('[vigilancia/iniciar] mail equipo:', err.message));
 
-  res.json(ok({ id: leadId, pack: pack.codigo }));
+  res.json(ok({ id: leadId, pack: pack.codigo, ciclo, init_point: initPoint }));
 });
 
 // helper de escape para HTML inline (usado solo en plantillas de mail server-side).

@@ -351,6 +351,18 @@
     .ciclo-price{font-size:12.5px;color:var(--text-soft);margin-top:12px;font-weight:700;border-top:1px dashed var(--border-soft);padding-top:12px}
 
     /* Selector de pack en modal de vigilancia */
+    /* Toggle Mensual / Anual debajo del selector de pack. El "Anual" lleva
+       un tag verde "2 meses gratis" que aparece arriba de la card. */
+    .vig-ciclo-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .vig-ciclo-opt{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;transition:all .15s;color:var(--text-soft)}
+    .vig-ciclo-opt strong{font-size:14.5px;color:#fff;font-weight:700}
+    .vig-ciclo-opt span:not(.vig-ciclo-tag){font-size:12.5px;color:var(--text-muted)}
+    .vig-ciclo-opt:hover{border-color:var(--blue)}
+    .vig-ciclo-opt.activo{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 1px var(--blue)}
+    .vig-ciclo-opt.destacado{border-color:rgba(16,185,129,.35)}
+    .vig-ciclo-opt.destacado.activo{border-color:#10b981;background:rgba(16,185,129,.08);box-shadow:0 0 0 1px #10b981}
+    .vig-ciclo-tag{position:absolute;top:-9px;background:#10b981;color:#fff;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.04em}
+
     .vig-pack-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
     .vig-pack-opt{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:10px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;color:var(--text-soft)}
     .vig-pack-opt strong{font-size:14px;color:#fff;font-weight:700}
@@ -1010,20 +1022,33 @@
     <label class="modal-label" style="margin-top:4px">¿Cuántas marcas querés vigilar?</label>
     <div class="vig-pack-picker">
       <button type="button" class="vig-pack-opt" :class="{ activo: vigForm.pack === 'vigilancia_3' }"  @click="seleccionarPack('vigilancia_3')">
-        <strong>3 marcas</strong><span>$4.900/mes</span>
+        <strong>3 marcas</strong><span x-text="precioVigTxt('vigilancia_3')"></span>
       </button>
       <button type="button" class="vig-pack-opt" :class="{ activo: vigForm.pack === 'vigilancia_10' }" @click="seleccionarPack('vigilancia_10')">
-        <strong>10 marcas</strong><span>$12.900/mes</span>
+        <strong>10 marcas</strong><span x-text="precioVigTxt('vigilancia_10')"></span>
       </button>
       <button type="button" class="vig-pack-opt" :class="{ activo: vigForm.pack === 'vigilancia_20' }" @click="seleccionarPack('vigilancia_20')">
-        <strong>20 marcas</strong><span>$19.900/mes</span>
+        <strong>20 marcas</strong><span x-text="precioVigTxt('vigilancia_20')"></span>
       </button>
     </div>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px">¿Más de 20? <a :href="waCorporativo" target="_blank" style="color:#60a5fa">Cotizá un plan corporativo</a>.</p>
 
+    <label class="modal-label">Frecuencia de cobro</label>
+    <div class="vig-ciclo-toggle">
+      <button type="button" class="vig-ciclo-opt" :class="{ activo: vigForm.ciclo === 'mensual' }" @click="vigForm.ciclo = 'mensual'">
+        <strong>Mensual</strong>
+        <span x-text="'$' + vigForm.packPrecio.toLocaleString('es-AR') + '/mes'"></span>
+      </button>
+      <button type="button" class="vig-ciclo-opt destacado" :class="{ activo: vigForm.ciclo === 'anual' }" @click="vigForm.ciclo = 'anual'">
+        <span class="vig-ciclo-tag">2 meses gratis</span>
+        <strong>Anual</strong>
+        <span x-text="'$' + (vigForm.packPrecio * 10).toLocaleString('es-AR') + '/año'"></span>
+      </button>
+    </div>
+
     <div class="price-block" x-show="vigForm.packPrecio > 0">
-      <div class="num" x-text="'$' + vigForm.packPrecio.toLocaleString('es-AR') + ' /mes'"></div>
-      <div class="meta">Suscripción mensual · Cancelás cuando quieras · Activación en 24 hs hábiles</div>
+      <div class="num" x-text="vigForm.ciclo === 'anual' ? '$' + (vigForm.packPrecio * 10).toLocaleString('es-AR') + ' /año' : '$' + vigForm.packPrecio.toLocaleString('es-AR') + ' /mes'"></div>
+      <div class="meta" x-text="vigForm.ciclo === 'anual' ? 'Suscripción anual · Equivale a 10 meses · Cancelás cuando quieras' : 'Suscripción mensual · Cancelás cuando quieras'"></div>
     </div>
 
     <div class="entregables">
@@ -1047,11 +1072,11 @@
     <div x-show="vigForm.error" class="modal-error" x-text="vigForm.error"></div>
 
     <button class="btn btn-primary btn-full" @click="confirmarVigilancia()" :disabled="vigForm.enviando">
-      <span x-show="!vigForm.enviando">Solicitar activación</span>
-      <span x-show="vigForm.enviando" x-cloak>Enviando…</span>
+      <span x-show="!vigForm.enviando" x-text="vigForm.ciclo === 'anual' ? 'Suscribirme — pago anual' : 'Suscribirme — pago mensual'"></span>
+      <span x-show="vigForm.enviando" x-cloak>Procesando…</span>
     </button>
     <p style="font-size:12px;color:var(--text-dim);margin-top:10px;text-align:center">
-      Un Agente de PI te contacta en 24h hábiles con el link de pago de Mercado Pago.
+      Te llevamos a Mercado Pago para activar la suscripción. Cancelás cuando quieras.
     </p>
   </div>
 </div>
@@ -1105,7 +1130,7 @@ function landing() {
     resultado: null, cargando: false, iniciandoPago: false, iniciandoRegistro: false, errorMsg: '', rateLimited: false,
     modalInforme: false, modalRegistro: false, regForm: {marca:'', email:'', telefono:''}, regError: '',
     modalVigilancia: false,
-    vigForm: { pack: '', packNombre: '', packPrecio: 0, nombre: '', email: '', telefono: '', marcas: '', error: '', enviando: false, exito: false },
+    vigForm: { pack: '', packNombre: '', packPrecio: 0, ciclo: 'mensual', nombre: '', email: '', telefono: '', marcas: '', error: '', enviando: false, exito: false },
     faqAbierto: -1,
 
     get waLink() {
@@ -1263,9 +1288,16 @@ function landing() {
         pack: pack || 'vigilancia_10',
         packNombre: info ? info.nombre : 'Activar monitoreo',
         packPrecio: info ? info.precio : 0,
+        ciclo: this.vigForm.ciclo || 'mensual',
         error: '',
         exito: false,
       };
+      // Si no hay pack pre-seleccionado, asumimos vigilancia_10 (la más elegida).
+      if (!info) {
+        const fallback = this.vigPacks.vigilancia_10;
+        this.vigForm.packNombre = fallback.nombre;
+        this.vigForm.packPrecio = fallback.precio;
+      }
       this.modalVigilancia = true;
       trackEvent('lp:vigilancia_open', { pack: pack || 'sin_preset' });
     },
@@ -1275,6 +1307,14 @@ function landing() {
       this.vigForm.pack = code;
       this.vigForm.packNombre = info.nombre;
       this.vigForm.packPrecio = info.precio;
+    },
+    // Texto del precio en cada card del selector (refleja el ciclo elegido).
+    precioVigTxt(code) {
+      const p = this.vigPacks[code]?.precio || 0;
+      if (this.vigForm.ciclo === 'anual') {
+        return '$' + (p * 10).toLocaleString('es-AR') + '/año';
+      }
+      return '$' + p.toLocaleString('es-AR') + '/mes';
     },
     async confirmarVigilancia() {
       this.vigForm.error = '';
@@ -1288,6 +1328,7 @@ function landing() {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             pack_codigo: this.vigForm.pack,
+            ciclo: this.vigForm.ciclo,
             nombre: this.vigForm.nombre.trim(),
             email: this.vigForm.email.trim(),
             telefono: this.vigForm.telefono.trim() || undefined,
@@ -1295,9 +1336,15 @@ function landing() {
           }),
         }).then(res => res.json());
         if (r.ok) {
+          trackEvent('lp:vigilancia_lead', { pack: this.vigForm.pack, ciclo: this.vigForm.ciclo });
+          // Si MP devolvió el link de la suscripción, redirigimos al checkout.
+          // Si no (env sin link), mostramos el modal de éxito tradicional.
+          if (r.data?.init_point) {
+            window.location.assign(r.data.init_point);
+            return;
+          }
           this.modalVigilancia = false;
           this.vigForm.exito = true;
-          trackEvent('lp:vigilancia_lead', { pack: this.vigForm.pack });
         } else {
           this.vigForm.error = r.error || 'No pudimos enviar tu solicitud.';
         }
