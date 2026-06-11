@@ -15,6 +15,48 @@
 const db = require('../db');
 const { DOCTRINA_INPI } = require('./doctrina');
 
+// ===== Pautas de análisis fonético en español rioplatense =====
+// Reglas que aplicaría un examinador del INPI argentino al cotejo auditivo.
+// El motor de Etapa 1 ya las usa internamente (codigoFonetico en etapa1.js);
+// acá las explicamos en lenguaje natural para que Gemini pueda razonar sobre
+// CADA par concreto en vez de aplicar una intuición fonética genérica.
+const PAUTAS_FONETICAS = `
+PAUTAS PARA EL ANÁLISIS FONÉTICO en español rioplatense:
+
+1. EQUIVALENCIAS CONSONÁNTICAS (pares que el oído NO distingue acá):
+   - B / V → mismo sonido bilabial. "BIVA" y "VIBA" son fonéticamente idénticos.
+   - C ante e/i / S / Z → mismo sonido /s/ (seseo). "CIELO", "SIELO" y "ZIELO" suenan igual.
+   - C ante a/o/u / K / QU / W → mismo sonido /k/. "CASA", "KASA", "QUASA" son equivalentes.
+   - G ante e/i / J → mismo sonido. "GENTE" y "JENTE" suenan igual.
+   - LL / Y → yeísmo rioplatense, mismo sonido /ʃ/ o /ʒ/. "POLLO" y "POYO" suenan idéntico.
+   - H → muda, no se pronuncia. "HOLA" suena "OLA"; "HUEVO" suena "UEVO".
+   - X → en posición intervocálica suena /s/ o /ks/. "EXTRA" ≈ "ESTRA".
+   - Letras DOBLES (CC, NN, MM, etc.) se reducen a una sola en habla. "FOCCA" suena "FOKA".
+
+2. ÁMBITO DEL COTEJO:
+   - Comparar SONIDO, no escritura. Si dos grafías distintas producen el mismo flujo
+     fonético, hay coincidencia fonética total aunque la ortografía difiera.
+   - Aplicar el principio del COTEJO SUCESIVO (Doctrina §4): el consumidor no ve las dos
+     marcas juntas; las recuerda. La memoria fonética es más imprecisa que la visual.
+
+3. CRITERIOS DE PESO:
+   - SÍLABA INICIAL idéntica eleva mucho el riesgo (el oído humano la retiene más).
+   - SÍLABA TÓNICA coincidente refuerza la confundibilidad.
+   - Cantidad de sílabas: si difiere en 1 sílaba pero las raíces suenan iguales, sigue
+     habiendo riesgo (ej: "Acmé" vs "Acmena" en misma clase).
+   - Vocales tónicas distintas (a/e/o) atenúan la coincidencia, salvo que las consonantes
+     dominen el flujo sonoro.
+
+4. EJEMPLOS APLICADOS:
+   - "Focca" vs "Fokka"  → idénticos (CC=K, KK=K, FOKA = FOKA).
+   - "Biva" vs "Viva"    → idénticos (B=V).
+   - "Yamada" vs "Llamada" → casi idénticos (yeísmo). Solo la sílaba inicial es muda en la 2da.
+   - "Sielo" vs "Cielo"  → idénticos (C ante e = S).
+   - "Hotel" vs "Otel"   → idénticos (H muda).
+   - "Acmena" vs "Acmé"  → coinciden en la raíz "AKM-", sílaba tónica distinta: riesgo medio.
+   - "Tango" vs "Mango"  → distintos (consonante inicial T vs M produce flujo distinto).
+`;
+
 // ===== Marcas notorias / renombradas en Argentina =====
 // Lista no taxativa para el contexto del prompt — Gemini debe reconocerlas
 // y aplicar la protección reforzada (quiebre del principio de especialidad).
@@ -136,6 +178,9 @@ Tu salida es SEÑAL para revisión humana, no decisión final. Un Agente revisa 
 
 # MARCO NORMATIVO
 ${DOCTRINA_INPI}
+
+# COTEJO FONÉTICO
+${PAUTAS_FONETICAS}
 
 # REGLAS DE SCORING
 ${REGLAS_SCORING}
