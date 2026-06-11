@@ -1,0 +1,32 @@
+/* Estilos compartidos por las páginas legales de LegalPacers. */
+:root{
+  --bg:#030712; --bg-soft:#070d1c; --surface:#0f172a; --surface-2:#1e293b;
+  --border:#334155; --border-soft:#1f2a40;
+  --text:#f8fafc; --text-soft:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
+  --blue:#1b6ef3; --blue-dark:#1656c4; --blue-soft:rgba(27,110,243,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:#60a5fa;text-decoration:none}
+a:hover{text-decoration:underline}
+
+header{padding:18px 24px;border-bottom:1px solid var(--border-soft);background:rgba(3,7,18,.92);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+.header-inner{max-width:880px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-weight:800;letter-spacing:.5px;font-size:16px;color:var(--text)}
+.logo .accent{color:var(--blue)}
+.back-link{font-size:13.5px;color:var(--text-muted)}
+
+main{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:32px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px;color:#fff}
+h2{font-size:20px;font-weight:700;margin-top:36px;margin-bottom:12px;color:#fff}
+h3{font-size:16px;font-weight:700;margin-top:24px;margin-bottom:10px;color:var(--text-soft)}
+p{margin-bottom:14px;color:var(--text-soft);font-size:15px}
+ul,ol{margin-left:22px;margin-bottom:16px}
+li{margin-bottom:6px;color:var(--text-soft);font-size:15px}
+strong{color:#fff}
+.meta{color:var(--text-muted);font-size:13.5px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border-soft)}
+.placeholder{background:rgba(245,158,11,.05);border:1px dashed rgba(245,158,11,.35);border-radius:10px;padding:18px 22px;margin:24px 0;color:#fcd34d;font-size:14px;line-height:1.6}
+.placeholder strong{color:#fde68a}
+
+footer{padding:32px 24px;border-top:1px solid var(--border-soft);text-align:center;color:var(--text-dim);font-size:13px}
+footer a{margin:0 12px;color:var(--text-muted)}

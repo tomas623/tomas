@@ -10,8 +10,10 @@
   <meta name="author" content="LegalPacers">
   <meta name="robots" content="index, follow, max-image-preview:large">
 
-  <link rel="icon" href="/static/logo-icon.png">
-  <link rel="canonical" href="https://legalpacers.com/">
+  <link rel="icon" type="image/png" href="/static/logo-icon.png">
+  <link rel="shortcut icon" type="image/png" href="/static/logo-icon.png">
+  <link rel="apple-touch-icon" href="/static/logo-icon.png">
+  <link rel="canonical" href="https://marcas.legalpacers.com/">
   <meta name="theme-color" content="#030712">
   <meta name="color-scheme" content="dark">
 
@@ -229,7 +231,12 @@
          marca la card visible, los círculos grises el resto. Click en un dot
          scrollea a esa card. Generados en JS solo cuando el carrusel está
          activo (mobile). */
-      .carousel-dots{display:flex;justify-content:center;gap:8px;margin-top:14px}
+      .carousel-dots{display:flex !important;justify-content:center;gap:8px;margin-top:14px}
+      /* En mobile, cuando el modal es más alto que la pantalla, align-items:center
+         hace que se corte arriba (no se puede scrollear hacia arriba). Lo anclamos
+         desde arriba con padding para que el scroll dentro de .modal-bg funcione. */
+      .modal-bg{align-items:flex-start;padding:16px}
+      .modal-card{padding:22px 18px;border-radius:14px;max-height:none}
       .carousel-dots button{
         width:8px;height:8px;border-radius:99px;border:none;
         background:var(--border);cursor:pointer;padding:0;
@@ -734,7 +741,7 @@
           <li>Sin sorpresas: cotizamos antes de presentar</li>
           <li>Te avisamos cuando se acerca el hito</li>
         </ul>
-        <a :href="waLink" target="_blank" class="btn btn-outline" style="text-decoration:none">Consultar por WhatsApp</a>
+        <a :href="waCon('DJU y Renovación de marca')" target="_blank" class="btn btn-outline" style="text-decoration:none">Consultar por WhatsApp</a>
       </div>
     </div>
   </div>
@@ -919,6 +926,9 @@
     © 2026 LegalPacers — consultora de propiedad intelectual fundada y dirigida por el Dr. Tomás Rodríguez. El patrocinio jurídico se brinda en partnership con el Estudio Rodríguez y Asociados. El uso de este sitio no constituye asesoramiento legal vinculante hasta la formalización del expediente técnico.
     <div style="margin-top:14px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
       <a href="/cliente" style="color:var(--text-muted)">Portal cliente</a>
+      <a href="/terminos" style="color:var(--text-muted)">Términos</a>
+      <a href="/privacidad" style="color:var(--text-muted)">Privacidad</a>
+      <a href="/cookies" style="color:var(--text-muted)">Cookies</a>
       <a href="mailto:contacto@legalpacers.com" style="color:var(--text-muted)">contacto@legalpacers.com</a>
     </div>
   </div>
@@ -1140,6 +1150,14 @@ function landing() {
     },
     get waCorporativo() {
       const msg = 'Hola LegalPacers, necesito vigilar más de 20 marcas. ¿Pueden cotizarme un plan corporativo?';
+      return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
+    },
+    // Genera un link a WhatsApp con un mensaje específico según el botón
+    // tocado. Si hay una marca cargada en el chequeo previo, la incluye.
+    waCon(asunto) {
+      const marca = this.form.marca?.trim();
+      const sufijo = marca ? ` Mi marca es "${marca}".` : '';
+      const msg = `Hola LegalPacers, quiero preguntar sobre ${asunto}.${sufijo}`;
       return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
     },
     get precioFinalInforme() { return (this.precioInforme && this.precioInforme.precio) || PRECIO_INFORME_BASE; },

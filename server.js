@@ -775,7 +775,19 @@ app.get('/pagos/pendiente', (req, res) =>
 
 // ===== Landing estática =====
 app.get('/', (req, res) => res.sendFile(path.join(ROOT_DIR, 'landing-legalpacers.html')));
+// Algunos browsers piden /favicon.ico de forma incondicional (sin importar
+// el <link rel="icon"> del HTML). Lo aliaseamos al PNG del logo.
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(ROOT_DIR, 'static', 'logo-icon.png'));
+});
 app.use('/static', express.static(path.join(ROOT_DIR, 'static')));
+
+// Páginas legales. /terminos, /privacidad y /cookies aliasean a los HTML
+// estáticos de public/legal — más amigable que la URL .html.
+app.get('/terminos',   (req, res) => res.sendFile(path.join(ROOT_DIR, 'public', 'legal', 'terminos.html')));
+app.get('/privacidad', (req, res) => res.sendFile(path.join(ROOT_DIR, 'public', 'legal', 'privacidad.html')));
+app.get('/cookies',    (req, res) => res.sendFile(path.join(ROOT_DIR, 'public', 'legal', 'cookies.html')));
+app.use('/legal', express.static(path.join(ROOT_DIR, 'public', 'legal')));
 
 // Panel admin (HTML estático). Las rutas /api/admin/* viven en src/admin.js.
 app.use('/admin', express.static(path.join(ROOT_DIR, 'public', 'admin')));
