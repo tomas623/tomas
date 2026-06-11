@@ -15,6 +15,39 @@
 const db = require('../db');
 const { DOCTRINA_INPI } = require('./doctrina');
 
+// Catálogos concretos de palabras restringidas por leyes especiales argentinas.
+// El módulo leyes-especiales.js los usa para flags determinísticos; acá los
+// inyectamos al prompt para que Gemini detecte estos términos al razonar
+// sobre la candidata del boletín, sin depender de que el motor previo
+// los haya marcado.
+const LEYES_ESPECIALES_CATALOGO = `
+LEYES ARGENTINAS QUE RESTRINGEN TÉRMINOS ESPECÍFICOS EN MARCAS:
+
+a) Ley 25.127 (producción ecológica) + práctica INPI/SENASA:
+   - Términos restringidos: bio, eco, orgánico, ecológico, biológico.
+   - Clases afectadas: 16, 20, 24, 29, 30, 31, 32 (agroalimentarias).
+   - Efecto: INPI rechaza estos términos salvo certificación SENASA del producto.
+
+b) Ley 24.664 (Símbolo Olímpico, titularidad COI/COA):
+   - Términos protegidos en TODAS las clases: juegos olímpicos, olimpiada(s),
+     olímpico/a/os/as, "Citius Altius Fortius", "Más Rápido Más Alto Más Fuerte",
+     movimiento olímpico.
+   - Efecto: registro improbable sin licencia previa del COI o COA.
+
+c) Ley 26.687 (control de tabaco):
+   - Términos prohibidos en clase 34: light, suave, milds, "bajo en nicotina",
+     "bajo en alquitrán" y similares que sugieran menor daño.
+   - Efecto: bloqueo objetivo en clase 34.
+
+d) Art. 3 inc. d Ley 22.362 (designaciones de actividad):
+   - Solas, sin acompañamiento distintivo, NO son registrables: zapatería, taller,
+     estudio, consultora, consultoría, panadería, librería, farmacia, kiosco, almacén.
+   - Efecto: requiere elemento adicional distintivo para superar el examen INPI.
+
+Si la candidata del boletín contiene alguno de estos términos en las condiciones
+descritas, mencionalo en el fundamento y elevá el nivel_riesgo según corresponda.
+`;
+
 // ===== Pautas de análisis fonético en español rioplatense =====
 // Reglas que aplicaría un examinador del INPI argentino al cotejo auditivo.
 // El motor de Etapa 1 ya las usa internamente (codigoFonetico en etapa1.js);
@@ -178,6 +211,9 @@ Tu salida es SEÑAL para revisión humana, no decisión final. Un Agente revisa 
 
 # MARCO NORMATIVO
 ${DOCTRINA_INPI}
+
+# LEYES ESPECIALES — CATÁLOGO CONCRETO DE TÉRMINOS
+${LEYES_ESPECIALES_CATALOGO}
 
 # COTEJO FONÉTICO
 ${PAUTAS_FONETICAS}
