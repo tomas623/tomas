@@ -17,6 +17,36 @@
   <meta name="theme-color" content="#030712">
   <meta name="color-scheme" content="dark">
 
+  <!-- ===== Google Analytics 4 ===== -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KG37NB45C4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-KG37NB45C4', { anonymize_ip: true });
+  </script>
+
+  <!-- ===== LinkedIn Insight Tag ===== -->
+  <script type="text/javascript">
+    _linkedin_partner_id = "1152902303";
+    window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
+    window._linkedin_data_partner_ids.push(_linkedin_partner_id);
+  </script>
+  <script type="text/javascript">
+  (function(l) {
+    if (!l){window.lintrk = function(a,b){window.lintrk.q.push([a,b])};
+    window.lintrk.q=[]}
+    var s = document.getElementsByTagName("script")[0];
+    var b = document.createElement("script");
+    b.type = "text/javascript";b.async = true;
+    b.src = "https://snap.licdn.com/li.lms-analytics/insight.min.js";
+    s.parentNode.insertBefore(b, s);})(window.lintrk);
+  </script>
+  <noscript>
+    <img height="1" width="1" style="display:none;" alt=""
+         src="https://px.ads.linkedin.com/collect/?pid=1152902303&fmt=gif" />
+  </noscript>
+
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="LegalPacers">
   <meta property="og:locale" content="es_AR">
@@ -1126,8 +1156,63 @@ const NIZA_TITLES = {
 const PRECIO_INFORME_BASE = 19900;
 const PRECIO_REGISTRO_BASE = 120000;
 
+// ===== UTM tracking =====
+// Capturamos los utm_* de la URL al cargar la página (primer touch) y los
+// persistimos en sessionStorage para que sobrevivan a navegación interna.
+// Después se inyectan en cada POST de creación de lead para que el backend
+// los guarde y podamos atribuir conversiones a campaña.
+const UTM_KEYS = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'];
+(function captarUtm() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const stored = JSON.parse(sessionStorage.getItem('lp_utm') || '{}');
+    let cambio = false;
+    for (const k of UTM_KEYS) {
+      const v = params.get(k);
+      if (v && !stored[k]) { stored[k] = v.slice(0, 100); cambio = true; }
+    }
+    if (cambio) sessionStorage.setItem('lp_utm', JSON.stringify(stored));
+  } catch (e) {}
+})();
+
+function getUtm() {
+  try { return JSON.parse(sessionStorage.getItem('lp_utm') || '{}'); }
+  catch (e) { return {}; }
+}
+
+// ===== Bridge de eventos =====
+// Cada llamada a trackEvent('lp:xxx', {...}) dispara 3 cosas:
+//   1) CustomEvent local (para listeners internos / debug).
+//   2) gtag('event', ...) → GA4 lo registra como evento custom.
+//   3) lintrk('track', { conversion_id }) → solo para eventos mapeados como
+//      conversiones de campaña en LinkedIn Campaign Manager.
+//
+// Mapeo a LinkedIn conversion_id: pendiente. Una vez creadas las
+// conversiones en Campaign Manager, pegar los IDs en LINKEDIN_CONVERSIONS
+// y se disparan solas. Sin esos IDs, el Insight Tag igual capta page views
+// y permite armar audiencias / lookalikes.
+const LINKEDIN_CONVERSIONS = {
+  // 'lp:vigilancia_lead': 12345678,  // conversión principal
+  // 'lp:lead_free':       87654321,  // micro-conversión
+};
+
 function trackEvent(name, payload) {
-  try { window.dispatchEvent(new CustomEvent(name, {detail: payload || {}})); } catch(e) {}
+  const detalle = payload || {};
+  try { window.dispatchEvent(new CustomEvent(name, { detail: detalle })); } catch (e) {}
+  // GA4 — los nombres de evento van con underscore, no con dos puntos.
+  try {
+    if (typeof gtag === 'function') {
+      const gaName = name.replace(/^lp:/, '').replace(/[^a-zA-Z0-9_]/g, '_');
+      gtag('event', gaName, detalle);
+    }
+  } catch (e) {}
+  // LinkedIn — solo dispara si hay conversion_id mapeado.
+  try {
+    const convId = LINKEDIN_CONVERSIONS[name];
+    if (convId && typeof window.lintrk === 'function') {
+      window.lintrk('track', { conversion_id: convId });
+    }
+  } catch (e) {}
 }
 
 function landing() {
@@ -1283,6 +1368,7 @@ function landing() {
             clases: this.form.clases, rubro: this.form.rubro,
             veredicto: this.resultado?.veredicto,
             mensaje: (this.resultado?.mensaje || '').replace(/<[^>]+>/g, ''),
+            utm: getUtm(),
           }),
         }).then(res => res.json());
         if (r.ok) { this.emailGuardado = true; trackEvent('lp:lead_free', { marca: this.form.marca }); }
@@ -1351,6 +1437,7 @@ function landing() {
             email: this.vigForm.email.trim(),
             telefono: this.vigForm.telefono.trim() || undefined,
             marcas_a_vigilar: this.vigForm.marcas.trim() || undefined,
+            utm: getUtm(),
           }),
         }).then(res => res.json());
         if (r.ok) {
@@ -1378,7 +1465,7 @@ function landing() {
       try {
         const r = await fetch('/api/marca/consulta/iniciar', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ marca: this.form.marca, email: this.informeEmail, clases: this.form.clases, rubro: this.form.rubro })
+          body: JSON.stringify({ marca: this.form.marca, email: this.informeEmail, clases: this.form.clases, rubro: this.form.rubro, utm: getUtm() })
         }).then(res => res.json());
         const initPoint = r?.data?.init_point || r?.init_point;
         if (r.ok && initPoint) window.location.href = initPoint;
@@ -1393,10 +1480,11 @@ function landing() {
       try {
         const r = await fetch('/api/marca/registro/iniciar', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ 
-            marca: this.regForm.marca, email: this.regForm.email, 
+          body: JSON.stringify({
+            marca: this.regForm.marca, email: this.regForm.email,
             telefono: this.regForm.telefono, clases: this.form.clases,
-            rubro: this.form.rubro
+            rubro: this.form.rubro,
+            utm: getUtm(),
           })
         }).then(res => res.json());
         const initPoint = r?.data?.init_point || r?.init_point;

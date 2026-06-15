@@ -197,6 +197,25 @@ app.post('/api/marca/check', (req, res) => {
 // follow-up de 48h y le envía una copia del veredicto al cliente.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Extrae y sanitiza UTMs del body del request. El front los manda en `utm`
+// pero también aceptamos campos sueltos por compatibilidad. Trunca a 100
+// chars (suficiente para identificadores de campaña razonables).
+function extraerUtm(body) {
+  const u = body?.utm || {};
+  const limpiar = v => {
+    if (v == null) return null;
+    const s = String(v).trim().slice(0, 100);
+    return s || null;
+  };
+  return {
+    utm_source:   limpiar(u.source   ?? body?.utm_source),
+    utm_medium:   limpiar(u.medium   ?? body?.utm_medium),
+    utm_campaign: limpiar(u.campaign ?? body?.utm_campaign),
+    utm_content:  limpiar(u.content  ?? body?.utm_content),
+    utm_term:     limpiar(u.term     ?? body?.utm_term),
+  };
+}
+
 app.post('/api/marca/lead-free', async (req, res) => {
   const { marca, email, telefono, clases, rubro, veredicto, mensaje } = req.body || {};
   if (!marca || !String(marca).trim()) return res.status(400).json(fail('Falta la marca'));
@@ -212,21 +231,33 @@ app.post('/api/marca/lead-free', async (req, res) => {
     SELECT id FROM leads WHERE tipo = 'free' AND email = ? AND lower(marca) = lower(?) LIMIT 1
   `).get(emailLimpio, marcaLimpia);
 
+  const utm = extraerUtm(req.body);
   let leadId;
   if (existente) {
+    // Si el lead refresca y ya tenía UTMs, mantenemos los originales (primer
+    // touch). Si no tenía, escribimos los actuales.
     db.prepare(`
       UPDATE leads SET
         telefono = COALESCE(?, telefono),
-        clases = ?, rubro = ?, created_at = datetime('now')
+        clases = ?, rubro = ?, created_at = datetime('now'),
+        utm_source   = COALESCE(utm_source, ?),
+        utm_medium   = COALESCE(utm_medium, ?),
+        utm_campaign = COALESCE(utm_campaign, ?),
+        utm_content  = COALESCE(utm_content, ?),
+        utm_term     = COALESCE(utm_term, ?)
       WHERE id = ?
-    `).run(telefono || null, JSON.stringify(clasesArr), rubro || null, existente.id);
+    `).run(telefono || null, JSON.stringify(clasesArr), rubro || null,
+           utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content, utm.utm_term,
+           existente.id);
     leadId = existente.id;
   } else {
     const externalReference = `free-${crypto.randomBytes(8).toString('hex')}`;
     const info = db.prepare(`
-      INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, estado, external_reference)
-      VALUES ('free', ?, ?, ?, ?, ?, 'lead_free', ?)
-    `).run(marcaLimpia, emailLimpio, telefono || null, JSON.stringify(clasesArr), rubro || null, externalReference);
+      INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, estado, external_reference,
+                         utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+      VALUES ('free', ?, ?, ?, ?, ?, 'lead_free', ?, ?, ?, ?, ?, ?)
+    `).run(marcaLimpia, emailLimpio, telefono || null, JSON.stringify(clasesArr), rubro || null, externalReference,
+           utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content, utm.utm_term);
     leadId = info.lastInsertRowid;
   }
 
@@ -322,9 +353,11 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
   const { linkPackSuscripcion } = require('./src/pagos');
   const initPoint = linkPackSuscripcion(pack.codigo, externalReference, ciclo);
 
+  const utm = extraerUtm(req.body);
   const info = db.prepare(`
-    INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, estado, external_reference, notas, init_point)
-    VALUES ('suscripcion', ?, ?, ?, '[]', NULL, ?, 'lead_suscripcion', ?, ?, ?)
+    INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, estado, external_reference, notas, init_point,
+                       utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+    VALUES ('suscripcion', ?, ?, ?, '[]', NULL, ?, 'lead_suscripcion', ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     pack.codigo,
     emailLimpio,
@@ -338,6 +371,7 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
       initPoint ? `Init point MP: ${initPoint}` : 'Sin link MP configurado — coordinar manualmente.',
     ].filter(Boolean).join('\n\n'),
     initPoint,
+    utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content, utm.utm_term,
   );
   const leadId = info.lastInsertRowid;
 
@@ -413,15 +447,19 @@ function esc(s) {
 }
 
 // ===== 2.3 / 2.4 helpers =====
-function crearLead({ tipo, marca, email, telefono, clases, rubro, monto }) {
+function crearLead({ tipo, marca, email, telefono, clases, rubro, monto, utm }) {
   const externalReference = `${tipo}-${crypto.randomBytes(8).toString('hex')}`;
+  const u = utm || {};
   const stmt = db.prepare(`
-    INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, external_reference)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, monto, external_reference,
+                       utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const info = stmt.run(
     tipo, marca, email || null, telefono || null,
     JSON.stringify(clases || []), rubro || null, monto, externalReference,
+    u.utm_source || null, u.utm_medium || null, u.utm_campaign || null,
+    u.utm_content || null, u.utm_term || null,
   );
   return { id: info.lastInsertRowid, externalReference };
 }
@@ -440,6 +478,7 @@ app.post('/api/marca/consulta/iniciar', async (req, res) => {
   const lead = crearLead({
     tipo: 'informe', marca: String(marca).trim(), email: String(email).trim(),
     telefono: null, clases: clases || [], rubro: rubro || null, monto: PRECIO_INFORME,
+    utm: extraerUtm(req.body),
   });
 
   try {
@@ -470,6 +509,7 @@ app.post('/api/marca/registro/iniciar', async (req, res) => {
     tipo: 'registro', marca: String(marca).trim(), email: String(email).trim(),
     telefono: String(telefono).trim(), clases: clases || [], rubro: rubro || null,
     monto: PRECIO_REGISTRO,
+    utm: extraerUtm(req.body),
   });
 
   // Notificación interna (WhatsApp / log) para acelerar el flujo humano del cliente.

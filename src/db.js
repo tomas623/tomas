@@ -239,6 +239,14 @@ for (const [col, ddl] of [
   ['asignado_a',          `ALTER TABLE leads ADD COLUMN asignado_a INTEGER REFERENCES usuarios(id)`],
   ['follow_up_at',        `ALTER TABLE leads ADD COLUMN follow_up_at TEXT`],
   ['follow_up_count',     `ALTER TABLE leads ADD COLUMN follow_up_count INTEGER NOT NULL DEFAULT 0`],
+  // UTM tracking — el front captura los UTMs de la URL al cargar (y los
+  // persiste en sessionStorage), después los manda con cada POST de creación
+  // de lead para atribución a campaña.
+  ['utm_source',          `ALTER TABLE leads ADD COLUMN utm_source TEXT`],
+  ['utm_medium',          `ALTER TABLE leads ADD COLUMN utm_medium TEXT`],
+  ['utm_campaign',        `ALTER TABLE leads ADD COLUMN utm_campaign TEXT`],
+  ['utm_content',         `ALTER TABLE leads ADD COLUMN utm_content TEXT`],
+  ['utm_term',            `ALTER TABLE leads ADD COLUMN utm_term TEXT`],
 ]) {
   if (!columnExists('leads', col)) db.exec(ddl);
 }
