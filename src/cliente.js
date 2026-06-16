@@ -148,6 +148,23 @@ function mountClienteRoutes(app) {
   //
   // Si el cupo no alcanza para todas, devolvemos cuáles entrarían y cuáles no
   // sin escribir nada (HTTP 403 + detalle), así el cliente decide.
+  // Descarga la plantilla CSV para carga masiva. Tiene BOM UTF-8 al inicio
+  // para que Excel abra los acentos y la ñ correctamente. Incluye una fila
+  // de ejemplo + una vacía para que el cliente la complete.
+  app.get('/api/cliente/marcas/plantilla.csv', guard, (req, res) => {
+    const BOM = '﻿';
+    const lineas = [
+      'Denominación,Clases,Tipo,Número de acta,Fecha de concesión (AAAA-MM-DD),Titular',
+      'Focca,"9,42",denominativa,4500123,2023-06-01,',
+      'Acme Foods,"29,30",mixta,4500124,2024-02-15,Acme SA',
+      '"Marca con, coma",35,denominativa,,,',
+      ',,,,,',
+    ];
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="plantilla-marcas-vigilancia.csv"');
+    res.send(BOM + lineas.join('\n'));
+  });
+
   app.post('/api/cliente/marcas/bulk', guard, (req, res) => {
     const { marcas } = req.body || {};
     if (!Array.isArray(marcas) || !marcas.length) {

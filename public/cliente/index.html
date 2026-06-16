@@ -209,7 +209,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
           tenés, dejá esos campos vacíos.
         </p>
         <p class="muted" style="font-size:12px;margin-top:6px">
-          ¿Tenés varias marcas para cargar? <a href="#" id="bulkToggle" style="color:#60a5fa">Importar desde Excel/CSV</a>
+          ¿Tenés varias marcas para cargar? <a href="#" id="bulkToggle" style="color:#60a5fa">📥 Descargar plantilla e importar</a>
         </p>
       </form>
     </div>
@@ -217,21 +217,41 @@ main{max-width:1100px;margin:0 auto;padding:24px}
     <!-- Carga masiva desde tabla (Excel/CSV). Oculto por default. -->
     <div class="card" id="bulkCard" hidden>
       <h3>Importar varias marcas</h3>
-      <p class="muted" style="font-size:13px;line-height:1.6;margin-bottom:14px">
-        Pegá una tabla copiada de Excel/Sheets con estas columnas (la primera fila puede ser encabezado).<br>
-        <strong>Columnas:</strong> <code>Denominación</code>, <code>Clases</code>, <code>Tipo</code>, <code>Nº de acta</code>, <code>Fecha concesión</code>, <code>Titular</code>.<br>
-        Solo las dos primeras son obligatorias. Separador: <strong>tabulación</strong> (lo que copia Excel) o <strong>punto y coma</strong>.
-        El campo <strong>Titular</strong> se deja vacío si la marca está a tu nombre. Máximo 100 filas por carga.
-      </p>
-      <details style="background:var(--bg-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px">
-        <summary style="cursor:pointer;font-size:13px;color:var(--text-soft);font-weight:600">Ver ejemplo</summary>
-        <pre style="background:var(--surface);padding:12px;border-radius:6px;margin-top:10px;font-size:11.5px;overflow-x:auto;color:var(--text-soft);font-family:ui-monospace,monospace">Denominación	Clases	Tipo	Nº de acta	Fecha concesión	Titular
-Focca	9,42	denominativa	4500123	2023-06-01
-Acme Foods	29,30	mixta	4500124	2024-02-15	Acme SA
-Brio	35					</pre>
-      </details>
-      <textarea id="bulkText" rows="8" placeholder="Pegá acá la tabla copiada de Excel…"
-        style="width:100%;padding:12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:ui-monospace,monospace;font-size:13px;resize:vertical;line-height:1.5"></textarea>
+
+      <!-- Paso 1: descargar plantilla -->
+      <div style="background:var(--bg-soft);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">1. Descargá la plantilla</div>
+        <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
+          Tiene las columnas listas con un ejemplo. Abrila en Excel o Google Sheets y completá una marca por fila.
+          Las columnas <strong>Denominación</strong> y <strong>Clases</strong> son obligatorias.
+        </p>
+        <a class="btn primary" href="/api/cliente/marcas/plantilla.csv" download style="text-decoration:none;display:inline-block">
+          📥 Descargar plantilla
+        </a>
+      </div>
+
+      <!-- Paso 2: subir archivo -->
+      <div style="background:var(--bg-soft);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">2. Subí el archivo completado</div>
+        <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
+          Aceptamos <strong>.csv</strong> (recomendado) o pegar la tabla copiada de Excel.
+          Si trabajaste en .xlsx, antes de subir usá <em>Archivo → Guardar como → CSV UTF-8</em>.
+        </p>
+        <input id="bulkFile" type="file" accept=".csv,text/csv,.txt"
+               style="font-size:13px;color:var(--text-muted)">
+      </div>
+
+      <!-- Paso 3: o pegar tabla -->
+      <div style="background:var(--bg-soft);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">2-bis. O pegá la tabla de Excel directamente</div>
+        <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
+          Si preferís, copiá las filas en Excel/Sheets y pegalas acá abajo. Separador: tabulación (Excel) o punto y coma.
+          Máximo 100 filas por carga.
+        </p>
+        <textarea id="bulkText" rows="6" placeholder="Pegá acá las filas copiadas de Excel…"
+          style="width:100%;padding:12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:ui-monospace,monospace;font-size:13px;resize:vertical;line-height:1.5"></textarea>
+      </div>
+
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
         <button id="bulkPreviewBtn" type="button" class="btn">🔍 Previsualizar</button>
         <button id="bulkConfirmBtn" type="button" class="btn primary" disabled>Cargar todo</button>
@@ -464,24 +484,51 @@ $('#altaForm').addEventListener('submit', async (e) => {
 // ===== Carga masiva desde Excel/CSV =====
 // Parser: una fila por línea, columnas separadas por TAB (Excel copy) o ; o ,
 // con preferencia por TAB. Skipea la primera línea si parece header.
+// Parser CSV mínimo que entiende comillas dobles (RFC 4180). Necesario porque
+// la columna Clases viene como "9,42" entre comillas y un split simple por coma
+// la rompería. También soporta TAB y ; como separadores (Excel europeo).
+function parseLineaCsv(linea, sep) {
+  const out = [];
+  let actual = '';
+  let inQuotes = false;
+  for (let i = 0; i < linea.length; i++) {
+    const c = linea[i];
+    if (inQuotes) {
+      if (c === '"') {
+        // "" dentro de comillas = comilla literal.
+        if (linea[i + 1] === '"') { actual += '"'; i++; }
+        else inQuotes = false;
+      } else actual += c;
+    } else {
+      if (c === '"' && actual === '') inQuotes = true;
+      else if (c === sep) { out.push(actual.trim()); actual = ''; }
+      else actual += c;
+    }
+  }
+  out.push(actual.trim());
+  return out;
+}
+
 function parseBulkText(txt) {
-  const lineas = (txt || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  // Saca el BOM UTF-8 que Excel agrega al guardar.
+  const raw = (txt || '').replace(/^﻿/, '');
+  const lineas = raw.split(/\r?\n/).filter(l => l.trim().length);
   if (!lineas.length) return [];
 
-  // Detectar separador: si la mayoría de líneas tienen TAB, usamos TAB.
-  // Si no, ;. Si no, , (pero ojo: las clases también usan comas — por eso
-  // el TAB es preferible y ; el fallback seguro).
-  const sep = lineas.some(l => l.includes('\t')) ? '\t'
-            : lineas.some(l => l.includes(';')) ? ';'
+  // Detectamos separador. TAB primero (Excel copy-paste), ; (CSV europeo),
+  // , (CSV inglés / nuestra plantilla).
+  const muestra = lineas[0];
+  const sep = muestra.includes('\t') ? '\t'
+            : muestra.includes(';') ? ';'
             : ',';
 
-  // Detectar header: si la primera línea contiene "denominación" o "marca" + "clase".
+  // Header: si la primera línea contiene "denominación" o "marca" + "clase".
   const primero = lineas[0].toLowerCase();
   const hayHeader = /(denomi|marca)/.test(primero) && /clase/.test(primero);
   const data = hayHeader ? lineas.slice(1) : lineas;
 
   return data.map((linea, i) => {
-    const cols = linea.split(sep).map(c => c.trim());
+    const cols = parseLineaCsv(linea, sep);
     return {
       idx_visual: i + 1,
       denominacion: cols[0] || '',
@@ -491,7 +538,26 @@ function parseBulkText(txt) {
       fecha_concesion: cols[4] || null,
       titular: cols[5] || null,
     };
-  });
+  }).filter(r => r.denominacion || r.clases); // Tira las filas totalmente vacías de la plantilla.
+}
+
+// Cuando el cliente sube un archivo, lo leemos y volcamos al textarea para que
+// pueda revisarlo antes de previsualizar. El parser después lo procesa igual
+// que un paste manual.
+function leerArchivoBulk(file) {
+  if (!file) return;
+  const nombre = file.name.toLowerCase();
+  if (nombre.endsWith('.xlsx') || nombre.endsWith('.xls')) {
+    alert('Por ahora aceptamos solo CSV. En Excel: Archivo → Guardar como → "CSV UTF-8 (delimitado por comas)" y volvé a subirlo.');
+    document.getElementById('bulkFile').value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('bulkText').value = e.target.result || '';
+  };
+  reader.onerror = () => alert('No pudimos leer el archivo. Probá pegando el contenido directamente.');
+  reader.readAsText(file, 'utf-8');
 }
 
 function renderBulkPreview(rows) {
@@ -559,6 +625,16 @@ $('#bulkPreviewBtn').addEventListener('click', () => {
   bulkParsedRows = parseBulkText($('#bulkText').value);
   $('#bulkResult').innerHTML = renderBulkPreview(bulkParsedRows);
   $('#bulkConfirmBtn').disabled = bulkParsedRows.length === 0;
+});
+
+// Subida de archivo: lee el CSV, lo vuelca al textarea y previsualiza
+// automáticamente para que el cliente vea las filas detectadas.
+$('#bulkFile').addEventListener('change', (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  leerArchivoBulk(f);
+  // Espera al onload del FileReader y dispara preview
+  setTimeout(() => $('#bulkPreviewBtn').click(), 150);
 });
 
 $('#bulkConfirmBtn').addEventListener('click', async () => {
