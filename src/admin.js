@@ -259,6 +259,118 @@ function mountAdminRoutes(app) {
     res.json(ok({ usuarios: rows }));
   });
 
+  // ===== Crear usuario (cliente / operador / admin) desde el panel admin =====
+  // Usa el guard de sesión admin — sin ADMIN_TOKEN.
+  app.post('/api/admin/usuarios', guard, express.json(), async (req, res) => {
+    const { email, password, nombre, telefono, rol = 'cliente', pack_codigo } = req.body || {};
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+      return res.status(400).json(fail('Email inválido'));
+    }
+    if (!password || String(password).length < 8) {
+      return res.status(400).json(fail('Password debe tener al menos 8 caracteres'));
+    }
+    if (!['admin', 'operador', 'cliente'].includes(rol)) {
+      return res.status(400).json(fail('Rol inválido (admin/operador/cliente)'));
+    }
+    const emailLower = String(email).toLowerCase().trim();
+    const existing = db.prepare('SELECT id FROM usuarios WHERE email = ?').get(emailLower);
+    if (existing) return res.status(409).json(fail('Email ya registrado'));
+
+    let packId = null;
+    if (pack_codigo) {
+      const p = db.prepare('SELECT id FROM packs WHERE codigo = ?').get(String(pack_codigo));
+      if (!p) return res.status(404).json(fail(`Pack "${pack_codigo}" no existe`));
+      packId = p.id;
+    }
+    const { hashPassword } = require('./auth');
+    const hash = await hashPassword(String(password));
+    const info = db.prepare(`
+      INSERT INTO usuarios (email, password_hash, rol, nombre, telefono, pack_id, activo)
+      VALUES (?, ?, ?, ?, ?, ?, 1)
+    `).run(emailLower, hash, rol, nombre || null, telefono || null, packId);
+
+    audit.log(req.user.id, 'usuario.alta_admin', {
+      entidad: 'usuarios', entidad_id: info.lastInsertRowid,
+      detalle: { email: emailLower, rol, pack_codigo: pack_codigo || null },
+    });
+    res.json(ok({ id: info.lastInsertRowid, email: emailLower, rol, pack_codigo: pack_codigo || null }));
+  });
+
+  // ===== Editar usuario (rol, pack, password, nombre, activo) =====
+  app.patch('/api/admin/usuarios/:id', guard, express.json(), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const u = db.prepare('SELECT id, email, rol FROM usuarios WHERE id = ?').get(id);
+    if (!u) return res.status(404).json(fail('Usuario no encontrado'));
+
+    const { rol, pack_codigo, new_password, nombre, telefono, activo } = req.body || {};
+    const sets = [];
+    const vals = [];
+
+    if (rol !== undefined) {
+      if (!['admin', 'operador', 'cliente'].includes(rol)) return res.status(400).json(fail('Rol inválido'));
+      // Anti foot-shoot: no permitir que un admin se quite a sí mismo el rol admin.
+      if (req.user.id === id && rol !== 'admin') {
+        return res.status(400).json(fail('No podés cambiarte tu propio rol admin.'));
+      }
+      sets.push('rol = ?'); vals.push(rol);
+    }
+    if (pack_codigo !== undefined) {
+      if (pack_codigo === null || pack_codigo === '') {
+        sets.push('pack_id = NULL');
+      } else {
+        const p = db.prepare('SELECT id FROM packs WHERE codigo = ?').get(String(pack_codigo));
+        if (!p) return res.status(404).json(fail(`Pack "${pack_codigo}" no existe`));
+        sets.push('pack_id = ?'); vals.push(p.id);
+      }
+    }
+    if (new_password !== undefined && new_password) {
+      if (String(new_password).length < 8) return res.status(400).json(fail('Password muy corto (min 8)'));
+      const { hashPassword } = require('./auth');
+      sets.push('password_hash = ?'); vals.push(await hashPassword(String(new_password)));
+      // Invalidar sesiones activas — el usuario tiene que loguear de nuevo.
+      db.prepare('DELETE FROM sesiones WHERE usuario_id = ?').run(id);
+    }
+    if (nombre !== undefined)    { sets.push('nombre = ?');    vals.push(nombre || null); }
+    if (telefono !== undefined)  { sets.push('telefono = ?');  vals.push(telefono || null); }
+    if (activo !== undefined) {
+      if (req.user.id === id && !activo) {
+        return res.status(400).json(fail('No podés desactivar tu propia cuenta.'));
+      }
+      sets.push('activo = ?'); vals.push(activo ? 1 : 0);
+      if (!activo) db.prepare('DELETE FROM sesiones WHERE usuario_id = ?').run(id);
+    }
+    if (!sets.length) return res.status(400).json(fail('Nada que actualizar'));
+    vals.push(id);
+    db.prepare(`UPDATE usuarios SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+    audit.log(req.user.id, 'usuario.editado_admin', {
+      entidad: 'usuarios', entidad_id: id,
+      detalle: { rol, pack_codigo, password_reset: !!new_password, activo },
+    });
+    res.json(ok({ id }));
+  });
+
+  // ===== Crear/upsert pack desde el panel admin =====
+  app.post('/api/admin/packs', guard, express.json(), (req, res) => {
+    const { codigo, nombre, cupo_marcas, precio_mensual = 0 } = req.body || {};
+    if (!codigo || !String(codigo).trim()) return res.status(400).json(fail('codigo obligatorio'));
+    if (!nombre || !String(nombre).trim()) return res.status(400).json(fail('nombre obligatorio'));
+    const cupo = parseInt(cupo_marcas, 10);
+    if (!Number.isInteger(cupo) || cupo < 1 || cupo > 100000) {
+      return res.status(400).json(fail('cupo_marcas inválido (1-100000)'));
+    }
+    const precio = parseInt(precio_mensual, 10);
+    if (!Number.isInteger(precio) || precio < 0) {
+      return res.status(400).json(fail('precio_mensual inválido'));
+    }
+    db.prepare(`
+      INSERT INTO packs (codigo, nombre, cupo_marcas, precio_mensual) VALUES (?, ?, ?, ?)
+      ON CONFLICT(codigo) DO UPDATE SET nombre = excluded.nombre, cupo_marcas = excluded.cupo_marcas, precio_mensual = excluded.precio_mensual
+    `).run(String(codigo).trim(), String(nombre).trim(), cupo, precio);
+    const pack = db.prepare('SELECT * FROM packs WHERE codigo = ?').get(String(codigo).trim());
+    audit.log(req.user.id, 'pack.upsert_admin', { entidad: 'packs', entidad_id: pack.id, detalle: pack });
+    res.json(ok({ pack }));
+  });
+
   // ===== Packs =====
   app.get('/api/admin/packs', guard, (req, res) => {
     const rows = db.prepare(`SELECT * FROM packs ORDER BY cupo_marcas ASC`).all();

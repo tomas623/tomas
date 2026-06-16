@@ -69,6 +69,16 @@ tr:hover td{background:rgba(255,255,255,.015)}
 
 .empty{text-align:center;padding:60px 20px;color:var(--text-dim);font-size:14px;background:var(--surface);border:1px dashed var(--border-soft);border-radius:12px}
 
+/* Modal genérico para crear/editar usuarios */
+.modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(2,6,17,.85);backdrop-filter:blur(8px);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:24px;overflow-y:auto}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:520px;width:100%;position:relative;box-shadow:0 25px 50px -12px rgba(0,0,0,.6)}
+.modal-close{position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;line-height:1;padding:4px 8px}
+.modal-close:hover{color:#fff}
+.modal-card .field{margin-bottom:12px}
+.modal-card .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
+.modal-card .field input,.modal-card .field select{width:100%;padding:10px 12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
+.modal-card .field input:focus,.modal-card .field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+
 /* Alertas */
 .alerta-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:20px;margin-bottom:14px}
 .alerta-card.alto{border-color:rgba(239,68,68,.4)}
@@ -733,12 +743,27 @@ async function dispararFollowUp() {
   loadLeads();
 }
 
+// Cache de packs para los selects de creación/edición.
+let USUARIOS_CACHE = [];
+let PACKS_CACHE = [];
+
 async function loadUsuarios() {
-  const r = await api('/api/admin/usuarios');
+  const [r, rp] = await Promise.all([
+    api('/api/admin/usuarios'),
+    api('/api/admin/packs'),
+  ]);
   if (!r.ok) return;
-  $('#panel-usuarios').innerHTML = tabla(
-    ['#','Email','Rol','Nombre','Pack','Cupo','Activo','Creado'],
-    r.data.usuarios.map(u => [
+  USUARIOS_CACHE = r.data.usuarios;
+  PACKS_CACHE = (rp.ok && rp.data.packs) ? rp.data.packs : [];
+
+  const toolbar = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;flex-wrap:wrap">
+      <div class="muted" style="font-size:13px">${USUARIOS_CACHE.length} usuario(s).</div>
+      <button class="btn primary" onclick="abrirCrearUsuario()">+ Crear usuario</button>
+    </div>`;
+  $('#panel-usuarios').innerHTML = toolbar + tabla(
+    ['#','Email','Rol','Nombre','Pack','Cupo','Activo','Creado','Acciones'],
+    USUARIOS_CACHE.map(u => [
       `<span class="mono">${u.id}</span>`,
       esc(u.email),
       `<span class="chip ${u.rol === 'admin' ? 'red' : u.rol === 'operador' ? 'yellow' : 'blue'}">${esc(u.rol)}</span>`,
@@ -747,8 +772,122 @@ async function loadUsuarios() {
       u.cupo_marcas ?? '—',
       u.activo ? '<span class="chip green">sí</span>' : '<span class="chip red">no</span>',
       fmtDate(u.created_at),
+      `<button class="btn tiny outline" onclick="abrirEditarUsuario(${u.id})">Editar</button>`,
     ])
   );
+}
+
+function packOptions(selected) {
+  const blank = `<option value="">(sin pack)</option>`;
+  const opts = PACKS_CACHE.map(p =>
+    `<option value="${esc(p.codigo)}" ${selected === p.codigo ? 'selected' : ''}>${esc(p.nombre)} (${p.cupo_marcas})</option>`
+  ).join('');
+  return blank + opts;
+}
+
+function rolOptions(selected = 'cliente') {
+  return ['cliente','operador','admin'].map(r =>
+    `<option value="${r}" ${selected === r ? 'selected' : ''}>${r}</option>`
+  ).join('');
+}
+
+function abrirCrearUsuario() {
+  const html = `
+    <div class="modal-bg" id="userModal" onclick="if(event.target.id==='userModal')cerrarUserModal()">
+      <div class="modal-card">
+        <button class="modal-close" onclick="cerrarUserModal()">&times;</button>
+        <h3 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:18px">Nuevo usuario</h3>
+        <div class="field"><label>Email</label><input type="email" id="um_email" required></div>
+        <div class="field"><label>Contraseña (mín 8)</label><input type="text" id="um_password" minlength="8" required value="${randomPass()}"></div>
+        <div class="field"><label>Nombre / razón social</label><input type="text" id="um_nombre"></div>
+        <div class="field"><label>Teléfono</label><input type="tel" id="um_telefono" placeholder="+54 9 11..."></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field"><label>Rol</label><select id="um_rol">${rolOptions('cliente')}</select></div>
+          <div class="field"><label>Pack</label><select id="um_pack">${packOptions(null)}</select></div>
+        </div>
+        <div id="um_err" class="error-msg" hidden style="margin-top:10px"></div>
+        <button class="btn primary" style="width:100%;margin-top:14px;padding:12px" onclick="guardarNuevoUsuario()">Crear</button>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function abrirEditarUsuario(id) {
+  const u = USUARIOS_CACHE.find(x => x.id === id);
+  if (!u) return alert('Usuario no encontrado.');
+  const html = `
+    <div class="modal-bg" id="userModal" onclick="if(event.target.id==='userModal')cerrarUserModal()">
+      <div class="modal-card">
+        <button class="modal-close" onclick="cerrarUserModal()">&times;</button>
+        <h3 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:6px">Editar usuario</h3>
+        <div class="muted" style="font-size:12.5px;margin-bottom:18px">${esc(u.email)} · ID ${u.id}</div>
+        <div class="field"><label>Nombre / razón social</label><input type="text" id="um_nombre" value="${esc(u.nombre || '')}"></div>
+        <div class="field"><label>Teléfono</label><input type="tel" id="um_telefono" value="${esc(u.telefono || '')}"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field"><label>Rol</label><select id="um_rol">${rolOptions(u.rol)}</select></div>
+          <div class="field"><label>Pack</label><select id="um_pack">${packOptions(u.pack_codigo)}</select></div>
+        </div>
+        <div class="field"><label>Activo</label>
+          <select id="um_activo"><option value="1" ${u.activo?'selected':''}>Sí</option><option value="0" ${!u.activo?'selected':''}>No (cierra sesión actual)</option></select>
+        </div>
+        <div class="field"><label>Nueva contraseña <span class="muted">(dejá vacío para no cambiarla)</span></label>
+          <input type="text" id="um_password" placeholder="Mínimo 8 caracteres si la cambiás">
+        </div>
+        <div id="um_err" class="error-msg" hidden style="margin-top:10px"></div>
+        <button class="btn primary" style="width:100%;margin-top:14px;padding:12px" onclick="guardarEdicionUsuario(${id})">Guardar cambios</button>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function cerrarUserModal() {
+  const m = document.getElementById('userModal');
+  if (m) m.remove();
+}
+
+function randomPass() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from({length:14}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+async function guardarNuevoUsuario() {
+  const body = {
+    email: $('#um_email').value.trim(),
+    password: $('#um_password').value,
+    nombre: $('#um_nombre').value.trim() || null,
+    telefono: $('#um_telefono').value.trim() || null,
+    rol: $('#um_rol').value,
+    pack_codigo: $('#um_pack').value || null,
+  };
+  const r = await api('/api/admin/usuarios', { method: 'POST', body: JSON.stringify(body) });
+  if (!r.ok) {
+    $('#um_err').textContent = r.error || 'Error';
+    $('#um_err').hidden = false;
+    return;
+  }
+  cerrarUserModal();
+  loadUsuarios();
+  loadResumen();
+}
+
+async function guardarEdicionUsuario(id) {
+  const body = {
+    nombre: $('#um_nombre').value.trim() || null,
+    telefono: $('#um_telefono').value.trim() || null,
+    rol: $('#um_rol').value,
+    pack_codigo: $('#um_pack').value || null,
+    activo: $('#um_activo').value === '1',
+  };
+  const np = $('#um_password').value;
+  if (np) body.new_password = np;
+  const r = await api(`/api/admin/usuarios/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  if (!r.ok) {
+    $('#um_err').textContent = r.error || 'Error';
+    $('#um_err').hidden = false;
+    return;
+  }
+  cerrarUserModal();
+  loadUsuarios();
 }
 
 async function loadMarcas() {
