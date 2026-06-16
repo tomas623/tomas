@@ -151,6 +151,37 @@ function mountAuthRoutes(app) {
     res.json({ ok: true, data: { id: u.id, email: u.email, rol: u.rol, nombre: u.nombre } });
   });
 
+  // Promueve un usuario existente a otro rol (admin/operador/cliente) y opcionalmente
+  // resetea su contraseña. Gated por ADMIN_TOKEN — útil para recuperación de
+  // cuenta sin necesidad de tener admin previo logueado.
+  // Body: { email, new_rol, new_password? }
+  app.post('/api/auth/promote-user', async (req, res) => {
+    const adminToken = (process.env.ADMIN_TOKEN || '').trim();
+    if (!adminToken) return res.status(503).json({ ok: false, error: 'ADMIN_TOKEN no configurado en el server' });
+    const provided = req.headers['x-admin-token'] || req.body?.admin_token;
+    if (provided !== adminToken) return res.status(401).json({ ok: false, error: 'admin token inválido' });
+
+    const { email, new_rol, new_password, new_nombre } = req.body || {};
+    if (!email) return res.status(400).json({ ok: false, error: 'email obligatorio' });
+    if (!['admin','operador','cliente'].includes(new_rol)) {
+      return res.status(400).json({ ok: false, error: 'new_rol inválido (admin/operador/cliente)' });
+    }
+    const u = db.prepare('SELECT id, email, rol FROM usuarios WHERE email = ?').get(String(email).toLowerCase().trim());
+    if (!u) return res.status(404).json({ ok: false, error: 'Usuario no encontrado' });
+
+    const sets = ['rol = ?'];
+    const vals = [new_rol];
+    if (new_password) {
+      if (String(new_password).length < 8) return res.status(400).json({ ok: false, error: 'password muy corto (min 8)' });
+      sets.push('password_hash = ?'); vals.push(await hashPassword(String(new_password)));
+    }
+    if (new_nombre !== undefined) { sets.push('nombre = ?'); vals.push(new_nombre || null); }
+    vals.push(u.id);
+    db.prepare(`UPDATE usuarios SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+    audit.log(null, 'usuario.promote', { entidad: 'usuarios', entidad_id: u.id, detalle: { from: u.rol, to: new_rol, reset_password: !!new_password } });
+    res.json({ ok: true, data: { id: u.id, email: u.email, rol_anterior: u.rol, rol_nuevo: new_rol, password_reseteada: !!new_password } });
+  });
+
   app.post('/api/auth/logout', (req, res) => {
     if (req.user?.sid) {
       revocarSesion(req.user.sid);
