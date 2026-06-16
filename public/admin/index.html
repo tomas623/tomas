@@ -141,6 +141,19 @@ tr:hover td{background:rgba(255,255,255,.015)}
       <button type="submit" class="btn primary" style="width:100%;padding:12px">Ingresar</button>
       <div class="error-msg" id="loginError" hidden></div>
     </form>
+    <p style="text-align:center;margin-top:14px;font-size:13px">
+      <a href="#" id="forgotLink" style="color:#60a5fa">Olvidé mi contraseña</a>
+    </p>
+
+    <form id="forgotForm" hidden style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border-soft)">
+      <div class="field">
+        <label>Tu email</label>
+        <input type="email" id="forgotEmail" required autocomplete="email" placeholder="nombre@empresa.com">
+      </div>
+      <button type="submit" class="btn primary" style="width:100%;padding:11px;font-size:13.5px">Enviarme el link</button>
+      <div id="forgotMsg" class="hint" style="margin-top:10px"></div>
+    </form>
+
     <p class="hint">Default sembrado: <code>admin@legalpacers.com</code> / <code>admin12345</code><br>(cambiá con <code>SEED_ADMIN_*</code> en .env).</p>
   </div>
 </section>
@@ -222,6 +235,34 @@ $('#loginForm').addEventListener('submit', async (e) => {
   } else {
     $('#loginError').textContent = r.error || 'Error de login';
     $('#loginError').hidden = false;
+  }
+});
+
+// "Olvidé mi contraseña" — mismo flujo que en /cliente.
+$('#forgotLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  const f = $('#forgotForm');
+  f.hidden = !f.hidden;
+  if (!f.hidden) {
+    const e2 = $('#loginEmail').value.trim();
+    if (e2) $('#forgotEmail').value = e2;
+    $('#forgotEmail').focus();
+  }
+});
+
+$('#forgotForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = $('#forgotEmail').value.trim();
+  const msg = $('#forgotMsg');
+  msg.textContent = 'Enviando…';
+  const r = await api('/api/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+  if (r.ok) {
+    msg.innerHTML = '<span style="color:#6ee7b7">✓ Si el email está registrado, te llega un mail con el link para crear una contraseña nueva. Revisá también la bandeja de spam.</span>';
+  } else {
+    msg.innerHTML = `<span style="color:#fca5a5">${r.error || 'Error'}</span>`;
   }
 });
 

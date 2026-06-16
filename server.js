@@ -824,6 +824,7 @@ app.use('/static', express.static(path.join(ROOT_DIR, 'static')));
 
 // Páginas legales. /terminos, /privacidad y /cookies aliasean a los HTML
 // estáticos de public/legal — más amigable que la URL .html.
+app.get('/reset-password', (req, res) => res.sendFile(path.join(ROOT_DIR, 'public', 'auth', 'reset-password.html')));
 app.get('/terminos',   (req, res) => res.sendFile(path.join(ROOT_DIR, 'public', 'legal', 'terminos.html')));
 app.get('/privacidad', (req, res) => res.sendFile(path.join(ROOT_DIR, 'public', 'legal', 'privacidad.html')));
 app.get('/cookies',    (req, res) => res.sendFile(path.join(ROOT_DIR, 'public', 'legal', 'cookies.html')));

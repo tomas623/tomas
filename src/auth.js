@@ -182,6 +182,109 @@ function mountAuthRoutes(app) {
     res.json({ ok: true, data: { id: u.id, email: u.email, rol_anterior: u.rol, rol_nuevo: new_rol, password_reseteada: !!new_password } });
   });
 
+  // ===== Olvidé mi contraseña =====
+  // Flujo de 2 pasos:
+  //   1) POST /api/auth/forgot-password { email } → si el email existe como
+  //      usuario activo, generamos un token único, lo guardamos hasheado (sha256)
+  //      y le mandamos por mail un link al /reset-password?token=XXX.
+  //      Por seguridad respondemos siempre 200 (no revelamos si el email existe).
+  //   2) POST /api/auth/reset-password { token, new_password } → valida que el
+  //      token no haya expirado ni se haya usado, hashea la nueva contraseña,
+  //      la guarda y marca el token como usado.
+  const RESET_TTL_HORAS = 2;
+
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    const email = String(req.body?.email || '').toLowerCase().trim();
+    if (!email) return res.status(400).json({ ok: false, error: 'email obligatorio' });
+
+    const u = db.prepare('SELECT id, email, nombre, activo FROM usuarios WHERE email = ?').get(email);
+
+    // Si no existe o está inactivo, devolvemos 200 igual (anti-enumeración).
+    if (!u || !u.activo) {
+      return res.json({ ok: true, data: { enviado: true } });
+    }
+
+    // Token aleatorio: lo que mandamos por mail. En DB guardamos solo el hash.
+    const tokenPlain = crypto.randomBytes(24).toString('base64url');
+    const tokenHash = crypto.createHash('sha256').update(tokenPlain).digest('hex');
+    const expiresAt = new Date(Date.now() + RESET_TTL_HORAS * 3600 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+
+    db.prepare(`
+      INSERT INTO password_resets (usuario_id, token_hash, expires_at)
+      VALUES (?, ?, ?)
+    `).run(u.id, tokenHash, expiresAt);
+
+    audit.log(u.id, 'usuario.forgot_password', { detalle: { email } });
+
+    const baseUrl = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+    const link = `${baseUrl}/reset-password?token=${tokenPlain}`;
+    const { enviarMailGenerico } = require('./notificaciones');
+    enviarMailGenerico({
+      to: u.email,
+      subject: 'Recuperación de contraseña — LegalPacers',
+      html: `
+        <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f1f3d">
+          <h2 style="color:#1B6EF3">Recuperación de contraseña</h2>
+          <p>Hola${u.nombre ? ' ' + u.nombre.replace(/[<>]/g, '') : ''},</p>
+          <p>Recibimos una solicitud para resetear la contraseña de tu cuenta en LegalPacers.
+             Si fuiste vos, hacé click en el botón de abajo. El link caduca en ${RESET_TTL_HORAS} horas.</p>
+          <p style="margin-top:24px">
+            <a href="${link}" style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
+                                     text-decoration:none;display:inline-block;font-weight:600">
+              Crear contraseña nueva
+            </a>
+          </p>
+          <p style="font-size:13px;color:#64748b;margin-top:18px">
+            Si no fuiste vos, podés ignorar este mail — tu contraseña actual sigue funcionando
+            y el link expira solo.
+          </p>
+          <p style="font-size:11px;color:#94a3b8;margin-top:18px">
+            Si el botón no funciona, copiá esta URL en el navegador:<br>
+            <code style="word-break:break-all">${link}</code>
+          </p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+          <p style="font-size:12px;color:#64748b">
+            LegalPacers · Consultora de Propiedad Industrial<br>
+            contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+          </p>
+        </div>`,
+      tag: 'password_reset_request',
+    }).catch(err => console.error('[forgot-password] mail:', err.message));
+
+    res.json({ ok: true, data: { enviado: true } });
+  });
+
+  app.post('/api/auth/reset-password', async (req, res) => {
+    const { token, new_password } = req.body || {};
+    if (!token) return res.status(400).json({ ok: false, error: 'token obligatorio' });
+    if (!new_password || String(new_password).length < 8) {
+      return res.status(400).json({ ok: false, error: 'password muy corto (min 8)' });
+    }
+    const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
+    const row = db.prepare(`
+      SELECT pr.id, pr.usuario_id, pr.expires_at, pr.used_at, u.email
+      FROM password_resets pr
+      JOIN usuarios u ON u.id = pr.usuario_id
+      WHERE pr.token_hash = ?
+    `).get(tokenHash);
+    if (!row) return res.status(400).json({ ok: false, error: 'Link inválido o ya usado' });
+    if (row.used_at) return res.status(400).json({ ok: false, error: 'Este link ya fue usado' });
+    if (new Date(row.expires_at) < new Date()) {
+      return res.status(400).json({ ok: false, error: 'El link expiró. Pedí uno nuevo.' });
+    }
+
+    const hash = await hashPassword(String(new_password));
+    db.prepare('UPDATE usuarios SET password_hash = ? WHERE id = ?').run(hash, row.usuario_id);
+    db.prepare(`UPDATE password_resets SET used_at = datetime('now') WHERE id = ?`).run(row.id);
+
+    // Por seguridad: invalidamos sesiones activas del usuario para forzar
+    // un nuevo login con la pass nueva (los atacantes que quizá tenían una
+    // sesión robada quedan afuera).
+    db.prepare('DELETE FROM sesiones WHERE usuario_id = ?').run(row.usuario_id);
+    audit.log(row.usuario_id, 'usuario.password_reset', { detalle: { email: row.email } });
+    res.json({ ok: true, data: { reseteada: true } });
+  });
+
   app.post('/api/auth/logout', (req, res) => {
     if (req.user?.sid) {
       revocarSesion(req.user.sid);
