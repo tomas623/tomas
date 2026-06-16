@@ -240,6 +240,10 @@ db.exec(`
 for (const [col, ddl] of [
   ['numero_acta',     `ALTER TABLE marcas_vigiladas ADD COLUMN numero_acta TEXT`],
   ['fecha_concesion', `ALTER TABLE marcas_vigiladas ADD COLUMN fecha_concesion TEXT`],
+  // titular = persona/empresa titular de la marca registrada. Si null, se
+  // entiende que es el propio cliente. Si tiene valor, es un tercero al que
+  // el cliente le presta el servicio (apoderado/abogado representando).
+  ['titular',         `ALTER TABLE marcas_vigiladas ADD COLUMN titular TEXT`],
 ]) {
   if (!columnExists('marcas_vigiladas', col)) db.exec(ddl);
 }

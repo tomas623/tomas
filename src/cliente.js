@@ -53,7 +53,7 @@ function mountClienteRoutes(app) {
   app.get('/api/cliente/marcas', guard, (req, res) => {
     const rows = db.prepare(`
       SELECT id, denominacion, clases, tipo, logo_path, estado, numero_acta,
-             fecha_concesion, created_at,
+             fecha_concesion, titular, created_at,
              CASE WHEN fecha_concesion IS NOT NULL
                   THEN date(fecha_concesion, '+5 years') END AS dju_due_at,
              CASE WHEN fecha_concesion IS NOT NULL
@@ -67,7 +67,7 @@ function mountClienteRoutes(app) {
   app.post('/api/cliente/marcas', guard, (req, res) => {
     const {
       denominacion, clases, tipo = 'denominativa', logo_path = null,
-      numero_acta = null, fecha_concesion = null,
+      numero_acta = null, fecha_concesion = null, titular = null,
     } = req.body || {};
     if (!denominacion || !String(denominacion).trim()) {
       return res.status(400).json(fail('Falta la denominación'));
@@ -82,6 +82,7 @@ function mountClienteRoutes(app) {
     }
     const den = String(denominacion).trim();
     const numAct = numero_acta ? String(numero_acta).trim().slice(0, 50) : null;
+    const titularLimpio = titular ? String(titular).trim().slice(0, 200) : null;
     const fechaCon = validarFechaIso(fecha_concesion);
     if (fecha_concesion && !fechaCon) {
       return res.status(400).json(fail('Fecha de concesión inválida (formato AAAA-MM-DD)'));
@@ -117,20 +118,20 @@ function mountClienteRoutes(app) {
     const info2 = db.prepare(`
       INSERT INTO marcas_vigiladas
         (usuario_id, denominacion, denominacion_norm, clases, tipo, logo_path,
-         estado, numero_acta, fecha_concesion)
-      VALUES (?, ?, ?, ?, ?, ?, 'activa', ?, ?)
+         estado, numero_acta, fecha_concesion, titular)
+      VALUES (?, ?, ?, ?, ?, ?, 'activa', ?, ?, ?)
     `).run(req.user.id, den, denNorm, JSON.stringify(clasesArr), tipo, logo_path,
-           numAct, fechaCon);
+           numAct, fechaCon, titularLimpio);
 
     audit.log(req.user.id, 'vigilancia.alta', {
       entidad: 'marcas_vigiladas', entidad_id: info2.lastInsertRowid,
-      detalle: { denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon },
+      detalle: { denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, titular: titularLimpio },
     });
 
     res.json(ok({
       id: info2.lastInsertRowid,
       denominacion: den, clases: clasesArr, tipo, estado: 'activa',
-      numero_acta: numAct, fecha_concesion: fechaCon,
+      numero_acta: numAct, fecha_concesion: fechaCon, titular: titularLimpio,
       pack: packInfo(req.user.id),
     }));
   });
@@ -179,13 +180,14 @@ function mountClienteRoutes(app) {
       if (!['denominativa', 'mixta', 'figurativa'].includes(tipo)) errores.push('Tipo inválido (denominativa/mixta/figurativa)');
 
       const numAct = m?.numero_acta ? String(m.numero_acta).trim().slice(0, 50) : null;
+      const titular = m?.titular ? String(m.titular).trim().slice(0, 200) : null;
       let fechaCon = null;
       if (m?.fecha_concesion) {
         fechaCon = validarFechaIso(m.fecha_concesion);
         if (!fechaCon) errores.push('Fecha de concesión inválida (AAAA-MM-DD)');
       }
 
-      return { idx, denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, errores };
+      return { idx, denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, titular, errores };
     });
 
     // Detectar duplicados con el cliente (DB) y entre las propias filas del batch.
@@ -225,15 +227,15 @@ function mountClienteRoutes(app) {
     const insStmt = db.prepare(`
       INSERT INTO marcas_vigiladas
         (usuario_id, denominacion, denominacion_norm, clases, tipo, logo_path,
-         estado, numero_acta, fecha_concesion)
-      VALUES (?, ?, ?, ?, ?, NULL, 'activa', ?, ?)
+         estado, numero_acta, fecha_concesion, titular)
+      VALUES (?, ?, ?, ?, ?, NULL, 'activa', ?, ?, ?)
     `);
     const insertarTodas = db.transaction((rows) => {
       const out = [];
       for (const f of rows) {
         const norm = normalizar(f.denominacion);
         const r = insStmt.run(req.user.id, f.denominacion, norm, JSON.stringify(f.clases),
-                              f.tipo, f.numero_acta, f.fecha_concesion);
+                              f.tipo, f.numero_acta, f.fecha_concesion, f.titular);
         out.push({ idx: f.idx, id: r.lastInsertRowid });
       }
       return out;

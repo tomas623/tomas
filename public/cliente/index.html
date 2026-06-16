@@ -195,13 +195,18 @@ main{max-width:1100px;margin:0 auto;padding:24px}
             <label>Fecha de concesión <span class="muted">(opcional)</span></label>
             <input type="date" id="newFecha">
           </div>
+          <div class="field" style="grid-column:1 / -2">
+            <label>Titular <span class="muted">(opcional — dejá vacío si la marca está a tu nombre)</span></label>
+            <input type="text" id="newTitular" placeholder="Ej: Otro cliente / Razón social del titular">
+          </div>
           <button type="submit" class="btn primary" id="altaBtn">Cargar</button>
         </div>
         <p class="muted" style="font-size:11.5px;margin-top:8px;line-height:1.5">
-          La fecha de concesión nos permite avisarte cuando se acerquen los hitos
-          legales: <strong>DJU</strong> al año 5 (obligatoria por ley) y
-          <strong>renovación</strong> al año 10. Si todavía no la tenés, dejá los
-          campos vacíos y los cargamos cuando esté.
+          <strong>Titular:</strong> si la marca está a nombre de un tercero al que vos representás,
+          escribilo acá. Si la marca es tuya, dejalo vacío.<br>
+          <strong>Fecha de concesión:</strong> nos permite avisarte cuando se acerquen los hitos
+          legales — DJU al año 5 (obligatoria por ley) y renovación al año 10. Si todavía no la
+          tenés, dejá esos campos vacíos.
         </p>
         <p class="muted" style="font-size:12px;margin-top:6px">
           ¿Tenés varias marcas para cargar? <a href="#" id="bulkToggle" style="color:#60a5fa">Importar desde Excel/CSV</a>
@@ -214,16 +219,16 @@ main{max-width:1100px;margin:0 auto;padding:24px}
       <h3>Importar varias marcas</h3>
       <p class="muted" style="font-size:13px;line-height:1.6;margin-bottom:14px">
         Pegá una tabla copiada de Excel/Sheets con estas columnas (la primera fila puede ser encabezado).<br>
-        <strong>Columnas:</strong> <code>Denominación</code>, <code>Clases</code>, <code>Tipo</code>, <code>Nº de acta</code>, <code>Fecha concesión</code>.<br>
+        <strong>Columnas:</strong> <code>Denominación</code>, <code>Clases</code>, <code>Tipo</code>, <code>Nº de acta</code>, <code>Fecha concesión</code>, <code>Titular</code>.<br>
         Solo las dos primeras son obligatorias. Separador: <strong>tabulación</strong> (lo que copia Excel) o <strong>punto y coma</strong>.
-        Máximo 100 filas por carga.
+        El campo <strong>Titular</strong> se deja vacío si la marca está a tu nombre. Máximo 100 filas por carga.
       </p>
       <details style="background:var(--bg-soft);border-radius:8px;padding:10px 14px;margin-bottom:14px">
         <summary style="cursor:pointer;font-size:13px;color:var(--text-soft);font-weight:600">Ver ejemplo</summary>
-        <pre style="background:var(--surface);padding:12px;border-radius:6px;margin-top:10px;font-size:11.5px;overflow-x:auto;color:var(--text-soft);font-family:ui-monospace,monospace">Denominación	Clases	Tipo	Nº de acta	Fecha concesión
+        <pre style="background:var(--surface);padding:12px;border-radius:6px;margin-top:10px;font-size:11.5px;overflow-x:auto;color:var(--text-soft);font-family:ui-monospace,monospace">Denominación	Clases	Tipo	Nº de acta	Fecha concesión	Titular
 Focca	9,42	denominativa	4500123	2023-06-01
-Acme Foods	29,30	mixta	4500124	2024-02-15
-Brio	35				</pre>
+Acme Foods	29,30	mixta	4500124	2024-02-15	Acme SA
+Brio	35					</pre>
       </details>
       <textarea id="bulkText" rows="8" placeholder="Pegá acá la tabla copiada de Excel…"
         style="width:100%;padding:12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:ui-monospace,monospace;font-size:13px;resize:vertical;line-height:1.5"></textarea>
@@ -388,11 +393,15 @@ function marcaRow(m) {
     : '<span class="chip blue">en trámite</span>';
   const hitos = hitosLegales(m);
   const acta = m.numero_acta ? ` · Acta ${esc(m.numero_acta)}` : '';
+  const titularLine = m.titular
+    ? `<div class="marca-meta" style="color:var(--text-soft);margin-top:2px">Titular: <strong>${esc(m.titular)}</strong></div>`
+    : '';
   return `
     <div class="marca-row">
       <div>
         <div class="marca-name">${esc(m.denominacion)} ${chip}</div>
         <div class="marca-meta">Clases ${esc(m.clases)} · ${esc(m.tipo || 'denominativa')}${acta} · alta ${fmtDate(m.created_at)}</div>
+        ${titularLine}
         ${hitos}
       </div>
       <div class="marca-actions">
@@ -436,14 +445,16 @@ $('#altaForm').addEventListener('submit', async (e) => {
   const tipo = $('#newTipo').value;
   const numero_acta = $('#newActa').value.trim() || null;
   const fecha_concesion = $('#newFecha').value || null;
+  const titular = $('#newTitular').value.trim() || null;
   if (!denom || !clases) return;
   const r = await api('/api/cliente/marcas', { method: 'POST', body: JSON.stringify({
-    denominacion: denom, clases, tipo, numero_acta, fecha_concesion,
+    denominacion: denom, clases, tipo, numero_acta, fecha_concesion, titular,
   })});
   if (r.ok) {
     flash(`"${denom}" agregada a vigilancia.`, 'ok');
     $('#newDenom').value = ''; $('#newClases').value = '';
     $('#newActa').value = ''; $('#newFecha').value = '';
+    $('#newTitular').value = '';
     loadMarcas();
   } else {
     flash(r.error || 'Error', 'bad');
@@ -478,13 +489,14 @@ function parseBulkText(txt) {
       tipo: (cols[2] || 'denominativa').toLowerCase(),
       numero_acta: cols[3] || null,
       fecha_concesion: cols[4] || null,
+      titular: cols[5] || null,
     };
   });
 }
 
 function renderBulkPreview(rows) {
   if (!rows.length) return '<div class="empty">No detectamos filas. Verificá el formato.</div>';
-  const headers = ['#', 'Denominación', 'Clases', 'Tipo', 'Acta', 'Concesión'];
+  const headers = ['#', 'Denominación', 'Clases', 'Tipo', 'Acta', 'Concesión', 'Titular'];
   return `
     <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
       Detectadas <strong>${rows.length}</strong> filas. Revisá antes de confirmar.
@@ -501,6 +513,7 @@ function renderBulkPreview(rows) {
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)">${esc(r.tipo)}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${esc(r.numero_acta || '—')}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${esc(r.fecha_concesion || '—')}</td>
+              <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${esc(r.titular || '<span style="color:var(--text-dim);font-style:italic">yo</span>')}</td>
             </tr>`).join('')}
         </tbody>
       </table>

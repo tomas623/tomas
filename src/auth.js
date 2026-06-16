@@ -161,7 +161,7 @@ function mountAuthRoutes(app) {
     const provided = req.headers['x-admin-token'] || req.body?.admin_token;
     if (provided !== adminToken) return res.status(401).json({ ok: false, error: 'admin token inválido' });
 
-    const { email, new_rol, new_password, new_nombre } = req.body || {};
+    const { email, new_rol, new_password, new_nombre, pack_codigo } = req.body || {};
     if (!email) return res.status(400).json({ ok: false, error: 'email obligatorio' });
     if (!['admin','operador','cliente'].includes(new_rol)) {
       return res.status(400).json({ ok: false, error: 'new_rol inválido (admin/operador/cliente)' });
@@ -176,10 +176,29 @@ function mountAuthRoutes(app) {
       sets.push('password_hash = ?'); vals.push(await hashPassword(String(new_password)));
     }
     if (new_nombre !== undefined) { sets.push('nombre = ?'); vals.push(new_nombre || null); }
+    let packAsignado = null;
+    if (pack_codigo !== undefined) {
+      if (pack_codigo === null || pack_codigo === '') {
+        sets.push('pack_id = NULL');
+      } else {
+        const pack = db.prepare('SELECT id, codigo, nombre, cupo_marcas FROM packs WHERE codigo = ?').get(String(pack_codigo));
+        if (!pack) return res.status(404).json({ ok: false, error: `Pack "${pack_codigo}" no existe` });
+        sets.push('pack_id = ?'); vals.push(pack.id);
+        packAsignado = pack;
+      }
+    }
     vals.push(u.id);
     db.prepare(`UPDATE usuarios SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
-    audit.log(null, 'usuario.promote', { entidad: 'usuarios', entidad_id: u.id, detalle: { from: u.rol, to: new_rol, reset_password: !!new_password } });
-    res.json({ ok: true, data: { id: u.id, email: u.email, rol_anterior: u.rol, rol_nuevo: new_rol, password_reseteada: !!new_password } });
+    audit.log(null, 'usuario.promote', {
+      entidad: 'usuarios', entidad_id: u.id,
+      detalle: { from: u.rol, to: new_rol, reset_password: !!new_password, pack: packAsignado?.codigo || null },
+    });
+    res.json({ ok: true, data: {
+      id: u.id, email: u.email,
+      rol_anterior: u.rol, rol_nuevo: new_rol,
+      password_reseteada: !!new_password,
+      pack: packAsignado,
+    }});
   });
 
   // ===== Olvidé mi contraseña =====
