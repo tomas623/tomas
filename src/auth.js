@@ -304,6 +304,42 @@ function mountAuthRoutes(app) {
     res.json({ ok: true, data: { reseteada: true } });
   });
 
+  // Crea o actualiza un pack (UPSERT por codigo). Útil cuando el seed no
+  // corrió o cuando se necesita agregar un pack sin redeploy. Gated por
+  // ADMIN_TOKEN.
+  // Body: { codigo, nombre, cupo_marcas, precio_mensual? }
+  app.post('/api/auth/ensure-pack', (req, res) => {
+    const adminToken = (process.env.ADMIN_TOKEN || '').trim();
+    if (!adminToken) return res.status(503).json({ ok: false, error: 'ADMIN_TOKEN no configurado en el server' });
+    const provided = req.headers['x-admin-token'] || req.body?.admin_token;
+    if (provided !== adminToken) return res.status(401).json({ ok: false, error: 'admin token inválido' });
+
+    const { codigo, nombre, cupo_marcas, precio_mensual = 0 } = req.body || {};
+    if (!codigo || !String(codigo).trim()) return res.status(400).json({ ok: false, error: 'codigo obligatorio' });
+    if (!nombre || !String(nombre).trim()) return res.status(400).json({ ok: false, error: 'nombre obligatorio' });
+    const cupo = parseInt(cupo_marcas, 10);
+    if (!Number.isInteger(cupo) || cupo < 1 || cupo > 100000) {
+      return res.status(400).json({ ok: false, error: 'cupo_marcas inválido (1-100000)' });
+    }
+    const precio = parseInt(precio_mensual, 10);
+    if (!Number.isInteger(precio) || precio < 0) {
+      return res.status(400).json({ ok: false, error: 'precio_mensual inválido' });
+    }
+
+    db.prepare(`
+      INSERT INTO packs (codigo, nombre, cupo_marcas, precio_mensual)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(codigo) DO UPDATE SET
+        nombre = excluded.nombre,
+        cupo_marcas = excluded.cupo_marcas,
+        precio_mensual = excluded.precio_mensual
+    `).run(String(codigo).trim(), String(nombre).trim(), cupo, precio);
+
+    const pack = db.prepare('SELECT id, codigo, nombre, cupo_marcas, precio_mensual FROM packs WHERE codigo = ?').get(String(codigo).trim());
+    audit.log(null, 'pack.ensure', { entidad: 'packs', entidad_id: pack.id, detalle: pack });
+    res.json({ ok: true, data: pack });
+  });
+
   app.post('/api/auth/logout', (req, res) => {
     if (req.user?.sid) {
       revocarSesion(req.user.sid);
