@@ -135,6 +135,130 @@ function mountClienteRoutes(app) {
     }));
   });
 
+  // ===== Carga masiva de marcas (Excel/CSV) =====
+  // Recibe un array `marcas` con [{ denominacion, clases, tipo?, numero_acta?,
+  // fecha_concesion? }]. Valida cada fila individualmente y devuelve resultado
+  // por fila (índice, ok|error). No es transacción: cada marca que pasa las
+  // validaciones se inserta; las que no, se reportan con error en su fila.
+  //
+  // Pre-validaciones globales (rechazan TODO el batch sin escribir nada):
+  //   - max 100 filas por request (DoS soft-protection).
+  //   - pack asignado y con cupo suficiente para TODAS las filas válidas.
+  //
+  // Si el cupo no alcanza para todas, devolvemos cuáles entrarían y cuáles no
+  // sin escribir nada (HTTP 403 + detalle), así el cliente decide.
+  app.post('/api/cliente/marcas/bulk', guard, (req, res) => {
+    const { marcas } = req.body || {};
+    if (!Array.isArray(marcas) || !marcas.length) {
+      return res.status(400).json(fail('Mandá un array `marcas` con al menos una fila.'));
+    }
+    if (marcas.length > 100) {
+      return res.status(400).json(fail('Máximo 100 marcas por carga. Dividí en lotes.'));
+    }
+    const info = packInfo(req.user.id);
+    if (!info) return res.status(404).json(fail('Usuario no encontrado'));
+    if (!info.pack_id) {
+      return res.status(403).json(fail('No tenés un pack de vigilancia asignado. Contactá a soporte.', 403, { necesita_pack: true }));
+    }
+
+    // Parseo + validación por fila.
+    const filas = marcas.map((m, idx) => {
+      const errores = [];
+      const den = String(m?.denominacion || '').trim();
+      if (!den) errores.push('Falta denominación');
+
+      let clasesArr = [];
+      const cr = m?.clases;
+      if (Array.isArray(cr)) clasesArr = cr.map(Number).filter(Number.isFinite);
+      else if (typeof cr === 'string') clasesArr = cr.split(/[,\s]+/).map(s => parseInt(s.trim(), 10)).filter(Number.isFinite);
+      else if (typeof cr === 'number') clasesArr = [cr];
+      if (!clasesArr.length) errores.push('Indicá al menos una clase Niza');
+      if (clasesArr.some(c => c < 1 || c > 45)) errores.push('Clases Niza válidas: 1-45');
+
+      const tipo = m?.tipo || 'denominativa';
+      if (!['denominativa', 'mixta', 'figurativa'].includes(tipo)) errores.push('Tipo inválido (denominativa/mixta/figurativa)');
+
+      const numAct = m?.numero_acta ? String(m.numero_acta).trim().slice(0, 50) : null;
+      let fechaCon = null;
+      if (m?.fecha_concesion) {
+        fechaCon = validarFechaIso(m.fecha_concesion);
+        if (!fechaCon) errores.push('Fecha de concesión inválida (AAAA-MM-DD)');
+      }
+
+      return { idx, denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, errores };
+    });
+
+    // Detectar duplicados con el cliente (DB) y entre las propias filas del batch.
+    const denomsExistentes = new Set(
+      db.prepare(`SELECT denominacion_norm FROM marcas_vigiladas WHERE usuario_id = ? AND estado != 'baja'`)
+        .all(req.user.id).map(r => r.denominacion_norm)
+    );
+    const denomsBatch = new Set();
+    for (const f of filas) {
+      if (f.errores.length) continue;
+      const norm = normalizar(f.denominacion);
+      if (denomsExistentes.has(norm)) f.errores.push(`Ya tenés "${f.denominacion}" en vigilancia`);
+      else if (denomsBatch.has(norm)) f.errores.push(`Duplicada dentro de esta carga`);
+      else denomsBatch.add(norm);
+    }
+
+    const validas = filas.filter(f => !f.errores.length);
+    const invalidas = filas.filter(f => f.errores.length);
+
+    // Validación dura: las válidas tienen que entrar en el cupo restante.
+    if (validas.length > info.cupo_disponible) {
+      return res.status(403).json(fail(
+        `Tu pack permite ${info.cupo_marcas} marcas. Tenés ${info.marcas_activas} activas, te quedan ${info.cupo_disponible} libres. La carga incluye ${validas.length} válidas — no entran.`,
+        403,
+        {
+          cupo_excedido: true,
+          cupo_actual: info.cupo_marcas,
+          marcas_activas: info.marcas_activas,
+          cupo_disponible: info.cupo_disponible,
+          validas: validas.length,
+          invalidas: invalidas.length,
+        }
+      ));
+    }
+
+    // Inserción real de las válidas.
+    const insStmt = db.prepare(`
+      INSERT INTO marcas_vigiladas
+        (usuario_id, denominacion, denominacion_norm, clases, tipo, logo_path,
+         estado, numero_acta, fecha_concesion)
+      VALUES (?, ?, ?, ?, ?, NULL, 'activa', ?, ?)
+    `);
+    const insertarTodas = db.transaction((rows) => {
+      const out = [];
+      for (const f of rows) {
+        const norm = normalizar(f.denominacion);
+        const r = insStmt.run(req.user.id, f.denominacion, norm, JSON.stringify(f.clases),
+                              f.tipo, f.numero_acta, f.fecha_concesion);
+        out.push({ idx: f.idx, id: r.lastInsertRowid });
+      }
+      return out;
+    });
+    const insertadas = insertarTodas(validas);
+
+    audit.log(req.user.id, 'vigilancia.bulk_alta', {
+      detalle: { total: filas.length, insertadas: insertadas.length, invalidas: invalidas.length },
+    });
+
+    res.json(ok({
+      total: filas.length,
+      insertadas: insertadas.length,
+      invalidas: invalidas.length,
+      filas: filas.map(f => ({
+        idx: f.idx,
+        denominacion: f.denominacion,
+        ok: f.errores.length === 0,
+        errores: f.errores,
+        id: insertadas.find(x => x.idx === f.idx)?.id || null,
+      })),
+      pack: packInfo(req.user.id),
+    }));
+  });
+
   // ===== Pausar / reactivar marca =====
   app.patch('/api/cliente/marcas/:id', guard, (req, res) => {
     const id = parseInt(req.params.id, 10);
