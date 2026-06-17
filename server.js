@@ -5,7 +5,7 @@ const express = require('express');
 
 const db = require('./src/db');
 const audit = require('./src/audit');
-const { buscarEnINPI, listaCorta, enmascararActa, enmascararDenominacion } = require('./src/inpi');
+const { buscarEnINPI, listaCorta, buscarPalabraEmbebida, enmascararActa, enmascararDenominacion } = require('./src/inpi');
 const { crearPreferencia, obtenerPago } = require('./src/pagos');
 const { mountAuthRoutes } = require('./src/auth');
 const { mountAdminRoutes } = require('./src/admin');
@@ -126,6 +126,12 @@ app.post('/api/marca/check', (req, res) => {
   const rubroIngresado = !!(rubro && String(rubro).trim());
   const clasesNoMatchean = rubroIngresado && !rubroConocido;
 
+  // Búsqueda complementaria: la palabra consultada dentro de denominaciones
+  // compuestas, en las clases del usuario. Atrapa los casos como "CORE" vs
+  // "CORE FIT SA CORE PILATES" que el matching normal no detecta porque la
+  // normalización los colapsa en un string largo.
+  const hitsPalabraClase = clasesUsuario.length ? buscarPalabraEmbebida(marca, clasesUsuario) : [];
+
   let veredicto, mensaje, muestras = [];
 
   if (hitsClase.length > 0) {
@@ -133,6 +139,12 @@ app.post('/api/marca/check', (req, res) => {
     const top = hitsClase[0];
     mensaje = `Encontramos <strong>${hitsClase.length} acta${hitsClase.length === 1 ? '' : 's'}</strong> que coincide${hitsClase.length === 1 ? '' : 'n'} de forma exacta en la clase ${top.clase}.`;
     muestras = hitsClase.slice(0, 5);
+  } else if (hitsPalabraClase.length > 0) {
+    // La palabra aparece DENTRO de denominaciones compuestas en la misma clase.
+    // Es más relevante que "exact en otras clases" porque comparte mercado.
+    veredicto = 'necesita_analisis';
+    mensaje = `Detectamos <strong>${hitsPalabraClase.length} acta${hitsPalabraClase.length === 1 ? '' : 's'}</strong> que contiene${hitsPalabraClase.length === 1 ? '' : 'n'} la palabra "${String(marca).trim()}" en la${clasesUsuario.length === 1 ? '' : 's'} clase${clasesUsuario.length === 1 ? '' : 's'} ${clasesUsuario.join(', ')} (denominaciones compuestas). Conviene analizarlas con un profesional antes de presentar.`;
+    muestras = hitsPalabraClase.slice(0, 5);
   } else if (hitsTodos.length > 0) {
     // Hay coincidencias en otras clases. Aviso de "necesita_analisis" para que el cliente
     // entienda que aunque la clase pedida está libre, el nombre existe registrado en otras.
@@ -145,8 +157,17 @@ app.post('/api/marca/check', (req, res) => {
     veredicto = 'necesita_analisis';
     mensaje = `No identificamos automáticamente la clase Niza correcta para "${String(rubro).slice(0, 60)}". Para evitar un falso "LIBRE" en la clase equivocada, te recomendamos auditar la viabilidad con nuestro equipo.`;
   } else {
-    veredicto = 'probablemente_disponible';
-    mensaje = `No encontramos coincidencias exactas en la${clasesUsuario.length === 1 ? '' : 's'} clase${clasesUsuario.length === 1 ? '' : 's'} ${clasesUsuario.join(', ') || 'consultada'} del INPI. El pre-check no analiza similitud fonética ni conceptual.`;
+    // Último intento: palabra embebida en CUALQUIER clase (cuando el usuario no
+    // pasó clase, o ninguna de las anteriores encontró nada).
+    const hitsPalabraGlobal = clasesUsuario.length ? [] : buscarPalabraEmbebida(marca, null);
+    if (hitsPalabraGlobal.length > 0) {
+      veredicto = 'necesita_analisis';
+      mensaje = `Detectamos <strong>${hitsPalabraGlobal.length} acta${hitsPalabraGlobal.length === 1 ? '' : 's'}</strong> con la palabra "${String(marca).trim()}" en denominaciones compuestas del INPI. Conviene analizarlas con un profesional antes de presentar.`;
+      muestras = hitsPalabraGlobal.slice(0, 5);
+    } else {
+      veredicto = 'probablemente_disponible';
+      mensaje = `No encontramos coincidencias exactas en la${clasesUsuario.length === 1 ? '' : 's'} clase${clasesUsuario.length === 1 ? '' : 's'} ${clasesUsuario.join(', ') || 'consultada'} del INPI. El pre-check no analiza similitud fonética ni conceptual.`;
+    }
   }
 
   // Tease siempre — incluso cuando el veredicto es "probablemente disponible".

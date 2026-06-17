@@ -89,6 +89,57 @@ function listaCorta(marca, clases, opciones) {
   return matching(marca, clases?.[0] || null, universo, { minScore: opciones?.minScore ?? 55 });
 }
 
+// Busca la marca como PALABRA dentro de denominaciones compuestas. Las
+// denominaciones del INPI a veces traen el solicitante embebido
+// (ej: "MARTINEZ ELINA MARIA y otros DOLCE COCA") — el matching normal no
+// detecta "DOLCE COCA" porque la normalización colapsa todo en un string largo.
+// Acá usamos un LIKE sobre denominacion original con boundaries de palabra.
+function buscarPalabraEmbebida(marca, clases) {
+  const palabra = String(marca || '').trim();
+  if (palabra.length < 3) return [];
+
+  // Patrones: la palabra al inicio, al final, en el medio, o sola. Insensitive.
+  const upper = palabra.toUpperCase();
+  const conds = [];
+  const params = [];
+
+  const clasesArr = Array.isArray(clases) && clases.length ? clases.filter(Number.isFinite) : null;
+  if (clasesArr && clasesArr.length) {
+    conds.push(`clase IN (${clasesArr.map(() => '?').join(',')})`);
+    params.push(...clasesArr);
+  }
+
+  // El campo denominacion en la DB suele estar en mayúsculas. Para boundaries
+  // usamos espacios o caracteres no-alfanuméricos comunes (- / , .).
+  conds.push(`(
+    denominacion = ?
+    OR denominacion LIKE ? OR denominacion LIKE ?
+    OR denominacion LIKE ? OR denominacion LIKE ?
+    OR denominacion LIKE ? OR denominacion LIKE ?
+  )`);
+  params.push(
+    upper,
+    `${upper} %`, `% ${upper}`,
+    `% ${upper} %`,
+    `${upper}-%`, `%-${upper}`, `%-${upper}-%`,
+  );
+
+  const where = 'WHERE ' + conds.join(' AND ');
+  const rows = db.prepare(
+    `SELECT id, denominacion, denominacion_norm, clase, acta, titular, estado
+     FROM marcas_inpi ${where} LIMIT 50`
+  ).all(...params);
+
+  // Score 70 (medio-alto) para marcar como "necesita análisis", no como
+  // bloqueo total. La palabra coincide pero en un contexto compuesto.
+  return rows.map(r => ({
+    id: r.id, denominacion: r.denominacion, clase: r.clase, acta: r.acta,
+    titular: r.titular, estado: r.estado,
+    score: r.denominacion === upper ? 95 : 70,
+    motivos: r.denominacion === upper ? ['coincidencia_exacta'] : ['palabra_embebida'],
+  }));
+}
+
 function enmascararActa(acta) {
   if (!acta) return 'REDACTADO';
   const s = String(acta);
@@ -109,4 +160,4 @@ function enmascararDenominacion(denom) {
   }).join(' ');
 }
 
-module.exports = { buscarEnINPI, listaCorta, normalizar, enmascararActa, enmascararDenominacion };
+module.exports = { buscarEnINPI, listaCorta, buscarPalabraEmbebida, normalizar, enmascararActa, enmascararDenominacion };
