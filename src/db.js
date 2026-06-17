@@ -23,6 +23,12 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_marcas_norm_clase ON marcas_inpi(denominacion_norm, clase);
   CREATE INDEX IF NOT EXISTS idx_marcas_clase ON marcas_inpi(clase);
+  -- Índice por (primer carácter, longitud) para que el prefilter del chequeo
+  -- gratis sea O(log N) en vez de full scan. Acelera buscarEnINPI ~100×.
+  CREATE INDEX IF NOT EXISTS idx_marcas_prefilter
+    ON marcas_inpi(substr(denominacion_norm, 1, 1), length(denominacion_norm));
+  CREATE INDEX IF NOT EXISTS idx_marcas_len
+    ON marcas_inpi(length(denominacion_norm));
 
   CREATE TABLE IF NOT EXISTS leads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

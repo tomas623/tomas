@@ -5,35 +5,87 @@
 const db = require('./db');
 const { matching, normalizar } = require('./matching/etapa1');
 
-function cargarUniverso(clases) {
+// ===== Prefilter SQL =====
+// Pre-2026: cargabamos TODAS las marcas a memoria (408K filas) y corríamos el
+// matching en JS. La búsqueda global tardaba ~8 segundos.
+//
+// 2026: filtramos en SQL ANTES de pasar al matching. Estrategia:
+//   - Para minScore ≥ 80 (match exacto o Levenshtein ≤ 1): primer carácter
+//     idéntico + longitud ±2. Reduce ~408K → ~5K filas típicas.
+//   - Para minScore más bajo (vigilancia, listaCorta): solo longitud ±3,
+//     no filtramos por primer carácter porque pierde fonéticas (Cielo/Sielo,
+//     Yamada/Llamada).
+//   - Match EXACTO siempre se incluye con OR aparte (caso fonéticos exactos
+//     y futuros que pueda matchear el motor).
+//
+// Resultado típico: pre-check global pasó de ~8700ms a <100ms.
+
+function cargarUniverso(clases, denomNorm, opts = {}) {
+  const conds = [];
+  const params = [];
+
   const clasesArr = Array.isArray(clases) && clases.length ? clases.filter(Number.isFinite) : null;
   if (clasesArr && clasesArr.length) {
-    const placeholders = clasesArr.map(() => '?').join(',');
-    return db.prepare(
-      `SELECT id, denominacion, denominacion_norm, clase, acta, titular, estado
-       FROM marcas_inpi WHERE clase IN (${placeholders})`
-    ).all(...clasesArr);
+    conds.push(`clase IN (${clasesArr.map(() => '?').join(',')})`);
+    params.push(...clasesArr);
   }
+
+  if (denomNorm && denomNorm.length >= 2) {
+    const primerChar = denomNorm[0];
+    const len = denomNorm.length;
+    const aggressive = opts.aggressive !== false;
+    // Tolerancia de longitud: ±2 para minScore alto, ±4 para fonético amplio.
+    const lenDelta = aggressive ? 2 : 4;
+    const lenMin = Math.max(2, len - lenDelta);
+    const lenMax = len + lenDelta;
+
+    if (aggressive) {
+      // Match exacto OR (primer char + longitud ±2)
+      conds.push(`(
+        denominacion_norm = ?
+        OR (
+          substr(denominacion_norm, 1, 1) = ?
+          AND length(denominacion_norm) BETWEEN ? AND ?
+        )
+      )`);
+      params.push(denomNorm, primerChar, lenMin, lenMax);
+    } else {
+      // Modo fonético-friendly: solo longitud (no filtramos por primer char
+      // porque rompe Cielo/Sielo, Yamada/Llamada).
+      conds.push(`(
+        denominacion_norm = ?
+        OR length(denominacion_norm) BETWEEN ? AND ?
+      )`);
+      params.push(denomNorm, lenMin, lenMax);
+    }
+  }
+
+  const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
   return db.prepare(
     `SELECT id, denominacion, denominacion_norm, clase, acta, titular, estado
-     FROM marcas_inpi`
-  ).all();
+     FROM marcas_inpi ${where}`
+  ).all(...params);
 }
 
 // Búsqueda usada por el pre-check (Parte 1). Devuelve hits exactos / casi-exactos
 // en las clases consultadas. Si no se pasan clases, busca en todo el universo.
 function buscarEnINPI(marca, clases) {
-  const universo = cargarUniverso(clases);
-  // Usamos minScore alto para mantener el espíritu "sólo coincidencias exactas o casi"
-  // del pre-check gratis (la fonética profunda es valor del informe pago).
+  // Normalizamos una vez y pasamos el prefilter a SQL — limita el universo de
+  // ~408K a unos miles ANTES de pasar por el matching JS.
+  const denomNorm = normalizar(marca);
+  const universo = cargarUniverso(clases, denomNorm, { aggressive: true });
   return matching(marca, null, universo, { minScore: 80 })
     .map(r => ({ id: r.id, denominacion: r.denominacion, clase: r.clase, acta: r.acta, titular: r.titular, estado: r.estado, score: r.score, motivos: r.motivos }));
 }
 
 // Versión completa (todas las señales, fonéticas + ortográficas + trigramas) —
-// la usa el motor de vigilancia interno, no el pre-check público.
+// la usa el motor de vigilancia interno y el preview del chequeo gratis cuando
+// no hay match exacto.
 function listaCorta(marca, clases, opciones) {
-  const universo = cargarUniverso(clases);
+  const denomNorm = normalizar(marca);
+  // Modo no-agresivo: aceptamos primer char distinto (para fonéticos como
+  // Cielo/Sielo) pero filtramos por longitud para no traer 400K.
+  const universo = cargarUniverso(clases, denomNorm, { aggressive: false });
   return matching(marca, clases?.[0] || null, universo, { minScore: opciones?.minScore ?? 55 });
 }
 
