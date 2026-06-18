@@ -216,6 +216,31 @@ db.exec(`
 function columnExists(table, col) {
   return db.prepare(`PRAGMA table_info(${table})`).all().some(c => c.name === col);
 }
+
+// Índice único (acta, clase) sobre marcas_inpi para habilitar UPSERT en la
+// importación de dumps frescos. Se crea con guard: si por algún motivo hubiera
+// duplicados en producción, no rompe el boot — solo loguea y sigue (el import
+// caería al modo insert-or-ignore en ese caso).
+// Índice único completo (no parcial) para que sirva como target de ON CONFLICT.
+// En SQLite los NULL no colisionan entre sí en índices únicos, así que las
+// (pocas/nulas) filas sin acta no rompen — solo se deduplican las que tienen
+// acta real. Confirmado: 0 actas null/vacías en el dump actual.
+//
+// Una versión anterior creó este índice como PARCIAL (con WHERE). Un índice
+// parcial NO sirve como target de ON CONFLICT, así que si detectamos esa
+// versión vieja, la dropeamos y recreamos completa (una sola vez).
+try {
+  const idxSql = db.prepare(
+    `SELECT sql FROM sqlite_master WHERE type='index' AND name='uniq_marcas_inpi_acta_clase'`
+  ).get();
+  if (idxSql && /\bWHERE\b/i.test(idxSql.sql || '')) {
+    db.exec('DROP INDEX uniq_marcas_inpi_acta_clase');
+  }
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_marcas_inpi_acta_clase
+           ON marcas_inpi(acta, clase)`);
+} catch (e) {
+  console.error('[db] No se pudo crear índice único marcas_inpi(acta,clase):', e.message);
+}
 if (!columnExists('alertas', 'boletin_id')) {
   db.exec(`ALTER TABLE alertas ADD COLUMN boletin_id INTEGER REFERENCES boletines(id)`);
 }

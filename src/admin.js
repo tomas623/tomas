@@ -825,6 +825,36 @@ function mountAdminRoutes(app) {
     res.json(ok({ audit: rows }));
   });
 
+  // ===== Importar dump fresco de marcas a marcas_inpi (Opción 2) =====
+  // Recibe un CSV (texto plano en el body) y lo mergea con UPSERT por (acta,
+  // clase): agrega marcas nuevas y actualiza estados de las existentes, sin
+  // borrar el resto del universo. Autenticado con la sesión admin (cookie).
+  app.post('/api/admin/marcas-inpi/import', guard, express.text({ type: '*/*', limit: '120mb' }), (req, res) => {
+    const texto = req.body;
+    if (!texto || typeof texto !== 'string' || !texto.trim()) {
+      return res.status(400).json(fail('Mandá el contenido del CSV en el body (text/plain o text/csv).'));
+    }
+    try {
+      const { importarCSVText } = require('./jobs/import-marcas-inpi');
+      const { stats, errores } = importarCSVText(texto, { actorId: req.user.id, fuente: 'admin_upload' });
+      res.json(ok({ stats, errores: errores.slice(0, 20), errores_total: errores.length }));
+    } catch (err) {
+      res.status(400).json(fail(err.message));
+    }
+  });
+
+  // Dispara el cron de sync a demanda (útil para probar la URL configurada).
+  app.post('/api/admin/marcas-inpi/sync-now', guard, async (req, res) => {
+    try {
+      const syncInpi = require('./jobs/sync-inpi');
+      const r = await syncInpi.correr();
+      audit.log(req.user.id, 'sync_inpi.manual', { detalle: r });
+      res.json(ok(r));
+    } catch (err) {
+      res.status(500).json(fail(err.message));
+    }
+  });
+
   // ===== Upload one-shot de marcas.db (DB de la app Python heredada) =====
   // Protegido con ADMIN_TOKEN para que nadie pise el archivo. Recibe el .db
   // crudo en el body, lo guarda en /app/data/marcas.db y dispara import-python

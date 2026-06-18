@@ -8,6 +8,7 @@ const { correr } = require('./monitoreo-semanal');
 const followUp = require('./follow-up');
 const puentePython = require('./puente-python');
 const avisoAjuste = require('./aviso-ajuste-trimestral');
+const syncInpi = require('./sync-inpi');
 
 const state = { tasks: [] };
 const TZ = process.env.TZ || 'America/Argentina/Buenos_Aires';
@@ -72,7 +73,22 @@ function iniciar() {
     });
   }
 
-  // 4) Puente Python — sólo si PYTHON_DB_PATH está seteado. Default cada hora.
+  // 4) Sync INPI — sólo si INPI_DUMP_URL está seteada. Default jueves 7:00.
+  // Descarga el dump fresco del INPI y lo mergea en marcas_inpi (UPSERT).
+  if ((process.env.INPI_DUMP_URL || '').trim()) {
+    programar('sync-inpi', (process.env.CRON_SYNC_INPI || '0 7 * * 4').trim(), async () => {
+      try {
+        const r = await syncInpi.correr();
+        if (r.ok) console.log(`[cron] sync-inpi: nuevas=${r.stats.nuevas} actualizadas=${r.stats.actualizadas}`);
+        else console.error('[cron] sync-inpi FAIL:', r.error || r.motivo);
+      } catch (err) {
+        console.error('[cron] sync-inpi ERROR:', err.message);
+        audit.log(null, 'cron.sync_inpi.error', { detalle: { error: err.message } });
+      }
+    });
+  }
+
+  // 5) Puente Python — sólo si PYTHON_DB_PATH está seteado. Default cada hora.
   if ((process.env.PYTHON_DB_PATH || '').trim()) {
     programar('puente-python', (process.env.CRON_PUENTE_PYTHON || '0 * * * *').trim(), async () => {
       try {
