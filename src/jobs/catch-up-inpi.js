@@ -21,11 +21,22 @@ const { parseBoletinBuffer } = require('./parse-boletin-inpi');
 const { importarFilas } = require('./import-marcas-inpi');
 
 // Puntos de partida iniciales (override con env vars). Son los números más
-// bajos desde donde empezamos a buscar si la DB está vacía. El usuario los
-// puede ajustar desde el panel admin via PUT /inpi/sync-state.
+// bajos desde donde empezamos a buscar si la DB está vacía. Calibrados para
+// cubrir el universo útil:
+//
+//   - registros (52 boletines/año confirmado por bulk_importer.py): 5400
+//     cubre ~12 años hacia atrás desde el tope actual (~6042). 12 años abarca
+//     prácticamente toda la vigencia de marcas (la renovación es a los 10).
+//
+//   - nuevas (frecuencia más alta, ~2-3 por semana): 10800 cubre ~15 meses
+//     hacia atrás desde el tope actual (~11062), atrapando las solicitudes
+//     en trámite que justamente no aparecían en el dump original.
+//
+// El catch-up no penaliza arrancar bajo: los boletines inexistentes se
+// registran como 'no_existe' y siguen. Sobreestimar es seguro.
 const INICIOS = {
-  registros: parseInt(process.env.INPI_INICIO_REGISTROS || '6020', 10),
-  nuevas:    parseInt(process.env.INPI_INICIO_NUEVAS    || '11050', 10),
+  registros: parseInt(process.env.INPI_INICIO_REGISTROS || '5400', 10),
+  nuevas:    parseInt(process.env.INPI_INICIO_NUEVAS    || '10800', 10),
 };
 
 // Cuántos 'no_existe' consecutivos toleramos antes de cortar (descubrir el
@@ -163,19 +174,21 @@ async function catchUpSerie({ serie, desde, hasta, actorId, maxFallos = MAX_FALL
 
 // Catch-up de TODAS las series configuradas. Pensado para el cron jueves y
 // para el botón "Catch-up automático" del panel.
+//
+// Las series corren en PARALELO entre sí (typical: 'registros' y 'nuevas'
+// usan rangos numéricos distintos del INPI, así que no compiten). Dentro de
+// cada serie las descargas siguen secuenciales para no spammear al INPI.
 async function correr({ actorId = null, series, desde, hasta, maxFallos, onProgreso } = {}) {
   const lista = (series && series.length) ? series : Object.keys(SERIES);
   const t0 = Date.now();
-  const porSerie = [];
-  for (const serie of lista) {
-    const r = await catchUpSerie({
+  const porSerie = await Promise.all(lista.map(serie =>
+    catchUpSerie({
       serie,
       desde: desde && desde[serie],
       hasta: hasta && hasta[serie],
       actorId, maxFallos, onProgreso,
-    });
-    porSerie.push(r);
-  }
+    })
+  ));
   const resumen = {
     ok: true,
     duracion_ms: Date.now() - t0,

@@ -1080,9 +1080,11 @@ async function loadBoletines() {
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 16px;margin-bottom:14px">
         <div style="font-weight:700;color:#fff;font-size:14px;margin-bottom:6px">🤖 Catch-up automático con el INPI</div>
         <p class="muted" style="font-size:12.5px;line-height:1.5;margin-bottom:10px">
-          Descarga todos los boletines nuevos desde el INPI (concedidas en .xls + marcas nuevas en .pdf)
-          y los importa. La primera vez puede tardar (carga histórica); después solo procesa los
-          nuevos cada jueves. Hace merge sin borrar.
+          Descarga directo del INPI: concedidas (.xls, ~12 años hacia atrás) y marcas
+          nuevas (.pdf, ~15 meses). Después, todos los jueves a las 7 AM se incorpora lo
+          nuevo automáticamente. Hace merge sin borrar nada.<br>
+          <strong>La primera corrida puede tardar 30-60 minutos</strong> porque baja varios cientos de
+          boletines. Corre en background — podés cerrar la pestaña y volver después.
         </p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn primary" onclick="inpiCatchUpAuto()">⟳ Catch-up automático</button>
