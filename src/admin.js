@@ -883,6 +883,71 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // ===== Catch-up automático con el INPI =====
+  // Estado de los jobs en memoria (un único job a la vez para no saturar al
+  // INPI). El frontend hace polling cada 2-3 segundos al GET /status.
+  const inpiJob = { activo: false, comenzado_at: null, progreso: [], resumen: null, error: null };
+
+  app.get('/api/admin/inpi/status', guard, (req, res) => {
+    const catchUp = require('./jobs/catch-up-inpi');
+    res.json(ok({
+      job: {
+        activo: inpiJob.activo,
+        comenzado_at: inpiJob.comenzado_at,
+        ultimos_progresos: inpiJob.progreso.slice(-10),
+        resumen: inpiJob.resumen,
+        error: inpiJob.error,
+      },
+      log: catchUp.estado(),
+    }));
+  });
+
+  // Dispara el catch-up en background.
+  // Body opcional: { series:['registros','nuevas'], desde:{registros:6030}, hasta:{registros:6080}, maxFallos:8 }
+  app.post('/api/admin/inpi/catch-up', guard, express.json(), async (req, res) => {
+    if (inpiJob.activo) {
+      return res.status(409).json(fail('Ya hay un catch-up en curso. Esperá a que termine o revisá el estado.'));
+    }
+    const opts = req.body || {};
+    inpiJob.activo = true;
+    inpiJob.comenzado_at = new Date().toISOString();
+    inpiJob.progreso = [];
+    inpiJob.resumen = null;
+    inpiJob.error = null;
+
+    // Respondemos inmediato; el job corre en background.
+    res.json(ok({ iniciado: true, comenzado_at: inpiJob.comenzado_at }));
+
+    setImmediate(async () => {
+      try {
+        const catchUp = require('./jobs/catch-up-inpi');
+        const resumen = await catchUp.correr({
+          actorId: req.user.id,
+          series: opts.series,
+          desde: opts.desde,
+          hasta: opts.hasta,
+          maxFallos: opts.maxFallos,
+          onProgreso: (p) => {
+            const r = p.resultado || {};
+            const linea = r.ok
+              ? `✓ ${p.serie} #${p.numero} (${r.formato}): ${r.stats.nuevas} nuevas, ${r.stats.actualizadas} actualizadas`
+              : r.skipped
+                ? `↷ ${p.serie} #${p.numero} ya estaba ok`
+                : `✗ ${p.serie} #${p.numero}: ${r.motivo || 'desconocido'}${r.status ? ' (HTTP ' + r.status + ')' : ''}`;
+            inpiJob.progreso.push({ ts: new Date().toISOString(), linea });
+            if (inpiJob.progreso.length > 500) inpiJob.progreso.shift();
+          },
+        });
+        inpiJob.resumen = resumen;
+      } catch (err) {
+        console.error('[inpi/catch-up] ERROR:', err);
+        inpiJob.error = err.message;
+      } finally {
+        inpiJob.activo = false;
+      }
+    });
+  });
+
   // ===== Upload one-shot de marcas.db (DB de la app Python heredada) =====
   // Protegido con ADMIN_TOKEN para que nadie pise el archivo. Recibe el .db
   // crudo en el body, lo guarda en /app/data/marcas.db y dispara import-python

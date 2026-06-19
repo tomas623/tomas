@@ -241,6 +241,30 @@ try {
 } catch (e) {
   console.error('[db] No se pudo crear índice único marcas_inpi(acta,clase):', e.message);
 }
+
+// Log de sincronización con el INPI. Una fila por (serie, número) intentado:
+// nos dice si ya lo procesamos, qué encontramos y qué resultado dio. Habilita
+// catch-up histórico sin duplicar trabajo y descubrir el último boletín
+// publicado probando números crecientes hasta tener N fallos seguidos.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS inpi_sync_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    serie TEXT NOT NULL,
+    numero INTEGER NOT NULL,
+    formato TEXT,
+    estado TEXT NOT NULL CHECK(estado IN ('ok','no_existe','error')),
+    marcas_nuevas INTEGER DEFAULT 0,
+    marcas_actualizadas INTEGER DEFAULT 0,
+    error_msg TEXT,
+    bytes INTEGER,
+    duracion_ms INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS uniq_inpi_sync_serie_numero
+    ON inpi_sync_log(serie, numero);
+  CREATE INDEX IF NOT EXISTS idx_inpi_sync_estado
+    ON inpi_sync_log(serie, estado, numero);
+`);
 if (!columnExists('alertas', 'boletin_id')) {
   db.exec(`ALTER TABLE alertas ADD COLUMN boletin_id INTEGER REFERENCES boletines(id)`);
 }

@@ -9,6 +9,7 @@ const followUp = require('./follow-up');
 const puentePython = require('./puente-python');
 const avisoAjuste = require('./aviso-ajuste-trimestral');
 const syncInpi = require('./sync-inpi');
+const catchUpInpi = require('./catch-up-inpi');
 
 const state = { tasks: [] };
 const TZ = process.env.TZ || 'America/Argentina/Buenos_Aires';
@@ -73,10 +74,28 @@ function iniciar() {
     });
   }
 
-  // 4) Sync INPI — sólo si INPI_DUMP_URL está seteada. Default jueves 7:00.
-  // Descarga el dump fresco del INPI y lo mergea en marcas_inpi (UPSERT).
+  // 4a) Catch-up automático del INPI — los jueves a las 7:00 hora local.
+  // Busca boletines nuevos en ambas series desde el último importado y los
+  // procesa. No requiere configuración: las URLs son públicas del INPI.
+  // Se puede desactivar con CRON_INPI_CATCHUP_ENABLED=false.
+  if ((process.env.CRON_INPI_CATCHUP_ENABLED || 'true').toLowerCase() !== 'false') {
+    programar('inpi-catch-up', (process.env.CRON_INPI_CATCHUP || '0 7 * * 4').trim(), async () => {
+      try {
+        const r = await catchUpInpi.correr({});
+        const s = r.series.map(x => `${x.serie}:${x.ok}ok/${x.no_existe}no/${x.error}err`).join(' · ');
+        console.log(`[cron] inpi-catch-up: nuevas=${r.total_nuevas} actualizadas=${r.total_actualizadas} · ${s}`);
+      } catch (err) {
+        console.error('[cron] inpi-catch-up ERROR:', err.message);
+        audit.log(null, 'cron.inpi_catch_up.error', { detalle: { error: err.message } });
+      }
+    });
+  }
+
+  // 4b) Sync INPI legacy (URL externa) — sólo si INPI_DUMP_URL está seteada.
+  // Permite usar una fuente alternativa (un proveedor de datos pago, p.ej.)
+  // sin pisar el catch-up directo del INPI.
   if ((process.env.INPI_DUMP_URL || '').trim()) {
-    programar('sync-inpi', (process.env.CRON_SYNC_INPI || '0 7 * * 4').trim(), async () => {
+    programar('sync-inpi', (process.env.CRON_SYNC_INPI || '30 7 * * 4').trim(), async () => {
       try {
         const r = await syncInpi.correr();
         if (r.ok) console.log(`[cron] sync-inpi: nuevas=${r.stats.nuevas} actualizadas=${r.stats.actualizadas}`);

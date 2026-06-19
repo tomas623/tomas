@@ -1075,17 +1075,34 @@ async function loadBoletines() {
   const universo = `
     <div class="card" style="background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px;margin-bottom:20px">
       <h3 style="font-size:15px;color:#fff;margin-bottom:6px">🗂️ Actualizar universo de marcas (chequeo)</h3>
-      <p class="muted" style="font-size:13px;line-height:1.55;margin-bottom:14px">
-        Subí un boletín del INPI tal cual lo descargás. Acepta:
-        <strong>.xls / .xlsx</strong> (concedidas, limitaciones, oposiciones),
-        <strong>.pdf</strong> (marcas nuevas en trámite) y <strong>.csv</strong>.
-        Hace <strong>merge</strong> por (acta, clase): agrega marcas nuevas y actualiza
-        estados de las existentes, sin borrar nada.
-      </p>
-      <input id="dumpFile" type="file" accept=".csv,.txt,.xls,.xlsx,.pdf" style="font-size:13px;color:var(--text-muted);margin-bottom:10px"><br>
-      <button class="btn primary" onclick="importarDump()">Importar boletín</button>
-      <button class="btn" onclick="syncInpiNow()" title="Descarga desde INPI_DUMP_URL si está configurada">⟳ Sync desde URL</button>
-      <div id="dumpResult" style="margin-top:12px"></div>
+
+      <!-- Sync automático con el INPI -->
+      <div style="background:var(--bg-soft);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-weight:700;color:#fff;font-size:14px;margin-bottom:6px">🤖 Catch-up automático con el INPI</div>
+        <p class="muted" style="font-size:12.5px;line-height:1.5;margin-bottom:10px">
+          Descarga todos los boletines nuevos desde el INPI (concedidas en .xls + marcas nuevas en .pdf)
+          y los importa. La primera vez puede tardar (carga histórica); después solo procesa los
+          nuevos cada jueves. Hace merge sin borrar.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn primary" onclick="inpiCatchUpAuto()">⟳ Catch-up automático</button>
+          <button class="btn" onclick="inpiCatchUpStatus()">📊 Ver estado</button>
+          <span id="inpiJobBadge" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+        <div id="inpiCatchUpResult" style="margin-top:12px"></div>
+      </div>
+
+      <!-- Subida manual de archivo -->
+      <div style="background:var(--bg-soft);border-radius:10px;padding:14px 16px">
+        <div style="font-weight:700;color:#fff;font-size:14px;margin-bottom:6px">📤 Subida manual de un boletín</div>
+        <p class="muted" style="font-size:12.5px;line-height:1.5;margin-bottom:10px">
+          Si tenés un archivo del INPI en tu PC y querés subirlo directo. Acepta:
+          <strong>.xls / .xlsx</strong>, <strong>.pdf</strong> y <strong>.csv</strong>.
+        </p>
+        <input id="dumpFile" type="file" accept=".csv,.txt,.xls,.xlsx,.pdf" style="font-size:13px;color:var(--text-muted);margin-bottom:10px"><br>
+        <button class="btn primary" onclick="importarDump()">Importar archivo</button>
+        <div id="dumpResult" style="margin-top:12px"></div>
+      </div>
     </div>`;
 
   const toolbar = universo + `
@@ -1150,6 +1167,77 @@ async function importarDump() {
     html += `<div class="muted" style="font-size:12px;margin-top:8px">${r.data.errores_total} fila(s) con error. Primeras: ${r.data.errores.map(e => esc(e.denominacion) + ' (' + esc(e.motivo) + ')').join('; ')}</div>`;
   }
   out.innerHTML = html;
+}
+
+// ===== Catch-up automático del INPI =====
+let inpiPolling = null;
+
+async function inpiCatchUpAuto() {
+  const out = $('#inpiCatchUpResult');
+  out.innerHTML = '<div class="muted" style="font-size:13px">Disparando catch-up… (corre en background, podés cerrar esta pestaña)</div>';
+  const r = await api('/api/admin/inpi/catch-up', { method: 'POST', body: JSON.stringify({}) });
+  if (!r.ok) {
+    out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35)">${esc(r.error)}</div>`;
+    return;
+  }
+  iniciarPollingInpi();
+}
+
+function iniciarPollingInpi() {
+  if (inpiPolling) clearInterval(inpiPolling);
+  refrescarInpiStatus();
+  inpiPolling = setInterval(refrescarInpiStatus, 2500);
+}
+
+async function refrescarInpiStatus() {
+  const r = await api('/api/admin/inpi/status');
+  if (!r.ok) return;
+  const job = r.data.job;
+  const out = $('#inpiCatchUpResult');
+  const badge = $('#inpiJobBadge');
+
+  badge.innerHTML = job.activo
+    ? '<span style="color:#fcd34d">● corriendo…</span>'
+    : (job.resumen ? '<span style="color:#6ee7b7">● último: OK</span>' : '');
+
+  // Estado de cada serie (último OK + total cargado)
+  const seriesHtml = (r.data.log.series_log || []).map(s =>
+    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-soft);font-size:12.5px">
+       <span><strong>${esc(s.serie)}</strong> · último OK: <code>${s.ultimo_ok ?? '—'}</code> · último intentado: <code>${s.ultimo_intentado ?? '—'}</code></span>
+       <span class="muted">ok ${s.ok || 0} · 404 ${s.no_existe || 0} · err ${s.errores || 0} · +${s.total_nuevas || 0} marcas</span>
+     </div>`
+  ).join('') || '<div class="muted" style="font-size:12.5px">Sin sync log todavía.</div>';
+
+  // Últimas líneas de progreso
+  const progHtml = job.ultimos_progresos.length
+    ? `<div style="background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:8px;padding:10px;margin-top:10px;font-family:ui-monospace,monospace;font-size:11.5px;max-height:200px;overflow-y:auto">
+         ${job.ultimos_progresos.map(p => esc(p.linea)).join('<br>')}
+       </div>`
+    : '';
+
+  let resumenHtml = '';
+  if (job.resumen) {
+    resumenHtml = `<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);font-size:13px">
+      ✓ Catch-up completo: <strong>${job.resumen.total_boletines_ok}</strong> boletines procesados ·
+      <strong>${job.resumen.total_nuevas}</strong> marcas nuevas ·
+      <strong>${job.resumen.total_actualizadas}</strong> actualizadas
+      (${Math.round(job.resumen.duracion_ms / 1000)}s).
+    </div>`;
+  }
+  if (job.error) {
+    resumenHtml = `<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">⚠ Error: ${esc(job.error)}</div>`;
+  }
+
+  out.innerHTML = seriesHtml + progHtml + resumenHtml;
+
+  if (!job.activo && inpiPolling && (job.resumen || job.error)) {
+    clearInterval(inpiPolling);
+    inpiPolling = null;
+  }
+}
+
+async function inpiCatchUpStatus() {
+  iniciarPollingInpi();
 }
 
 async function syncInpiNow() {
