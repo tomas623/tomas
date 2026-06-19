@@ -825,23 +825,51 @@ function mountAdminRoutes(app) {
     res.json(ok({ audit: rows }));
   });
 
-  // ===== Importar dump fresco de marcas a marcas_inpi (Opción 2) =====
-  // Recibe un CSV (texto plano en el body) y lo mergea con UPSERT por (acta,
-  // clase): agrega marcas nuevas y actualiza estados de las existentes, sin
-  // borrar el resto del universo. Autenticado con la sesión admin (cookie).
-  app.post('/api/admin/marcas-inpi/import', guard, express.text({ type: '*/*', limit: '120mb' }), (req, res) => {
-    const texto = req.body;
-    if (!texto || typeof texto !== 'string' || !texto.trim()) {
-      return res.status(400).json(fail('Mandá el contenido del CSV en el body (text/plain o text/csv).'));
-    }
-    try {
-      const { importarCSVText } = require('./jobs/import-marcas-inpi');
-      const { stats, errores } = importarCSVText(texto, { actorId: req.user.id, fuente: 'admin_upload' });
-      res.json(ok({ stats, errores: errores.slice(0, 20), errores_total: errores.length }));
-    } catch (err) {
-      res.status(400).json(fail(err.message));
-    }
-  });
+  // ===== Importar boletín / dump del INPI a marcas_inpi (Opción 2) =====
+  // Acepta CSV (texto), o boletines del INPI en XLS/XLSX (concedidas,
+  // limitaciones, oposiciones) y PDF (marcas nuevas en trámite). El server
+  // parsea el formato y hace UPSERT por (acta, clase): agrega nuevas y
+  // actualiza estados sin borrar el resto. Autenticado con sesión admin.
+  //
+  // Mandar el archivo como binario crudo en el body con el filename en el
+  // header X-Filename (para que el parser sepa el formato).
+  app.post('/api/admin/marcas-inpi/import',
+    guard,
+    express.raw({ type: '*/*', limit: '200mb' }),
+    async (req, res) => {
+      const buf = req.body;
+      if (!buf || !buf.length) {
+        return res.status(400).json(fail('Body vacío. Subí un archivo CSV, XLS, XLSX o PDF.'));
+      }
+      const filename = (req.headers['x-filename'] || '').toString().toLowerCase();
+      try {
+        const { importarCSVText, importarFilas } = require('./jobs/import-marcas-inpi');
+        let resultado;
+
+        const esPDF = filename.endsWith('.pdf') || buf.slice(0, 4).toString() === '%PDF';
+        const esXLS = filename.endsWith('.xls') || filename.endsWith('.xlsx')
+          || buf.slice(0, 2).toString('hex') === 'd0cf'  // OLE2 (.xls viejo)
+          || buf.slice(0, 2).toString() === 'PK';          // ZIP (.xlsx)
+
+        if (esPDF || esXLS) {
+          const { parseBoletinBuffer } = require('./jobs/parse-boletin-inpi');
+          const { marcas, meta } = await parseBoletinBuffer(buf, filename || (esPDF ? 'x.pdf' : 'x.xls'));
+          if (!marcas.length) {
+            return res.status(400).json(fail('No se detectaron marcas en el archivo. ¿Es un boletín del INPI con tabla de actas?'));
+          }
+          const { stats, errores } = importarFilas(marcas, { actorId: req.user.id, fuente: `admin_${meta.formato}` });
+          resultado = { stats, errores: errores.slice(0, 20), errores_total: errores.length, meta };
+        } else {
+          // CSV / texto.
+          const { stats, errores } = importarCSVText(buf.toString('utf8'), { actorId: req.user.id, fuente: 'admin_csv' });
+          resultado = { stats, errores: errores.slice(0, 20), errores_total: errores.length, meta: { formato: 'csv' } };
+        }
+        res.json(ok(resultado));
+      } catch (err) {
+        console.error('[marcas-inpi/import]', err);
+        res.status(400).json(fail(err.message));
+      }
+    });
 
   // Dispara el cron de sync a demanda (útil para probar la URL configurada).
   app.post('/api/admin/marcas-inpi/sync-now', guard, async (req, res) => {

@@ -1076,13 +1076,14 @@ async function loadBoletines() {
     <div class="card" style="background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px;margin-bottom:20px">
       <h3 style="font-size:15px;color:#fff;margin-bottom:6px">🗂️ Actualizar universo de marcas (chequeo)</h3>
       <p class="muted" style="font-size:13px;line-height:1.55;margin-bottom:14px">
-        Subí un dump CSV del INPI para mantener al día la base que usa el chequeo gratuito.
-        Hace <strong>merge</strong> por (acta, clase): agrega marcas nuevas y actualiza estados
-        de las existentes, sin borrar nada. Columnas: <code>denominacion</code>, <code>clase</code>,
-        <code>acta</code>, <code>titular</code>, <code>estado</code> (las dos primeras obligatorias).
+        Subí un boletín del INPI tal cual lo descargás. Acepta:
+        <strong>.xls / .xlsx</strong> (concedidas, limitaciones, oposiciones),
+        <strong>.pdf</strong> (marcas nuevas en trámite) y <strong>.csv</strong>.
+        Hace <strong>merge</strong> por (acta, clase): agrega marcas nuevas y actualiza
+        estados de las existentes, sin borrar nada.
       </p>
-      <input id="dumpFile" type="file" accept=".csv,text/csv,.txt" style="font-size:13px;color:var(--text-muted);margin-bottom:10px"><br>
-      <button class="btn primary" onclick="importarDump()">Importar dump</button>
+      <input id="dumpFile" type="file" accept=".csv,.txt,.xls,.xlsx,.pdf" style="font-size:13px;color:var(--text-muted);margin-bottom:10px"><br>
+      <button class="btn primary" onclick="importarDump()">Importar boletín</button>
       <button class="btn" onclick="syncInpiNow()" title="Descarga desde INPI_DUMP_URL si está configurada">⟳ Sync desde URL</button>
       <div id="dumpResult" style="margin-top:12px"></div>
     </div>`;
@@ -1119,25 +1120,32 @@ async function loadBoletines() {
 async function importarDump() {
   const file = $('#dumpFile').files?.[0];
   const out = $('#dumpResult');
-  if (!file) { out.innerHTML = '<div class="muted" style="font-size:13px">Elegí un archivo CSV primero.</div>'; return; }
-  if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
-    out.innerHTML = '<div style="color:#fca5a5;font-size:13px">Convertí a CSV primero: Excel → Guardar como → CSV UTF-8.</div>';
+  if (!file) { out.innerHTML = '<div class="muted" style="font-size:13px">Elegí un archivo primero (.xls, .xlsx, .pdf o .csv).</div>'; return; }
+  out.innerHTML = '<div class="muted" style="font-size:13px">Subiendo e importando… (los boletines grandes pueden tardar 1-2 min, no cierres la pestaña)</div>';
+  // Mandamos el archivo como binario crudo; el server detecta el formato por
+  // el nombre (header X-Filename) y los magic bytes.
+  const buf = await file.arrayBuffer();
+  let res;
+  try {
+    res = await fetch('/api/admin/marcas-inpi/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream', 'X-Filename': file.name },
+      body: buf,
+    });
+  } catch (e) {
+    out.innerHTML = `<div style="color:#fca5a5;font-size:13px">Error de red al subir. ${esc(e.message)}</div>`;
     return;
   }
-  out.innerHTML = '<div class="muted" style="font-size:13px">Subiendo e importando… (puede tardar en archivos grandes)</div>';
-  const texto = await file.text();
-  // Mandamos como text/csv crudo (el endpoint usa express.text).
-  const res = await fetch('/api/admin/marcas-inpi/import', {
-    method: 'POST', headers: { 'Content-Type': 'text/csv' }, body: texto,
-  });
   const r = await res.json();
   if (!r.ok) {
     out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35)">${esc(r.error)}</div>`;
     return;
   }
   const s = r.data.stats;
+  const fmt = r.data.meta?.formato ? ` · formato ${r.data.meta.formato}` : '';
+  const hojas = r.data.meta?.hojas?.length ? ` · hojas: ${r.data.meta.hojas.join(', ')}` : '';
   let html = `<div style="padding:12px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)">
-    ✓ Importado: <strong>${s.nuevas}</strong> nuevas · <strong>${s.actualizadas}</strong> actualizadas · ${s.ignoradas} ignoradas (de ${s.total}).</div>`;
+    ✓ Importado${fmt}: <strong>${s.nuevas}</strong> nuevas · <strong>${s.actualizadas}</strong> actualizadas · ${s.ignoradas} ignoradas (de ${s.total})${hojas}.</div>`;
   if (r.data.errores_total > 0) {
     html += `<div class="muted" style="font-size:12px;margin-top:8px">${r.data.errores_total} fila(s) con error. Primeras: ${r.data.errores.map(e => esc(e.denominacion) + ' (' + esc(e.motivo) + ')').join('; ')}</div>`;
   }

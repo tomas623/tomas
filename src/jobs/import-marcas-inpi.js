@@ -67,8 +67,25 @@ function importarCSVText(text, { actorId = null, fuente = 'manual' } = {}) {
     throw new Error('Faltan columnas obligatorias. El CSV necesita al menos "denominacion" y "clase".');
   }
 
-  // ¿Existe el índice único? Si sí, usamos UPSERT; si no (caso degradado),
-  // insert-or-ignore para no romper.
+  // Mapeamos las filas del CSV a objetos normalizados y delegamos en importarFilas.
+  const filas = rows.map(r => ({
+    denominacion: (r[iDen] || '').trim(),
+    clase: r[iClase],
+    acta: iActa >= 0 ? (r[iActa] || '').trim() || null : null,
+    titular: iTit >= 0 ? (r[iTit] || '').trim() || null : null,
+    estado: iEst >= 0 ? (r[iEst] || '').trim() || null : 'Solicitada',
+  }));
+  return importarFilas(filas, { actorId, fuente });
+}
+
+// Núcleo del UPSERT. Recibe filas como objetos { denominacion, clase, acta,
+// titular, estado } (ya sea del CSV, del XLS o del PDF). Hace UPSERT por
+// (acta, clase) y devuelve { stats, errores }.
+function importarFilas(filas, { actorId = null, fuente = 'manual' } = {}) {
+  if (!Array.isArray(filas) || !filas.length) {
+    return { stats: { total: 0, nuevas: 0, actualizadas: 0, ignoradas: 0 }, errores: [] };
+  }
+
   const tieneUnique = db.prepare(
     `SELECT 1 FROM sqlite_master WHERE type='index' AND name='uniq_marcas_inpi_acta_clase'`
   ).get();
@@ -90,33 +107,21 @@ function importarCSVText(text, { actorId = null, fuente = 'manual' } = {}) {
 
   const stats = { total: 0, nuevas: 0, actualizadas: 0, ignoradas: 0 };
   const errores = [];
-
-  // Para distinguir nuevas vs actualizadas contamos changes/lastInsertRowid.
-  // SQLite no devuelve "fue insert o update" directamente; comparamos el
-  // total de filas antes/después por acta.
   const existeStmt = db.prepare('SELECT 1 FROM marcas_inpi WHERE acta = ? AND clase = ?');
 
-  const tx = db.transaction((filas) => {
-    for (const r of filas) {
-      const den = (r[iDen] || '').trim();
-      const claseRaw = (r[iClase] || '').trim();
-      const clase = parseInt(claseRaw, 10);
+  const tx = db.transaction((rows) => {
+    for (const r of rows) {
+      const den = String(r.denominacion || '').trim();
+      const clase = parseInt(String(r.clase ?? '').replace(/\.0$/, ''), 10);
       if (!den || !Number.isInteger(clase) || clase < 1 || clase > 45) {
         stats.ignoradas++;
         if (errores.length < 50) errores.push({ denominacion: den || '(vacío)', motivo: 'denominación o clase inválida' });
         continue;
       }
-      const acta = iActa >= 0 ? (r[iActa] || '').trim() || null : null;
-      const titular = iTit >= 0 ? (r[iTit] || '').trim() || null : null;
-      const estado = iEst >= 0 ? (r[iEst] || '').trim() || null : 'Solicitada';
-      const payload = {
-        denominacion: den,
-        denominacion_norm: normalizar(den),
-        clase,
-        acta,
-        titular,
-        estado,
-      };
+      const acta = r.acta ? String(r.acta).trim() || null : null;
+      const titular = r.titular ? String(r.titular).trim() || null : null;
+      const estado = r.estado ? String(r.estado).trim() : 'Solicitada';
+      const payload = { denominacion: den, denominacion_norm: normalizar(den), clase, acta, titular, estado };
       stats.total++;
       try {
         if (acta && tieneUnique) {
@@ -133,13 +138,10 @@ function importarCSVText(text, { actorId = null, fuente = 'manual' } = {}) {
       }
     }
   });
-  tx(rows);
+  tx(filas);
 
-  audit.log(actorId, 'marcas_inpi.import', {
-    detalle: { fuente, ...stats, errores: errores.length },
-  });
-
+  audit.log(actorId, 'marcas_inpi.import', { detalle: { fuente, ...stats, errores: errores.length } });
   return { stats, errores };
 }
 
-module.exports = { importarCSVText, parseCSV };
+module.exports = { importarCSVText, importarFilas, parseCSV };
