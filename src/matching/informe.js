@@ -346,6 +346,24 @@ REGLAS DURAS:
   globalmente o en Argentina. En la duda, marca_notoria.es_notoria = false.
 - Usá el marco doctrinario que sigue como referencia obligatoria al razonar.
 
+MARCAS EN TRÁMITE (PRIORIDAD / DERECHO DE PRELACIÓN):
+- Cada candidata trae un "Estado". Puede ser "Registrada"/"Concedida"/"Renovada"
+  (marca vigente) o "Solicitud publicada"/"Solicitada"/"En trámite" (todavía no
+  concedida, pero EN PROCESO).
+- Una solicitud anterior en trámite NO es un obstáculo menor: por el principio de
+  prelación (quien solicita primero tiene mejor derecho, Art. 8 y conc. Ley 22.362),
+  una solicitud previa de marca idéntica o confundible en la misma clase puede
+  bloquear el registro del cliente tanto como una marca ya concedida — incluso
+  habilita a ese solicitante anterior a oponerse cuando se publique la del cliente.
+- Por lo tanto, una candidata "En trámite" con alta similitud en la misma clase
+  debe tratarse como conflicto real (choca=true) y elevar el nivel_riesgo, igual
+  que una registrada. La diferencia: en el comentario aclará que es una SOLICITUD
+  EN TRÁMITE (todavía no resuelta), lo que abre dos caminos —esperar a ver si esa
+  solicitud prospera o cae, o avanzar asumiendo el riesgo de oposición—. Esa
+  incertidumbre es justamente información valiosa para el cliente.
+- En el campo "estado" de cada comparativa, reflejá el estado real ("En trámite"
+  cuando corresponda), no lo conviertas en "Registrada".
+
 ${DOCTRINA_INPI}
 
 ---
