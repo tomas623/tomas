@@ -223,4 +223,94 @@ function estado() {
   };
 }
 
-module.exports = { correr, catchUpSerie, procesarUno, estado, INICIOS, SERIES };
+// Evalúa el resultado de una corrida del cron y manda mail al equipo legal si
+// hay algo que mirar. Dos disparadores:
+//   1) La corrida terminó con boletines en estado 'error' (timeout, formato
+//      cambiado, etc.) → aviso inmediato.
+//   2) Van N corridas del cron seguidas (default 3) sin importar ningún
+//      boletín nuevo → posible cambio en el INPI (URL, numeración, formato).
+//
+// Solo se llama desde el cron (las corridas manuales del panel no notifican).
+async function notificarResultadoCron(resumen, { umbralVacias = 3 } = {}) {
+  const mailEquipo = (process.env.MAIL_EQUIPO_LEGAL || 'contacto@legalpacers.com').trim();
+  const { enviarMailGenerico } = require('../notificaciones');
+
+  const errores = (resumen.series || []).reduce((s, x) => s + (x.error || 0), 0);
+  const okTotal = resumen.total_boletines_ok || 0;
+
+  // Contar corridas del cron (actor NULL) consecutivas con 0 boletines OK,
+  // mirando el audit_log. La corrida actual ya fue logueada por correr().
+  let vaciasSeguidas = 0;
+  try {
+    const ultimas = db.prepare(`
+      SELECT detalle FROM audit_log
+      WHERE accion = 'inpi.catch_up' AND actor_id IS NULL
+      ORDER BY id DESC LIMIT ?
+    `).all(umbralVacias);
+    for (const row of ultimas) {
+      let d = {};
+      try { d = JSON.parse(row.detalle || '{}'); } catch {}
+      if ((d.total_boletines_ok || 0) === 0) vaciasSeguidas++;
+      else break;
+    }
+  } catch {}
+
+  const motivos = [];
+  if (errores > 0) motivos.push(`${errores} boletín(es) con error de descarga/parseo`);
+  if (vaciasSeguidas >= umbralVacias) {
+    motivos.push(`${vaciasSeguidas} jueves seguidos sin boletines nuevos (posible cambio en el INPI)`);
+  }
+  if (!motivos.length) return { notificado: false };
+
+  const filas = (resumen.series || []).map(s => `
+    <tr>
+      <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb"><strong>${s.serie}</strong></td>
+      <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${s.ok || 0}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${s.no_existe || 0}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center;color:${s.error ? '#dc2626' : '#64748b'}">${s.error || 0}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${s.ultimo_numero_ok || '—'}</td>
+    </tr>`).join('');
+
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;color:#0f1f3d">
+      <h2 style="color:#d97706">⚠ Revisar la sincronización del INPI</h2>
+      <p>La actualización automática de boletines del jueves necesita una mirada:</p>
+      <ul>${motivos.map(m => `<li>${m}</li>`).join('')}</ul>
+      <h3 style="font-size:14px;margin-top:18px">Detalle de esta corrida</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#f8fafc;text-align:left">
+          <th style="padding:8px 10px">Serie</th><th style="padding:8px 10px">OK</th>
+          <th style="padding:8px 10px">404</th><th style="padding:8px 10px">Errores</th>
+          <th style="padding:8px 10px">Último OK</th>
+        </tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <p style="margin-top:16px;font-size:13px">
+        Importadas en total: ${resumen.total_nuevas || 0} nuevas, ${resumen.total_actualizadas || 0} actualizadas.
+      </p>
+      <p style="font-size:13px;color:#64748b;margin-top:16px">
+        Qué hacer: entrá al panel admin → Boletines → "⟳ Catch-up automático" para
+        reintentar. Si el problema persiste varias semanas, probablemente el INPI
+        cambió la URL o el formato de los boletines y hay que ajustar el parser.
+      </p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
+      <p style="font-size:12px;color:#64748b">
+        Aviso automático del cron <code>inpi-catch-up</code> · LegalPacers
+      </p>
+    </div>`;
+
+  try {
+    await enviarMailGenerico({
+      to: mailEquipo,
+      subject: '⚠ Sincronización del INPI: requiere atención',
+      html, tag: 'sync_inpi_alerta',
+    });
+    audit.log(null, 'inpi.sync_alerta', { detalle: { motivos, errores, vaciasSeguidas } });
+    return { notificado: true, motivos };
+  } catch (err) {
+    console.error('[catch-up-inpi] no se pudo enviar alerta:', err.message);
+    return { notificado: false, error: err.message };
+  }
+}
+
+module.exports = { correr, catchUpSerie, procesarUno, estado, notificarResultadoCron, INICIOS, SERIES };

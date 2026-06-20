@@ -84,9 +84,27 @@ function iniciar() {
         const r = await catchUpInpi.correr({});
         const s = r.series.map(x => `${x.serie}:${x.ok}ok/${x.no_existe}no/${x.error}err`).join(' · ');
         console.log(`[cron] inpi-catch-up: nuevas=${r.total_nuevas} actualizadas=${r.total_actualizadas} · ${s}`);
+        // Avisa al equipo legal si hubo errores o varias semanas sin novedades.
+        const aviso = await catchUpInpi.notificarResultadoCron(r);
+        if (aviso.notificado) console.log(`[cron] inpi-catch-up: alerta enviada (${aviso.motivos.join('; ')})`);
       } catch (err) {
         console.error('[cron] inpi-catch-up ERROR:', err.message);
         audit.log(null, 'cron.inpi_catch_up.error', { detalle: { error: err.message } });
+        // El crash total del cron también es algo que el equipo debe saber.
+        try {
+          const { enviarMailGenerico } = require('../notificaciones');
+          await enviarMailGenerico({
+            to: (process.env.MAIL_EQUIPO_LEGAL || 'contacto@legalpacers.com').trim(),
+            subject: '⚠ El cron de sincronización del INPI falló',
+            html: `<div style="font-family:system-ui,sans-serif;color:#0f1f3d">
+              <h2 style="color:#dc2626">El cron inpi-catch-up falló</h2>
+              <p>La actualización automática del jueves se cortó con un error:</p>
+              <pre style="background:#f8fafc;padding:12px;border-radius:8px;font-size:12px">${String(err.message).slice(0, 500)}</pre>
+              <p style="font-size:13px">Revisá los logs de Railway y reintentá desde el panel admin → Boletines.</p>
+            </div>`,
+            tag: 'sync_inpi_crash',
+          });
+        } catch {}
       }
     });
   }
