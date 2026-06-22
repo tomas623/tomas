@@ -15,6 +15,7 @@ cache/
 node_modules/
 data/legalpacers.db
 data/legalpacers.db-*
+data/backups/
 npm-debug.log*
 
 # Bases SQLite locales (la app Python heredada usa marcas.db, queda fuera del repo)

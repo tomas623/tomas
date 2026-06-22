@@ -11,15 +11,35 @@ const { mountAuthRoutes } = require('./src/auth');
 const { mountAdminRoutes } = require('./src/admin');
 const { mountClienteRoutes } = require('./src/cliente');
 const scheduler = require('./src/jobs/scheduler');
+const { securityHeaders, limiters } = require('./src/middleware/seguridad');
 
 const app = express();
+// Confiar en el proxy de Railway para leer la IP real (x-forwarded-for) y
+// el protocolo (x-forwarded-proto) — necesario para rate limiting y HSTS.
+app.set('trust proxy', 1);
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const PRECIO_INFORME = parseInt(process.env.PRECIO_INFORME || '19900', 10);
 const PRECIO_REGISTRO = parseInt(process.env.PRECIO_REGISTRO || '120000', 10);
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const ROOT_DIR = __dirname;
 
+app.use(securityHeaders);
 app.use(express.json({ limit: '256kb' }));
+
+// Rate limiting en endpoints sensibles (antes de montar las rutas).
+// Login: anti brute force.
+app.use('/api/auth/login', limiters.login);
+// Recuperación de contraseña: anti-mailbombing.
+app.use('/api/auth/forgot-password', limiters.lead);
+// Chequeo gratis: anti-scraping.
+app.use('/api/marca/check', limiters.check);
+// Captura de leads: anti-spam.
+app.use('/api/marca/lead-free', limiters.lead);
+// Creación de pagos/suscripciones/registros: anti-abuso.
+app.use('/api/marca/consulta/iniciar', limiters.pago);
+app.use('/api/marca/registro/iniciar', limiters.pago);
+app.use('/api/cliente/vigilancia/iniciar', limiters.pago);
+
 mountAuthRoutes(app);
 mountAdminRoutes(app);
 mountClienteRoutes(app);

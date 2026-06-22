@@ -10,6 +10,7 @@ const puentePython = require('./puente-python');
 const avisoAjuste = require('./aviso-ajuste-trimestral');
 const syncInpi = require('./sync-inpi');
 const catchUpInpi = require('./catch-up-inpi');
+const backupDb = require('./backup-db');
 
 const state = { tasks: [] };
 const TZ = process.env.TZ || 'America/Argentina/Buenos_Aires';
@@ -134,6 +135,32 @@ function iniciar() {
       } catch (err) {
         console.error('[cron] puente-python ERROR:', err.message);
         audit.log(null, 'cron.puente.error', { detalle: { error: err.message } });
+      }
+    });
+  }
+
+  // 6) Backup diario de la DB — default 3:00 AM hora local.
+  // Snapshot consistente + gzip + rotación (BACKUP_RETENCION, default 7).
+  if ((process.env.CRON_BACKUP_ENABLED || 'true').toLowerCase() !== 'false') {
+    programar('backup-db', (process.env.CRON_BACKUP || '0 3 * * *').trim(), async () => {
+      try {
+        const r = await backupDb.crear({});
+        if (!r.ok) {
+          console.error('[cron] backup-db FAIL:', r.error);
+          const { enviarMailGenerico } = require('../notificaciones');
+          await enviarMailGenerico({
+            to: (process.env.MAIL_EQUIPO_LEGAL || 'contacto@legalpacers.com').trim(),
+            subject: '⚠ El backup diario de la base falló',
+            html: `<div style="font-family:system-ui,sans-serif;color:#0f1f3d">
+              <h2 style="color:#dc2626">Backup diario falló</h2>
+              <pre style="background:#f8fafc;padding:12px;border-radius:8px;font-size:12px">${String(r.error).slice(0, 500)}</pre>
+            </div>`,
+            tag: 'backup_fallo',
+          }).catch(() => {});
+        }
+      } catch (err) {
+        console.error('[cron] backup-db ERROR:', err.message);
+        audit.log(null, 'cron.backup.error', { detalle: { error: err.message } });
       }
     });
   }

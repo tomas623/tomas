@@ -883,6 +883,40 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // ===== Backups de la base =====
+  app.get('/api/admin/backups', guard, (req, res) => {
+    const backupDb = require('./jobs/backup-db');
+    res.json(ok({ backups: backupDb.listarBackups() }));
+  });
+
+  // Crear un backup a demanda.
+  app.post('/api/admin/backups/crear', guard, async (req, res) => {
+    try {
+      const backupDb = require('./jobs/backup-db');
+      const r = await backupDb.crear({ actorId: req.user.id });
+      if (!r.ok) return res.status(500).json(fail(r.error));
+      res.json(ok(r));
+    } catch (err) {
+      res.status(500).json(fail(err.message));
+    }
+  });
+
+  // Descargar un backup. El nombre se valida contra path traversal.
+  app.get('/api/admin/backups/:archivo', guard, (req, res) => {
+    const archivo = String(req.params.archivo);
+    // Solo permitimos el patrón exacto de nuestros backups (anti traversal).
+    if (!/^legalpacers-[\d-]+\.db\.gz$/.test(archivo)) {
+      return res.status(400).json(fail('Nombre de backup inválido'));
+    }
+    const backupDb = require('./jobs/backup-db');
+    const full = path.join(backupDb.dirBackups(), archivo);
+    if (!fs.existsSync(full)) return res.status(404).json(fail('Backup no encontrado'));
+    audit.log(req.user.id, 'db.backup.descarga', { detalle: { archivo } });
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', `attachment; filename="${archivo}"`);
+    fs.createReadStream(full).pipe(res);
+  });
+
   // ===== Catch-up automático con el INPI =====
   // Estado de los jobs en memoria (un único job a la vez para no saturar al
   // INPI). El frontend hace polling cada 2-3 segundos al GET /status.
