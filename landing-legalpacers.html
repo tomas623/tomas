@@ -494,8 +494,12 @@
     /* MODALES */
     .modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(2,6,17,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;overflow-y:auto}
     .modal-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;max-width:600px;width:100%;position:relative;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);text-align:left}
-    .modal-close{position:absolute;top:20px;right:20px;background:transparent;font-size:28px;color:var(--text-muted);cursor:pointer}
-    .modal-close:hover{color:#fff}
+    /* Close button anclado al viewport para que esté visible aún cuando el
+       modal scrolea (modales largos en mobile). */
+    .modal-close{position:fixed;top:14px;right:18px;background:rgba(2,6,17,0.7);border:1px solid var(--border);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1;color:#fff;cursor:pointer;z-index:110;backdrop-filter:blur(6px)}
+    .modal-close:hover{color:#fff;background:rgba(220,38,38,.85);border-color:rgba(220,38,38,1)}
+    .modal-error{margin-top:10px;color:#fca5a5;font-size:13px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);padding:8px 12px;border-radius:8px}
+    .search-error{margin-top:10px;color:#fca5a5;font-size:13.5px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);padding:9px 12px;border-radius:8px;text-align:left}
     .modal-eyebrow{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--blue);letter-spacing:0.05em;display:block;margin-bottom:4px}
     .modal-title{font-size:24px;font-weight:800;margin-bottom:16px;color:#fff}
     .price-block{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:12px;padding:16px;margin-bottom:20px}
@@ -607,6 +611,7 @@
         <span x-show="!cargando">Chequear marca gratis →</span>
         <span x-show="cargando" x-cloak>Cruzando registros de marca en tiempo real…</span>
       </button>
+      <div x-show="searchError" x-cloak class="search-error" x-text="searchError"></div>
       <p class="micro" style="font-size:12px; color:var(--text-dim); margin-top:10px">Búsqueda directa de coincidencias exactas en bases de datos de propiedad intelectual</p>
 
       <template x-if="resultado">
@@ -981,12 +986,16 @@
       </ul>
     </div>
 
+    <label class="modal-label" for="infMarca">Marca a auditar</label>
+    <input id="infMarca" type="text" x-model="informeMarca" class="modal-input" placeholder="Ej: Acme, Focca, Verbum…">
+
     <label class="modal-label" for="infEmail">Email corporativo de destino (Recibís el PDF acá)</label>
     <input id="infEmail" type="email" x-model="informeEmail" class="modal-input" placeholder="nombre@empresa.com">
     <div x-show="informeEmailError" class="modal-error" x-text="informeEmailError"></div>
 
-    <button class="btn btn-primary btn-full" @click="iniciarConsultaCompleta()">
-      Pagar informe con Mercado Pago · $19.900
+    <button class="btn btn-primary btn-full" @click="iniciarConsultaCompleta()" :disabled="iniciandoPago">
+      <span x-show="!iniciandoPago">Pagar informe con Mercado Pago · $19.900</span>
+      <span x-show="iniciandoPago" x-cloak>Redirigiendo a Mercado Pago…</span>
     </button>
   </div>
 </div>
@@ -1213,8 +1222,8 @@ function landing() {
     NIZA_TITLES, PRECIO_INFORME_BASE, PRECIO_REGISTRO_BASE,
     form: {marca: _params.get('marca') || '', rubro: '', clases: []},
     clasesDetectadas: [], seguimientoEmail: '', emailGuardado: false, guardandoEmail: false, emailError: '',
-    informeEmail: '', informeEmailError: '', promoCode: _params.get('promo') || '', precioInforme: null,
-    resultado: null, cargando: false, iniciandoPago: false, iniciandoRegistro: false, errorMsg: '', rateLimited: false,
+    informeMarca: '', informeEmail: '', informeEmailError: '', promoCode: _params.get('promo') || '', precioInforme: null,
+    resultado: null, cargando: false, iniciandoPago: false, iniciandoRegistro: false, errorMsg: '', searchError: '', rateLimited: false,
     modalInforme: false, modalRegistro: false, regForm: {marca:'', email:'', telefono:''}, regError: '',
     modalVigilancia: false,
     vigForm: { pack: '', packNombre: '', packPrecio: 0, ciclo: 'mensual', nombre: '', email: '', telefono: '', marcas: '', error: '', enviando: false, exito: false },
@@ -1331,7 +1340,14 @@ function landing() {
       } catch(e) {}
     },
     async buscar() {
-      if (!this.form.marca.trim()) return;
+      this.searchError = '';
+      const marca = (this.form.marca || '').trim();
+      if (!marca) {
+        this.searchError = 'Ingresá el nombre de la marca a chequear.';
+        this.resultado = null;
+        document.getElementById('marca')?.focus();
+        return;
+      }
       this.cargando = true; this.resultado = null;
       this.form.clases = this.detectarClases(this.form.rubro);
       trackEvent('lp:search', {marca: this.form.marca, rubro: this.form.rubro, clases: this.form.clases});
@@ -1341,7 +1357,8 @@ function landing() {
           body: JSON.stringify({ marca: this.form.marca, clases: this.form.clases, rubro: this.form.rubro })
         }).then(res => res.json());
         if (r.ok) this.resultado = r.data;
-      } catch(e) { this.errorMsg = 'Error de red.'; }
+        else this.searchError = r.error || 'No pudimos hacer el chequeo. Probá de nuevo.';
+      } catch(e) { this.searchError = 'Error de red. Probá de nuevo.'; }
       finally { this.cargando = false; }
     },
     async guardarSeguimiento() {
@@ -1371,7 +1388,24 @@ function landing() {
         this.guardandoEmail = false;
       }
     },
-    openInforme() { this.modalInforme = true; },
+    // Reset scrollTop del modal-bg para que siempre se abra desde arriba
+    // (si quedó scrolleado de una apertura anterior, el header podía estar
+    // fuera de pantalla). Espera al próximo tick para que x-show pinte.
+    _scrollModalTop() {
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.modal-bg').forEach(el => {
+          if (el.offsetParent !== null) el.scrollTop = 0;
+        });
+      });
+    },
+    openInforme() {
+      // Si el usuario ya tipeó una marca arriba, la prellenamos. Si no,
+      // el modal queda con el input vacío para que la complete acá.
+      if (!this.informeMarca) this.informeMarca = (this.form.marca || '').trim();
+      this.informeEmailError = '';
+      this.modalInforme = true;
+      this._scrollModalTop();
+    },
     vigPacks: {
       vigilancia_3:  { nombre: 'Plan Monitoreo · 3 marcas',  precio: 4900 },
       vigilancia_10: { nombre: 'Plan Monitoreo · 10 marcas', precio: 12900 },
@@ -1395,6 +1429,7 @@ function landing() {
         this.vigForm.packPrecio = fallback.precio;
       }
       this.modalVigilancia = true;
+      this._scrollModalTop();
       trackEvent('lp:vigilancia_open', { pack: pack || 'sin_preset' });
     },
     seleccionarPack(code) {
@@ -1453,35 +1488,65 @@ function landing() {
     },
     abrirCheckoutInformeDirecto() { this.openInforme(); },
     async iniciarConsultaCompleta() {
+      this.informeEmailError = '';
+      const marca = (this.informeMarca || this.form.marca || '').trim();
+      const email = (this.informeEmail || '').trim();
+      if (!marca) {
+        this.informeEmailError = 'Ingresá la marca que querés auditar.';
+        document.getElementById('infMarca')?.focus();
+        return;
+      }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        this.informeEmailError = 'Ingresá un email válido para recibir el informe.';
+        document.getElementById('infEmail')?.focus();
+        return;
+      }
       this.iniciandoPago = true;
       try {
         const r = await fetch('/api/marca/consulta/iniciar', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ marca: this.form.marca, email: this.informeEmail, clases: this.form.clases, rubro: this.form.rubro, utm: getUtm() })
+          body: JSON.stringify({ marca, email, clases: this.form.clases, rubro: this.form.rubro, utm: getUtm() })
         }).then(res => res.json());
         const initPoint = r?.data?.init_point || r?.init_point;
         if (r.ok && initPoint) window.location.href = initPoint;
-      } catch(e) {} finally { this.iniciandoPago = false; }
+        else this.informeEmailError = r.error || 'No pudimos iniciar el pago. Probá de nuevo.';
+      } catch(e) {
+        this.informeEmailError = 'Error de red. Probá de nuevo.';
+      } finally { this.iniciandoPago = false; }
     },
     iniciarRegistroDirecto() {
       this.regForm.marca = this.form.marca;
+      this.regError = '';
       this.modalRegistro = true;
+      this._scrollModalTop();
     },
     async confirmarRegistroDirecto() {
+      this.regError = '';
+      const marca = (this.regForm.marca || '').trim();
+      const email = (this.regForm.email || '').trim();
+      const telefono = (this.regForm.telefono || '').trim();
+      if (!marca) { this.regError = 'Ingresá la marca a registrar.'; return; }
+      if (!telefono) { this.regError = 'Ingresá un WhatsApp de contacto.'; return; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        this.regError = 'Ingresá un email válido.'; return;
+      }
       this.iniciandoRegistro = true;
       try {
         const r = await fetch('/api/marca/registro/iniciar', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
-            marca: this.regForm.marca, email: this.regForm.email,
-            telefono: this.regForm.telefono, clases: this.form.clases,
+            marca, email, telefono,
+            clases: this.form.clases,
             rubro: this.form.rubro,
             utm: getUtm(),
           })
         }).then(res => res.json());
         const initPoint = r?.data?.init_point || r?.init_point;
         if (r.ok && initPoint) window.location.href = initPoint;
-      } catch(e) {} finally { this.iniciandoRegistro = false; }
+        else this.regError = r.error || 'No pudimos iniciar el pago. Probá de nuevo.';
+      } catch(e) {
+        this.regError = 'Error de red. Probá de nuevo.';
+      } finally { this.iniciandoRegistro = false; }
     },
     faqs: [
       {
