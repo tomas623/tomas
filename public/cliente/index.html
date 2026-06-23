@@ -199,8 +199,8 @@ main{max-width:1100px;margin:0 auto;padding:24px}
             <input type="text" id="newActa" placeholder="Ej: 4500123 o 3.987.456">
           </div>
           <div class="field">
-            <label>Fecha de concesión <span class="muted">(opcional)</span></label>
-            <input type="date" id="newFecha">
+            <label>Fecha de concesión <span class="muted">(opcional · dd/mm/aaaa)</span></label>
+            <input type="date" id="newFecha" lang="es-AR" pattern="\d{4}-\d{2}-\d{2}">
           </div>
           <div class="field" style="grid-column:1 / -2">
             <label>Titular <span class="muted">(opcional — dejá vacío si la marca está a tu nombre)</span></label>
@@ -300,7 +300,28 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Timestamp completo (created_at/etc) → dd/mm/aaaa hh:mm en hora local.
 const fmtDate = s => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('es-AR') : '—';
+// Fecha simple (YYYY-MM-DD) → dd/mm/aaaa. Evita el bug de timezone al parsear
+// como UTC midnight que en es-AR caería un día antes.
+const fmtFecha = s => {
+  if (!s) return '—';
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : s;
+};
+// Convierte slugs de pack (vigilancia_unlimited) a algo legible si no llega el
+// nombre humano desde la API. Sirve de fallback defensivo.
+const humanizarPack = s => {
+  const map = {
+    vigilancia_unlimited: 'Vigilancia ilimitada',
+    vigilancia_corporativa: 'Plan corporativo',
+    vigilancia_3: 'Plan Monitoreo · 3 marcas',
+    vigilancia_10: 'Plan Monitoreo · 10 marcas',
+    vigilancia_20: 'Plan Monitoreo · 20 marcas',
+  };
+  const k = String(s || '').toLowerCase();
+  return map[k] || String(s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+};
 async function api(path, opts = {}) {
   const r = await fetch(path, { credentials: 'include', headers: { 'Content-Type': 'application/json' }, ...opts });
   return r.json();
@@ -318,7 +339,10 @@ async function checkAuth() {
     $('#loginScreen').hidden = true;
     $('#topbar').hidden = false;
     $('#portalScreen').hidden = false;
-    $('#userInfo').innerHTML = `<strong>${esc(r.data.email)}</strong>`;
+    // Saludo: si tenemos el nombre, usamos solo el primer nombre. Si no, email.
+    const first = (r.data.nombre || '').trim().split(/\s+/)[0];
+    const saludo = first ? `Hola, <strong>${esc(first)}</strong>` : `<strong>${esc(r.data.email)}</strong>`;
+    $('#userInfo').innerHTML = saludo;
     selectTab('marcas');
     return true;
   }
@@ -389,13 +413,21 @@ function renderPackBanner(pack) {
   const usadas = pack.marcas_activas || 0;
   const pct = cupo ? Math.min(100, Math.round((usadas / cupo) * 100)) : 0;
   const isFull = cupo && usadas >= cupo;
+  // Cuotas "ilimitadas" (cupo 9999) son visualmente confusas: en vez de
+  // "0 de 9999 marcas" mostramos "Cupo ilimitado · 0 cargadas".
+  const ilimitado = cupo >= 9999;
+  const nombre = pack.pack_nombre && pack.pack_nombre !== pack.pack_codigo
+    ? pack.pack_nombre
+    : humanizarPack(pack.pack_codigo);
   $('#packBanner').innerHTML = pack.pack_id ? `
     <div class="pack-left">
-      <div class="pack-name">${esc(pack.pack_nombre || pack.pack_codigo)}</div>
-      <div class="pack-cupo">${usadas} <span class="small">de ${cupo} marcas activas</span></div>
-      <div class="pack-bar ${isFull ? 'full' : ''}"><div style="width:${pct}%"></div></div>
+      <div class="pack-name">${esc(nombre)}</div>
+      <div class="pack-cupo">${ilimitado
+        ? `Cupo ilimitado · <span class="small">${usadas} cargadas</span>`
+        : `${usadas} <span class="small">de ${cupo} marcas activas</span>`}</div>
+      ${ilimitado ? '' : `<div class="pack-bar ${isFull ? 'full' : ''}"><div style="width:${pct}%"></div></div>`}
     </div>
-    ${isFull ? `<button class="btn primary" onclick="selectTab('pack')">Hacer upgrade</button>` : ''}
+    ${isFull && !ilimitado ? `<button class="btn primary" onclick="selectTab('pack')">Hacer upgrade</button>` : ''}
   ` : `
     <div class="pack-left"><div class="pack-name">Sin pack asignado</div>
     <div class="pack-cupo small" style="font-size:14px;margin-top:8px">Contactanos para asignarte uno.</div></div>
@@ -453,8 +485,8 @@ function hitosLegales(m) {
     const vencido = fecha < hoy;
     const cerca = !vencido && diasHasta(fecha) <= 180;
     const cls = vencido ? 'red' : cerca ? 'yellow' : 'blue';
-    const txt = vencido ? `${label}: VENCIÓ ${fmtDate(fecha)}`
-      : `${label}: ${fmtDate(fecha)}`;
+    const txt = vencido ? `${label}: VENCIÓ ${fmtFecha(fecha)}`
+      : `${label}: ${fmtFecha(fecha)}`;
     return `<span class="chip ${cls}" style="margin-right:6px">${txt}</span>`;
   };
   return `<div class="marca-hitos">${chip('DJU', m.dju_due_at)}${chip('Renovación', m.renovacion_due_at)}</div>`;
@@ -681,7 +713,23 @@ async function loadAlertas() {
   const r = await api('/api/cliente/alertas');
   if (!r.ok) return;
   if (!r.data.alertas.length) {
-    $('#alertasList').innerHTML = '<div class="empty">Sin alertas todavía. Te avisamos por mail y dejamos el detalle acá si detectamos una coincidencia.</div>';
+    // Estado vacío proactivo: mostramos el último escaneo y la cadencia para
+    // que el cliente sepa que la vigilancia está corriendo aunque no haya hits.
+    const m = await api('/api/cliente/monitoreo/estado').catch(() => null);
+    const ultimo = m?.ok && m.data.ultimo_run ? fmtDate(m.data.ultimo_run) : null;
+    const proxima = m?.ok ? m.data.proxima_descripcion : 'Cada miércoles a la mañana.';
+    $('#alertasList').innerHTML = `
+      <div class="empty" style="padding:18px 20px;text-align:left">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18)"></span>
+          <strong style="color:#fff">Vigilancia activa · sin coincidencias por ahora</strong>
+        </div>
+        <div style="font-size:13px;line-height:1.6;color:var(--text-muted)">
+          ${ultimo ? `Último escaneo del boletín: <strong style="color:var(--text-soft)">${ultimo}</strong>.<br>` : ''}
+          Próximo escaneo: <strong style="color:var(--text-soft)">${esc(proxima)}</strong><br>
+          Si detectamos una solicitud similar, te avisamos por mail y la vas a ver acá.
+        </div>
+      </div>`;
     return;
   }
   $('#alertasList').innerHTML = r.data.alertas.map(a => alertaRow(a)).join('');
@@ -731,12 +779,14 @@ async function loadPack() {
   const meR = await api('/api/cliente/me');
   if (!meR.ok) return;
   const me = meR.data;
+  const meIlim = me.cupo_marcas >= 9999;
+  const packNombre = me.pack_nombre && me.pack_nombre !== me.pack_codigo ? me.pack_nombre : humanizarPack(me.pack_codigo);
   $('#packDetalle').innerHTML = me.pack_id
     ? `<div style="display:flex;gap:30px;flex-wrap:wrap">
-        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Pack</div><div style="font-size:18px;font-weight:700">${esc(me.pack_nombre)}</div></div>
-        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Cupo</div><div style="font-size:18px;font-weight:700">${me.cupo_marcas} marcas</div></div>
-        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Usadas</div><div style="font-size:18px;font-weight:700">${me.marcas_activas}</div></div>
-        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Disponibles</div><div style="font-size:18px;font-weight:700">${me.cupo_disponible}</div></div>
+        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Pack</div><div style="font-size:18px;font-weight:700">${esc(packNombre)}</div></div>
+        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Cupo</div><div style="font-size:18px;font-weight:700">${meIlim ? 'Ilimitado' : `${me.cupo_marcas} marcas`}</div></div>
+        <div><div class="muted" style="font-size:11px;text-transform:uppercase">Cargadas</div><div style="font-size:18px;font-weight:700">${me.marcas_activas}</div></div>
+        ${meIlim ? '' : `<div><div class="muted" style="font-size:11px;text-transform:uppercase">Disponibles</div><div style="font-size:18px;font-weight:700">${me.cupo_disponible}</div></div>`}
        </div>`
     : '<div class="empty">Sin pack asignado. Contactanos.</div>';
 
@@ -748,10 +798,12 @@ async function loadPack() {
       if (esActual) cta = '<div class="badge-cur">tu pack actual</div>';
       else if (p.tiene_link) cta = `<button class="btn primary" style="width:100%;margin-top:10px;padding:8px;font-size:13px" onclick="suscribirPack('${esc(p.codigo)}')">Suscribirme</button>`;
       else cta = '<div class="muted" style="font-size:11px;margin-top:8px">Disponible próximamente</div>';
+      const nombrePack = p.nombre && p.nombre !== p.codigo ? p.nombre : humanizarPack(p.codigo);
+      const cupoTxt = p.cupo_marcas >= 9999 ? 'Cupo ilimitado' : `${p.cupo_marcas} marcas`;
       return `
         <div class="pack-opt ${esActual ? 'current' : ''}">
-          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">${esc(p.codigo)}</div>
-          <div class="pack-opt-cupo">${p.cupo_marcas} marcas</div>
+          <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">${esc(nombrePack)}</div>
+          <div class="pack-opt-cupo">${cupoTxt}</div>
           <div class="pack-opt-precio">$${(p.precio_mensual || 0).toLocaleString('es-AR')} / mes</div>
           ${cta}
         </div>`;
@@ -761,7 +813,7 @@ async function loadPack() {
     const waMsg = encodeURIComponent('Hola LegalPacers, necesito vigilar más de 20 marcas. ¿Pueden cotizarme un plan corporativo?');
     const waCard = `
       <div class="pack-opt" style="background:linear-gradient(180deg,rgba(34,197,94,.06),var(--bg-soft));border-color:rgba(34,197,94,.3)">
-        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">vigilancia_corporativa</div>
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Plan corporativo</div>
         <div class="pack-opt-cupo">+20 marcas</div>
         <div class="pack-opt-precio">cotización a medida</div>
         <a class="btn primary" style="width:100%;margin-top:10px;padding:8px;font-size:13px;background:#22c55e;display:block;text-align:center;text-decoration:none" href="https://wa.me/5491128774200?text=${waMsg}" target="_blank">Consultar por WhatsApp</a>

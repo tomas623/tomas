@@ -344,6 +344,21 @@ function mountClienteRoutes(app) {
     res.json(ok({ alertas }));
   });
 
+  // ===== Estado del monitoreo (último y próximo escaneo) =====
+  // Le da tranquilidad al cliente: aunque no haya alertas, ve que el sistema
+  // efectivamente corrió y cuándo va a volver a correr. El próximo se calcula
+  // en local: el cron por default es miércoles 9:00 hora Argentina.
+  app.get('/api/cliente/monitoreo/estado', guard, (req, res) => {
+    const ultima = db.prepare(`
+      SELECT created_at, detalle FROM audit_log
+      WHERE accion = 'cron.monitoreo' ORDER BY id DESC LIMIT 1
+    `).get();
+    res.json(ok({
+      ultimo_run: ultima?.created_at || null,
+      proxima_descripcion: 'Cada miércoles a la mañana, hora Argentina.',
+    }));
+  });
+
   // ===== Catálogo de packs (para mostrar upgrade) =====
   app.get('/api/cliente/packs', guard, (req, res) => {
     const rows = db.prepare('SELECT codigo, nombre, cupo_marcas, precio_mensual FROM packs ORDER BY cupo_marcas ASC').all();
