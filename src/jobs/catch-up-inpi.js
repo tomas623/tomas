@@ -16,9 +16,11 @@
 
 const db = require('../db');
 const audit = require('../audit');
+const crypto = require('crypto');
 const { descargar, SERIES } = require('./descargar-boletin-inpi');
 const { parseBoletinBuffer } = require('./parse-boletin-inpi');
 const { importarFilas } = require('./import-marcas-inpi');
+const { normalizar } = require('../matching/etapa1');
 
 // Puntos de partida iniciales (override con env vars). Son los números más
 // bajos desde donde empezamos a buscar si la DB está vacía. Calibrados para
@@ -71,12 +73,58 @@ function logSync(row) {
   });
 }
 
+// Persiste el boletín en `boletines` + `marcas_boletin` (las tablas que lee el
+// monitoreo semanal). Idempotente por hash del buffer descargado. Esto cierra
+// el loop entre el catch-up (poblaba sólo marcas_inpi → chequeo gratis) y el
+// monitoreo (que necesitaba estos boletines para crear alertas). Sin esto,
+// el monitoreo se quedaba "pegado" en el último boletín que se subió a mano.
+function crearBoletinLocal({ serie, numero, formato, buffer, marcas }) {
+  const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+  const archivo = `inpi_${serie}_${numero}.${formato || 'bin'}`;
+  const ya = db.prepare('SELECT id FROM boletines WHERE hash = ?').get(hash);
+  if (ya) return { boletinId: ya.id, dedup: true, total_actas: 0 };
+
+  const ins = db.prepare(`
+    INSERT INTO boletines (numero, fecha_publicacion, archivo, hash, estado, total_actas)
+    VALUES (?, NULL, ?, ?, 'procesando', 0)
+  `).run(String(numero), archivo, hash);
+  const boletinId = ins.lastInsertRowid;
+
+  const insActa = db.prepare(`
+    INSERT INTO marcas_boletin (boletin_id, acta, denominacion, denominacion_norm,
+      clase, titular, tipo, estado, fecha, imagen_path)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+  `);
+  const tx = db.transaction((rows) => {
+    for (const r of rows) {
+      insActa.run(
+        boletinId, r.acta || null, r.denominacion, normalizar(r.denominacion),
+        r.clase, r.titular || null, r.tipo || null, r.estado || null,
+      );
+    }
+  });
+  tx(marcas);
+
+  db.prepare(`UPDATE boletines SET estado = 'procesado', total_actas = ? WHERE id = ?`)
+    .run(marcas.length, boletinId);
+  return { boletinId, dedup: false, total_actas: marcas.length };
+}
+
+function existeBoletinLocal({ serie, numero }) {
+  return !!db.prepare(
+    `SELECT 1 FROM boletines WHERE archivo LIKE ?`
+  ).get(`inpi_${serie}_${numero}.%`);
+}
+
 async function procesarUno({ serie, numero, actorId }) {
-  // Si ya está logueado como 'ok' y tiene marcas importadas, skip silencioso.
+  // Skip silencioso SOLO si ya importamos marcas_inpi Y existe el boletín
+  // local. Si está en inpi_sync_log='ok' pero falta en `boletines`, lo
+  // reprocesamos para back-fillear (la primera versión del catch-up no
+  // populaba la tabla local — esto recupera el universo perdido).
   const prev = db.prepare(
     `SELECT estado FROM inpi_sync_log WHERE serie = ? AND numero = ?`
   ).get(serie, numero);
-  if (prev && prev.estado === 'ok') {
+  if (prev && prev.estado === 'ok' && existeBoletinLocal({ serie, numero })) {
     return { serie, numero, skipped: true, estado: 'ok' };
   }
 
@@ -109,6 +157,17 @@ async function procesarUno({ serie, numero, actorId }) {
     fuente: `inpi_sync_${serie}_${numero}`,
   });
 
+  // Acá está el fix: además de importarFilas (que actualiza marcas_inpi),
+  // creamos el boletín local para que el monitoreo lo vea.
+  let local = { boletinId: null, dedup: false, total_actas: 0 };
+  try {
+    local = crearBoletinLocal({
+      serie, numero, formato: dl.formato, buffer: dl.buffer, marcas: parsed.marcas,
+    });
+  } catch (err) {
+    console.error(`[catch-up-inpi] crearBoletinLocal fallo para ${serie}#${numero}:`, err.message);
+  }
+
   logSync({
     serie, numero, formato: dl.formato, estado: 'ok',
     marcas_nuevas: stats.nuevas,
@@ -116,7 +175,7 @@ async function procesarUno({ serie, numero, actorId }) {
     bytes: dl.bytes, duracion_ms: dl.duracion_ms,
   });
 
-  return { serie, numero, ok: true, formato: dl.formato, stats };
+  return { serie, numero, ok: true, formato: dl.formato, stats, boletin_local: local };
 }
 
 // Catch-up de una serie. Devuelve resumen con cuántos procesó y por qué cortó.

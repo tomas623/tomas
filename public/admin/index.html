@@ -1315,7 +1315,7 @@ async function correrMonitoreo() {
   $('#ingResult').innerHTML = '<div class="muted" style="font-size:13px">Corriendo monitoreo (puede tardar unos segundos)…</div>';
   const r = await api('/api/admin/monitoreo/run', { method: 'POST', body: JSON.stringify({}) });
   if (r.ok) {
-    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">Monitoreo OK · <strong>${r.data.alertas}</strong> alerta(s) creada(s) · ${r.data.candidatos || 0} candidato(s) evaluado(s). ${r.data.mensaje || ''}</div>`;
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">Monitoreo OK · <strong>${r.data.alertas}</strong> alerta(s) creada(s) · ${r.data.candidatos || 0} candidato(s) evaluado(s) sobre <strong>${r.data.boletines_total || (r.data.boletines && r.data.boletines.length) || 0}</strong> boletín(es). ${esc(r.data.mensaje || '')}</div>`;
     loadResumen();
   } else {
     $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">${esc(r.error)}</div>`;

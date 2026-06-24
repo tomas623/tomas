@@ -18,13 +18,29 @@ function nivelGte(a, b) {
   return orden[a] >= orden[b];
 }
 
-async function correr({ boletinId, actorId } = {}) {
-  // Targets: si no se pasa boletín, tomamos el último procesado.
+// Cuántos boletines recientes barre el monitoreo cuando no se pasa uno
+// explícito. La idempotencia (UNIQUE en usuario+marca+boletin) evita
+// que se generen alertas duplicadas si un boletín ya fue procesado.
+const BOLETINES_RECIENTES = parseInt(process.env.MONITOREO_BOLETINES || '20', 10);
+
+async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
+  // Targets:
+  //   - boletinId explícito → ese único boletín.
+  //   - desdeBoletinId → todos los boletines con id > desdeBoletinId.
+  //   - default → los últimos N procesados (cubre el caso de que el catch-up
+  //     traiga varios boletines de golpe y el monitoreo no se quede pegado
+  //     en el más reciente; lo viejo se descarta por idempotencia).
   let boletines;
   if (boletinId) {
     boletines = db.prepare(`SELECT * FROM boletines WHERE id = ? AND estado = 'procesado'`).all(boletinId);
+  } else if (desdeBoletinId) {
+    boletines = db.prepare(`
+      SELECT * FROM boletines WHERE estado = 'procesado' AND id > ? ORDER BY id ASC
+    `).all(desdeBoletinId);
   } else {
-    boletines = db.prepare(`SELECT * FROM boletines WHERE estado = 'procesado' ORDER BY id DESC LIMIT 1`).all();
+    boletines = db.prepare(`
+      SELECT * FROM boletines WHERE estado = 'procesado' ORDER BY id DESC LIMIT ?
+    `).all(BOLETINES_RECIENTES);
   }
   if (!boletines.length) return { ok: true, alertas: 0, mensaje: 'No hay boletines procesados.' };
 
@@ -103,8 +119,12 @@ async function correr({ boletinId, actorId } = {}) {
     detalle: { boletines: boletines.map(b => b.id), alertas_creadas: totalAlertas, candidatos: candidatosTotal },
   });
 
+  const lista = boletines.map(b => ({ id: b.id, numero: b.numero }));
+  const mensaje = boletines.length === 1
+    ? `Boletín #${boletines[0].numero || boletines[0].id} barrido.`
+    : `${boletines.length} boletines barridos (del #${boletines[0].numero || boletines[0].id} al #${boletines[boletines.length-1].numero || boletines[boletines.length-1].id}).`;
   return { ok: true, alertas: totalAlertas, candidatos: candidatosTotal,
-           boletines: boletines.map(b => ({ id: b.id, numero: b.numero })) };
+           boletines: lista, boletines_total: boletines.length, mensaje };
 }
 
 module.exports = { correr };

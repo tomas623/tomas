@@ -963,8 +963,11 @@ function mountAdminRoutes(app) {
           maxFallos: opts.maxFallos,
           onProgreso: (p) => {
             const r = p.resultado || {};
+            const boletinTag = r.boletin_local?.boletinId
+              ? ` · boletín local #${r.boletin_local.boletinId} (${r.boletin_local.total_actas} actas)`
+              : (r.boletin_local?.dedup ? ' · boletín local ya existía' : '');
             const linea = r.ok
-              ? `✓ ${p.serie} #${p.numero} (${r.formato}): ${r.stats.nuevas} nuevas, ${r.stats.actualizadas} actualizadas`
+              ? `✓ ${p.serie} #${p.numero} (${r.formato}): ${r.stats.nuevas} nuevas, ${r.stats.actualizadas} actualizadas${boletinTag}`
               : r.skipped
                 ? `↷ ${p.serie} #${p.numero} ya estaba ok`
                 : `✗ ${p.serie} #${p.numero}: ${r.motivo || 'desconocido'}${r.status ? ' (HTTP ' + r.status + ')' : ''}`;
