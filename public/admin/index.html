@@ -126,7 +126,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
 <body>
 
 <header class="topbar" id="topbar" hidden>
-  <div class="brand">LEGAL<span class="accent">PACERS</span> · panel admin</div>
+  <a href="/" class="brand" style="text-decoration:none;color:inherit" title="Volver al inicio">LEGAL<span class="accent">PACERS</span> · panel admin</a>
   <div class="user-chip">
     <span id="userInfo"></span>
     <button class="btn outline tiny" onclick="logout()">Salir</button>
@@ -138,6 +138,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
 <!-- LOGIN -->
 <section id="loginScreen" class="login-wrap">
   <div class="login-card">
+    <a href="/" style="display:inline-block;color:var(--text-muted);font-size:12.5px;text-decoration:none;margin-bottom:14px">← Volver al inicio</a>
     <h2>Panel · ingreso</h2>
     <form id="loginForm">
       <div class="field">

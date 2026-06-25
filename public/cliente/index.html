@@ -111,7 +111,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 <body>
 
 <header class="topbar" id="topbar" hidden>
-  <div class="brand">LEGAL<span class="accent">PACERS</span> · mi portal</div>
+  <a href="/" class="brand" style="text-decoration:none;color:inherit" title="Volver al inicio">LEGAL<span class="accent">PACERS</span> · mi portal</a>
   <div class="user-chip">
     <span id="userInfo"></span>
     <button class="btn outline tiny" onclick="logout()">Salir</button>
@@ -123,6 +123,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 <!-- LOGIN -->
 <section id="loginScreen" class="login-wrap">
   <div class="login-card">
+    <a href="/" style="display:inline-block;color:var(--text-muted);font-size:12.5px;text-decoration:none;margin-bottom:14px">← Volver al inicio</a>
     <h2>Mi portal · ingreso</h2>
     <form id="loginForm">
       <div class="field" style="margin-bottom:14px">
