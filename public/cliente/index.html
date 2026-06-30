@@ -479,22 +479,64 @@ function renderPackBanner(pack, hostId = 'packBanner') {
   if (altaBtn) altaBtn.disabled = !pack.pack_id || isFull;
 }
 
+let MIS_MARCAS = [];
+let marcasSort = { key: 'created_at', dir: -1 }; // por default, las últimas cargadas primero
+
+// Orden lógico de la situación para ordenar (no alfabético).
+const SIT_RANK = { registrada: 0, en_tramite: 1, denegada: 2, otro: 3 };
+
+// Valor por el que ordenamos cada columna.
+function sortValue(m, key) {
+  switch (key) {
+    case 'denominacion': return (m.denominacion || '').toLowerCase();
+    case 'situacion':    return SIT_RANK[m.situacion_inpi] ?? 9;
+    case 'clases':       return parseInt(String(m.clases).match(/\d+/)?.[0] || '999', 10);
+    case 'tipo':         return (m.tipo || '').toLowerCase();
+    case 'acta':         return parseInt(String(m.numero_acta || '').replace(/\D/g, '') || '0', 10);
+    case 'titular':      return (m.titular || '￿').toLowerCase(); // sin titular (a tu nombre) al final
+    case 'estado':       return m.estado === 'activa' ? 0 : 1;
+    case 'created_at':   return m.created_at || '';
+    default:             return '';
+  }
+}
+
+function ordenarMarcas(key) {
+  if (marcasSort.key === key) marcasSort.dir *= -1;
+  else { marcasSort.key = key; marcasSort.dir = 1; }
+  renderMarcasTable();
+}
+
 async function loadMarcas() {
   const r = await api('/api/cliente/marcas');
   if (!r.ok) return;
   renderPackBanner(r.data.pack, 'packBanner');
-  if (!r.data.marcas.length) {
+  MIS_MARCAS = r.data.marcas || [];
+  if (!MIS_MARCAS.length) {
     $('#marcasList').innerHTML = '<div class="empty">Todavía no cargaste ninguna marca a vigilancia. Tocá <strong>＋ Cargar marcas</strong> para empezar.</div>';
     return;
   }
-  const th = (t, extra = '') => `<th style="text-align:left;padding:9px 12px;border-bottom:1px solid var(--border-soft);color:var(--text-muted);text-transform:uppercase;font-size:10.5px;font-weight:700;letter-spacing:.04em;white-space:nowrap;${extra}">${t}</th>`;
+  renderMarcasTable();
+}
+
+function renderMarcasTable() {
+  const arr = [...MIS_MARCAS].sort((a, b) => {
+    const va = sortValue(a, marcasSort.key), vb = sortValue(b, marcasSort.key);
+    if (va < vb) return -1 * marcasSort.dir;
+    if (va > vb) return  1 * marcasSort.dir;
+    return 0;
+  });
+  const flecha = key => marcasSort.key === key ? (marcasSort.dir > 0 ? ' ▲' : ' ▼') : '';
+  // th ordenable (con key) o fijo (sin key).
+  const thBase = 'text-align:left;padding:9px 12px;border-bottom:1px solid var(--border-soft);color:var(--text-muted);text-transform:uppercase;font-size:10.5px;font-weight:700;letter-spacing:.04em;white-space:nowrap;';
+  const th  = (t, key, extra = '') => `<th onclick="ordenarMarcas('${key}')" style="${thBase}cursor:pointer;user-select:none;${marcasSort.key === key ? 'color:var(--text-soft)' : ''};${extra}" title="Ordenar por ${t}">${t}${flecha(key)}</th>`;
+  const thx = (t, extra = '') => `<th style="${thBase}${extra}">${t}</th>`;
   $('#marcasList').innerHTML = `
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:760px">
         <thead><tr style="background:var(--bg-soft)">
-          ${th('Marca')}${th('Situación')}${th('Clases')}${th('Tipo')}${th('Acta')}${th('Titular')}${th('Título')}${th('Vigilancia')}${th('', 'text-align:right')}
+          ${th('Marca','denominacion')}${th('Situación','situacion')}${th('Clases','clases')}${th('Tipo','tipo')}${th('Acta','acta')}${th('Titular','titular')}${thx('Título')}${th('Vigilancia','estado')}${thx('', 'text-align:right')}
         </tr></thead>
-        <tbody>${r.data.marcas.map(m => marcaRow(m)).join('')}</tbody>
+        <tbody>${arr.map(m => marcaRow(m)).join('')}</tbody>
       </table>
     </div>`;
 }
