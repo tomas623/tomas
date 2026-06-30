@@ -83,6 +83,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 .chip.yellow{background:var(--yellow-soft);color:#fcd34d}
 .chip.blue{background:var(--blue-soft);color:#7eb1ff}
 .chip.muted{background:var(--surface-2);color:var(--text-muted)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
 
 .empty{text-align:center;padding:50px 20px;color:var(--text-dim);font-size:14px;background:var(--bg-soft);border:1px dashed var(--border-soft);border-radius:12px}
 
@@ -486,7 +487,16 @@ async function loadMarcas() {
     $('#marcasList').innerHTML = '<div class="empty">Todavía no cargaste ninguna marca a vigilancia. Tocá <strong>＋ Cargar marcas</strong> para empezar.</div>';
     return;
   }
-  $('#marcasList').innerHTML = r.data.marcas.map(m => marcaRow(m)).join('');
+  const th = (t, extra = '') => `<th style="text-align:left;padding:9px 12px;border-bottom:1px solid var(--border-soft);color:var(--text-muted);text-transform:uppercase;font-size:10.5px;font-weight:700;letter-spacing:.04em;white-space:nowrap;${extra}">${t}</th>`;
+  $('#marcasList').innerHTML = `
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:760px">
+        <thead><tr style="background:var(--bg-soft)">
+          ${th('Marca')}${th('Situación')}${th('Clases')}${th('Tipo')}${th('Acta')}${th('Titular')}${th('Título')}${th('Vigilancia')}${th('', 'text-align:right')}
+        </tr></thead>
+        <tbody>${r.data.marcas.map(m => marcaRow(m)).join('')}</tbody>
+      </table>
+    </div>`;
 }
 
 // Tab "Cargar marcas": solo necesita el estado del pack para habilitar el
@@ -506,34 +516,30 @@ function badgeSituacion(s) {
 }
 
 function marcaRow(m) {
-  const sit = badgeSituacion(m.situacion_inpi);
-  const pausa = m.estado === 'pausada' ? '<span class="chip yellow">vigilancia pausada</span>' : '';
-  const acta = m.numero_acta ? ` · Acta ${esc(m.numero_acta)}` : '';
-  const titularLine = m.titular
-    ? `<div class="marca-meta" style="color:var(--text-soft);margin-top:2px">Titular: <strong>${esc(m.titular)}</strong></div>`
-    : '';
-  // PDF del título: link para ver/descargar si ya lo subió, o botón para subir.
+  const td = (c, extra = '') => `<td style="padding:9px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle;${extra}">${c}</td>`;
+  const sit = badgeSituacion(m.situacion_inpi) || '<span class="muted">—</span>';
+  // PDF del título: link para ver si ya lo subió, o botón para subir.
   const titulo = m.titulo_pdf_path
-    ? `<a class="btn tiny outline" href="/api/cliente/marcas/${m.id}/titulo" target="_blank" rel="noopener">📄 Ver título</a>`
-    : `<button class="btn tiny outline" onclick="subirTitulo(${m.id})">📎 Subir título</button>`;
-  return `
-    <div class="marca-row">
-      <div>
-        <div class="marca-name">${esc(m.denominacion)} ${sit} ${pausa}</div>
-        <div class="marca-meta">Clases ${esc(m.clases)} · ${esc(m.tipo || 'denominativa')}${acta} · alta ${fmtDate(m.created_at)}</div>
-        ${titularLine}
-      </div>
-      <div class="marca-actions">
-        ${titulo}
-        ${m.estado === 'activa'
-          ? `<button class="btn tiny outline" onclick="togglePausa(${m.id}, 'pausada')">Pausar</button>`
-          : m.estado === 'pausada'
-            ? `<button class="btn tiny outline" onclick="togglePausa(${m.id}, 'activa')">Reactivar</button>`
-            : ''}
-        <button class="btn tiny outline" style="color:#fca5a5" onclick="bajaMarca(${m.id}, '${esc(m.denominacion)}')">Quitar</button>
-      </div>
-    </div>
-  `;
+    ? `<a class="btn tiny outline" href="/api/cliente/marcas/${m.id}/titulo" target="_blank" rel="noopener">📄 Ver</a>`
+    : `<button class="btn tiny outline" onclick="subirTitulo(${m.id})">📎 Subir</button>`;
+  // Vigilancia activa/pausada con toggle.
+  const vig = m.estado === 'activa'
+    ? `<span class="chip green">activa</span> <button class="btn tiny outline" onclick="togglePausa(${m.id}, 'pausada')">Pausar</button>`
+    : `<span class="chip yellow">pausada</span> <button class="btn tiny outline" onclick="togglePausa(${m.id}, 'activa')">Reactivar</button>`;
+  const titular = m.titular
+    ? `<span style="color:var(--text-soft)">${esc(m.titular)}</span>`
+    : '<span class="muted" style="font-style:italic">a tu nombre</span>';
+  return `<tr>
+    ${td(`<strong style="color:#fff">${esc(m.denominacion)}</strong>`)}
+    ${td(sit, 'white-space:nowrap')}
+    ${td(esc(m.clases), 'white-space:nowrap')}
+    ${td(esc(m.tipo || 'denominativa'))}
+    ${td(m.numero_acta ? `<span class="mono">${esc(m.numero_acta)}</span>` : '<span class="muted">—</span>', 'white-space:nowrap')}
+    ${td(titular)}
+    ${td(titulo, 'white-space:nowrap')}
+    ${td(vig, 'white-space:nowrap')}
+    ${td(`<button class="btn tiny outline" style="color:#fca5a5" onclick="bajaMarca(${m.id}, '${esc(m.denominacion)}')">Quitar</button>`, 'text-align:right;white-space:nowrap')}
+  </tr>`;
 }
 
 // Subida del PDF del título: dispara un input file oculto, sube el binario
