@@ -299,6 +299,13 @@ for (const [col, ddl] of [
   // entiende que es el propio cliente. Si tiene valor, es un tercero al que
   // el cliente le presta el servicio (apoderado/abogado representando).
   ['titular',         `ALTER TABLE marcas_vigiladas ADD COLUMN titular TEXT`],
+  // situacion_inpi = estado de la marca ante el INPI (informativo, distinto
+  // del `estado` de vigilancia activa/pausada): 'registrada' | 'en_tramite' |
+  // 'denegada' | 'otro'. Se muestra como badge en el portal.
+  ['situacion_inpi',  `ALTER TABLE marcas_vigiladas ADD COLUMN situacion_inpi TEXT`],
+  // titulo_pdf_path = ruta en el volumen al PDF del título de la marca que el
+  // cliente sube. Guardamos solo la ruta, no el binario, para no inflar la DB.
+  ['titulo_pdf_path', `ALTER TABLE marcas_vigiladas ADD COLUMN titulo_pdf_path TEXT`],
 ]) {
   if (!columnExists('marcas_vigiladas', col)) db.exec(ddl);
 }

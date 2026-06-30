@@ -166,14 +166,29 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 <section id="portalScreen" hidden>
   <nav class="tabs">
     <button class="tab active" data-tab="marcas">Mis marcas</button>
+    <button class="tab" data-tab="cargar">＋ Cargar marcas</button>
     <button class="tab" data-tab="alertas">Mis alertas</button>
     <button class="tab" data-tab="pack">Mi pack</button>
   </nav>
 
   <div id="flash"></div>
 
+  <!-- ESPACIO 1: ver las marcas ya cargadas -->
   <div id="panel-marcas" class="panel">
     <div class="pack-card" id="packBanner"></div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+        <h3 style="margin:0">Marcas en vigilancia</h3>
+        <button class="btn primary tiny" onclick="selectTab('cargar')">＋ Cargar marcas</button>
+      </div>
+      <div id="marcasList"></div>
+    </div>
+  </div>
+
+  <!-- ESPACIO 2: cargar marcas nuevas (alta individual + importación masiva) -->
+  <div id="panel-cargar" class="panel" hidden>
+    <div class="pack-card" id="packBannerCargar"></div>
 
     <div class="card">
       <h3>Agregar marca a vigilancia</h3>
@@ -193,6 +208,13 @@ main{max-width:1100px;margin:0 auto;padding:24px}
               <option value="denominativa">Denominativa</option>
               <option value="mixta">Mixta</option>
               <option value="figurativa">Figurativa</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Situación ante el INPI</label>
+            <select id="newSituacion">
+              <option value="registrada">Registrada</option>
+              <option value="en_tramite">En trámite</option>
             </select>
           </div>
           <div class="field">
@@ -287,11 +309,6 @@ main{max-width:1100px;margin:0 auto;padding:24px}
         <button id="bulkCancelBtn" type="button" class="btn outline" style="margin-left:auto">Cerrar</button>
       </div>
       <div id="bulkResult" style="margin-top:14px"></div>
-    </div>
-
-    <div class="card">
-      <h3>Marcas en vigilancia</h3>
-      <div id="marcasList"></div>
     </div>
   </div>
 
@@ -425,23 +442,26 @@ $$('.tab').forEach(t => t.addEventListener('click', () => selectTab(t.dataset.ta
 function selectTab(name) {
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   $$('.panel').forEach(p => p.hidden = p.id !== `panel-${name}`);
-  const fn = { marcas: loadMarcas, alertas: loadAlertas, pack: loadPack }[name];
+  const fn = { marcas: loadMarcas, cargar: loadCargar, alertas: loadAlertas, pack: loadPack }[name];
   if (fn) fn();
 }
 
-function renderPackBanner(pack) {
+// Renderiza el banner de pack en el host indicado (lo usamos en las dos
+// pestañas: "Mis marcas" y "Cargar marcas") y deja habilitado/deshabilitado
+// el botón de alta según el cupo.
+function renderPackBanner(pack, hostId = 'packBanner') {
   MY_PACK = pack;
   const cupo = pack.cupo_marcas || 0;
   const usadas = pack.marcas_activas || 0;
   const pct = cupo ? Math.min(100, Math.round((usadas / cupo) * 100)) : 0;
   const isFull = cupo && usadas >= cupo;
-  // Cuotas "ilimitadas" (cupo 9999) son visualmente confusas: en vez de
-  // "0 de 9999 marcas" mostramos "Cupo ilimitado · 0 cargadas".
+  // Cupo "ilimitado" (9999) se muestra distinto para no confundir.
   const ilimitado = cupo >= 9999;
   const nombre = pack.pack_nombre && pack.pack_nombre !== pack.pack_codigo
     ? pack.pack_nombre
     : humanizarPack(pack.pack_codigo);
-  $('#packBanner').innerHTML = pack.pack_id ? `
+  const host = document.getElementById(hostId);
+  if (host) host.innerHTML = pack.pack_id ? `
     <div class="pack-left">
       <div class="pack-name">${esc(nombre)}</div>
       <div class="pack-cupo">${ilimitado
@@ -454,38 +474,57 @@ function renderPackBanner(pack) {
     <div class="pack-left"><div class="pack-name">Sin pack asignado</div>
     <div class="pack-cupo small" style="font-size:14px;margin-top:8px">Contactanos para asignarte uno.</div></div>
   `;
-  $('#altaBtn').disabled = !pack.pack_id || isFull;
+  const altaBtn = document.getElementById('altaBtn');
+  if (altaBtn) altaBtn.disabled = !pack.pack_id || isFull;
 }
 
 async function loadMarcas() {
   const r = await api('/api/cliente/marcas');
   if (!r.ok) return;
-  renderPackBanner(r.data.pack);
+  renderPackBanner(r.data.pack, 'packBanner');
   if (!r.data.marcas.length) {
-    $('#marcasList').innerHTML = '<div class="empty">Todavía no cargaste ninguna marca a vigilancia. Usá el formulario de arriba.</div>';
+    $('#marcasList').innerHTML = '<div class="empty">Todavía no cargaste ninguna marca a vigilancia. Tocá <strong>＋ Cargar marcas</strong> para empezar.</div>';
     return;
   }
   $('#marcasList').innerHTML = r.data.marcas.map(m => marcaRow(m)).join('');
 }
 
+// Tab "Cargar marcas": solo necesita el estado del pack para habilitar el
+// botón de alta y mostrar el cupo arriba del formulario.
+async function loadCargar() {
+  const r = await api('/api/cliente/marcas');
+  if (r.ok) renderPackBanner(r.data.pack, 'packBannerCargar');
+}
+
+// Badge de situación ante el INPI (informativo, distinto de activa/pausada).
+function badgeSituacion(s) {
+  if (s === 'registrada') return '<span class="chip green">Registrada</span>';
+  if (s === 'en_tramite') return '<span class="chip blue">En trámite</span>';
+  if (s === 'denegada')  return '<span class="chip red">Denegada</span>';
+  if (s === 'otro')      return '<span class="chip muted">Baja/otro</span>';
+  return '';
+}
+
 function marcaRow(m) {
-  const chip = m.estado === 'activa' ? '<span class="chip green">activa</span>'
-    : m.estado === 'pausada' ? '<span class="chip yellow">pausada</span>'
-    : '<span class="chip blue">en trámite</span>';
-  const hitos = hitosLegales(m);
+  const sit = badgeSituacion(m.situacion_inpi);
+  const pausa = m.estado === 'pausada' ? '<span class="chip yellow">vigilancia pausada</span>' : '';
   const acta = m.numero_acta ? ` · Acta ${esc(m.numero_acta)}` : '';
   const titularLine = m.titular
     ? `<div class="marca-meta" style="color:var(--text-soft);margin-top:2px">Titular: <strong>${esc(m.titular)}</strong></div>`
     : '';
+  // PDF del título: link para ver/descargar si ya lo subió, o botón para subir.
+  const titulo = m.titulo_pdf_path
+    ? `<a class="btn tiny outline" href="/api/cliente/marcas/${m.id}/titulo" target="_blank" rel="noopener">📄 Ver título</a>`
+    : `<button class="btn tiny outline" onclick="subirTitulo(${m.id})">📎 Subir título</button>`;
   return `
     <div class="marca-row">
       <div>
-        <div class="marca-name">${esc(m.denominacion)} ${chip}</div>
+        <div class="marca-name">${esc(m.denominacion)} ${sit} ${pausa}</div>
         <div class="marca-meta">Clases ${esc(m.clases)} · ${esc(m.tipo || 'denominativa')}${acta} · alta ${fmtDate(m.created_at)}</div>
         ${titularLine}
-        ${hitos}
       </div>
       <div class="marca-actions">
+        ${titulo}
         ${m.estado === 'activa'
           ? `<button class="btn tiny outline" onclick="togglePausa(${m.id}, 'pausada')">Pausar</button>`
           : m.estado === 'pausada'
@@ -497,26 +536,29 @@ function marcaRow(m) {
   `;
 }
 
-// Render de los próximos hitos legales (DJU y renovación) cuando hay fecha de
-// concesión. Si la fecha está vencida, lo decimos en rojo.
-function hitosLegales(m) {
-  if (!m.dju_due_at && !m.renovacion_due_at) return '';
-  const hoy = new Date().toISOString().slice(0, 10);
-  const chip = (label, fecha) => {
-    if (!fecha) return '';
-    const vencido = fecha < hoy;
-    const cerca = !vencido && diasHasta(fecha) <= 180;
-    const cls = vencido ? 'red' : cerca ? 'yellow' : 'blue';
-    const txt = vencido ? `${label}: VENCIÓ ${fmtFecha(fecha)}`
-      : `${label}: ${fmtFecha(fecha)}`;
-    return `<span class="chip ${cls}" style="margin-right:6px">${txt}</span>`;
+// Subida del PDF del título: dispara un input file oculto, sube el binario
+// crudo al endpoint y refresca la lista. Límite y tipo los valida el server.
+function subirTitulo(id) {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'application/pdf,.pdf';
+  inp.onchange = async () => {
+    const file = inp.files?.[0];
+    if (!file) return;
+    if (file.type && file.type !== 'application/pdf') { flash('El título tiene que ser un PDF.', 'bad'); return; }
+    if (file.size > 10 * 1024 * 1024) { flash('El PDF supera los 10 MB.', 'bad'); return; }
+    flash('Subiendo título…', 'ok');
+    try {
+      const r = await fetch(`/api/cliente/marcas/${id}/titulo`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/pdf' },
+        body: file,
+      }).then(res => res.json());
+      if (r.ok) { flash('Título guardado.', 'ok'); loadMarcas(); }
+      else flash(r.error || 'No se pudo subir.', 'bad');
+    } catch (e) { flash('Error de red subiendo el título.', 'bad'); }
   };
-  return `<div class="marca-hitos">${chip('DJU', m.dju_due_at)}${chip('Renovación', m.renovacion_due_at)}</div>`;
-}
-
-function diasHasta(fechaIso) {
-  const hoy = new Date(); hoy.setUTCHours(0, 0, 0, 0);
-  return Math.round((new Date(fechaIso) - hoy) / 86400000);
+  inp.click();
 }
 
 $('#altaForm').addEventListener('submit', async (e) => {
@@ -524,19 +566,20 @@ $('#altaForm').addEventListener('submit', async (e) => {
   const denom = $('#newDenom').value.trim();
   const clases = $('#newClases').value;
   const tipo = $('#newTipo').value;
+  const situacion_inpi = $('#newSituacion').value;
   const numero_acta = $('#newActa').value.trim() || null;
   const fecha_concesion = $('#newFecha').value || null;
   const titular = $('#newTitular').value.trim() || null;
   if (!denom || !clases) return;
   const r = await api('/api/cliente/marcas', { method: 'POST', body: JSON.stringify({
-    denominacion: denom, clases, tipo, numero_acta, fecha_concesion, titular,
+    denominacion: denom, clases, tipo, situacion_inpi, numero_acta, fecha_concesion, titular,
   })});
   if (r.ok) {
     flash(`"${denom}" agregada a vigilancia.`, 'ok');
     $('#newDenom').value = ''; $('#newClases').value = '';
     $('#newActa').value = ''; $('#newFecha').value = '';
     $('#newTitular').value = '';
-    loadMarcas();
+    loadCargar(); // refresca el cupo del banner de esta pestaña
   } else {
     flash(r.error || 'Error', 'bad');
   }
@@ -596,6 +639,18 @@ function restarAnios(iso, n) {
   return `${parseInt(y, 10) - n}-${m}-${d}`;
 }
 
+// Mapea el ESTADO del INPI ("Concedida", "En trámite", "Denegada"…) a uno de
+// nuestros tokens de situación. Null si no reconocemos nada.
+function derivarSituacion(estadoRaw) {
+  const e = normHeader(estadoRaw);
+  if (!e) return null;
+  if (/conced|registr|renov|vigente|otorg/.test(e)) return 'registrada';
+  if (/tramit|solicit|public|pendiente|presentad/.test(e)) return 'en_tramite';
+  if (/deneg|rechaz/.test(e)) return 'denegada';
+  if (/abandon|caduc|renunc|baja/.test(e)) return 'otro';
+  return null;
+}
+
 function parseBulkText(txt) {
   // Saca el BOM UTF-8 que Excel agrega al guardar.
   const raw = (txt || '').replace(/^﻿/, '');
@@ -632,6 +687,7 @@ function parseBulkText(txt) {
       titular:      find(/titular/, /solicitante/),
       concesion:    find(/concesi/),
       vencimiento:  find(/vencim/),
+      estado:       find(/estado|situacion/),
     };
   }
 
@@ -653,6 +709,7 @@ function parseBulkText(txt) {
         numero_acta: get(mapeo.acta) || null,
         fecha_concesion: fecha,
         titular: get(mapeo.titular) || null,
+        situacion_inpi: derivarSituacion(get(mapeo.estado)),
       };
     }
     // Sin header → orden posicional de nuestra plantilla.
@@ -663,6 +720,7 @@ function parseBulkText(txt) {
       numero_acta: cols[3] || null,
       fecha_concesion: normalizarFecha(cols[4]),
       titular: cols[5] || null,
+      situacion_inpi: derivarSituacion(cols[6]),
     };
   }).filter(r => r.denominacion || r.clases);
 
@@ -695,7 +753,9 @@ function leerArchivoBulk(file) {
 
 function renderBulkPreview(rows) {
   if (!rows.length) return '<div class="empty">No detectamos filas. Verificá el formato.</div>';
-  const headers = ['#', 'Denominación', 'Clases', 'Tipo', 'Acta', 'Concesión', 'Titular'];
+  const headers = ['#', 'Denominación', 'Clases', 'Tipo', 'Situación', 'Acta', 'Titular'];
+  const sitTxt = s => s === 'registrada' ? 'Registrada' : s === 'en_tramite' ? 'En trámite'
+    : s === 'denegada' ? 'Denegada' : s === 'otro' ? 'Baja/otro' : '—';
   return `
     <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">
       Detectadas <strong>${rows.length}</strong> filas. Revisá antes de confirmar.
@@ -710,8 +770,8 @@ function renderBulkPreview(rows) {
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:#fff;font-weight:600">${esc(r.denominacion) || '<span style="color:#fca5a5">vacío</span>'}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)">${esc(r.clases) || '<span style="color:#fca5a5">vacío</span>'}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)">${esc(r.tipo)}</td>
+              <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${sitTxt(r.situacion_inpi)}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${esc(r.numero_acta || '—')}</td>
-              <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${esc(r.fecha_concesion || '—')}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${esc(r.titular || '<span style="color:var(--text-dim);font-style:italic">yo</span>')}</td>
             </tr>`).join('')}
         </tbody>
@@ -797,7 +857,8 @@ $('#bulkConfirmBtn').addEventListener('click', async () => {
     return;
   }
   $('#bulkResult').innerHTML = renderBulkResultado(r.data);
-  loadMarcas(); // refrescar la tabla de abajo
+  loadMarcas();   // refresca la lista de la pestaña "Mis marcas"
+  loadCargar();   // refresca el cupo del banner de esta pestaña
   if (r.data.insertadas === r.data.total) {
     // Todo entró: limpio el textarea para que cierre limpio si quiere.
     $('#bulkText').value = '';

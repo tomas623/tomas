@@ -2,6 +2,8 @@
 // nunca sólo en el front (BUILD_SPEC_MOTOR.md §1).
 
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const db = require('./db');
 const { requireAuth } = require('./auth');
 const { normalizar } = require('./matching/etapa1');
@@ -9,8 +11,22 @@ const audit = require('./audit');
 const crypto = require('crypto');
 const { linkPackSuscripcion } = require('./pagos');
 
+// Directorio donde guardamos los PDF de títulos, dentro del volumen persistente
+// (mismo lugar que la DB). Guardamos el binario en disco y solo la ruta en la
+// base, así los backups (VACUUM de la DB) no se inflan.
+function dirTitulos() {
+  const base = path.dirname(db.name || (process.env.SQLITE_PATH || './data/legalpacers.db'));
+  const dir = path.join(base, 'titulos');
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
 function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400, extra) { return { ok: false, error: msg, code, ...(extra || {}) }; }
+
+// Situaciones válidas de la marca ante el INPI (informativas, distintas del
+// estado de vigilancia activa/pausada).
+const SITUACIONES = new Set(['registrada', 'en_tramite', 'denegada', 'otro']);
 
 // Devuelve la fecha en formato AAAA-MM-DD si es válida; null si no.
 function validarFechaIso(s) {
@@ -53,7 +69,9 @@ function mountClienteRoutes(app) {
   app.get('/api/cliente/marcas', guard, (req, res) => {
     const rows = db.prepare(`
       SELECT id, denominacion, clases, tipo, logo_path, estado, numero_acta,
-             fecha_concesion, titular, created_at,
+             fecha_concesion, titular, situacion_inpi,
+             CASE WHEN titulo_pdf_path IS NOT NULL AND titulo_pdf_path != '' THEN 1 ELSE 0 END AS titulo_pdf_path,
+             created_at,
              CASE WHEN fecha_concesion IS NOT NULL
                   THEN date(fecha_concesion, '+5 years') END AS dju_due_at,
              CASE WHEN fecha_concesion IS NOT NULL
@@ -68,6 +86,7 @@ function mountClienteRoutes(app) {
     const {
       denominacion, clases, tipo = 'denominativa', logo_path = null,
       numero_acta = null, fecha_concesion = null, titular = null,
+      situacion_inpi = null,
     } = req.body || {};
     if (!denominacion || !String(denominacion).trim()) {
       return res.status(400).json(fail('Falta la denominación'));
@@ -83,6 +102,7 @@ function mountClienteRoutes(app) {
     const den = String(denominacion).trim();
     const numAct = numero_acta ? String(numero_acta).trim().slice(0, 50) : null;
     const titularLimpio = titular ? String(titular).trim().slice(0, 200) : null;
+    const situacion = SITUACIONES.has(situacion_inpi) ? situacion_inpi : null;
     const fechaCon = validarFechaIso(fecha_concesion);
     if (fecha_concesion && !fechaCon) {
       return res.status(400).json(fail('Fecha de concesión inválida (formato AAAA-MM-DD)'));
@@ -134,20 +154,21 @@ function mountClienteRoutes(app) {
     const info2 = db.prepare(`
       INSERT INTO marcas_vigiladas
         (usuario_id, denominacion, denominacion_norm, clases, tipo, logo_path,
-         estado, numero_acta, fecha_concesion, titular)
-      VALUES (?, ?, ?, ?, ?, ?, 'activa', ?, ?, ?)
+         estado, numero_acta, fecha_concesion, titular, situacion_inpi)
+      VALUES (?, ?, ?, ?, ?, ?, 'activa', ?, ?, ?, ?)
     `).run(req.user.id, den, denNorm, JSON.stringify(clasesArr), tipo, logo_path,
-           numAct, fechaCon, titularLimpio);
+           numAct, fechaCon, titularLimpio, situacion);
 
     audit.log(req.user.id, 'vigilancia.alta', {
       entidad: 'marcas_vigiladas', entidad_id: info2.lastInsertRowid,
-      detalle: { denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, titular: titularLimpio },
+      detalle: { denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, titular: titularLimpio, situacion_inpi: situacion },
     });
 
     res.json(ok({
       id: info2.lastInsertRowid,
       denominacion: den, clases: clasesArr, tipo, estado: 'activa',
       numero_acta: numAct, fecha_concesion: fechaCon, titular: titularLimpio,
+      situacion_inpi: situacion,
       pack: packInfo(req.user.id),
     }));
   });
@@ -214,13 +235,14 @@ function mountClienteRoutes(app) {
 
       const numAct = m?.numero_acta ? String(m.numero_acta).trim().slice(0, 50) : null;
       const titular = m?.titular ? String(m.titular).trim().slice(0, 200) : null;
+      const situacion = SITUACIONES.has(m?.situacion_inpi) ? m.situacion_inpi : null;
       let fechaCon = null;
       if (m?.fecha_concesion) {
         fechaCon = validarFechaIso(m.fecha_concesion);
         if (!fechaCon) errores.push('Fecha de concesión inválida (AAAA-MM-DD)');
       }
 
-      return { idx, denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, titular, errores };
+      return { idx, denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, titular, situacion_inpi: situacion, errores };
     });
 
     // Deduplicación por ACTA, no por denominación. Cada acta del INPI es un
@@ -277,15 +299,15 @@ function mountClienteRoutes(app) {
     const insStmt = db.prepare(`
       INSERT INTO marcas_vigiladas
         (usuario_id, denominacion, denominacion_norm, clases, tipo, logo_path,
-         estado, numero_acta, fecha_concesion, titular)
-      VALUES (?, ?, ?, ?, ?, NULL, 'activa', ?, ?, ?)
+         estado, numero_acta, fecha_concesion, titular, situacion_inpi)
+      VALUES (?, ?, ?, ?, ?, NULL, 'activa', ?, ?, ?, ?)
     `);
     const insertarTodas = db.transaction((rows) => {
       const out = [];
       for (const f of rows) {
         const norm = normalizar(f.denominacion);
         const r = insStmt.run(req.user.id, f.denominacion, norm, JSON.stringify(f.clases),
-                              f.tipo, f.numero_acta, f.fecha_concesion, f.titular);
+                              f.tipo, f.numero_acta, f.fecha_concesion, f.titular, f.situacion_inpi);
         out.push({ idx: f.idx, id: r.lastInsertRowid });
       }
       return out;
@@ -342,13 +364,71 @@ function mountClienteRoutes(app) {
   // ===== Baja de marca =====
   app.delete('/api/cliente/marcas/:id', guard, (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const marca = db.prepare('SELECT id, denominacion FROM marcas_vigiladas WHERE id = ? AND usuario_id = ?')
+    const marca = db.prepare('SELECT id, denominacion, titulo_pdf_path FROM marcas_vigiladas WHERE id = ? AND usuario_id = ?')
       .get(id, req.user.id);
     if (!marca) return res.status(404).json(fail('Marca no encontrada'));
+    // Borramos el PDF del título asociado, si lo había.
+    if (marca.titulo_pdf_path) {
+      try { fs.unlinkSync(path.join(dirTitulos(), path.basename(marca.titulo_pdf_path))); } catch {}
+    }
     db.prepare('DELETE FROM marcas_vigiladas WHERE id = ?').run(id);
     audit.log(req.user.id, 'vigilancia.baja',
       { entidad: 'marcas_vigiladas', entidad_id: id, detalle: { denominacion: marca.denominacion } });
     res.json(ok({ id, pack: packInfo(req.user.id) }));
+  });
+
+  // ===== Subir el PDF del título de una marca =====
+  // Recibe el binario crudo (Content-Type: application/pdf), valida que sea PDF
+  // por magic bytes y lo guarda en el volumen. Límite 10 MB.
+  app.post('/api/cliente/marcas/:id/titulo', guard,
+    express.raw({ type: ['application/pdf', 'application/octet-stream'], limit: '10mb' }),
+    (req, res) => {
+      const id = parseInt(req.params.id, 10);
+      const marca = db.prepare('SELECT id FROM marcas_vigiladas WHERE id = ? AND usuario_id = ?')
+        .get(id, req.user.id);
+      if (!marca) return res.status(404).json(fail('Marca no encontrada'));
+      const buf = req.body;
+      if (!buf || !buf.length) return res.status(400).json(fail('Adjuntá el PDF del título.'));
+      // Magic bytes de un PDF: "%PDF".
+      if (buf.slice(0, 4).toString('latin1') !== '%PDF') {
+        return res.status(400).json(fail('El archivo no parece un PDF válido.'));
+      }
+      const nombre = `titulo-${req.user.id}-${id}.pdf`;
+      try {
+        fs.writeFileSync(path.join(dirTitulos(), nombre), buf);
+      } catch (err) {
+        return res.status(500).json(fail(`No se pudo guardar: ${err.message}`));
+      }
+      db.prepare('UPDATE marcas_vigiladas SET titulo_pdf_path = ? WHERE id = ?').run(nombre, id);
+      audit.log(req.user.id, 'vigilancia.titulo_subido',
+        { entidad: 'marcas_vigiladas', entidad_id: id, detalle: { bytes: buf.length } });
+      res.json(ok({ id, bytes: buf.length }));
+    });
+
+  // ===== Ver / descargar el PDF del título =====
+  app.get('/api/cliente/marcas/:id/titulo', guard, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const marca = db.prepare('SELECT titulo_pdf_path, denominacion FROM marcas_vigiladas WHERE id = ? AND usuario_id = ?')
+      .get(id, req.user.id);
+    if (!marca || !marca.titulo_pdf_path) return res.status(404).json(fail('No hay título cargado para esta marca.'));
+    const full = path.join(dirTitulos(), path.basename(marca.titulo_pdf_path));
+    if (!fs.existsSync(full)) return res.status(404).json(fail('El archivo del título no está disponible.'));
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="titulo-${String(marca.denominacion).replace(/[^\w.-]+/g, '_')}.pdf"`);
+    fs.createReadStream(full).pipe(res);
+  });
+
+  // ===== Borrar el PDF del título =====
+  app.delete('/api/cliente/marcas/:id/titulo', guard, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const marca = db.prepare('SELECT titulo_pdf_path FROM marcas_vigiladas WHERE id = ? AND usuario_id = ?')
+      .get(id, req.user.id);
+    if (!marca) return res.status(404).json(fail('Marca no encontrada'));
+    if (marca.titulo_pdf_path) {
+      try { fs.unlinkSync(path.join(dirTitulos(), path.basename(marca.titulo_pdf_path))); } catch {}
+      db.prepare('UPDATE marcas_vigiladas SET titulo_pdf_path = NULL WHERE id = ?').run(id);
+    }
+    res.json(ok({ id }));
   });
 
   // ===== Mis alertas =====
