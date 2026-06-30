@@ -101,18 +101,34 @@ function mountClienteRoutes(app) {
       ));
     }
 
-    // Evitamos que el mismo cliente cargue la misma marca dos veces (por
-    // denominación normalizada). Mejor un mensaje claro que dos filas dup.
+    // Evitamos duplicar el MISMO registro. Si viene con acta, el acta es la
+    // clave única (cada acta del INPI es una clase con su propio vencimiento,
+    // así que la misma denominación en otra clase/acta SÍ se puede cargar).
+    // Sin acta, caemos a denominación + clases para no duplicar exactos.
     const denNorm = normalizar(den);
-    const dup = db.prepare(`
-      SELECT id FROM marcas_vigiladas
-      WHERE usuario_id = ? AND denominacion_norm = ? AND estado != 'baja'
-    `).get(req.user.id, denNorm);
-    if (dup) {
-      return res.status(409).json(fail(
-        `Ya tenés a "${den}" en vigilancia. Editala en lugar de crearla otra vez.`,
-        409, { duplicada: true, id: dup.id }
-      ));
+    let dup;
+    if (numAct) {
+      dup = db.prepare(`
+        SELECT id FROM marcas_vigiladas
+        WHERE usuario_id = ? AND numero_acta = ? AND estado != 'baja'
+      `).get(req.user.id, numAct);
+      if (dup) {
+        return res.status(409).json(fail(
+          `Ya tenés el acta ${numAct} en vigilancia.`,
+          409, { duplicada: true, id: dup.id }
+        ));
+      }
+    } else {
+      dup = db.prepare(`
+        SELECT id FROM marcas_vigiladas
+        WHERE usuario_id = ? AND denominacion_norm = ? AND clases = ? AND estado != 'baja'
+      `).get(req.user.id, denNorm, JSON.stringify(clasesArr));
+      if (dup) {
+        return res.status(409).json(fail(
+          `Ya tenés a "${den}" en esas clases. Editala en lugar de crearla otra vez.`,
+          409, { duplicada: true, id: dup.id }
+        ));
+      }
     }
 
     const info2 = db.prepare(`
@@ -207,18 +223,35 @@ function mountClienteRoutes(app) {
       return { idx, denominacion: den, clases: clasesArr, tipo, numero_acta: numAct, fecha_concesion: fechaCon, titular, errores };
     });
 
-    // Detectar duplicados con el cliente (DB) y entre las propias filas del batch.
-    const denomsExistentes = new Set(
-      db.prepare(`SELECT denominacion_norm FROM marcas_vigiladas WHERE usuario_id = ? AND estado != 'baja'`)
-        .all(req.user.id).map(r => r.denominacion_norm)
+    // Deduplicación por ACTA, no por denominación. Cada acta del INPI es un
+    // registro único (una clase, un vencimiento propio): una misma marca en
+    // varias clases tiene varias actas y se renueva por separado, así que
+    // deben entrar como entradas distintas. Solo bloqueamos el acta repetida
+    // (misma carga o ya cargada). Para filas SIN acta (alta manual sin número)
+    // caemos a denominación + clases para no duplicar exactos.
+    const actasExistentes = new Set(
+      db.prepare(`SELECT numero_acta FROM marcas_vigiladas WHERE usuario_id = ? AND estado != 'baja' AND numero_acta IS NOT NULL AND numero_acta != ''`)
+        .all(req.user.id).map(r => String(r.numero_acta))
     );
-    const denomsBatch = new Set();
+    const denomClaseExistentes = new Set(
+      db.prepare(`SELECT denominacion_norm, clases FROM marcas_vigiladas WHERE usuario_id = ? AND estado != 'baja' AND (numero_acta IS NULL OR numero_acta = '')`)
+        .all(req.user.id).map(r => `${r.denominacion_norm}|${r.clases}`)
+    );
+    const actasBatch = new Set();
+    const denomClaseBatch = new Set();
     for (const f of filas) {
       if (f.errores.length) continue;
-      const norm = normalizar(f.denominacion);
-      if (denomsExistentes.has(norm)) f.errores.push(`Ya tenés "${f.denominacion}" en vigilancia`);
-      else if (denomsBatch.has(norm)) f.errores.push(`Duplicada dentro de esta carga`);
-      else denomsBatch.add(norm);
+      if (f.numero_acta) {
+        const acta = String(f.numero_acta);
+        if (actasExistentes.has(acta)) f.errores.push(`Ya tenés el acta ${acta} en vigilancia`);
+        else if (actasBatch.has(acta)) f.errores.push(`Acta ${acta} repetida en esta carga`);
+        else actasBatch.add(acta);
+      } else {
+        const key = `${normalizar(f.denominacion)}|${JSON.stringify(f.clases)}`;
+        if (denomClaseExistentes.has(key)) f.errores.push(`Ya tenés "${f.denominacion}" en esas clases`);
+        else if (denomClaseBatch.has(key)) f.errores.push(`Duplicada (misma marca y clase) en esta carga`);
+        else denomClaseBatch.add(key);
+      }
     }
 
     const validas = filas.filter(f => !f.errores.length);

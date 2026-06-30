@@ -254,8 +254,8 @@ main{max-width:1100px;margin:0 auto;padding:24px}
         <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">2-bis. O pegá la tabla directamente</div>
         <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
           Copiá las filas desde Excel/Sheets o <strong>directo del portal del INPI</strong> ("Mis marcas") y pegalas acá abajo —
-          reconocemos las columnas por su encabezado, en cualquier orden. Si una marca aparece en varias clases,
-          la agrupamos en una sola entrada. Máximo 100 filas por carga.
+          reconocemos las columnas por su encabezado, en cualquier orden. Cada acta entra como un registro propio
+          (una misma marca en varias clases = varias filas, cada una con su vencimiento). Máximo 100 filas por carga.
         </p>
         <textarea id="bulkText" rows="6" placeholder="Pegá acá las filas copiadas de Excel…"
           style="width:100%;padding:12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:ui-monospace,monospace;font-size:13px;resize:vertical;line-height:1.5"></textarea>
@@ -646,33 +646,12 @@ function parseBulkText(txt) {
     };
   }).filter(r => r.denominacion || r.clases);
 
-  // Agrupamos por denominación + titular: una misma marca que aparece en
-  // varias clases (típico del INPI: SITECNO en 35/37/39/42) se vigila como
-  // UNA sola entrada con todas sus clases combinadas, en vez de N entradas
-  // que consumen cupo y se marcan como duplicadas. Denominaciones iguales de
-  // titulares distintos quedan separadas (son marcas distintas).
-  const grupos = new Map();
-  for (const f of filas) {
-    const key = normHeader(f.denominacion) + '|' + normHeader(f.titular || '');
-    if (!grupos.has(key)) {
-      grupos.set(key, { ...f, _clases: new Set() });
-    }
-    const g = grupos.get(key);
-    String(f.clases).split(/[,\s]+/).map(s => s.trim()).filter(Boolean).forEach(c => g._clases.add(c));
-    // Conservamos el primer dato no vacío de tipo/acta/fecha.
-    if (!g.numero_acta && f.numero_acta) g.numero_acta = f.numero_acta;
-    if (!g.fecha_concesion && f.fecha_concesion) g.fecha_concesion = f.fecha_concesion;
-  }
-
-  return Array.from(grupos.values()).map((g, i) => ({
-    idx_visual: i + 1,
-    denominacion: g.denominacion,
-    clases: Array.from(g._clases).sort((a, b) => Number(a) - Number(b)).join(', '),
-    tipo: g.tipo,
-    numero_acta: g.numero_acta,
-    fecha_concesion: g.fecha_concesion,
-    titular: g.titular,
-  }));
+  // NO agrupamos: cada acta es un registro independiente, con su propia clase
+  // y su propio vencimiento. Una misma marca en varias clases (SITECNO en
+  // 35/37/39/42) son cuatro registros que se renuevan por separado — juntarlos
+  // escondería que una clase venció antes que otra. El server deduplica por
+  // acta para no cargar dos veces el mismo registro si re-subís la tabla.
+  return filas.map((f, i) => ({ idx_visual: i + 1, ...f }));
 }
 
 // Cuando el cliente sube un archivo, lo leemos y volcamos al textarea para que
