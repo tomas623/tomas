@@ -11,6 +11,7 @@ const avisoAjuste = require('./aviso-ajuste-trimestral');
 const syncInpi = require('./sync-inpi');
 const catchUpInpi = require('./catch-up-inpi');
 const backupDb = require('./backup-db');
+const avisoHitos = require('./aviso-hitos-legales');
 
 const state = { tasks: [] };
 const TZ = process.env.TZ || 'America/Argentina/Buenos_Aires';
@@ -161,6 +162,22 @@ function iniciar() {
       } catch (err) {
         console.error('[cron] backup-db ERROR:', err.message);
         audit.log(null, 'cron.backup.error', { detalle: { error: err.message } });
+      }
+    });
+  }
+
+  // 7) Aviso de hitos legales — default lunes 8:00 hora local.
+  // Manda un mail al equipo con las DJU/renovaciones que vencen dentro de la
+  // ventana (HITOS_DIAS_AVISO, default 90 días) o ya vencidas. Si no hay nada,
+  // no manda nada. Se desactiva con CRON_HITOS_ENABLED=false.
+  if ((process.env.CRON_HITOS_ENABLED || 'true').toLowerCase() !== 'false') {
+    programar('aviso-hitos', (process.env.CRON_HITOS || '0 8 * * 1').trim(), async () => {
+      try {
+        const r = await avisoHitos.correr({});
+        if (r.enviado) console.log(`[cron] aviso-hitos: ${r.total} hito(s) avisados (${r.vencidos} vencidos)`);
+      } catch (err) {
+        console.error('[cron] aviso-hitos ERROR:', err.message);
+        audit.log(null, 'cron.aviso_hitos.error', { detalle: { error: err.message } });
       }
     });
   }

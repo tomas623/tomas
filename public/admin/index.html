@@ -185,6 +185,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
   </nav>
 
   <div id="panel-resumen" class="panel">
+    <div id="hitosAlertBanner"></div>
     <div class="metrics" id="metricsGrid"></div>
     <div class="muted" style="font-size:13px">Slice 2 entregado: bandeja de revisión, leads, usuarios, marcas vigiladas, auditoría. Próximo: ingesta de boletines + scheduler + alertas reales.</div>
   </div>
@@ -318,6 +319,9 @@ async function loadResumen() {
   else $('#badgeHitos').hidden = true;
   if (d.informes_cola > 0) { $('#badgeInformes').textContent = d.informes_cola; $('#badgeInformes').hidden = false; }
   else $('#badgeInformes').hidden = true;
+
+  // Banner de hitos URGENTES (vencidos o dentro de 90 días) — salta al entrar.
+  renderHitosBanner();
 
   if (sch.ok) {
     const s = sch.data;
@@ -912,6 +916,56 @@ async function loadMarcas() {
 }
 
 // ===== Hitos legales: DJU (año 5) y renovación (año 10) =====
+// Banner de alerta en el Resumen: cuenta las marcas con un hito (DJU o
+// renovación) vencido o dentro de los próximos 90 días, y si hay alguna,
+// muestra un cartel rojo/amarillo clickeable que lleva a la pestaña Hitos.
+async function renderHitosBanner() {
+  const host = $('#hitosAlertBanner');
+  if (!host) return;
+  const r = await api('/api/admin/hitos-legales?dias_max=90');
+  if (!r.ok || !r.data.hitos.length) { host.innerHTML = ''; return; }
+  const hoy = new Date().toISOString().slice(0, 10);
+  let vencidos = 0, urgentes = 0;
+  for (const h of r.data.hitos) {
+    for (const f of [h.dju_due_at, h.renovacion_due_at]) {
+      if (!f) continue;
+      const dias = Math.round((new Date(f) - new Date(hoy)) / 86400000);
+      if (dias < 0) vencidos++;
+      else if (dias <= 90) urgentes++;
+    }
+  }
+  if (!vencidos && !urgentes) { host.innerHTML = ''; return; }
+  const grave = vencidos > 0;
+  const col = grave ? '#dc2626' : '#d97706';
+  const bg = grave ? 'rgba(220,38,38,.10)' : 'rgba(217,119,6,.10)';
+  const partes = [];
+  if (vencidos) partes.push(`<strong>${vencidos}</strong> hito(s) ya vencido(s)`);
+  if (urgentes) partes.push(`<strong>${urgentes}</strong> dentro de 90 días`);
+  host.innerHTML = `
+    <div onclick="selectTab('hitos')" style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:16px;border:1px solid ${col};border-radius:12px;background:${bg}">
+      <span style="font-size:22px;line-height:1">${grave ? '🚨' : '⏰'}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:#fff;font-size:14px">Hitos legales por vencer — DJU / renovación</div>
+        <div style="font-size:13px;color:var(--text-soft);margin-top:2px">${partes.join(' · ')}. Tocá para ver el detalle y avisar a los clientes.</div>
+      </div>
+      <span class="btn primary tiny" style="white-space:nowrap">Ver hitos →</span>
+    </div>`;
+}
+
+async function probarAvisoHitos(btn) {
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Enviando…';
+  const r = await api('/api/admin/hitos-legales/avisar', { method: 'POST', body: '{}' });
+  const msg = $('#hitosAvisoMsg');
+  if (r.ok && r.data.enviado) {
+    msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;font-size:13px">✓ Aviso enviado al equipo · ${r.data.total} hito(s)${r.data.vencidos ? ` (${r.data.vencidos} vencidos)` : ''}.</div>`;
+  } else if (r.ok) {
+    msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--bg-soft);color:var(--text-muted);font-size:13px">No hay hitos dentro de la ventana de 90 días — no se envió nada.</div>`;
+  } else {
+    msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;font-size:13px">${esc(r.error || 'Error')}</div>`;
+  }
+  btn.disabled = false; btn.textContent = orig;
+}
+
 async function loadHitos() {
   const r = await api('/api/admin/hitos-legales?dias_max=365');
   if (!r.ok) return;
@@ -934,10 +988,14 @@ async function loadHitos() {
     return `<span class="chip blue">en ${dias}d</span>`;
   };
   $('#panel-hitos').innerHTML = `
-    <div class="muted" style="margin-bottom:12px;font-size:13px">
-      Marcas con fecha de concesión cargada y un hito (DJU o renovación) en los próximos 365 días.
-      Usá esta vista para mandar avisos a los clientes con anticipación.
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div class="muted" style="font-size:13px;flex:1;min-width:240px">
+        Marcas con fecha de concesión cargada y un hito (DJU o renovación) en los próximos 365 días.
+        El equipo recibe un mail automático cada lunes con lo que vence dentro de 90 días.
+      </div>
+      <button class="btn" onclick="probarAvisoHitos(this)">✉ Enviar aviso ahora</button>
     </div>
+    <div id="hitosAvisoMsg" style="margin-bottom:10px"></div>
     ${tabla(
       ['Cliente','Marca','Acta','Concesión','DJU (año 5)','Renovación (año 10)'],
       r.data.hitos.map(h => [

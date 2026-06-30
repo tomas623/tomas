@@ -462,6 +462,18 @@ function mountAdminRoutes(app) {
     res.json(ok({ hitos: rows, dias_max: dias }));
   });
 
+  // Dispara el mail de aviso de hitos al equipo a demanda (para probarlo).
+  app.post('/api/admin/hitos-legales/avisar', guard, async (req, res) => {
+    try {
+      const avisoHitos = require('./jobs/aviso-hitos-legales');
+      const r = await avisoHitos.correr({});
+      audit.log(req.user.id, 'hitos.aviso_manual', { detalle: r });
+      res.json(ok(r));
+    } catch (err) {
+      res.status(500).json(fail(err.message));
+    }
+  });
+
   // ===== Alertas — bandeja de revisión =====
   app.get('/api/admin/alertas', guard, (req, res) => {
     const estado = req.query.estado;
