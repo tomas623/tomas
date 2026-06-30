@@ -1398,11 +1398,53 @@ async function loadAudit() {
   );
 }
 
+// Tabla genérica con columnas ordenables. Cada <th> es clickeable y ordena las
+// filas por el texto de esa columna (detecta fechas dd/mm/aaaa y números para
+// ordenarlos bien; el resto alfabético es-AR). Una flecha ▲/▼ marca el criterio.
+let _tablaN = 0;
 function tabla(cols, rows) {
-  return `<div style="overflow-x:auto"><table>
-    <thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+  const id = 'tbl_' + (++_tablaN);
+  const ths = cols.map((c, i) =>
+    `<th onclick="sortTabla('${id}',${i})" style="cursor:pointer;user-select:none;white-space:nowrap" title="Ordenar por ${esc(String(c))}">${esc(c)}<span class="sort-ind" data-col="${i}"></span></th>`
+  ).join('');
+  return `<div style="overflow-x:auto"><table id="${id}">
+    <thead><tr>${ths}</tr></thead>
     <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
   </table></div>`;
+}
+
+const _sortDir = {};
+function sortTabla(id, col) {
+  const table = document.getElementById(id);
+  if (!table || !table.tBodies[0]) return;
+  const tbody = table.tBodies[0];
+  const key = id + ':' + col;
+  const dir = _sortDir[key] = (_sortDir[key] === 1 ? -1 : 1);
+  const texto = row => (row.cells[col] ? (row.cells[col].innerText || row.cells[col].textContent || '') : '').trim();
+  // Devuelve un número comparable si la celda es fecha dd/mm/aaaa o un número; si no, null.
+  const num = s => {
+    const f = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (f) return new Date(+f[3], +f[2] - 1, +f[1]).getTime();
+    if (/^[\s$]*-?[\d.]+\s*$/.test(s)) {
+      const n = parseFloat(s.replace(/[^\d.-]/g, ''));
+      if (!isNaN(n)) return n;
+    }
+    return null;
+  };
+  Array.from(tbody.rows)
+    .sort((ra, rb) => {
+      const a = texto(ra), b = texto(rb);
+      const pa = num(a), pb = num(b);
+      const cmp = (pa !== null && pb !== null)
+        ? pa - pb
+        : a.localeCompare(b, 'es', { numeric: true, sensitivity: 'base' });
+      return cmp * dir;
+    })
+    .forEach(r => tbody.appendChild(r));
+  // Indicadores: limpiar todos, marcar el activo.
+  table.querySelectorAll('.sort-ind').forEach(s => { s.textContent = ''; });
+  const ind = table.querySelector(`.sort-ind[data-col="${col}"]`);
+  if (ind) ind.textContent = dir === 1 ? ' ▲' : ' ▼';
 }
 
 // ===== Init =====

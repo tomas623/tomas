@@ -493,6 +493,7 @@ function sortValue(m, key) {
     case 'clases':       return parseInt(String(m.clases).match(/\d+/)?.[0] || '999', 10);
     case 'tipo':         return (m.tipo || '').toLowerCase();
     case 'acta':         return parseInt(String(m.numero_acta || '').replace(/\D/g, '') || '0', 10);
+    case 'concesion':    return m.fecha_concesion || '9999-99-99'; // sin fecha al final
     case 'titular':      return (m.titular || '￿').toLowerCase(); // sin titular (a tu nombre) al final
     case 'estado':       return m.estado === 'activa' ? 0 : 1;
     case 'created_at':   return m.created_at || '';
@@ -534,7 +535,7 @@ function renderMarcasTable() {
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:760px">
         <thead><tr style="background:var(--bg-soft)">
-          ${th('Marca','denominacion')}${th('Situación','situacion')}${th('Clases','clases')}${th('Tipo','tipo')}${th('Acta','acta')}${th('Titular','titular')}${thx('Título')}${th('Vigilancia','estado')}${thx('', 'text-align:right')}
+          ${th('Marca','denominacion')}${th('Situación','situacion')}${th('Clases','clases')}${th('Tipo','tipo')}${th('Acta','acta')}${th('Concesión','concesion')}${th('Titular','titular')}${thx('Título')}${th('Vigilancia','estado')}${thx('', 'text-align:right')}
         </tr></thead>
         <tbody>${arr.map(m => marcaRow(m)).join('')}</tbody>
       </table>
@@ -577,6 +578,7 @@ function marcaRow(m) {
     ${td(esc(m.clases), 'white-space:nowrap')}
     ${td(esc(m.tipo || 'denominativa'))}
     ${td(m.numero_acta ? `<span class="mono">${esc(m.numero_acta)}</span>` : '<span class="muted">—</span>', 'white-space:nowrap')}
+    ${td(m.fecha_concesion ? fmtFecha(m.fecha_concesion) : '<span class="muted">—</span>', 'white-space:nowrap')}
     ${td(titular)}
     ${td(titulo, 'white-space:nowrap')}
     ${td(vig, 'white-space:nowrap')}
