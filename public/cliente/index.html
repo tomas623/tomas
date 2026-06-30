@@ -216,10 +216,15 @@ main{max-width:1100px;margin:0 auto;padding:24px}
           legales — DJU al año 5 (obligatoria por ley) y renovación al año 10. Si todavía no la
           tenés, dejá esos campos vacíos.
         </p>
-        <p class="muted" style="font-size:12px;margin-top:6px">
-          ¿Tenés varias marcas para cargar? <a href="#" id="bulkToggle" style="color:#60a5fa">📥 Descargar plantilla e importar</a>
-        </p>
       </form>
+
+      <div style="margin-top:16px;padding:14px 16px;border:1px dashed rgba(96,165,250,.45);border-radius:10px;background:rgba(96,165,250,.06);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="font-size:13px;color:var(--text-soft);line-height:1.5">
+          <strong style="color:#fff">¿Tenés varias marcas?</strong><br>
+          <span class="muted" style="font-size:12px">Importá toda tu cartera de una vez — pegando la tabla del INPI o subiendo un CSV.</span>
+        </div>
+        <button type="button" id="bulkToggle" class="btn primary" style="white-space:nowrap">📥 Importar varias marcas</button>
+      </div>
     </div>
 
     <!-- Carga masiva desde tabla (Excel/CSV). Oculto por default. -->
@@ -257,13 +262,28 @@ main{max-width:1100px;margin:0 auto;padding:24px}
           reconocemos las columnas por su encabezado, en cualquier orden. Cada acta entra como un registro propio
           (una misma marca en varias clases = varias filas, cada una con su vencimiento). Máximo 100 filas por carga.
         </p>
-        <textarea id="bulkText" rows="6" placeholder="Pegá acá las filas copiadas de Excel…"
+
+        <!-- Columnas reconocidas: visible siempre, no solo si bajan la plantilla. -->
+        <div style="font-size:12px;color:var(--text-soft);background:var(--surface);border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:10px;line-height:1.7">
+          <strong style="color:#fff">Columnas que leemos</strong> (incluí la fila de encabezado al pegar):<br>
+          <span style="color:#fca5a5">Denominación</span> y <span style="color:#fca5a5">Clase</span> son obligatorias ·
+          <span class="muted">Titular, Tipo, Acta y Vencimiento son opcionales</span>.<br>
+          <span class="muted" style="font-size:11.5px">Del <strong>Vencimiento</strong> calculamos solas las fechas de DJU (año 5) y renovación (año 10). Las marcas en trámite no necesitan fecha.</span>
+        </div>
+
+        <textarea id="bulkText" rows="6" placeholder="Pegá acá la tabla con su fila de encabezado (ej: Acta  Denominación  Titular  Clase  Tipo  …)"
           style="width:100%;padding:12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:ui-monospace,monospace;font-size:13px;resize:vertical;line-height:1.5"></textarea>
       </div>
 
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button id="bulkPreviewBtn" type="button" class="btn">🔍 Previsualizar</button>
-        <button id="bulkConfirmBtn" type="button" class="btn primary" disabled>Cargar todo</button>
+      <!-- Flujo de 2 pasos, explícito: primero previsualizar, después confirmar. -->
+      <div style="font-size:12.5px;color:var(--text-soft);margin-bottom:8px">
+        <strong style="color:#fff">Cómo se carga:</strong>
+        <span style="color:#60a5fa">1)</span> Tocá <strong>Previsualizar</strong> para revisar lo que detectamos ·
+        <span style="color:#60a5fa">2)</span> si está bien, tocá <strong>Confirmar carga</strong>. Nada se guarda hasta que confirmás.
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+        <button id="bulkPreviewBtn" type="button" class="btn primary">🔍 1 · Previsualizar</button>
+        <button id="bulkConfirmBtn" type="button" class="btn" disabled title="Primero previsualizá">✓ 2 · Confirmar carga</button>
         <button id="bulkCancelBtn" type="button" class="btn outline" style="margin-left:auto">Cerrar</button>
       </div>
       <div id="bulkResult" style="margin-top:14px"></div>
@@ -723,7 +743,10 @@ $('#bulkToggle').addEventListener('click', (e) => {
   e.preventDefault();
   const c = $('#bulkCard');
   c.hidden = !c.hidden;
-  if (!c.hidden) $('#bulkText').focus();
+  if (!c.hidden) {
+    c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => $('#bulkText').focus(), 300);
+  }
 });
 
 $('#bulkCancelBtn').addEventListener('click', () => {
@@ -731,13 +754,23 @@ $('#bulkCancelBtn').addEventListener('click', () => {
   $('#bulkText').value = '';
   $('#bulkResult').innerHTML = '';
   $('#bulkConfirmBtn').disabled = true;
+  // Devolvemos el estado visual al paso 1.
+  $('#bulkConfirmBtn').classList.remove('primary');
+  $('#bulkPreviewBtn').classList.add('primary');
   bulkParsedRows = [];
 });
 
 $('#bulkPreviewBtn').addEventListener('click', () => {
   bulkParsedRows = parseBulkText($('#bulkText').value);
   $('#bulkResult').innerHTML = renderBulkPreview(bulkParsedRows);
-  $('#bulkConfirmBtn').disabled = bulkParsedRows.length === 0;
+  const hayFilas = bulkParsedRows.length > 0;
+  $('#bulkConfirmBtn').disabled = !hayFilas;
+  // Tras previsualizar, el paso 2 (Confirmar) pasa a ser la acción primaria.
+  if (hayFilas) {
+    $('#bulkConfirmBtn').classList.add('primary');
+    $('#bulkPreviewBtn').classList.remove('primary');
+    $('#bulkConfirmBtn').removeAttribute('title');
+  }
 });
 
 // Subida de archivo: lee el CSV, lo vuelca al textarea y previsualiza
@@ -758,7 +791,7 @@ $('#bulkConfirmBtn').addEventListener('click', async () => {
     method: 'POST',
     body: JSON.stringify({ marcas: bulkParsedRows }),
   });
-  $('#bulkConfirmBtn').textContent = 'Cargar todo';
+  $('#bulkConfirmBtn').textContent = '✓ 2 · Confirmar carga';
   if (!r.ok) {
     $('#bulkResult').innerHTML = `<div style="padding:14px;background:var(--red-soft);border-radius:8px;color:#fca5a5;font-size:14px">⚠ ${esc(r.error || 'Error')}</div>`;
     return;
