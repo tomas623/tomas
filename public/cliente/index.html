@@ -251,10 +251,11 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 
       <!-- Paso 3: o pegar tabla -->
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">2-bis. O pegá la tabla de Excel directamente</div>
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">2-bis. O pegá la tabla directamente</div>
         <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
-          Si preferís, copiá las filas en Excel/Sheets y pegalas acá abajo. Separador: tabulación (Excel) o punto y coma.
-          Máximo 100 filas por carga.
+          Copiá las filas desde Excel/Sheets o <strong>directo del portal del INPI</strong> ("Mis marcas") y pegalas acá abajo —
+          reconocemos las columnas por su encabezado, en cualquier orden. Si una marca aparece en varias clases,
+          la agrupamos en una sola entrada. Máximo 100 filas por carga.
         </p>
         <textarea id="bulkText" rows="6" placeholder="Pegá acá las filas copiadas de Excel…"
           style="width:100%;padding:12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-family:ui-monospace,monospace;font-size:13px;resize:vertical;line-height:1.5"></textarea>
@@ -549,6 +550,32 @@ function parseLineaCsv(linea, sep) {
   return out;
 }
 
+// Normaliza un encabezado para compararlo: minúsculas, sin acentos ni símbolos.
+function normHeader(h) {
+  return String(h || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+// Convierte fechas dd/mm/aaaa, d/m/aaaa o ya AAAA-MM-DD → AAAA-MM-DD.
+// Devuelve null si no parsea (incluye el "-" que usa el INPI para vacío).
+function normalizarFecha(s) {
+  const t = String(s || '').trim();
+  if (!t || t === '-') return null;
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return null;
+}
+
+// Resta N años a una fecha AAAA-MM-DD (para derivar la concesión desde el
+// vencimiento: en Argentina la marca dura 10 años, así que concesión =
+// vencimiento − 10).
+function restarAnios(iso, n) {
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-');
+  return `${parseInt(y, 10) - n}-${m}-${d}`;
+}
+
 function parseBulkText(txt) {
   // Saca el BOM UTF-8 que Excel agrega al guardar.
   const raw = (txt || '').replace(/^﻿/, '');
@@ -562,23 +589,90 @@ function parseBulkText(txt) {
             : muestra.includes(';') ? ';'
             : ',';
 
-  // Header: si la primera línea contiene "denominación" o "marca" + "clase".
-  const primero = lineas[0].toLowerCase();
-  const hayHeader = /(denomi|marca)/.test(primero) && /clase/.test(primero);
+  // Header: si la primera línea contiene "denominación/marca" + "clase".
+  const headerCols = parseLineaCsv(lineas[0], sep).map(normHeader);
+  const hayHeader = headerCols.some(h => /denomi|marca/.test(h)) && headerCols.some(h => /clase/.test(h));
+
+  // Si hay header, mapeamos cada campo a su columna por NOMBRE (tolera
+  // cualquier orden y columnas extra: el pegado del portal del INPI viene
+  // como # | Acta | Denominación | Titular | Clase | Tipo | F.Ingreso | …).
+  let mapeo = null;
+  if (hayHeader) {
+    const find = (...regs) => {
+      for (let i = 0; i < headerCols.length; i++) {
+        if (regs.some(re => re.test(headerCols[i]))) return i;
+      }
+      return -1;
+    };
+    mapeo = {
+      denominacion: find(/denomi/, /^marca/),
+      clases:       find(/clase/),
+      tipo:         find(/tipo/),
+      acta:         find(/acta/),
+      titular:      find(/titular/, /solicitante/),
+      concesion:    find(/concesi/),
+      vencimiento:  find(/vencim/),
+    };
+  }
+
   const data = hayHeader ? lineas.slice(1) : lineas;
 
-  return data.map((linea, i) => {
+  const filas = data.map((linea) => {
     const cols = parseLineaCsv(linea, sep);
+    if (mapeo) {
+      const get = idx => idx >= 0 ? (cols[idx] || '').trim() : '';
+      // Fecha de concesión: explícita si existe; si no, la derivamos del
+      // vencimiento (− 10 años). Nunca usamos "F. Ingreso" porque es la fecha
+      // de presentación, no la de concesión, y daría hitos legales corridos.
+      let fecha = normalizarFecha(get(mapeo.concesion));
+      if (!fecha) fecha = restarAnios(normalizarFecha(get(mapeo.vencimiento)), 10);
+      return {
+        denominacion: get(mapeo.denominacion),
+        clases: get(mapeo.clases),
+        tipo: (get(mapeo.tipo) || 'denominativa').toLowerCase(),
+        numero_acta: get(mapeo.acta) || null,
+        fecha_concesion: fecha,
+        titular: get(mapeo.titular) || null,
+      };
+    }
+    // Sin header → orden posicional de nuestra plantilla.
     return {
-      idx_visual: i + 1,
       denominacion: cols[0] || '',
       clases: cols[1] || '',
       tipo: (cols[2] || 'denominativa').toLowerCase(),
       numero_acta: cols[3] || null,
-      fecha_concesion: cols[4] || null,
+      fecha_concesion: normalizarFecha(cols[4]),
       titular: cols[5] || null,
     };
-  }).filter(r => r.denominacion || r.clases); // Tira las filas totalmente vacías de la plantilla.
+  }).filter(r => r.denominacion || r.clases);
+
+  // Agrupamos por denominación + titular: una misma marca que aparece en
+  // varias clases (típico del INPI: SITECNO en 35/37/39/42) se vigila como
+  // UNA sola entrada con todas sus clases combinadas, en vez de N entradas
+  // que consumen cupo y se marcan como duplicadas. Denominaciones iguales de
+  // titulares distintos quedan separadas (son marcas distintas).
+  const grupos = new Map();
+  for (const f of filas) {
+    const key = normHeader(f.denominacion) + '|' + normHeader(f.titular || '');
+    if (!grupos.has(key)) {
+      grupos.set(key, { ...f, _clases: new Set() });
+    }
+    const g = grupos.get(key);
+    String(f.clases).split(/[,\s]+/).map(s => s.trim()).filter(Boolean).forEach(c => g._clases.add(c));
+    // Conservamos el primer dato no vacío de tipo/acta/fecha.
+    if (!g.numero_acta && f.numero_acta) g.numero_acta = f.numero_acta;
+    if (!g.fecha_concesion && f.fecha_concesion) g.fecha_concesion = f.fecha_concesion;
+  }
+
+  return Array.from(grupos.values()).map((g, i) => ({
+    idx_visual: i + 1,
+    denominacion: g.denominacion,
+    clases: Array.from(g._clases).sort((a, b) => Number(a) - Number(b)).join(', '),
+    tipo: g.tipo,
+    numero_acta: g.numero_acta,
+    fecha_concesion: g.fecha_concesion,
+    titular: g.titular,
+  }));
 }
 
 // Cuando el cliente sube un archivo, lo leemos y volcamos al textarea para que
