@@ -931,21 +931,21 @@ async function loadAlertas() {
   const r = await api('/api/cliente/alertas');
   if (!r.ok) return;
   if (!r.data.alertas.length) {
-    // Estado vacío proactivo: mostramos el último escaneo y la cadencia para
-    // que el cliente sepa que la vigilancia está corriendo aunque no haya hits.
+    // Estado vacío proactivo: mostramos el último escaneo y explicamos que
+    // cada coincidencia la revisa un humano antes de avisar (no auto-spam).
     const m = await api('/api/cliente/monitoreo/estado').catch(() => null);
     const ultimo = m?.ok && m.data.ultimo_run ? fmtDate(m.data.ultimo_run) : null;
-    const proxima = m?.ok ? m.data.proxima_descripcion : 'Cada miércoles a la mañana.';
     $('#alertasList').innerHTML = `
       <div class="empty" style="padding:18px 20px;text-align:left">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
           <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18)"></span>
           <strong style="color:#fff">Vigilancia activa · sin coincidencias por ahora</strong>
         </div>
-        <div style="font-size:13px;line-height:1.6;color:var(--text-muted)">
-          ${ultimo ? `Último escaneo del boletín: <strong style="color:var(--text-soft)">${ultimo}</strong>.<br>` : ''}
-          Próximo escaneo: <strong style="color:var(--text-soft)">${esc(proxima)}</strong><br>
-          Si detectamos una solicitud similar, te avisamos por mail y la vas a ver acá.
+        <div style="font-size:13px;line-height:1.65;color:var(--text-muted)">
+          Escaneamos el Boletín del INPI todas las semanas. Si aparece una solicitud
+          parecida a tu marca, <strong style="color:var(--text-soft)">la revisa un profesional de nuestro equipo antes de avisarte</strong>,
+          así te llegan solo las coincidencias que valen la pena y no falsos positivos.
+          ${ultimo ? `<br><br>Último escaneo del boletín: <strong style="color:var(--text-soft)">${ultimo}</strong>.` : ''}
         </div>
       </div>`;
     return;
@@ -974,8 +974,8 @@ function alertaRow(a) {
       ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
       ${cands ? `<div class="alerta-cands"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Marcas detectadas en el boletín</div>${cands}</div>` : ''}
       <div class="alerta-cta">
-        <a class="btn primary" target="_blank" rel="noopener" href="${linkOposicionWA(a)}">Consultar para presentar oposición</a>
-        <span class="muted" style="font-size:11.5px">Te derivamos a WhatsApp con un Agente de PI. La oposición se cotiza aparte.</span>
+        <a class="btn primary" target="_blank" rel="noopener" href="${linkOposicionWA(a)}">Consultar con un especialista</a>
+        <span class="muted" style="font-size:11.5px">Te derivamos a WhatsApp con un Agente de PI para ver si conviene oponerte. La oposición, si corresponde, se cotiza aparte.</span>
       </div>
     </div>
   `;
@@ -989,7 +989,7 @@ function linkOposicionWA(a) {
   const top = (a.candidatos || [])[0];
   const denom = top?.denominacion || '—';
   const clase = top?.clase || a.marca_clases || '—';
-  const msg = `Hola LegalPacers, quiero consultar por una posible oposición. Mi marca registrada es "${a.marca}" y detectaron una solicitud similar: "${denom}" (clase ${clase}). ¿Pueden cotizarme la presentación?`;
+  const msg = `Hola LegalPacers, me llegó una alerta de monitoreo. Mi marca es "${a.marca}" y detectaron una solicitud similar: "${denom}" (clase ${clase}). ¿Pueden ayudarme a evaluar si conviene oponerme?`;
   return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
 }
 

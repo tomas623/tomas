@@ -457,18 +457,19 @@ function mountClienteRoutes(app) {
     res.json(ok({ alertas }));
   });
 
-  // ===== Estado del monitoreo (último y próximo escaneo) =====
+  // ===== Estado del monitoreo (último escaneo) =====
   // Le da tranquilidad al cliente: aunque no haya alertas, ve que el sistema
-  // efectivamente corrió y cuándo va a volver a correr. El próximo se calcula
-  // en local: el cron por default es miércoles 9:00 hora Argentina.
+  // efectivamente corrió. Contempla tanto el escaneo automático (cron) como
+  // las corridas manuales desde el panel admin.
   app.get('/api/cliente/monitoreo/estado', guard, (req, res) => {
     const ultima = db.prepare(`
-      SELECT created_at, detalle FROM audit_log
-      WHERE accion = 'cron.monitoreo' ORDER BY id DESC LIMIT 1
+      SELECT created_at FROM audit_log
+      WHERE accion IN ('cron.monitoreo', 'monitoreo.run')
+      ORDER BY id DESC LIMIT 1
     `).get();
     res.json(ok({
       ultimo_run: ultima?.created_at || null,
-      proxima_descripcion: 'Cada miércoles a la mañana, hora Argentina.',
+      proxima_descripcion: 'Escaneamos el Boletín del INPI todas las semanas.',
     }));
   });
 
