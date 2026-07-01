@@ -316,7 +316,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
   <div id="panel-alertas" class="panel" hidden>
     <div class="card">
       <h3>Alertas recibidas</h3>
-      <p class="muted" style="font-size:13px;margin-bottom:14px">Si detectamos una solicitud de marca similar a alguna de las que tenés en vigilancia, te aparece acá y te avisamos por mail / WhatsApp.</p>
+      <p class="muted" style="font-size:13px;margin-bottom:14px">Si detectamos una solicitud de marca similar a alguna de las que tenés en vigilancia, te aparece acá y te avisamos por mail.</p>
       <div id="alertasList"></div>
     </div>
   </div>
@@ -931,10 +931,8 @@ async function loadAlertas() {
   const r = await api('/api/cliente/alertas');
   if (!r.ok) return;
   if (!r.data.alertas.length) {
-    // Estado vacío proactivo: mostramos el último escaneo y explicamos que
-    // cada coincidencia la revisa un humano antes de avisar (no auto-spam).
-    const m = await api('/api/cliente/monitoreo/estado').catch(() => null);
-    const ultimo = m?.ok && m.data.ultimo_run ? fmtDate(m.data.ultimo_run) : null;
+    // Estado vacío proactivo: explicamos que cada coincidencia la revisa un
+    // humano antes de avisar (no auto-spam), sin prometer días ni mostrar fechas.
     $('#alertasList').innerHTML = `
       <div class="empty" style="padding:18px 20px;text-align:left">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
@@ -945,7 +943,7 @@ async function loadAlertas() {
           Escaneamos el Boletín del INPI todas las semanas. Si aparece una solicitud
           parecida a tu marca, <strong style="color:var(--text-soft)">la revisa un profesional de nuestro equipo antes de avisarte</strong>,
           así te llegan solo las coincidencias que valen la pena y no falsos positivos.
-          ${ultimo ? `<br><br>Último escaneo del boletín: <strong style="color:var(--text-soft)">${ultimo}</strong>.` : ''}
+          <br><br>En caso de que haya marcas con riesgo de confusión, te llegará la alerta.
         </div>
       </div>`;
     return;

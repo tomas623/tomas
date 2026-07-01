@@ -32,8 +32,11 @@ function iniciar() {
     return state;
   }
 
-  // 1) Monitoreo semanal — default miércoles 9:00.
-  programar('monitoreo-semanal', (process.env.CRON_MONITOREO || '0 9 * * 3').trim(), async () => {
+  // 1) Monitoreo semanal — default jueves 10:00, DESPUÉS del catch-up del INPI
+  // (jueves 7:00). El INPI publica el boletín los jueves; primero lo bajamos,
+  // después cruzamos las marcas vigiladas contra lo nuevo. Así las alertas
+  // pendientes salen el mismo día que se publica el boletín, no una semana tarde.
+  programar('monitoreo-semanal', (process.env.CRON_MONITOREO || '0 10 * * 4').trim(), async () => {
     const startedAt = new Date();
     try {
       const r = await correr({ actorId: null });
