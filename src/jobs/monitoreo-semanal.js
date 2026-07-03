@@ -13,6 +13,15 @@ const { analizar, nivelDesdeScore } = require('../matching/etapa2');
 const MIN_SCORE_LISTA_CORTA = 55;       // Etapa 1: cualquier candidato ≥ 55 va a Etapa 2.
 const MIN_NIVEL_PARA_ALERTAR = 'medio'; // Generamos alerta si Etapa 2 dice medio o alto.
 
+// Denominaciones "placeholder" que el parser genera para marcas figurativas o
+// sin elemento denominativo: "[Figurativa]", "[Figurativa s/d]", "[Acta 123]".
+// No tienen palabra para cotejar; matchearlas entre sí es puro ruido (todas
+// comparten la raíz "figurativa"). Se saltean del monitoreo por denominación.
+function esPlaceholder(denom) {
+  const s = String(denom || '').trim();
+  return !s || s.startsWith('[');
+}
+
 function nivelGte(a, b) {
   const orden = { bajo: 0, medio: 1, alto: 2 };
   return orden[a] >= orden[b];
@@ -53,13 +62,18 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
   let totalAlertas = 0, candidatosTotal = 0;
 
   for (const bol of boletines) {
+    // Filtramos las actas placeholder (figurativas sin denominación) del universo
+    // a cotejar: no aportan nada al matching por nombre y sólo generan ruido.
     const actas = db.prepare(`
       SELECT id, denominacion, denominacion_norm, clase, acta, titular, estado, tipo
       FROM marcas_boletin WHERE boletin_id = ?
-    `).all(bol.id);
+    `).all(bol.id).filter(a => !esPlaceholder(a.denominacion));
     if (!actas.length) continue;
 
     for (const mv of vigiladas) {
+      // Las marcas figurativas del cliente (sin palabra) no se vigilan por
+      // denominación — se saltean. Su protección es sobre la imagen, no el nombre.
+      if (esPlaceholder(mv.denominacion)) continue;
       const clases = (() => { try { return JSON.parse(mv.clases || '[]'); } catch { return []; } })();
 
       // Etapa 1 — marcamos todas las coincidencias, incluso del mismo titular.

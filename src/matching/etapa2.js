@@ -257,12 +257,14 @@ function nivelDesdeScore(score) {
   return 'bajo';
 }
 
-function stubAnalisis(marca, candidata) {
+function stubAnalisis(marca, candidata, motivo) {
   const nivel = nivelDesdeScore(candidata.score || 0);
+  const motivos = (candidata.motivos || []).join(', ') || 'similitud detectada por el motor';
+  const razon = motivo || 'El dictamen de IA no está disponible — requiere revisión manual del Agente.';
   return {
     nivel_riesgo: nivel,
     notoria: false,
-    fundamento: `STUB (sin GEMINI_API_KEY): la candidata "${candidata.denominacion}" presenta señales de Etapa 1 (motivos: ${(candidata.motivos || []).join(', ') || 'n/a'}). Nivel estimado por score=${candidata.score}.`,
+    fundamento: `Coincidencia automática entre la marca vigilada "${marca.denominacion}" y "${candidata.denominacion}" (clase ${candidata.clase || '?'}). Señales del motor: ${motivos}. Nivel preliminar por score: ${nivel} (${candidata.score}). ${razon}`,
     recomendacion: nivel === 'alto'
       ? 'Escalar a Agente de la Propiedad Industrial para análisis profundo y eventual oposición.'
       : nivel === 'medio'
@@ -274,7 +276,7 @@ function stubAnalisis(marca, candidata) {
 
 async function callGemini(marca, candidata) {
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) return stubAnalisis(marca, candidata);
+  if (!apiKey) return stubAnalisis(marca, candidata, 'Falta configurar GEMINI_API_KEY en el servidor.');
 
   const model = (process.env.GEMINI_MODEL || 'gemini-2.5-pro').trim();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
@@ -289,8 +291,9 @@ async function callGemini(marca, candidata) {
       body: JSON.stringify(body),
     });
     if (!res.ok) {
-      console.error('[etapa2] Gemini', res.status, await res.text().catch(() => ''));
-      return { ...stubAnalisis(marca, candidata), gemini_error: `HTTP ${res.status}` };
+      const detalle = await res.text().catch(() => '');
+      console.error('[etapa2] Gemini', res.status, detalle.slice(0, 300));
+      return { ...stubAnalisis(marca, candidata, `Gemini respondió HTTP ${res.status} (modelo "${model}").`), gemini_error: `HTTP ${res.status}: ${detalle.slice(0, 200)}` };
     }
     const json = await res.json();
     const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
@@ -298,11 +301,11 @@ async function callGemini(marca, candidata) {
       const parsed = JSON.parse(txt);
       return { ...parsed, stub: false };
     } catch {
-      return { ...stubAnalisis(marca, candidata), parse_error: true, raw: txt };
+      return { ...stubAnalisis(marca, candidata, 'Gemini respondió pero no en el formato esperado.'), parse_error: true, raw: txt };
     }
   } catch (err) {
     console.error('[etapa2] error red:', err.message);
-    return { ...stubAnalisis(marca, candidata), red_error: err.message };
+    return { ...stubAnalisis(marca, candidata, `Error de red al llamar a Gemini: ${err.message}`), red_error: err.message };
   }
 }
 
