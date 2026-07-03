@@ -1,5 +1,6 @@
 // Scheduler de cron — arranca tasks recurrentes al boot del server.
-// Hoy: monitoreo semanal (miércoles 9:00 por default, configurable con CRON_MONITOREO).
+// Ciclo semanal del INPI: catch-up jueves 7:00 (baja boletines nuevos) →
+// monitoreo jueves 10:00 (cruza marcas y crea alertas pendientes de revisión).
 // Cualquier task se desactiva con CRON_ENABLED=false (útil en dev/CI).
 
 const cron = require('node-cron');
