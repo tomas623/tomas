@@ -168,4 +168,57 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
            boletines: lista, boletines_total: boletines.length, mensaje };
 }
 
-module.exports = { correr };
+// Avisa al equipo por mail que hay alertas pendientes de revisión. Pensado para
+// llamarse después de la corrida semanal del cron. Si no hay pendientes, no
+// manda nada (no spamear). Cuenta TODAS las pendientes, no solo las de esta
+// corrida, para que un pendiente viejo no quede olvidado.
+async function avisarPendientes() {
+  const { enviarMailGenerico } = require('../notificaciones');
+  const mailEquipo = (process.env.MAIL_EQUIPO_LEGAL || 'contacto@legalpacers.com').trim();
+  const filas = db.prepare(`
+    SELECT nivel, COUNT(*) AS n FROM alertas WHERE estado = 'pendiente_revision' GROUP BY nivel
+  `).all();
+  const total = filas.reduce((s, f) => s + f.n, 0);
+  if (!total) return { enviado: false, total: 0 };
+
+  const porNivel = { alto: 0, medio: 0, bajo: 0 };
+  for (const f of filas) if (f.nivel in porNivel) porNivel[f.nivel] = f.n;
+  const baseUrl = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+
+  const chip = (label, n, color) => n > 0
+    ? `<span style="display:inline-block;background:${color};color:#fff;border-radius:6px;padding:3px 10px;font-size:13px;font-weight:700;margin-right:6px">${n} ${label}</span>`
+    : '';
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+      <h2 style="color:#1B6EF3;margin-bottom:6px">🔔 ${total} alerta(s) para revisar</h2>
+      <p style="color:#64748b;margin-top:0">El monitoreo semanal del INPI encontró coincidencias con marcas de tus clientes.</p>
+      <p style="margin:16px 0">
+        ${chip('alto', porNivel.alto, '#dc2626')}
+        ${chip('medio', porNivel.medio, '#d97706')}
+        ${chip('bajo', porNivel.bajo, '#059669')}
+      </p>
+      <p>Entrá al panel a revisarlas: aprobá las que valen (se le manda el mail al
+         cliente) y descartá las que sean ruido.</p>
+      <p style="margin-top:24px">
+        <a href="${baseUrl}/admin/"
+           style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
+                  text-decoration:none;display:inline-block;font-weight:600">
+          Revisar alertas
+        </a>
+      </p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="font-size:12px;color:#64748b">
+        Aviso automático del monitoreo semanal · LegalPacers
+      </p>
+    </div>`;
+
+  const r = await enviarMailGenerico({
+    to: mailEquipo,
+    subject: `🔔 ${total} alerta(s) del INPI para revisar — LegalPacers`,
+    html, tag: 'alertas_pendientes_aviso',
+  });
+  if (r.ok) audit.log(null, 'monitoreo.aviso_pendientes', { detalle: { total, porNivel, stub: !!r.stub } });
+  return { enviado: r.ok, total, porNivel, stub: !!r.stub };
+}
+
+module.exports = { correr, avisarPendientes };

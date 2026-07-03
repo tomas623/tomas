@@ -6,7 +6,7 @@
 
 const cron = require('node-cron');
 const audit = require('../audit');
-const { correr } = require('./monitoreo-semanal');
+const { correr, avisarPendientes } = require('./monitoreo-semanal');
 const followUp = require('./follow-up');
 const puentePython = require('./puente-python');
 const avisoAjuste = require('./aviso-ajuste-trimestral');
@@ -45,6 +45,13 @@ function iniciar() {
       const r = await correr({ actorId: null });
       console.log(`[cron] monitoreo OK · ${r.alertas} alerta(s) · ${r.candidatos || 0} candidatos`);
       audit.log(null, 'cron.monitoreo', { detalle: { started_at: startedAt.toISOString(), alertas: r.alertas, candidatos: r.candidatos } });
+      // Avisamos al equipo por mail si quedaron alertas pendientes de revisión.
+      try {
+        const aviso = await avisarPendientes();
+        if (aviso.enviado) console.log(`[cron] aviso de ${aviso.total} alerta(s) pendiente(s) enviado al equipo`);
+      } catch (e) {
+        console.error('[cron] aviso pendientes ERROR:', e.message);
+      }
     } catch (err) {
       console.error('[cron] monitoreo ERROR:', err.message);
       audit.log(null, 'cron.monitoreo.error', { detalle: { error: err.message } });
