@@ -278,7 +278,10 @@ async function callGemini(marca, candidata) {
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) return stubAnalisis(marca, candidata, 'Falta configurar GEMINI_API_KEY en el servidor.');
 
-  const model = (process.env.GEMINI_MODEL || 'gemini-2.5-pro').trim();
+  // Default gemini-2.5-flash: disponible en el free tier de Google (2.5-pro
+  // tiene límite 0 sin billing → 429). Si activás billing y querés el pro,
+  // seteá GEMINI_MODEL=gemini-2.5-pro en el entorno.
+  const model = (process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
   const body = {
     contents: [{ role: 'user', parts: [{ text: buildPrompt(marca, candidata) }] }],
