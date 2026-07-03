@@ -1,7 +1,8 @@
 // Scheduler de cron — arranca tasks recurrentes al boot del server.
-// Ciclo semanal del INPI: catch-up jueves 7:00 (baja boletines nuevos) →
-// monitoreo jueves 10:00 (cruza marcas y crea alertas pendientes de revisión).
-// Cualquier task se desactiva con CRON_ENABLED=false (útil en dev/CI).
+// Ciclo semanal del INPI: catch-up miércoles 12:00 (baja boletines nuevos) →
+// monitoreo miércoles 12:30 (cruza marcas y crea alertas pendientes de revisión).
+// El equipo revisa/aprueba la tarde del miércoles y el cliente recibe cuando se
+// aprueba. Cualquier task se desactiva con CRON_ENABLED=false (útil en dev/CI).
 
 const cron = require('node-cron');
 const audit = require('../audit');
@@ -33,11 +34,12 @@ function iniciar() {
     return state;
   }
 
-  // 1) Monitoreo semanal — default jueves 10:00, DESPUÉS del catch-up del INPI
-  // (jueves 7:00). El INPI publica el boletín los jueves; primero lo bajamos,
-  // después cruzamos las marcas vigiladas contra lo nuevo. Así las alertas
-  // pendientes salen el mismo día que se publica el boletín, no una semana tarde.
-  programar('monitoreo-semanal', (process.env.CRON_MONITOREO || '0 10 * * 4').trim(), async () => {
+  // 1) Monitoreo semanal — default miércoles 12:30, DESPUÉS del catch-up del INPI
+  // (miércoles 12:00). Primero bajamos los boletines nuevos, después cruzamos las
+  // marcas vigiladas contra lo nuevo. Así el equipo tiene toda la tarde del
+  // miércoles para revisar las alertas pendientes y aprobar/descartar antes de
+  // que le lleguen al cliente.
+  programar('monitoreo-semanal', (process.env.CRON_MONITOREO || '30 12 * * 3').trim(), async () => {
     const startedAt = new Date();
     try {
       const r = await correr({ actorId: null });
@@ -80,12 +82,12 @@ function iniciar() {
     });
   }
 
-  // 4a) Catch-up automático del INPI — los jueves a las 7:00 hora local.
+  // 4a) Catch-up automático del INPI — los miércoles a las 12:00 hora local.
   // Busca boletines nuevos en ambas series desde el último importado y los
-  // procesa. No requiere configuración: las URLs son públicas del INPI.
-  // Se puede desactivar con CRON_INPI_CATCHUP_ENABLED=false.
+  // procesa. Corre justo antes del monitoreo (12:30) para que el equipo tenga
+  // la tarde del miércoles para revisar. Se desactiva con CRON_INPI_CATCHUP_ENABLED=false.
   if ((process.env.CRON_INPI_CATCHUP_ENABLED || 'true').toLowerCase() !== 'false') {
-    programar('inpi-catch-up', (process.env.CRON_INPI_CATCHUP || '0 7 * * 4').trim(), async () => {
+    programar('inpi-catch-up', (process.env.CRON_INPI_CATCHUP || '0 12 * * 3').trim(), async () => {
       try {
         const r = await catchUpInpi.correr({});
         const s = r.series.map(x => `${x.serie}:${x.ok}ok/${x.no_existe}no/${x.error}err`).join(' · ');
