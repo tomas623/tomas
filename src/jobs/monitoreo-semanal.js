@@ -11,7 +11,12 @@ const { matching } = require('../matching/etapa1');
 const { analizar, nivelDesdeScore } = require('../matching/etapa2');
 
 const MIN_SCORE_LISTA_CORTA = 55;       // Etapa 1: cualquier candidato ≥ 55 va a Etapa 2.
-const MIN_NIVEL_PARA_ALERTAR = 'medio'; // Generamos alerta si Etapa 2 dice medio o alto.
+// Umbral de nivel para crear la alerta. Default 'bajo' = mostramos TODA
+// coincidencia real (que ya pasó los filtros de ruido: figurativas + mismo
+// titular), con el nivel de Gemini (alto/medio/bajo) como ETIQUETA para que el
+// equipo ordene y filtre a mano. Subilo a 'medio' con MONITOREO_MIN_NIVEL si
+// preferís que Gemini pre-filtre y no te muestre los de riesgo bajo.
+const MIN_NIVEL_PARA_ALERTAR = (process.env.MONITOREO_MIN_NIVEL || 'bajo').trim();
 
 // Denominaciones "placeholder" que el parser genera para marcas figurativas o
 // sin elemento denominativo: "[Figurativa]", "[Figurativa s/d]", "[Acta 123]".
