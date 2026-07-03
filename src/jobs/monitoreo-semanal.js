@@ -50,17 +50,6 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
     WHERE mv.estado = 'activa'
   `).all();
 
-  // Actas propias de cada cliente: si el boletín publica una solicitud cuyo
-  // número de acta ya es una de las marcas que el propio cliente vigila, es SU
-  // marca (no la de un tercero) → no tiene sentido alertarlo sobre sí mismo.
-  const actasPropias = new Map(); // usuario_id -> Set(acta normalizada)
-  for (const mv of vigiladas) {
-    const a = String(mv.numero_acta || '').replace(/\D/g, '');
-    if (!a) continue;
-    if (!actasPropias.has(mv.usuario_id)) actasPropias.set(mv.usuario_id, new Set());
-    actasPropias.get(mv.usuario_id).add(a);
-  }
-
   let totalAlertas = 0, candidatosTotal = 0;
 
   for (const bol of boletines) {
@@ -72,17 +61,11 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
 
     for (const mv of vigiladas) {
       const clases = (() => { try { return JSON.parse(mv.clases || '[]'); } catch { return []; } })();
-      const propias = actasPropias.get(mv.usuario_id) || null;
 
-      // Etapa 1
-      let cortos = matching(mv.denominacion, clases[0] || null, actas, { minScore: MIN_SCORE_LISTA_CORTA });
-      // Filtramos las coincidencias que son la propia marca del cliente (mismo acta).
-      if (propias && propias.size) {
-        cortos = cortos.filter(c => {
-          const ca = String(c.acta || '').replace(/\D/g, '');
-          return !ca || !propias.has(ca);
-        });
-      }
+      // Etapa 1 — marcamos todas las coincidencias, incluso del mismo titular.
+      // El equipo filtra a mano al armar el resumen (muchas marcas las registra
+      // el propio cliente para terceros, así que "mismo acta" no es ruido).
+      const cortos = matching(mv.denominacion, clases[0] || null, actas, { minScore: MIN_SCORE_LISTA_CORTA });
       if (!cortos.length) continue;
 
       // Etapa 2 sobre la lista corta
