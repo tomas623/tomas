@@ -434,7 +434,7 @@ function mountClienteRoutes(app) {
   // ===== Mis alertas =====
   app.get('/api/cliente/alertas', guard, (req, res) => {
     const alertas = db.prepare(`
-      SELECT a.id, a.nivel, a.notoria, a.estado, a.canal, a.fundamento,
+      SELECT a.id, a.nivel, a.notoria, a.estado, a.canal, a.fundamento, a.nota_admin,
              a.created_at, a.revisada_en,
              mv.denominacion AS marca, mv.clases AS marca_clases
       FROM alertas a JOIN marcas_vigiladas mv ON mv.id = a.marca_vigilada_id

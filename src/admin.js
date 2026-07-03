@@ -478,7 +478,7 @@ function mountAdminRoutes(app) {
   app.get('/api/admin/alertas', guard, (req, res) => {
     const estado = req.query.estado;
     let sql = `
-      SELECT a.id, a.nivel, a.notoria, a.estado, a.canal, a.fundamento,
+      SELECT a.id, a.nivel, a.notoria, a.estado, a.canal, a.fundamento, a.nota_admin,
              a.created_at, a.revisada_en,
              mv.denominacion AS marca, mv.clases AS marca_clases,
              u.email AS usuario_email, u.nombre AS usuario_nombre,
@@ -526,6 +526,17 @@ function mountAdminRoutes(app) {
     res.json(ok({ id, estado }));
   });
 
+  // ===== Guardar/editar la nota del admin sobre una alerta (sin aprobar) =====
+  app.patch('/api/admin/alertas/:id/nota', guard, express.json(), (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const nota = String(req.body?.nota ?? '').trim().slice(0, 1000);
+    const exists = db.prepare('SELECT id FROM alertas WHERE id = ?').get(id);
+    if (!exists) return res.status(404).json(fail('alerta no encontrada'));
+    db.prepare('UPDATE alertas SET nota_admin = ? WHERE id = ?').run(nota || null, id);
+    audit.log(req.user.id, 'alerta.nota', { entidad: 'alertas', entidad_id: id, detalle: { len: nota.length } });
+    res.json(ok({ id, nota_admin: nota }));
+  });
+
   // ===== Aprobar y enviar alerta al cliente =====
   // Disparado por un humano del equipo legal después de revisar el dictamen de
   // Gemini en /api/admin/alertas. La alerta pasa a estado 'aprobada' y se le
@@ -554,12 +565,26 @@ function mountAdminRoutes(app) {
       ORDER BY ac.score DESC LIMIT 5
     `).all(id);
 
+    // Nota opcional del admin (contexto/aclaración) — se guarda y se incluye en
+    // el mail y el portal. Si no viene en el body, conservamos la que ya hubiera.
+    const notaAdmin = req.body?.nota != null
+      ? String(req.body.nota).trim().slice(0, 1000)
+      : (row.nota_admin || '');
+
     const baseUrl = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
     const colorNivel = row.nivel === 'alto' ? '#dc2626'
                      : row.nivel === 'medio' ? '#d97706' : '#059669';
     const candsHtml = cands.map(c =>
       `<li><strong>${(c.denominacion || '—')}</strong> · clase ${c.clase || '?'}${c.acta ? ' · acta ' + c.acta : ''}</li>`
     ).join('');
+
+    // Link directo a WhatsApp con el caso en contexto, para que el cliente
+    // consulte sin tener que entrar al portal.
+    const topCand = cands[0];
+    const waMsg = `Hola LegalPacers, me llegó una alerta de monitoreo sobre mi marca "${row.marca}". `
+      + (topCand ? `Detectaron una solicitud similar: "${topCand.denominacion || '—'}" (clase ${topCand.clase || '?'}). ` : '')
+      + `¿Pueden ayudarme a evaluar si conviene oponerme?`;
+    const waLink = `https://wa.me/5491128774200?text=${encodeURIComponent(waMsg)}`;
 
     const html = `
       <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
@@ -571,14 +596,19 @@ function mountAdminRoutes(app) {
         <p><strong>Nivel de riesgo:</strong>
            <span style="color:${colorNivel};font-weight:600">${(row.nivel || 'medio').toUpperCase()}</span></p>
         ${row.fundamento ? `<div style="background:#f8fafc;border-left:3px solid ${colorNivel};padding:10px 14px;border-radius:6px;font-size:13px;margin:12px 0">${row.fundamento}</div>` : ''}
+        ${notaAdmin ? `<div style="background:#eff6ff;border-left:3px solid #1B6EF3;padding:10px 14px;border-radius:6px;font-size:13px;margin:12px 0"><strong>Nota de nuestro equipo:</strong><br>${notaAdmin.replace(/\n/g, '<br>')}</div>` : ''}
         ${candsHtml ? `<p><strong>Marcas detectadas:</strong></p><ul>${candsHtml}</ul>` : ''}
-        <p>El detalle completo y el botón para iniciar la consulta de oposición
-           están en tu portal cliente:</p>
-        <p style="margin-top:24px">
+        <p style="margin:24px 0 8px">Consultá directo con un especialista por WhatsApp, o mirá el detalle en tu portal:</p>
+        <p style="margin:0">
+          <a href="${waLink}"
+             style="background:#25D366;color:#fff;padding:12px 22px;border-radius:8px;
+                    text-decoration:none;display:inline-block;font-weight:600;margin-right:8px">
+            💬 Consultar por WhatsApp
+          </a>
           <a href="${baseUrl}/cliente/"
              style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
                     text-decoration:none;display:inline-block;font-weight:600">
-            Ver alerta en mi portal
+            Ver en mi portal
           </a>
         </p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
@@ -600,8 +630,8 @@ function mountAdminRoutes(app) {
     }
 
     db.prepare(`
-      UPDATE alertas SET estado = 'aprobada', revisada_por = ?, revisada_en = datetime('now') WHERE id = ?
-    `).run(req.user.id, id);
+      UPDATE alertas SET estado = 'aprobada', nota_admin = ?, revisada_por = ?, revisada_en = datetime('now') WHERE id = ?
+    `).run(notaAdmin || null, req.user.id, id);
     audit.log(req.user.id, 'alerta.aprobada', { entidad: 'alertas', entidad_id: id, detalle: { email: row.cliente_email } });
     res.json(ok({ id, estado: 'aprobada', stub: !!r.stub }));
   });

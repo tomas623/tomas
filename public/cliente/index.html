@@ -970,6 +970,7 @@ function alertaRow(a) {
         </div>
       </div>
       ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
+      ${a.nota_admin ? `<div class="alerta-fund" style="border-left:3px solid #60a5fa;background:rgba(96,165,250,.08)"><strong style="color:#93c5fd">Nota de nuestro equipo:</strong><br>${esc(a.nota_admin)}</div>` : ''}
       ${cands ? `<div class="alerta-cands"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Marcas detectadas en el boletín</div>${cands}</div>` : ''}
       <div class="alerta-cta">
         <a class="btn primary" target="_blank" rel="noopener" href="${linkOposicionWA(a)}">Consultar con un especialista</a>

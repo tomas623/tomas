@@ -340,12 +340,30 @@ async function loadResumen() {
   }
 }
 
+let alertasVista = 'pendientes'; // pendientes | resueltas | todas
+function setAlertasVista(v) { alertasVista = v; loadAlertas(); }
+
 async function loadAlertas() {
-  $('#panel-alertas').innerHTML = '<div class="muted">Cargando…</div>';
+  const cont = $('#panel-alertas');
+  cont.innerHTML = '<div class="muted">Cargando…</div>';
   const r = await api('/api/admin/alertas');
-  if (!r.ok) { $('#panel-alertas').innerHTML = `<div class="empty">${esc(r.error)}</div>`; return; }
-  if (!r.data.alertas.length) { $('#panel-alertas').innerHTML = '<div class="empty">Sin alertas todavía.</div>'; return; }
-  $('#panel-alertas').innerHTML = r.data.alertas.map(a => alertaCard(a)).join('');
+  if (!r.ok) { cont.innerHTML = `<div class="empty">${esc(r.error)}</div>`; return; }
+  const todas = r.data.alertas || [];
+  const esPendiente = a => a.estado === 'pendiente_revision' || a.estado === 'nueva';
+  const pend = todas.filter(esPendiente);
+  const resu = todas.filter(a => !esPendiente(a));
+  const lista = alertasVista === 'pendientes' ? pend : alertasVista === 'resueltas' ? resu : todas;
+
+  const tab = (k, label, n) => `<button class="btn tiny ${alertasVista === k ? 'primary' : ''}" onclick="setAlertasVista('${k}')">${label} (${n})</button>`;
+  const toolbar = `<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    ${tab('pendientes', 'Pendientes', pend.length)}
+    ${tab('resueltas', 'Resueltas', resu.length)}
+    ${tab('todas', 'Todas', todas.length)}
+  </div>`;
+  const vacio = alertasVista === 'pendientes'
+    ? '✓ No hay alertas pendientes de revisión.'
+    : 'Nada por acá.';
+  cont.innerHTML = toolbar + (lista.length ? lista.map(a => alertaCard(a)).join('') : `<div class="empty">${vacio}</div>`);
 }
 
 function alertaCard(a) {
@@ -373,9 +391,16 @@ function alertaCard(a) {
         </div>` : ''}
       ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
       ${cands}
+      ${pendiente ? `
+        <div style="margin-top:12px">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px">Nota para el cliente (opcional) — se incluye en el mail y el portal:</label>
+          <textarea id="nota-${a.id}" rows="2" style="width:100%;padding:9px 11px;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:vertical" placeholder="Ej: Coincidencia relevante. Conviene evaluar la oposición antes del vencimiento del plazo.">${esc(a.nota_admin || '')}</textarea>
+        </div>`
+        : (a.nota_admin ? `<div class="alerta-fund" style="border-left-color:#1B6EF3"><b>Nota del equipo:</b> ${esc(a.nota_admin)}</div>` : '')}
       <div class="alerta-actions">
         ${pendiente
           ? `<button class="btn tiny green" onclick="aprobarAlerta(${a.id})">✓ Aprobar y enviar al cliente</button>
+             <button class="btn tiny" onclick="guardarNota(${a.id}, this)">💾 Guardar nota</button>
              <button class="btn tiny outline" onclick="cambiarEstado(${a.id}, 'descartada')">Descartar</button>`
           : `<button class="btn tiny" onclick="cambiarEstado(${a.id}, 'revisada')">Marcar revisada</button>
              <button class="btn tiny green" onclick="cambiarEstado(${a.id}, 'accion_tomada')">Acción tomada</button>
@@ -387,10 +412,19 @@ function alertaCard(a) {
 }
 
 async function aprobarAlerta(id) {
+  const nota = ($('#nota-' + id)?.value || '').trim();
   if (!confirm('¿Aprobar y enviar mail al cliente con esta alerta?')) return;
-  const r = await api(`/api/admin/alertas/${id}/aprobar`, { method: 'POST' });
+  const r = await api(`/api/admin/alertas/${id}/aprobar`, { method: 'POST', body: JSON.stringify({ nota }) });
   if (r.ok) { loadAlertas(); loadResumen(); }
   else alert(r.error || 'No se pudo aprobar');
+}
+
+// Guarda la nota sin aprobar (para dejarla lista y aprobar después).
+async function guardarNota(id, btn) {
+  const nota = ($('#nota-' + id)?.value || '').trim();
+  const r = await api(`/api/admin/alertas/${id}/nota`, { method: 'PATCH', body: JSON.stringify({ nota }) });
+  if (r.ok && btn) { const t = btn.textContent; btn.textContent = '✓ Guardada'; setTimeout(() => { btn.textContent = t; }, 1500); }
+  else if (!r.ok) alert(r.error || 'No se pudo guardar la nota');
 }
 
 function candidatoCard(c) {

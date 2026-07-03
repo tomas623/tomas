@@ -331,6 +331,13 @@ db.exec(`
   }
 }
 
+// Nota del admin sobre una alerta: texto libre que el equipo agrega al revisar
+// (contexto, aclaración, instrucción para el cliente). Se muestra en el mail y
+// en el portal. Idempotente.
+if (!columnExists('alertas', 'nota_admin')) {
+  db.exec(`ALTER TABLE alertas ADD COLUMN nota_admin TEXT`);
+}
+
 // Marca vigilada: nro de acta/registro y fecha de concesión para calcular
 // hitos de DJU (año 5) y renovación (año 10). Idempotentes.
 for (const [col, ddl] of [
