@@ -22,6 +22,17 @@ function esPlaceholder(denom) {
   return !s || s.startsWith('[');
 }
 
+// Normaliza un titular para comparar identidad de dueño: minúsculas, sin
+// acentos ni puntuación, sin sufijos societarios, y con los tokens ordenados
+// alfabéticamente (así "RODRIGUEZ TOMAS GUIDO" == "TOMAS GUIDO RODRIGUEZ").
+const SUF_SOC = new Set(['sa', 'srl', 'sas', 'sca', 'scs', 'sociedad', 'anonima', 'responsabilidad', 'limitada', 's', 'a', 'r', 'l', 'y', 'cia', 'e', 'hijos']);
+function normTitular(t) {
+  if (!t) return '';
+  const limpio = String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ ]+/g, ' ');
+  const tokens = limpio.split(/\s+/).filter(w => w && !SUF_SOC.has(w));
+  return tokens.sort().join(' ');
+}
+
 function nivelGte(a, b) {
   const orden = { bajo: 0, medio: 1, alto: 2 };
   return orden[a] >= orden[b];
@@ -75,11 +86,20 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
       // denominación — se saltean. Su protección es sobre la imagen, no el nombre.
       if (esPlaceholder(mv.denominacion)) continue;
       const clases = (() => { try { return JSON.parse(mv.clases || '[]'); } catch { return []; } })();
+      const titularVig = normTitular(mv.titular);
 
-      // Etapa 1 — marcamos todas las coincidencias, incluso del mismo titular.
-      // El equipo filtra a mano al armar el resumen (muchas marcas las registra
-      // el propio cliente para terceros, así que "mismo acta" no es ruido).
-      const cortos = matching(mv.denominacion, clases[0] || null, actas, { minScore: MIN_SCORE_LISTA_CORTA });
+      // Etapa 1. Descartamos candidatos del MISMO titular que la marca vigilada:
+      // nadie se opone a su propia marca, así que un match con el mismo dueño
+      // (aunque sea otra acta/clase) no es una amenaza, es ruido. Sólo aplica
+      // cuando conocemos el titular de la marca vigilada (si es null, no podemos
+      // comparar y dejamos pasar todo).
+      let cortos = matching(mv.denominacion, clases[0] || null, actas, { minScore: MIN_SCORE_LISTA_CORTA });
+      if (titularVig) {
+        cortos = cortos.filter(c => {
+          const tc = normTitular(c.titular);
+          return !tc || tc !== titularVig;
+        });
+      }
       if (!cortos.length) continue;
 
       // Etapa 2 sobre la lista corta
