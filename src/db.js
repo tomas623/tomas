@@ -290,6 +290,47 @@ db.exec(`
     WHERE boletin_id IS NOT NULL;
 `);
 
+// FIX CRÍTICO: el CHECK original de alertas.estado solo aceptaba
+// ('nueva','revisada','accion_tomada','descartada') pero el flujo real usa
+// 'pendiente_revision' (el monitoreo crea la alerta así) y 'aprobada' (cuando
+// el admin la aprueba). Con el CHECK viejo, TODO insert del monitoreo fallaba
+// con "CHECK constraint failed" y abortaba la corrida entera → nunca se creaba
+// ni una alerta. Reconstruimos la tabla sin ese CHECK (el estado se valida en
+// la capa de aplicación). Idempotente: solo corre si el CHECK viejo sigue ahí.
+{
+  const row = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='alertas'").get();
+  if (row && /CHECK\s*\(\s*estado\s+IN/i.test(row.sql)) {
+    const cols = db.prepare('PRAGMA table_info(alertas)').all().map(c => c.name).join(', ');
+    db.pragma('foreign_keys = OFF');
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE alertas_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+          marca_vigilada_id INTEGER NOT NULL REFERENCES marcas_vigiladas(id) ON DELETE CASCADE,
+          nivel TEXT NOT NULL CHECK(nivel IN ('alto','medio','bajo')),
+          notoria INTEGER NOT NULL DEFAULT 0,
+          estado TEXT NOT NULL DEFAULT 'nueva',
+          canal TEXT,
+          fundamento TEXT,
+          revisada_por INTEGER REFERENCES usuarios(id),
+          revisada_en TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          boletin_id INTEGER REFERENCES boletines(id)
+        )
+      `);
+      db.exec(`INSERT INTO alertas_new (${cols}) SELECT ${cols} FROM alertas`);
+      db.exec('DROP TABLE alertas');
+      db.exec('ALTER TABLE alertas_new RENAME TO alertas');
+    })();
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_alertas_estado ON alertas(usuario_id, estado)`);
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_alertas_por_boletin
+             ON alertas(usuario_id, marca_vigilada_id, boletin_id) WHERE boletin_id IS NOT NULL`);
+    db.pragma('foreign_keys = ON');
+    console.log('[db] alertas.estado: CHECK obsoleto removido (rebuild) — el monitoreo ya puede crear alertas.');
+  }
+}
+
 // Marca vigilada: nro de acta/registro y fecha de concesión para calcular
 // hitos de DJU (año 5) y renovación (año 10). Idempotentes.
 for (const [col, ddl] of [
