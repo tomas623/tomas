@@ -856,6 +856,33 @@ app.get('/pagos/pendiente', (req, res) =>
 
 // ===== Landing estática =====
 app.get('/', (req, res) => res.sendFile(path.join(ROOT_DIR, 'landing-legalpacers.html')));
+
+// ===== SEO: robots.txt + sitemap.xml =====
+// robots.txt: permite indexar el sitio público, bloquea el crawl del panel
+// admin, el portal cliente y la API, y apunta al sitemap.
+app.get('/robots.txt', (req, res) => {
+  const base = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+  res.type('text/plain').send(
+    `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cliente\nDisallow: /api/\n\nSitemap: ${base}/sitemap.xml\n`
+  );
+});
+
+// sitemap.xml: las URLs públicas indexables (landing + páginas legales).
+app.get('/sitemap.xml', (req, res) => {
+  const base = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+  const urls = [
+    { loc: '/',           prio: '1.0', freq: 'weekly' },
+    { loc: '/terminos',   prio: '0.4', freq: 'yearly' },
+    { loc: '/privacidad', prio: '0.4', freq: 'yearly' },
+    { loc: '/cookies',    prio: '0.4', freq: 'yearly' },
+  ];
+  const body = urls.map(u =>
+    `  <url><loc>${base}${u.loc}</loc><changefreq>${u.freq}</changefreq><priority>${u.prio}</priority></url>`
+  ).join('\n');
+  res.type('application/xml').send(
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`
+  );
+});
 // Algunos browsers piden /favicon.ico de forma incondicional (sin importar
 // el <link rel="icon"> del HTML). Lo aliaseamos al PNG del logo.
 app.get('/favicon.ico', (req, res) => {
