@@ -955,7 +955,7 @@ function alertaRow(a) {
   const chipNivel = { alto:'red', medio:'yellow', bajo:'green' }[a.nivel] || 'muted';
   const chipEstado = { nueva:'red', revisada:'blue', accion_tomada:'green', descartada:'muted' }[a.estado] || 'muted';
   const cands = (a.candidatos || []).map(c =>
-    `<div>· <strong>${esc(c.denominacion || '—')}</strong> (clase ${esc(c.clase || '?')}, ${esc(c.estado || '—')})</div>`
+    `<div>· <strong>${esc(c.denominacion || '—')}</strong> (clase ${esc(c.clase || '?')}, ${esc(c.estado || '—')})${c.titular ? ` — titular: ${esc(c.titular)}` : ''}</div>`
   ).join('');
   return `
     <div class="alerta-row ${esc(a.nivel)}">

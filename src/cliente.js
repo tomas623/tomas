@@ -445,9 +445,9 @@ function mountClienteRoutes(app) {
     `).all(req.user.id);
 
     // Para el cliente NO exponemos el JSON crudo de Gemini ni los motivos técnicos —
-    // sólo nombre, clase y estado del candidato. El detalle queda en el panel admin.
+    // sólo nombre, clase, titular y estado del candidato. El detalle queda en el admin.
     const candStmt = db.prepare(`
-      SELECT mb.denominacion, mb.clase, mb.estado
+      SELECT mb.denominacion, mb.clase, mb.estado, mb.titular
       FROM alerta_candidatos ac
       LEFT JOIN marcas_boletin mb ON mb.id = ac.marca_boletin_id
       WHERE ac.alerta_id = ?

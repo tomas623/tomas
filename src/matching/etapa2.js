@@ -259,18 +259,20 @@ function nivelDesdeScore(score) {
 
 function stubAnalisis(marca, candidata, motivo) {
   const nivel = nivelDesdeScore(candidata.score || 0);
-  const motivos = (candidata.motivos || []).join(', ') || 'similitud detectada por el motor';
-  const razon = motivo || 'El dictamen de IA no está disponible — requiere revisión manual del Agente.';
   return {
     nivel_riesgo: nivel,
     notoria: false,
-    fundamento: `Coincidencia automática entre la marca vigilada "${marca.denominacion}" y "${candidata.denominacion}" (clase ${candidata.clase || '?'}). Señales del motor: ${motivos}. Nivel preliminar por score: ${nivel} (${candidata.score}). ${razon}`,
+    // Fundamento LIMPIO — lo ve el cliente. Sin jerga técnica, sin nombre de
+    // modelo, sin códigos HTTP. El detalle técnico va en nota_tecnica (solo admin).
+    fundamento: `Se detectó una posible coincidencia entre tu marca «${marca.denominacion}» y «${candidata.denominacion}» (clase ${candidata.clase || 's/d'}). Un profesional de nuestro equipo la está revisando para confirmar el nivel de riesgo y la estrategia.`,
     recomendacion: nivel === 'alto'
       ? 'Escalar a Agente de la Propiedad Industrial para análisis profundo y eventual oposición.'
       : nivel === 'medio'
         ? 'Revisar manualmente. Posible variante viable con ajuste de denominación o estrategia de clase.'
         : 'Riesgo bajo. Documentar y continuar monitoreo.',
     stub: true,
+    // Nota técnica interna: por qué no hay dictamen de IA. NO se muestra al cliente.
+    nota_tecnica: motivo || 'Dictamen de IA no disponible.',
   };
 }
 

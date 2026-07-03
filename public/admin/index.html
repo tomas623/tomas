@@ -401,7 +401,7 @@ function candidatoCard(c) {
       <div class="candidato-head">
         <div>
           <span class="cand-name">${esc(c.denominacion || '—')}</span>
-          <span class="cand-meta">· clase ${esc(c.clase || '—')} · acta ${esc(c.acta || '—')} · ${esc(c.titular || '—')}</span>
+          <span class="cand-meta">· clase ${esc(c.clase || '—')} · acta ${esc(c.acta || '—')} · titular: <b style="color:var(--text-soft)">${esc(c.titular || 'sin dato')}</b></span>
         </div>
         <span class="score-pill">score ${c.score}</span>
       </div>
