@@ -474,8 +474,14 @@ function mountClienteRoutes(app) {
   });
 
   // ===== Catálogo de packs (para mostrar upgrade) =====
+  // Sólo los packs públicos pagos. El pack "unlimited" (interno, gratis, cupo
+  // 9999) NO se ofrece a los clientes — se asigna a mano desde el panel admin.
   app.get('/api/cliente/packs', guard, (req, res) => {
-    const rows = db.prepare('SELECT codigo, nombre, cupo_marcas, precio_mensual FROM packs ORDER BY cupo_marcas ASC').all();
+    const rows = db.prepare(`
+      SELECT codigo, nombre, cupo_marcas, precio_mensual FROM packs
+      WHERE precio_mensual > 0 AND codigo != 'vigilancia_unlimited'
+      ORDER BY cupo_marcas ASC
+    `).all();
     const conLink = rows.map(p => ({
       ...p,
       tiene_link: !!process.env[`MP_PLAN_${p.codigo.toUpperCase().replace('VIGILANCIA_', 'VIG_')}`],
