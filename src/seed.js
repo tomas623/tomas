@@ -81,9 +81,9 @@ async function main() {
 
   // ===== 2) Packs de vigilancia (BUILD_SPEC_MOTOR §1) =====
   const packs = [
-    { codigo: 'vigilancia_3',         nombre: 'Vigilancia 3 marcas',     cupo_marcas: 3,    precio_mensual: 4900 },
-    { codigo: 'vigilancia_10',        nombre: 'Vigilancia 10 marcas',    cupo_marcas: 10,   precio_mensual: 12900 },
-    { codigo: 'vigilancia_20',        nombre: 'Vigilancia hasta 20',     cupo_marcas: 20,   precio_mensual: 19900 },
+    { codigo: 'vigilancia_3',         nombre: 'Vigilancia 3 marcas',     cupo_marcas: 3,    precio_mensual: 7900 },
+    { codigo: 'vigilancia_10',        nombre: 'Vigilancia 10 marcas',    cupo_marcas: 10,   precio_mensual: 14900 },
+    { codigo: 'vigilancia_20',        nombre: 'Vigilancia hasta 20',     cupo_marcas: 20,   precio_mensual: 22900 },
     // Pack interno sin cobro mensual, cupo prácticamente ilimitado. Se asigna
     // manualmente desde el panel a cuentas internas / partners / cortesía.
     // No se ofrece en la landing.
