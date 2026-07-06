@@ -1221,6 +1221,8 @@ async function loadBoletines() {
       </div>
       <button class="btn primary" onclick="ingestar()">Ingestar boletín</button>
       <button class="btn green" onclick="correrMonitoreo()">Correr monitoreo ahora</button>
+      <button class="btn" onclick="reporteMensual(true, this)" title="Muestra a quién le tocaría, sin enviar">👁 Reporte mensual (preview)</button>
+      <button class="btn" onclick="reporteMensual(false, this)">✉ Enviar reporte mensual</button>
     </div>
     <div id="ingResult"></div>`;
   if (!r.data.boletines.length) {
@@ -1412,6 +1414,23 @@ async function correrMonitoreo() {
     loadResumen();
   } else {
     $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">${esc(r.error)}</div>`;
+  }
+}
+
+async function reporteMensual(dryRun, btn) {
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = dryRun ? 'Calculando…' : 'Enviando…';
+  const r = await api('/api/admin/reporte-mensual/run', { method: 'POST', body: JSON.stringify({ dry_run: dryRun }) });
+  btn.disabled = false; btn.textContent = orig;
+  if (!r.ok) { $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">${esc(r.error)}</div>`; return; }
+  const d = r.data;
+  if (dryRun) {
+    const filas = (d.detalle || []).map(x => `${esc(x.email)} — ${x.marcas} marcas · ${x.alertas} alerta(s) · ${x.hitos} hito(s)`).join('<br>');
+    $('#ingResult').innerHTML = `<div style="padding:12px 14px;border-radius:8px;background:var(--bg-soft);border:1px solid var(--border-soft);font-size:13px">
+      <strong>Preview del reporte de ${esc(d.mes)}</strong> — le tocaría a <strong>${d.clientes}</strong> cliente(s). No se envió nada.<br>
+      <div style="margin-top:8px;font-size:12.5px;color:var(--text-muted);line-height:1.7">${filas || 'Ningún cliente con vigilancia activa.'}</div>
+    </div>`;
+  } else {
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)">✓ Reporte de ${esc(d.mes)} enviado a <strong>${d.enviados}</strong>/${d.clientes} cliente(s)${d.errores ? ` · ${d.errores} error(es)` : ''}.</div>`;
   }
 }
 

@@ -14,6 +14,7 @@ const syncInpi = require('./sync-inpi');
 const catchUpInpi = require('./catch-up-inpi');
 const backupDb = require('./backup-db');
 const avisoHitos = require('./aviso-hitos-legales');
+const reporteMensual = require('./reporte-mensual');
 
 const state = { tasks: [] };
 const TZ = process.env.TZ || 'America/Argentina/Buenos_Aires';
@@ -191,6 +192,21 @@ function iniciar() {
       } catch (err) {
         console.error('[cron] aviso-hitos ERROR:', err.message);
         audit.log(null, 'cron.aviso_hitos.error', { detalle: { error: err.message } });
+      }
+    });
+  }
+
+  // 8) Reporte mensual de cartera — default día 1 de cada mes, 9:00 hora local.
+  // Manda a cada cliente con vigilancia activa un resumen del mes (marcas,
+  // alertas, próximos hitos). Se desactiva con CRON_REPORTE_MENSUAL_ENABLED=false.
+  if ((process.env.CRON_REPORTE_MENSUAL_ENABLED || 'true').toLowerCase() !== 'false') {
+    programar('reporte-mensual', (process.env.CRON_REPORTE_MENSUAL || '0 9 1 * *').trim(), async () => {
+      try {
+        const r = await reporteMensual.correr({});
+        console.log(`[cron] reporte-mensual: ${r.enviados}/${r.clientes} enviados (${r.errores} errores)`);
+      } catch (err) {
+        console.error('[cron] reporte-mensual ERROR:', err.message);
+        audit.log(null, 'cron.reporte_mensual.error', { detalle: { error: err.message } });
       }
     });
   }

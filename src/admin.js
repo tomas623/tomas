@@ -1109,6 +1109,19 @@ function mountAdminRoutes(app) {
       res.status(500).json(fail(err.message, 500));
     }
   });
+
+  // Reporte mensual de cartera. Con dry_run:true no manda mails (preview de a
+  // quién le tocaría y con qué números); sin él, envía a todos.
+  app.post('/api/admin/reporte-mensual/run', guard, express.json(), async (req, res) => {
+    try {
+      const dryRun = !!(req.body && req.body.dry_run);
+      const r = await require('./jobs/reporte-mensual').correr({ dryRun });
+      audit.log(req.user.id, 'reporte_mensual.manual', { detalle: { dryRun, enviados: r.enviados, clientes: r.clientes } });
+      res.json(ok(r));
+    } catch (err) {
+      res.status(500).json(fail(err.message, 500));
+    }
+  });
 }
 
 // hoist al require de express para no romper si server.js no lo pasa.
