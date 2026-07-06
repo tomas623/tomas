@@ -66,8 +66,16 @@ function construirHtml({ cliente, mesNombre, marcas, alertas, hitos, marcasEscan
 
       <div style="border-top:1px solid #e5e7eb;margin-top:22px;padding-top:14px;font-size:12.5px;color:#64748b">
         ${marcasEscaneadas > 0
-          ? `✓ Este mes cruzamos tu cartera contra <strong>${marcasEscaneadas.toLocaleString('es-AR')}</strong> marcas nuevas publicadas en el Boletín del INPI. Seguimos escaneando cada semana.`
-          : `✓ Escaneamos el Boletín del INPI todas las semanas cruzándolo con tu cartera.`}
+          ? `✓ Este mes cruzamos tu cartera contra <strong>${marcasEscaneadas.toLocaleString('es-AR')}</strong> marcas nuevas publicadas en el Boletín del INPI. Este es tu resumen del mes; vas a seguir recibiendo nuestras alertas todas las semanas.`
+          : `✓ Escaneamos el Boletín del INPI todas las semanas cruzándolo con tu cartera. Vas a seguir recibiendo nuestras alertas.`}
+      </div>
+
+      <div style="background:#eff6ff;border-left:3px solid #1B6EF3;padding:12px 16px;border-radius:6px;margin-top:16px;font-size:12.5px;line-height:1.65;color:#0f1f3d">
+        <strong>Cómo se defiende una marca.</strong> El derecho marcario argentino se rige por la prioridad:
+        <em>quien presenta primero, tiene preferencia</em>. Tener tu marca registrada o en trámite te habilita a
+        <strong>oponerte</strong> a solicitudes posteriores que puedan confundirse con la tuya. Nuestro monitoreo
+        existe para que no se te pase ninguna: te avisamos apenas aparece, para que ejerzas ese derecho dentro del
+        plazo legal. Detectar es el primer paso; oponerte, cuando corresponde, es lo que realmente defiende tu marca.
       </div>
 
       <p style="margin-top:22px">
