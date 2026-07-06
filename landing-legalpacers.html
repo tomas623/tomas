@@ -1088,37 +1088,33 @@
       </button>
     </div>
 
-    <div class="price-block" x-show="vigForm.packPrecio > 0">
-      <div class="num" x-text="vigForm.ciclo === 'anual' ? '$' + (vigForm.packPrecio * 10).toLocaleString('es-AR') + ' /año' : '$' + vigForm.packPrecio.toLocaleString('es-AR') + ' /mes'"></div>
-      <div class="meta" x-text="vigForm.ciclo === 'anual' ? 'Suscripción anual · Equivale a 10 meses · Cancelás cuando quieras' : 'Suscripción mensual · Cancelás cuando quieras'"></div>
-    </div>
-
-    <div class="entregables">
-      <h4>📡 Qué incluye:</h4>
-      <ul>
-        <li><strong>Escaneo del Boletín del INPI</strong> contra las marcas de tu cartera (publicación quincenal, los jueves).</li>
-        <li><strong>Alertas por mail y en tu portal cliente</strong> si detectamos un riesgo en alguna acta nueva.</li>
-        <li><strong>Reporte mensual del estado</strong> de tu cartera (en planes 10 y 20).</li>
+    <div class="entregables" style="margin:14px 0">
+      <ul style="font-size:12.5px">
+        <li><strong>Escaneo del Boletín del INPI</strong> contra tu cartera (quincenal, los jueves).</li>
+        <li><strong>Alertas por mail y portal</strong> si detectamos un riesgo en una acta nueva.</li>
+        <li><strong>Reporte mensual</strong> del estado de tu cartera (planes 10 y 20).</li>
       </ul>
-      <p style="font-size:12px;color:var(--text-dim);margin-top:8px">La presentación de oposiciones no está incluida y se cotiza por separado si querés avanzar.</p>
+      <p style="font-size:11.5px;color:var(--text-dim);margin-top:6px">La presentación de oposiciones se cotiza aparte.</p>
     </div>
 
-    <div style="margin-top:14px"><label class="modal-label">Tu nombre o razón social</label>
-      <input type="text" x-model="vigForm.nombre" class="modal-input" placeholder="Ej: Martín García / Empresa SA"></div>
-    <div><label class="modal-label">Email de contacto</label>
-      <input type="email" x-model="vigForm.email" class="modal-input" placeholder="nombre@empresa.com"></div>
-    <div><label class="modal-label">WhatsApp (opcional, para contacto)</label>
-      <input type="tel" x-model="vigForm.telefono" class="modal-input" placeholder="+54 9 11 1234 5678"></div>
-    <div><label class="modal-label">Marcas que querés vigilar (opcional)</label>
-      <textarea x-model="vigForm.marcas" class="modal-input" rows="3" placeholder="Una por línea. Si todavía no las tenés, dejalo vacío y lo coordinamos en la llamada."></textarea></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+      <div><label class="modal-label">Nombre o razón social</label>
+        <input type="text" x-model="vigForm.nombre" class="modal-input" placeholder="Ej: Martín García / Empresa SA"></div>
+      <div><label class="modal-label">Email de contacto</label>
+        <input type="email" x-model="vigForm.email" class="modal-input" placeholder="nombre@empresa.com"></div>
+      <div><label class="modal-label">WhatsApp <span class="muted" style="font-weight:400">(opcional)</span></label>
+        <input type="tel" x-model="vigForm.telefono" class="modal-input" placeholder="+54 9 11 1234 5678"></div>
+      <div><label class="modal-label">Marcas a vigilar <span class="muted" style="font-weight:400">(opcional)</span></label>
+        <input type="text" x-model="vigForm.marcas" class="modal-input" placeholder="Podés dejarlo para la llamada"></div>
+    </div>
     <div x-show="vigForm.error" class="modal-error" x-text="vigForm.error"></div>
 
     <button class="btn btn-primary btn-full" @click="confirmarVigilancia()" :disabled="vigForm.enviando">
-      <span x-show="!vigForm.enviando" x-text="vigForm.ciclo === 'anual' ? 'Suscribirme — pago anual' : 'Suscribirme — pago mensual'"></span>
+      <span x-show="!vigForm.enviando" x-text="(vigForm.ciclo === 'anual' ? 'Suscribirme · anual · $' + (vigForm.packPrecio*10).toLocaleString('es-AR') + '/año' : 'Suscribirme · $' + vigForm.packPrecio.toLocaleString('es-AR') + '/mes')"></span>
       <span x-show="vigForm.enviando" x-cloak>Procesando…</span>
     </button>
-    <p style="font-size:12px;color:var(--text-dim);margin-top:10px;text-align:center">
-      Te llevamos a Mercado Pago para activar la suscripción. Cancelás cuando quieras.
+    <p style="font-size:11.5px;color:var(--text-dim);margin-top:8px;text-align:center">
+      Te llevamos a Mercado Pago. Cancelás cuando quieras.
     </p>
   </div>
 </div>
