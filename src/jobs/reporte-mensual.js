@@ -21,7 +21,7 @@ function nivelColor(n) {
   return n === 'alto' ? '#dc2626' : n === 'medio' ? '#d97706' : '#059669';
 }
 
-function construirHtml({ cliente, mesNombre, marcas, alertas, hitos, ultimoScan, baseUrl }) {
+function construirHtml({ cliente, mesNombre, marcas, alertas, hitos, marcasEscaneadas, baseUrl }) {
   const nombre = (cliente.nombre || '').trim().split(/\s+/)[0];
   const saludo = nombre ? `Hola ${nombre},` : 'Hola,';
 
@@ -65,7 +65,9 @@ function construirHtml({ cliente, mesNombre, marcas, alertas, hitos, ultimoScan,
       ${hitosHtml}
 
       <div style="border-top:1px solid #e5e7eb;margin-top:22px;padding-top:14px;font-size:12.5px;color:#64748b">
-        ✓ Vigilancia activa. Escaneamos el Boletín del INPI todas las semanas.${ultimoScan ? ` Último escaneo: ${fmtFecha(ultimoScan)}.` : ''}
+        ${marcasEscaneadas > 0
+          ? `✓ Este mes cruzamos tu cartera contra <strong>${marcasEscaneadas.toLocaleString('es-AR')}</strong> marcas nuevas publicadas en el Boletín del INPI. Seguimos escaneando cada semana.`
+          : `✓ Escaneamos el Boletín del INPI todas las semanas cruzándolo con tu cartera.`}
       </div>
 
       <p style="margin-top:22px">
@@ -99,11 +101,12 @@ async function correr({ dryRun = false, ahora } = {}) {
       AND EXISTS (SELECT 1 FROM marcas_vigiladas mv WHERE mv.usuario_id = u.id AND mv.estado = 'activa')
   `).all();
 
-  const scan = db.prepare(`
-    SELECT created_at FROM audit_log
-    WHERE accion IN ('cron.monitoreo','monitoreo.run') ORDER BY id DESC LIMIT 1
-  `).get();
-  const ultimoScan = scan?.created_at || null;
+  // Marcas nuevas publicadas en el boletín y cruzadas contra las carteras este
+  // mes — el número "grande" que muestra el trabajo hecho (igual para todos).
+  const marcasEscaneadas = db.prepare(`
+    SELECT COUNT(*) AS n FROM marcas_boletin
+    WHERE boletin_id IN (SELECT id FROM boletines WHERE created_at >= date('now','-1 month'))
+  `).get().n;
 
   const stmtMarcas = db.prepare(`
     SELECT denominacion, clases, situacion_inpi FROM marcas_vigiladas
@@ -145,7 +148,7 @@ async function correr({ dryRun = false, ahora } = {}) {
     detalle.push({ email: c.email, marcas: marcas.length, alertas: alertas.length, hitos: hitos.length });
     if (dryRun) continue;
 
-    const html = construirHtml({ cliente: c, mesNombre, marcas, alertas, hitos, ultimoScan, baseUrl });
+    const html = construirHtml({ cliente: c, mesNombre, marcas, alertas, hitos, marcasEscaneadas, baseUrl });
     const r = await enviarMailGenerico({
       to: c.email,
       subject: `Tu reporte de marcas de ${mesNombre} — LegalPacers`,
