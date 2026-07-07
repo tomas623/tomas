@@ -855,7 +855,13 @@ app.get('/pagos/pendiente', (req, res) =>
   res.type('html').send(paginaResultado('Pago pendiente', 'Te avisamos cuando se acredite.', '#f59e0b')));
 
 // ===== Landing estática =====
-app.get('/', (req, res) => res.sendFile(path.join(ROOT_DIR, 'landing-legalpacers.html')));
+// no-cache: el navegador puede guardar la copia pero DEBE revalidar con el
+// server (via ETag) antes de usarla. Así, apenas redeployamos, los usuarios
+// toman el HTML/CSS nuevo sin quedarse con una versión vieja cacheada.
+app.get('/', (req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.sendFile(path.join(ROOT_DIR, 'landing-legalpacers.html'));
+});
 
 // ===== SEO: robots.txt + sitemap.xml =====
 // robots.txt: permite indexar el sitio público, bloquea el crawl del panel
