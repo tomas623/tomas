@@ -152,12 +152,8 @@ function dibujarHeader(doc, { cliente }) {
   doc.font('cuerpo-light').fontSize(9).fillColor(COLORES.textoSuave)
     .text('MARCA CONSULTADA', X_MARGEN, doc.y);
   const yMarca = doc.y;
-  // Isotipo como sello de marca a la derecha, alineado con la denominación.
-  if (fs.existsSync(ISOTIPO_PATH)) {
-    doc.image(ISOTIPO_PATH, X_MARGEN + ANCHO_CONTENIDO - 46, yMarca + 2, { width: 46 });
-  }
   doc.font('titulo').fontSize(32).fillColor(COLORES.navy)
-    .text(cliente.marca, X_MARGEN, yMarca, { lineGap: 0, width: ANCHO_CONTENIDO - 60 });
+    .text(cliente.marca, X_MARGEN, yMarca, { lineGap: 0, width: ANCHO_CONTENIDO });
   if (Array.isArray(cliente.clases) && cliente.clases.length > 0) {
     doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
       .text(
@@ -527,11 +523,13 @@ function dibujarCTAs(doc, cliente) {
   dibujarCardCTA(doc, card1);
   dibujarCardCTA(doc, card2);
 
-  // Datos de contacto del estudio
-  doc.moveDown(0.3);
+  // Datos de contacto del estudio — con aire arriba y abajo para que no quede
+  // pegado a la card anterior ni a la sección siguiente.
+  doc.moveDown(1);
   doc.font('cuerpo-light').fontSize(8.5).fillColor(COLORES.textoSuave)
-    .text('Escribinos a contacto@legalpacers.com  ·  WhatsApp +54 9 11 2877-4200  ·  legalpacers.com',
+    .text('Escribinos a contacto@legalpacers.com   ·   WhatsApp +54 9 11 2877-4200   ·   legalpacers.com',
       X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, align: 'center', lineBreak: false });
+  doc.moveDown(1.4);
 }
 
 function dibujarComparativas(doc, informe) {

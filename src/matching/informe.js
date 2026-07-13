@@ -661,7 +661,7 @@ function stubInforme(marca, candidatas_principales, candidatas_otras_clases, fla
       : nivel === 'medio' ? 'Auditar variante' : 'Presentar como está',
     alternativas_sugeridas: [],
     cliente: {
-      veredicto_breve: `[STUB sin GEMINI_API_KEY] Análisis aproximado: nivel ${nivel}, ${candidatas.length} marca(s) parecida(s) detectada(s) y ${flags.length} restricción(es) legal(es).`,
+      veredicto_breve: `Análisis preliminar automático: nivel ${nivel}, ${candidatas.length} marca(s) parecida(s) detectada(s) y ${flags.length} restricción(es) legal(es). Pendiente del dictamen profesional del Agente.`,
       comparativas: [
         ...candidatas.slice(0, 20).map(c => ({
           marca: c.denominacion, clase: c.clase, rubro: c.rubro || '—',
@@ -681,11 +681,11 @@ function stubInforme(marca, candidatas_principales, candidatas_otras_clases, fla
       bloques: [
         {
           icono: nivel === 'alto' ? 'fail' : nivel === 'medio' ? 'warning' : 'ok',
-          titulo: 'ANÁLISIS PRELIMINAR EN MODO STUB',
-          mensaje: 'Este informe se generó sin acceso al motor de análisis principal. El resultado es aproximado y debe completarse manualmente antes de enviar al cliente.',
+          titulo: 'ANÁLISIS PRELIMINAR',
+          mensaje: 'Este es un pre-análisis automático de la marca. El dictamen profesional completo, con las recomendaciones del Agente de la Propiedad Industrial, se elabora en la revisión antes de enviártelo.',
         },
       ],
-      proximos_pasos: ['Reintentar la generación con GEMINI_API_KEY configurada.'],
+      proximos_pasos: ['El equipo revisa el análisis y te envía el dictamen final.'],
       apendice_legal_corto: null,
     },
     stub: true,
