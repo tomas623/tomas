@@ -47,11 +47,25 @@ function colorIcono(tipo) {
   return COLORES[tipo] || COLORES.info;
 }
 
+// ✓ y ✗ NO existen en la fuente Mundial (salen como cuadrado roto si se
+// dibujan con doc.text). Los dibujamos con vectores, centrados en (cx, cy).
+function dibujarCheck(doc, cx, cy, color, s = 5) {
+  doc.save();
+  doc.lineWidth(Math.max(1.3, s * 0.34)).strokeColor(color).lineJoin('round').lineCap('round');
+  doc.moveTo(cx - s * 0.62, cy + s * 0.02).lineTo(cx - s * 0.12, cy + s * 0.55).lineTo(cx + s * 0.72, cy - s * 0.55).stroke();
+  doc.restore();
+}
+function dibujarCross(doc, cx, cy, color, s = 4.5) {
+  doc.save();
+  doc.lineWidth(Math.max(1.3, s * 0.34)).strokeColor(color).lineCap('round');
+  doc.moveTo(cx - s * 0.55, cy - s * 0.55).lineTo(cx + s * 0.55, cy + s * 0.55).stroke();
+  doc.moveTo(cx + s * 0.55, cy - s * 0.55).lineTo(cx - s * 0.55, cy + s * 0.55).stroke();
+  doc.restore();
+}
+
 function simboloIcono(tipo) {
-  // Símbolos Unicode soportados por Mundial Regular.
-  if (tipo === 'ok') return '✓';
+  // Solo ASCII que Mundial sí renderiza. ok/fail se dibujan con vectores aparte.
   if (tipo === 'warning') return '!';
-  if (tipo === 'fail') return '✗';
   return '·';
 }
 
@@ -353,16 +367,16 @@ function dibujarMetodologia(doc) {
 
   for (const e of ejes) {
     doc.font('cuerpo').fontSize(9.5);
-    const altoD = doc.heightOfString(e.d, { width: ANCHO_CONTENIDO - 28, lineGap: 2 });
-    asegurarEspacio(doc, altoD + 32);
+    const altoD = doc.heightOfString(e.d, { width: ANCHO_CONTENIDO - 28, lineGap: 3 });
+    asegurarEspacio(doc, altoD + 36);
     const yE = doc.y;
     doc.circle(X_MARGEN + 6, yE + 7, 2.8).fillColor(COLORES.azul).fill();
     doc.font('cuerpo-bold').fontSize(10).fillColor(COLORES.navy)
       .text(e.t, X_MARGEN + 18, yE, { width: ANCHO_CONTENIDO - 18 });
-    doc.moveDown(0.2);
+    doc.moveDown(0.4);
     doc.font('cuerpo').fontSize(9.5).fillColor(COLORES.textoCuerpo)
-      .text(e.d, X_MARGEN + 18, doc.y, { width: ANCHO_CONTENIDO - 18, lineGap: 2 });
-    doc.moveDown(0.7);
+      .text(e.d, X_MARGEN + 18, doc.y, { width: ANCHO_CONTENIDO - 18, lineGap: 3 });
+    doc.moveDown(1);
   }
   doc.moveDown(0.3);
 }
@@ -455,12 +469,11 @@ function dibujarQueImplicaRegistro(doc) {
     const x = X_MARGEN + col * (colW + 14);
     const y = yStart + row * rowH;
 
-    // Check verde
+    // Check verde (dibujado con vectores — la fuente no tiene el glyph ✓)
     doc.save();
     doc.circle(x + 9, y + 9, 8).fillColor(COLORES.ok).fillOpacity(0.15).fill();
     doc.fillOpacity(1).restore();
-    doc.font('cuerpo').fontSize(11).fillColor(COLORES.ok)
-      .text('✓', x, y + 3, { width: 18, align: 'center', lineBreak: false });
+    dibujarCheck(doc, x + 9, y + 9, COLORES.ok, 5.5);
     // Título
     doc.font('cuerpo-bold').fontSize(9.5).fillColor(COLORES.navy)
       .text(item.t, x + 24, y + 2, { width: colW - 26, lineBreak: false });
@@ -613,14 +626,16 @@ function dibujarBloque(doc, bloque) {
   const yInicio = doc.y;
 
   // Icono + título en la misma línea — lineBreak:false para evitar wrap
-  const iconoSimbolo = simboloIcono(icono);
   const iconoSize = 18;
   doc.save();
   doc.roundedRect(X_MARGEN, yInicio, iconoSize, iconoSize, 3)
     .fillColor(color).fillOpacity(0.15).fill();
   doc.fillOpacity(1).restore();
-  doc.font('cuerpo-bold').fontSize(11).fillColor(color)
-    .text(iconoSimbolo, X_MARGEN, yInicio + 3, { width: iconoSize, align: 'center', lineBreak: false });
+  const icx = X_MARGEN + iconoSize / 2, icy = yInicio + iconoSize / 2;
+  if (icono === 'ok') dibujarCheck(doc, icx, icy, color, 5.5);
+  else if (icono === 'fail') dibujarCross(doc, icx, icy, color, 4.5);
+  else doc.font('cuerpo-bold').fontSize(11).fillColor(color)
+    .text(simboloIcono(icono), X_MARGEN, yInicio + 3, { width: iconoSize, align: 'center', lineBreak: false });
 
   doc.font('titulo').fontSize(10).fillColor(COLORES.navy)
     .text(titulo, X_MARGEN + iconoSize + 8, yInicio + 5,
@@ -668,7 +683,9 @@ function dibujarContextoDigital(doc, contexto) {
 
   const dibujarFilaRecurso = (icono, color, etiquetaPrincipal, estado) => {
     const yRow = doc.y;
-    doc.font('cuerpo-bold').fontSize(10).fillColor(color)
+    if (icono === 'ok') dibujarCheck(doc, X_MARGEN + 16, yRow + 5, color, 4.5);
+    else if (icono === 'fail') dibujarCross(doc, X_MARGEN + 16, yRow + 5, color, 4);
+    else doc.font('cuerpo-bold').fontSize(10).fillColor(color)
       .text(icono, X_MARGEN + 12, yRow, { width: 12, align: 'left', lineBreak: false });
     doc.font('cuerpo').fontSize(10).fillColor(COLORES.textoCuerpo)
       .text(etiquetaPrincipal, X_MARGEN + 30, yRow, { lineBreak: false, width: 200 });
@@ -678,8 +695,8 @@ function dibujarContextoDigital(doc, contexto) {
   };
 
   const interpretarDisponibilidad = (info) => {
-    if (info.disponible === true) return { estado: 'libre — podés registrarlo', color: COLORES.ok, icono: '✓' };
-    if (info.disponible === false) return { estado: 'tomado', color: COLORES.fail, icono: '✗' };
+    if (info.disponible === true) return { estado: 'libre — podés registrarlo', color: COLORES.ok, icono: 'ok' };
+    if (info.disponible === false) return { estado: 'tomado', color: COLORES.fail, icono: 'fail' };
     return { estado: 'no pudimos verificar (la plataforma bloquea)', color: COLORES.textoSuave, icono: '?' };
   };
 
