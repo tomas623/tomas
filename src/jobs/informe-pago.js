@@ -115,9 +115,13 @@ function htmlMailEquipo({ informeId, marca, nivel, viab, solicitante, email }) {
 /**
  * Procesa un lead pagado: corre el análisis, genera el PDF y encola para revisión.
  * @param {number} leadId
+ * @param {object} [opts]
+ * @param {boolean} [opts.notificarCliente=true] - manda el mail de acuse al
+ *   cliente. En regeneraciones lo pasamos en false para no re-mandarle
+ *   "recibimos tu pago" cada vez.
  * @returns {Promise<{informeId:number, estado:string}|null>}
  */
-async function procesarInformePago(leadId) {
+async function procesarInformePago(leadId, { notificarCliente = true } = {}) {
   const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId);
   if (!lead) {
     console.error(`[informe-pago] lead ${leadId} no encontrado`);
@@ -199,7 +203,9 @@ async function procesarInformePago(leadId) {
     audit.log(null, 'informe_pago.borrador', { entidad: 'informes', entidad_id: informeId });
 
     // 6. Notificaciones (no bloquean — los errores se loguean).
-    if (lead.email) {
+    // El acuse al cliente ("recibimos tu pago") se manda SOLO en la generación
+    // original, no en regeneraciones — para no spamearlo con confirmaciones.
+    if (lead.email && notificarCliente) {
       enviarMailGenerico({
         to: lead.email,
         subject: `Recibimos tu pago — informe de "${lead.marca}" en proceso`,

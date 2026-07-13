@@ -785,7 +785,8 @@ function mountAdminRoutes(app) {
     try {
       db.prepare('DELETE FROM informes WHERE id = ?').run(id);
       const { procesarInformePago } = require('./jobs/informe-pago');
-      const r = await procesarInformePago(row.lead_id);
+      // notificarCliente:false → regenerar NO le re-manda "recibimos tu pago".
+      const r = await procesarInformePago(row.lead_id, { notificarCliente: false });
       const nuevo = r?.informeId ? db.prepare('SELECT informe_json FROM informes WHERE id = ?').get(r.informeId) : null;
       let stub = null;
       if (nuevo) { try { stub = JSON.parse(nuevo.informe_json || '{}').stub === true; } catch {} }
