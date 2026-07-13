@@ -430,7 +430,7 @@ function dibujarCardCTA(doc, opts) {
 function dibujarQueImplicaRegistro(doc) {
   const items = [
     { t: 'Derecho exclusivo',         d: 'Sos el único que puede usar la marca en las clases registradas.' },
-    { t: 'Vigencia 10 años',          d: 'Renovable indefinidamente mientras la marca esté en uso.' },
+    { t: 'Vigencia 10 años',          d: 'Renovable cada 10 años. Al año 5 se presenta la Declaración Jurada de Uso (DJU), obligatoria por ley.' },
     { t: 'Derecho a oponerte',        d: 'Con tu marca registrada o en trámite podés oponerte a solicitudes posteriores confundibles (la presentación de la oposición se cotiza aparte).' },
     { t: 'Activo transferible',       d: 'La marca se vende, licencia o aporta como activo intangible.' },
     { t: 'Trámite ágil',              d: 'Con el examen simplificado del INPI y sin oposiciones, suele concederse en alrededor de 3 meses.' },
