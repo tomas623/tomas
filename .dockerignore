@@ -10,7 +10,6 @@ __pycache__
 *.pyc
 *.pyo
 *.log
-TIPOGRAFIA
 cache
 *.mp4
 *.pdf

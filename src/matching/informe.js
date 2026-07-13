@@ -699,7 +699,9 @@ async function callGemini(marca, candidatas_principales, candidatas_otras_clases
   const apiKey = (process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) return stubInforme(marca, candidatas_principales, candidatas_otras_clases, flagsLeyesEspeciales);
 
-  const model = (process.env.GEMINI_MODEL_INFORME || 'gemini-2.5-pro').trim();
+  // Default flash: disponible en el free tier (pro da 429 sin billing). Con
+  // billing activo se puede subir a pro seteando GEMINI_MODEL_INFORME.
+  const model = (process.env.GEMINI_MODEL_INFORME || 'gemini-2.5-flash').trim();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
 
   const userPrompt = construirUserPrompt({
@@ -780,7 +782,7 @@ async function generar(marca, candidatasInput = []) {
   informe._pre_checks = flagsLeyesEspeciales;
   informe._meta = {
     generado_at: new Date().toISOString(),
-    model: (process.env.GEMINI_MODEL_INFORME || 'gemini-2.5-pro'),
+    model: (process.env.GEMINI_MODEL_INFORME || 'gemini-2.5-flash'),
     candidatas_principales: principales.length,
     candidatas_otras_clases: otras_clases.length,
   };

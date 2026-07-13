@@ -60,12 +60,28 @@ function fmtFecha(d = new Date()) {
 }
 
 function registrarFuentes(doc) {
-  doc.registerFont('cuerpo', path.join(FONT_DIR, 'MundialRegular.otf'));
-  doc.registerFont('cuerpo-bold', path.join(FONT_DIR, 'MundialBold.otf'));
-  doc.registerFont('cuerpo-light', path.join(FONT_DIR, 'MundialLight.otf'));
-  doc.registerFont('titulo', path.join(FONT_DIR, 'MundialBlack.otf'));
-  doc.registerFont('demi', path.join(FONT_DIR, 'MundialDemibold.otf'));
-  doc.registerFont('italic', path.join(FONT_DIR, 'MundialItalic.otf'));
+  // Alias → archivo de la tipografía Mundial + fuente estándar de PDFKit como
+  // fallback. Si algún .otf no está (p.ej. no llegó al build), NO reventamos la
+  // generación entera: registramos el alias apuntando a la fuente built-in, así
+  // el informe igual sale (con tipografía default) en vez de dejar al cliente
+  // colgado. Un informe pago nunca debe fallar por un tema de fuente.
+  const mapa = [
+    ['cuerpo', 'MundialRegular.otf', 'Helvetica'],
+    ['cuerpo-bold', 'MundialBold.otf', 'Helvetica-Bold'],
+    ['cuerpo-light', 'MundialLight.otf', 'Helvetica'],
+    ['titulo', 'MundialBlack.otf', 'Helvetica-Bold'],
+    ['demi', 'MundialDemibold.otf', 'Helvetica-Bold'],
+    ['italic', 'MundialItalic.otf', 'Helvetica-Oblique'],
+  ];
+  let faltaron = 0;
+  for (const [alias, archivo, fallback] of mapa) {
+    const ruta = path.join(FONT_DIR, archivo);
+    try {
+      if (fs.existsSync(ruta)) doc.registerFont(alias, ruta);
+      else { doc.registerFont(alias, fallback); faltaron++; }
+    } catch { doc.registerFont(alias, fallback); faltaron++; }
+  }
+  if (faltaron) console.error(`[informe-pdf] faltaron ${faltaron} fuente(s) Mundial en ${FONT_DIR} — usando fallback estándar`);
 }
 
 // Workaround para ligaduras OTF "fi/fl" que PDFKit mapea mal.
