@@ -542,6 +542,13 @@ async function abrirInforme(id) {
 
       ${errorBox}
 
+      ${i.pdf_path ? `
+      <div style="margin-bottom:18px">
+        <div style="font-size:11.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;font-weight:700">📄 Vista previa · esto es lo que recibe el cliente</div>
+        <iframe src="/api/admin/informes/${i.id}/pdf?v=${encodeURIComponent(i.pdf_bytes || i.generado_at || '')}#toolbar=1&view=FitH"
+                style="width:100%;height:620px;border:1px solid var(--border-soft);border-radius:10px;background:#fff"></iframe>
+      </div>` : ''}
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
         <label class="field"><span>Solicitante (nombre)</span>
           <input id="fSolicitante" value="${esc(i.solicitante || '')}" placeholder="Nombre completo o razón social"></label>
