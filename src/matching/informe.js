@@ -740,11 +740,27 @@ async function callGemini(marca, candidatas_principales, candidatas_otras_clases
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (res.status === 429 && intento < maxIntentos - 1) {
-        const espera = esperas[Math.min(intento, esperas.length - 1)];
-        console.warn(`[informe] Gemini 429 (rate limit) — reintento ${intento + 1}/${maxIntentos - 1} en ${espera / 1000}s`);
-        await new Promise(r => setTimeout(r, espera));
-        continue;
+      if (res.status === 429) {
+        // Leemos el cuerpo para saber QUÉ cuota se agotó. Google distingue
+        // por-minuto (se despeja solo, conviene reintentar) de por-día
+        // (no se despeja hoy — reintentar es inútil, hay que activar billing).
+        const txt429 = await res.text().catch(() => '');
+        const esPorDia = /PerDay|per day|daily/i.test(txt429);
+        const cuota = esPorDia ? 'cuota DIARIA agotada (free tier). Requiere activar billing en Gemini o esperar al reset del día.'
+          : 'límite por-minuto (free tier). Se despeja en ~1 min.';
+        if (esPorDia) {
+          // No tiene sentido reintentar por ~2 min si es la cuota diaria.
+          console.error('[informe] Gemini 429 cuota diaria:', txt429.slice(0, 300));
+          return { ...stubInforme(...stubArgs), gemini_error: `HTTP 429 — ${cuota}` };
+        }
+        if (intento < maxIntentos - 1) {
+          const espera = esperas[Math.min(intento, esperas.length - 1)];
+          console.warn(`[informe] Gemini 429 (${cuota}) — reintento ${intento + 1}/${maxIntentos - 1} en ${espera / 1000}s`);
+          await new Promise(r => setTimeout(r, espera));
+          continue;
+        }
+        console.error('[informe] Gemini 429 tras reintentos:', txt429.slice(0, 200));
+        return { ...stubInforme(...stubArgs), gemini_error: `HTTP 429 — ${cuota} (reintentos agotados)` };
       }
       if (!res.ok) {
         const txt = await res.text().catch(() => '');
