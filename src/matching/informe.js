@@ -711,7 +711,17 @@ async function callGemini(marca, candidatas_principales, candidatas_otras_clases
   const body = {
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-    generationConfig: { temperature: 0.2, responseMimeType: 'application/json' },
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: 'application/json',
+      // El informe es un JSON grande. Sin un tope alto, gemini-2.5-flash trunca
+      // la respuesta (queda JSON inválido → parse_error → cae al borrador).
+      maxOutputTokens: 32768,
+      // gemini-2.5-flash trae "thinking" activo por defecto, que consume tokens
+      // de salida y puede dejar el JSON incompleto. Lo desactivamos para el
+      // informe estructurado (necesitamos JSON completo, no razonamiento).
+      thinkingConfig: { thinkingBudget: 0 },
+    },
   };
 
   const stubArgs = [marca, candidatas_principales, candidatas_otras_clases, flagsLeyesEspeciales];
@@ -743,13 +753,24 @@ async function callGemini(marca, candidatas_principales, candidatas_otras_clases
         return { ...stubInforme(...stubArgs), gemini_error: ultimoError };
       }
       const json = await res.json();
-      const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const finishReason = json?.candidates?.[0]?.finishReason || null;
+      const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!txt) {
+        // Respuesta vacía: típico de bloqueo por safety o de que "thinking" se
+        // comió todo el presupuesto de salida. Guardamos el motivo.
+        const motivo = finishReason || json?.promptFeedback?.blockReason || 'respuesta vacía';
+        console.error('[informe] Gemini respuesta vacía. finishReason:', motivo, JSON.stringify(json).slice(0, 300));
+        return { ...stubInforme(...stubArgs), gemini_error: `respuesta vacía (${motivo})` };
+      }
       try {
         const parsed = JSON.parse(txt);
         return { ...parsed, stub: false };
       } catch (err) {
-        console.error('[informe] parse error:', err.message, 'raw:', txt.slice(0, 300));
-        return { ...stubInforme(...stubArgs), parse_error: true };
+        console.error('[informe] parse error:', err.message, 'finishReason:', finishReason, 'raw:', txt.slice(0, 300));
+        const detalle = finishReason === 'MAX_TOKENS'
+          ? 'JSON truncado (MAX_TOKENS)'
+          : `JSON inválido (${err.message})`;
+        return { ...stubInforme(...stubArgs), parse_error: true, gemini_error: detalle };
       }
     } catch (err) {
       console.error('[informe] error red:', err.message);

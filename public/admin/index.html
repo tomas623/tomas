@@ -613,7 +613,8 @@ async function regenerarCompleto(id, btn) {
   btn.disabled = false; btn.textContent = orig;
   if (!r.ok) { alert(r.error || 'No se pudo regenerar'); return; }
   if (r.data.stub === true) {
-    alert('⚠ Se regeneró pero SIGUE en modo borrador (la IA no respondió — probablemente rate limit). Esperá un minuto y probá de nuevo.');
+    const motivo = r.data.motivo ? `\n\nMotivo: ${r.data.motivo}` : '';
+    alert('⚠ Se regeneró pero SIGUE en modo borrador — la IA no devolvió un análisis válido.' + motivo + '\n\nSi es rate limit (429), esperá un minuto y probá de nuevo. Si es otro error, avisá al equipo técnico con este motivo.');
   } else {
     alert('✓ Análisis regenerado con contenido real.');
   }

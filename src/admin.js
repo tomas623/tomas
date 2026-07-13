@@ -788,10 +788,16 @@ function mountAdminRoutes(app) {
       // notificarCliente:false → regenerar NO le re-manda "recibimos tu pago".
       const r = await procesarInformePago(row.lead_id, { notificarCliente: false });
       const nuevo = r?.informeId ? db.prepare('SELECT informe_json FROM informes WHERE id = ?').get(r.informeId) : null;
-      let stub = null;
-      if (nuevo) { try { stub = JSON.parse(nuevo.informe_json || '{}').stub === true; } catch {} }
-      audit.log(req.user.id, 'informe.regenerado_completo', { entidad: 'informes', entidad_id: r?.informeId, detalle: { desde: id, stub } });
-      res.json(ok({ ...r, stub }));
+      let stub = null, motivo = null;
+      if (nuevo) {
+        try {
+          const j = JSON.parse(nuevo.informe_json || '{}');
+          stub = j.stub === true;
+          motivo = j.gemini_error || (j.parse_error ? 'JSON inválido de la IA' : null) || j.red_error || null;
+        } catch {}
+      }
+      audit.log(req.user.id, 'informe.regenerado_completo', { entidad: 'informes', entidad_id: r?.informeId, detalle: { desde: id, stub, motivo } });
+      res.json(ok({ ...r, stub, motivo }));
     } catch (err) {
       console.error('[admin] regenerar-completo:', err);
       res.status(500).json(fail(err.message));

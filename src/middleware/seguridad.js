@@ -7,8 +7,9 @@
 
 // ===== Security headers =====
 function securityHeaders(req, res, next) {
-  // Evita que el sitio se embeba en iframes de terceros (clickjacking).
-  res.setHeader('X-Frame-Options', 'DENY');
+  // Evita que el sitio se embeba en iframes de TERCEROS (clickjacking), pero
+  // permite el mismo origen — el panel admin embebe el visor de PDF del informe.
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   // Evita MIME sniffing.
   res.setHeader('X-Content-Type-Options', 'nosniff');
   // No filtrar el referer completo a sitios externos.
@@ -28,7 +29,7 @@ function securityHeaders(req, res, next) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "connect-src 'self' https://www.google-analytics.com https://px.ads.linkedin.com https://region1.google-analytics.com",
-    "frame-ancestors 'none'",
+    "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self' https://www.mercadopago.com.ar https://mpago.la",
   ].join('; '));
