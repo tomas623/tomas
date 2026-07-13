@@ -773,6 +773,30 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // Regenera el ANÁLISIS completo (re-llama a Gemini + PDF), no solo el PDF.
+  // Corre dentro del proceso de la app (código + env confiables), con los
+  // reintentos ante 429. Útil cuando el informe salió en modo stub.
+  app.post('/api/admin/informes/:id/regenerar-completo', guard, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const row = db.prepare('SELECT lead_id, estado FROM informes WHERE id = ?').get(id);
+    if (!row) return res.status(404).json(fail('Informe no encontrado'));
+    if (row.estado === 'enviado') return res.status(409).json(fail('Informe ya enviado, no se regenera'));
+    if (!row.lead_id) return res.status(400).json(fail('El informe no tiene lead asociado'));
+    try {
+      db.prepare('DELETE FROM informes WHERE id = ?').run(id);
+      const { procesarInformePago } = require('./jobs/informe-pago');
+      const r = await procesarInformePago(row.lead_id);
+      const nuevo = r?.informeId ? db.prepare('SELECT informe_json FROM informes WHERE id = ?').get(r.informeId) : null;
+      let stub = null;
+      if (nuevo) { try { stub = JSON.parse(nuevo.informe_json || '{}').stub === true; } catch {} }
+      audit.log(req.user.id, 'informe.regenerado_completo', { entidad: 'informes', entidad_id: r?.informeId, detalle: { desde: id, stub } });
+      res.json(ok({ ...r, stub }));
+    } catch (err) {
+      console.error('[admin] regenerar-completo:', err);
+      res.status(500).json(fail(err.message));
+    }
+  });
+
   // Aprueba el informe y se lo manda al cliente como adjunto.
   app.post('/api/admin/informes/:id/aprobar-y-enviar', guard, async (req, res) => {
     const id = parseInt(req.params.id, 10);
