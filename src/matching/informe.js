@@ -716,30 +716,51 @@ async function callGemini(marca, candidatas_principales, candidatas_otras_clases
 
   const stubArgs = [marca, candidatas_principales, candidatas_otras_clases, flagsLeyesEspeciales];
 
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const txt = await res.text().catch(() => '');
-      console.error('[informe] Gemini HTTP', res.status, txt.slice(0, 300));
-      return { ...stubInforme(...stubArgs), gemini_error: `HTTP ${res.status}` };
-    }
-    const json = await res.json();
-    const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+  // El informe corre en background (el cliente espera 24 hs), así que ante un
+  // 429 (rate limit por minuto del free tier) esperamos y reintentamos en vez
+  // de caer al stub. Backoff: 20s, 45s, 90s. Configurable con GEMINI_REINTENTOS.
+  const maxIntentos = 1 + parseInt(process.env.GEMINI_REINTENTOS || '3', 10);
+  const esperas = [20000, 45000, 90000];
+  let ultimoError = 'desconocido';
+
+  for (let intento = 0; intento < maxIntentos; intento++) {
     try {
-      const parsed = JSON.parse(txt);
-      return { ...parsed, stub: false };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.status === 429 && intento < maxIntentos - 1) {
+        const espera = esperas[Math.min(intento, esperas.length - 1)];
+        console.warn(`[informe] Gemini 429 (rate limit) — reintento ${intento + 1}/${maxIntentos - 1} en ${espera / 1000}s`);
+        await new Promise(r => setTimeout(r, espera));
+        continue;
+      }
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        console.error('[informe] Gemini HTTP', res.status, txt.slice(0, 300));
+        ultimoError = `HTTP ${res.status}`;
+        return { ...stubInforme(...stubArgs), gemini_error: ultimoError };
+      }
+      const json = await res.json();
+      const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      try {
+        const parsed = JSON.parse(txt);
+        return { ...parsed, stub: false };
+      } catch (err) {
+        console.error('[informe] parse error:', err.message, 'raw:', txt.slice(0, 300));
+        return { ...stubInforme(...stubArgs), parse_error: true };
+      }
     } catch (err) {
-      console.error('[informe] parse error:', err.message, 'raw:', txt.slice(0, 300));
-      return { ...stubInforme(...stubArgs), parse_error: true };
+      console.error('[informe] error red:', err.message);
+      ultimoError = err.message;
+      if (intento < maxIntentos - 1) { await new Promise(r => setTimeout(r, esperas[Math.min(intento, esperas.length - 1)])); continue; }
+      return { ...stubInforme(...stubArgs), red_error: err.message };
     }
-  } catch (err) {
-    console.error('[informe] error red:', err.message);
-    return { ...stubInforme(...stubArgs), red_error: err.message };
   }
+  // Se agotaron los reintentos por 429 sostenido.
+  console.error('[informe] Gemini 429 tras todos los reintentos');
+  return { ...stubInforme(...stubArgs), gemini_error: 'HTTP 429 (reintentos agotados)' };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
