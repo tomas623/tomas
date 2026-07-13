@@ -522,14 +522,16 @@ function dibujarCTAs(doc, cliente) {
 
   dibujarCardCTA(doc, card1);
   dibujarCardCTA(doc, card2);
+}
 
-  // Datos de contacto del estudio — con aire arriba y abajo para que no quede
-  // pegado a la card anterior ni a la sección siguiente.
-  doc.moveDown(1);
+// Datos de contacto del estudio — se dibujan al cierre, después de
+// "Qué incluye el registro", como pie de contacto del informe.
+function dibujarContactoCierre(doc) {
+  doc.moveDown(1.4);
   doc.font('cuerpo-light').fontSize(8.5).fillColor(COLORES.textoSuave)
     .text('Escribinos a contacto@legalpacers.com   ·   WhatsApp +54 9 11 2877-4200   ·   legalpacers.com',
       X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, align: 'center', lineBreak: false });
-  doc.moveDown(1.4);
+  doc.moveDown(1);
 }
 
 function dibujarComparativas(doc, informe) {
@@ -845,6 +847,7 @@ function generarPDF(informe, cliente, contexto = {}) {
       dibujarApendiceLegal(doc, informe);
       dibujarCTAs(doc, cliente);
       dibujarQueImplicaRegistro(doc);
+      dibujarContactoCierre(doc);
       dibujarPie(doc);
 
       doc.end();
