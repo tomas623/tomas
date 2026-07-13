@@ -17,6 +17,8 @@ COPY server.js ./
 COPY src ./src
 COPY public ./public
 COPY data ./data
+COPY static ./static
+COPY TIPOGRAFIA ./TIPOGRAFIA
 COPY landing-legalpacers.html ./
 
 # El volumen persistente del PaaS se configura desde su UI (Railway: Volume con
