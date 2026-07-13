@@ -630,7 +630,7 @@ function stubInforme(marca, candidatas_principales, candidatas_otras_clases, fla
   return {
     nivel_riesgo: nivel,
     viabilidad_estimada: viab,
-    resumen_ejecutivo: `STUB (sin GEMINI_API_KEY). ${candidatas.length} candidata(s) detectada(s), ${flags.length} flag(s) de leyes especiales.`,
+    resumen_ejecutivo: `[Borrador automático — pendiente de análisis del Agente] Se detectaron ${candidatas.length} candidata(s) en la base del INPI y ${flags.length} flag(s) de leyes especiales. El dictamen profesional completo se elabora en la revisión.`,
     distintividad_intrinseca: { nivel: 'media', comentario: 'STUB' },
     prohibiciones_absolutas: { flags: [], comentario: 'STUB' },
     prohibiciones_relativas: {

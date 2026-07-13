@@ -431,10 +431,10 @@ function dibujarQueImplicaRegistro(doc) {
   const items = [
     { t: 'Derecho exclusivo',         d: 'Sos el único que puede usar la marca en las clases registradas.' },
     { t: 'Vigencia 10 años',          d: 'Renovable indefinidamente mientras la marca esté en uso.' },
-    { t: 'Defensa frente a terceros', d: 'Oposiciones a marcas posteriores y acciones por infracción.' },
+    { t: 'Derecho a oponerte',        d: 'Con tu marca registrada o en trámite podés oponerte a solicitudes posteriores confundibles (la presentación de la oposición se cotiza aparte).' },
     { t: 'Activo transferible',       d: 'La marca se vende, licencia o aporta como activo intangible.' },
-    { t: 'Trámite 12-18 meses',       d: 'Plazo habitual ante INPI si no hay oposiciones de terceros.' },
-    { t: 'Cobertura LegalPacers',     d: 'Análisis, presentación, seguimiento y respuesta a oposiciones.' },
+    { t: 'Trámite ágil',              d: 'Con el examen simplificado del INPI y sin oposiciones, suele concederse en alrededor de 3 meses.' },
+    { t: 'Cobertura LegalPacers',     d: 'Análisis, presentación y contestación de vistas de forma. Las oposiciones de terceros se cotizan por separado.' },
   ];
 
   const colW = (ANCHO_CONTENIDO - 14) / 2;
@@ -490,11 +490,12 @@ function dibujarCTAs(doc, cliente) {
     titulo: 'Registrá tu marca con LegalPacers',
     tituloColor: COLORES.azul,
     parrafos: [
-      { txt: 'Nos encargamos de la presentación, el seguimiento ante el INPI y las eventuales oposiciones.' },
+      { txt: 'Nos encargamos del armado del expediente, la presentación y el seguimiento ante el INPI, incluida la contestación de vistas de forma.' },
       { txt: 'Descontamos íntegramente el valor de este informe del costo del registro.', bold: true },
     ],
     etiquetaBoton: 'INICIAR EL REGISTRO',
     botonColor: COLORES.azul,
+    link: 'https://wa.me/5491128774200?text=' + encodeURIComponent('Hola LegalPacers, quiero avanzar con el registro de mi marca.'),
     bg: { color: COLORES.azul, opacity: 0.08 },
     barra: COLORES.azul,
   };
