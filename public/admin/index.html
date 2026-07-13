@@ -1120,7 +1120,43 @@ async function loadPacks() {
         </button>
       </div>
       <div id="ajusteResult" class="muted" style="margin-top:12px;font-size:13px"></div>
+    </div>
+
+    <div class="card" style="margin-top:24px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px">
+      <h3 style="font-size:15px;color:#fff;margin-bottom:6px">🩺 Diagnóstico del sistema</h3>
+      <p class="muted" style="font-size:13px;line-height:1.55;margin-bottom:16px">
+        Verifica que las integraciones críticas estén configuradas. El ping a Gemini confirma que la key
+        funcione — si falla, los informes saldrían en modo borrador (sin análisis de IA).
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn outline" onclick="correrDiagnostico(false)">🔍 Revisar configuración</button>
+        <button class="btn primary" onclick="correrDiagnostico(true)">📡 Revisar + probar Gemini</button>
+      </div>
+      <div id="diagResult" class="muted" style="margin-top:14px;font-size:13px"></div>
     </div>`;
+}
+
+async function correrDiagnostico(ping) {
+  const box = document.getElementById('diagResult');
+  box.innerHTML = ping ? 'Probando Gemini (puede tardar unos segundos)…' : 'Revisando…';
+  const r = await api(`/api/admin/diagnostico${ping ? '?ping=1' : ''}`);
+  if (!r.ok) { box.innerHTML = `<span style="color:#f87171">Error: ${esc(r.error || 'falló')}</span>`; return; }
+  const d = r.data;
+  const fila = (label, val, okFlag) =>
+    `<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--border-soft)">
+       <span>${esc(label)}</span>
+       <span style="color:${okFlag ? '#34d399' : '#f87171'};font-weight:600">${esc(val)}</span>
+     </div>`;
+  let html = fila('Gemini · API key', d.gemini.api_key, d.gemini.listo);
+  html += fila('Gemini · modelo informe', d.gemini.modelo_informe, true);
+  html += fila('Mercado Pago · token', d.mercadopago.access_token + ' · ' + d.mercadopago.modo, d.mercadopago.modo === 'real');
+  html += fila('Resend · API key', d.resend.api_key, /seteada/.test(d.resend.api_key));
+  if (d.ping_gemini) {
+    const p = d.ping_gemini;
+    const txt = p.ok ? `OK (HTTP ${p.http}, ${p.ms}ms)` : `FALLÓ — ${p.error || ('HTTP ' + p.http)}`;
+    html += fila('Ping Gemini (llamada real)', txt, !!p.ok);
+  }
+  box.innerHTML = `<div style="max-width:640px">${html}</div>`;
 }
 
 async function guardarPack(codigo) {

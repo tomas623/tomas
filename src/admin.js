@@ -1135,6 +1135,57 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // Diagnóstico de configuración: confirma que las integraciones críticas
+  // (Gemini, Mercado Pago, Resend) estén seteadas. Con ?ping=1 hace una
+  // llamada real y liviana a Gemini para verificar que la key funcione —
+  // así detectamos temprano un informe que saldría en modo borrador.
+  app.get('/api/admin/diagnostico', guard, async (req, res) => {
+    const mask = (v) => (v ? `seteada (${v.length} chars, …${v.slice(-4)})` : 'NO seteada');
+    const geminiKey = (process.env.GEMINI_API_KEY || '').trim();
+    const modeloInforme = (process.env.GEMINI_MODEL_INFORME || 'gemini-2.5-flash').trim();
+
+    const out = {
+      gemini: {
+        api_key: mask(geminiKey),
+        modelo_informe: modeloInforme,
+        listo: !!geminiKey,
+      },
+      mercadopago: {
+        access_token: mask((process.env.MP_ACCESS_TOKEN || '').trim()),
+        modo: (process.env.MP_ACCESS_TOKEN || '').trim() ? 'real' : 'STUB (pagos simulados)',
+      },
+      resend: {
+        api_key: mask((process.env.RESEND_API_KEY || '').trim()),
+      },
+      ping_gemini: null,
+    };
+
+    if (req.query.ping === '1' && geminiKey) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modeloInforme)}:generateContent?key=${geminiKey}`;
+        const t0 = Date.now();
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Respondé solo con la palabra OK.' }] }] }),
+        });
+        const ms = Date.now() - t0;
+        const txt = await r.text();
+        if (r.ok) {
+          out.ping_gemini = { ok: true, http: r.status, ms, modelo: modeloInforme };
+        } else {
+          out.ping_gemini = { ok: false, http: r.status, ms, error: txt.slice(0, 300) };
+        }
+      } catch (err) {
+        out.ping_gemini = { ok: false, error: err.message };
+      }
+    } else if (req.query.ping === '1') {
+      out.ping_gemini = { ok: false, error: 'GEMINI_API_KEY no seteada — no se puede hacer ping.' };
+    }
+
+    res.json(ok(out));
+  });
+
   // Reporte mensual de cartera. Con dry_run:true no manda mails (preview de a
   // quién le tocaría y con qué números); sin él, envía a todos.
   app.post('/api/admin/reporte-mensual/run', guard, express.json(), async (req, res) => {
