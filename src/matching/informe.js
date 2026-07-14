@@ -374,7 +374,9 @@ Devolvé UN ÚNICO JSON con esta estructura exacta. Sin texto extra, sin markdow
 
 {
   "nivel_riesgo": "alto" | "medio" | "bajo",
-  "viabilidad_estimada": number (0-100),
+  "viabilidad_estimada": number (0-90). NUNCA más de 90: ningún registro está
+    garantizado (el INPI siempre puede observar), así que el caso más favorable
+    llega hasta 90, no más. Reservá 85-90 para casos sin ningún conflicto.
   "resumen_ejecutivo": "2-3 frases con el veredicto en lenguaje claro y accesible.",
   "distintividad_intrinseca": {
     "nivel": "alta" | "media" | "baja",
@@ -506,8 +508,20 @@ REGLAS DUROS de "proximos_pasos" en bloque cliente:
   atención), "fail" (rojo, problema serio), "info" (gris, contextual).
 
 Cómo armar los bloques típicos según el caso:
-- Cliente sin conflictos serios → bloque(s) "ok" con la VIABILIDAD (no con
-  la calidad del nombre). Ej: "EL REGISTRO ES VIABLE EN TU RUBRO".
+- Cliente sin conflictos serios → NO repitas el titular ni el veredicto de la
+  barra ("riesgo bajo" / "es viable") en el primer bloque. Ese mensaje ya lo dio
+  la barra y el resumen. Los bloques tienen que APORTAR análisis distinto y hacer
+  visible el trabajo hecho. Armá 2-3 bloques "ok", cada uno sobre una DIMENSIÓN
+  diferente, por ejemplo:
+    · Fonética/visual: qué tan parecida suena/se escribe respecto de lo que hay
+      registrado, y por qué no genera confusión (mencioná que se cruzó contra la
+      base). Ej: "CÓMO SUENA Y SE ESCRIBE FRENTE A LO REGISTRADO".
+    · Distintividad: si el nombre tiene elementos descriptivos y qué parte le da
+      fuerza distintiva (ej: un acrónimo, una combinación original). Ej:
+      "LA DENOMINACIÓN ES SUFICIENTEMENTE DISTINTIVA".
+    · Especialidad/clases: por qué las clases elegidas cubren el rubro y no chocan
+      con registros de otras clases. Ej: "LAS CLASES CUBREN TU ACTIVIDAD".
+  Cada bloque debe decir algo CONCRETO del caso, no una generalidad.
 - Cliente con coincidencia exacta → bloque "fail" con la marca chocante
   + datos del titular + analogía si ayuda.
 - Cliente con coincidencia fonética/cross-clase → bloque "warning".
@@ -515,8 +529,8 @@ Cómo armar los bloques típicos según el caso:
   por nombre (Coca-Cola, Nike, etc.) sin usar la palabra "renombrada".
 - Si hay flag de ley especial (eco/olímpico/tabaco) → bloque "fail"
   específico con explicación accionable de qué cambiar.
-- NO crear bloques que solo valoren el nombre ("EL NOMBRE ESTÁ BUENO"
-  NO va). Si la distintividad es relevante, integrala factualmente.
+- NO crear bloques vacíos que solo elogien el nombre ("EL NOMBRE ESTÁ BUENO"
+  NO va): cada bloque tiene que apoyarse en un hecho del análisis.
 
 TABLA "comparativas" (CRÍTICA — es la prueba del trabajo):
 - Incluí UNA entrada por cada marca registrada que te paso (principales Y
@@ -850,6 +864,13 @@ async function generar(marca, candidatasInput = [], { forzar = false } = {}) {
   }
 
   const informe = await callGemini(marca, principales, otras_clases, flagsLeyesEspeciales);
+
+  // Tope duro de viabilidad: nunca prometemos más de 90% (ningún registro está
+  // garantizado; el INPI siempre puede observar). Garantiza el límite aunque el
+  // modelo se pase.
+  if (typeof informe.viabilidad_estimada === 'number' && informe.viabilidad_estimada > 90) {
+    informe.viabilidad_estimada = 90;
+  }
 
   informe._pre_checks = flagsLeyesEspeciales;
   informe._meta = {

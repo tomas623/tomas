@@ -764,7 +764,14 @@ const MARCO_LEGAL = 'El presente informe se elaboró sobre la base de la Ley de 
 
 function dibujarApendiceLegal(doc, informe) {
   const apendice = informe.cliente?.apendice_legal_corto;
-  asegurarEspacio(doc, 80);
+  // Reservamos el alto REAL del contenido (no un fijo de 80): cuando el
+  // apéndice es largo, un fijo chico dejaba que el texto se cortara contra el
+  // pie de página. Medimos MARCO_LEGAL + apéndice y pedimos ese espacio.
+  doc.font('italic').fontSize(8);
+  let altoReal = 22; // "BASE LEGAL" + moveDowns
+  altoReal += doc.heightOfString(MARCO_LEGAL, { width: ANCHO_CONTENIDO, lineGap: 2 });
+  if (apendice) altoReal += 8 + doc.heightOfString(apendice, { width: ANCHO_CONTENIDO, lineGap: 2 });
+  asegurarEspacio(doc, altoReal + 16);
   doc.moveDown(0.6);
   doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
     .text('BASE LEGAL', X_MARGEN, doc.y);
