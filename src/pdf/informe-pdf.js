@@ -509,10 +509,16 @@ function dibujarCTAs(doc, cliente) {
     barra: COLORES.azul,
   };
 
-  // Reservar espacio del bloque completo (título + intro + 2 cards + contacto)
-  // para evitar que la card 2 se vaya sola a una página nueva.
-  const altoBloque = 56 + medirCardCTA(doc, card1) + 12 + medirCardCTA(doc, card2) + 30;
+  // Reservar espacio del bloque COMPLETO (título + intro + 2 cards) para que la
+  // sección no arranque con el título solo al pie y las cards en la página
+  // siguiente. El título+intro real mide ~70pt (título 18 + intro ~2 líneas +
+  // separación); reservamos 88 con margen para forzar el salto cuando está justo.
+  const altoBloque = 88 + medirCardCTA(doc, card1) + 12 + medirCardCTA(doc, card2) + 24;
+  const yAntes = doc.y;
   asegurarEspacio(doc, altoBloque);
+  // Aire antes del título — pero solo si NO hubo salto de página (si saltó,
+  // doc.y quedó en el margen superior y no queremos un hueco extra arriba).
+  if (doc.y === yAntes) doc.moveDown(1);
 
   dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGALPACERS');
   doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
@@ -768,20 +774,21 @@ function dibujarApendiceLegal(doc, informe) {
   // apéndice es largo, un fijo chico dejaba que el texto se cortara contra el
   // pie de página. Medimos MARCO_LEGAL + apéndice y pedimos ese espacio.
   doc.font('italic').fontSize(8);
-  let altoReal = 22; // "BASE LEGAL" + moveDowns
-  altoReal += doc.heightOfString(MARCO_LEGAL, { width: ANCHO_CONTENIDO, lineGap: 2 });
-  if (apendice) altoReal += 8 + doc.heightOfString(apendice, { width: ANCHO_CONTENIDO, lineGap: 2 });
-  asegurarEspacio(doc, altoReal + 16);
-  doc.moveDown(0.6);
+  let altoReal = 44; // "BASE LEGAL" + moveDowns (con más aire)
+  altoReal += doc.heightOfString(MARCO_LEGAL, { width: ANCHO_CONTENIDO, lineGap: 3 });
+  if (apendice) altoReal += 12 + doc.heightOfString(apendice, { width: ANCHO_CONTENIDO, lineGap: 3 });
+  asegurarEspacio(doc, altoReal + 20);
+  // Más aire arriba para separar de la sección anterior (venía pegado).
+  doc.moveDown(1.4);
   doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
     .text('BASE LEGAL', X_MARGEN, doc.y);
-  doc.moveDown(0.15);
+  doc.moveDown(0.35);
   doc.font('italic').fontSize(8).fillColor(COLORES.textoSuave)
-    .text(MARCO_LEGAL, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, lineGap: 2 });
+    .text(MARCO_LEGAL, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, lineGap: 3 });
   if (apendice) {
-    doc.moveDown(0.35);
+    doc.moveDown(0.6);
     doc.font('italic').fontSize(8).fillColor(COLORES.textoSuave)
-      .text(apendice, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, lineGap: 2 });
+      .text(apendice, X_MARGEN, doc.y, { width: ANCHO_CONTENIDO, lineGap: 3 });
   }
 }
 
