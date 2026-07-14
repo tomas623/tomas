@@ -253,6 +253,69 @@ Pre-checks especiales: ninguno.`,
     },
   },
   {
+    input: `Cliente: "VB Logística Express", clases 39 (transporte y logística), denominativa. Rubro: servicios de logística y transporte de cargas.
+Candidatas INPI: ninguna con similitud relevante en las clases del cliente.
+Pre-checks especiales: ninguno.`,
+    output: {
+      nivel_riesgo: 'medio',
+      viabilidad_estimada: 65,
+      resumen_ejecutivo: 'No hay antecedentes que choquen, pero el conjunto es débil: "Logística" y "Express" son descriptivos del servicio y no monopolizables. La capacidad distintiva recae en la sigla "VB". Es registrable, pero con protección limitada y probable limitación de oficio del INPI.',
+      distintividad_intrinseca: {
+        nivel: 'baja',
+        comentario: '"Logística" y "Express" describen la naturaleza y una característica del servicio (Art. 2 incs. a y b). El único elemento con aptitud distintiva es la sigla "VB". Marca débil.',
+      },
+      prohibiciones_absolutas: { flags: ['descriptiva', 'uso_general'], comentario: '"Logística" (naturaleza del servicio) y "Express" (uso general en transporte) no son apropiables en exclusiva.' },
+      prohibiciones_relativas: { flags: [], comentario: 'Sin marcas preexistentes confundibles en las clases solicitadas.' },
+      leyes_especiales: { flags: [], comentario: 'No aplican.' },
+      confundibilidad: {
+        fonetica: { similitud: 'nula', explicacion: 'Sin antecedentes con los que cotejar en las clases del cliente.' },
+        visual: { similitud: 'nula', explicacion: 'Sin antecedentes relevantes.' },
+        ideologica: { similitud: 'nula', explicacion: 'Sin antecedentes relevantes.' },
+        regla_predominante: 'Elemento distintivo predominante: descartados los términos descriptivos, el cotejo con terceros recae exclusivamente sobre la sigla "VB". El riesgo real de oposición depende de otras "VB" en clases 39.',
+      },
+      especialidad: {
+        afinidad: 'nula',
+        comentario: 'No hay marcas preexistentes en el rubro con las que evaluar afinidad.',
+      },
+      notoriedad: {
+        nivel: 'no', publico_relevante: null, rompe_especialidad: false, riesgos_especificos: [],
+        comentario: 'Ninguna marca notoria involucrada.',
+      },
+      ley_aplicable: 'Art. 2 incs. a y b, Ley 22.362',
+      recomendacion_principal: 'Auditar variante — conviene reforzar la distintividad antes de presentar.',
+      alternativas_sugeridas: ['Presentar como marca mixta con logotipo original', 'Anteponer o reforzar el elemento "VB" como núcleo de la marca'],
+      cliente: {
+        veredicto_breve: 'El registro de "VB Logística Express" es posible, pero es una marca débil: las palabras "Logística" y "Express" no van a ser tuyas en exclusiva y la fuerza recae solo en "VB". Conviene presentarla con un logo propio para protegerla mejor.',
+        comparativas: [],
+        comparativas_resto: 0,
+        bloques: [
+          {
+            icono: 'ok',
+            titulo: 'NO ENCONTRAMOS MARCAS QUE TE BLOQUEEN',
+            mensaje: 'Cruzamos tu marca contra la base del INPI en las clases 39 (transporte y logística) y no aparece ninguna marca registrada que represente un obstáculo directo para tu solicitud.',
+          },
+          {
+            icono: 'warning',
+            titulo: 'ES UNA MARCA DÉBIL: OJO CON ESTO',
+            mensaje: 'Las palabras "Logística" y "Express" describen tu servicio, así que no vas a poder impedir que otras empresas del rubro las usen — sobre esas palabras nadie tiene exclusividad. Lo único realmente tuyo es la sigla "VB". Por eso se considera una marca débil: se registra, pero su protección es más limitada.',
+            subbloques: [
+              {
+                titulo: '¿Qué puede pasar en el trámite?',
+                mensaje: 'Es probable que el INPI te pida expresamente que no reclames uso exclusivo sobre "Logística" y "Express". Es normal en estos casos y conviene que lo sepas de antemano para que no te sorprenda.',
+              },
+            ],
+          },
+        ],
+        proximos_pasos: [
+          'Para fortalecer la marca, conviene presentarla como marca mixta: sumarle un logotipo, un diseño o una tipografía propia. Eso le da una identidad que sí es exclusivamente tuya, más allá de las palabras.',
+          'Si preferís la versión solo de texto, tené presente que la protección se va a concentrar en la sigla "VB".',
+          'Asegurá el dominio y los perfiles en redes cuanto antes.',
+        ],
+        apendice_legal_corto: 'El Art. 2 incs. a y b de la Ley 22.362 excluye del registro exclusivo a las designaciones descriptivas de la naturaleza o función del producto/servicio y a los signos de uso general.',
+      },
+    },
+  },
+  {
     input: `Cliente: "CocaCola Studio", clase 41 (entretenimiento), denominativa.
 Candidata INPI: "Coca-Cola", clase 32 (bebidas no alcohólicas), titular The Coca-Cola Company, estado Concedida. Score Etapa 1: 88. Motivos: coincidencia_token_inicial, marca_referencia_global.
 Pre-checks especiales: ninguno.`,
@@ -363,6 +426,49 @@ MARCAS EN TRÁMITE (PRIORIDAD / DERECHO DE PRELACIÓN):
   incertidumbre es justamente información valiosa para el cliente.
 - En el campo "estado" de cada comparativa, reflejá el estado real ("En trámite"
   cuando corresponda), no lo conviertas en "Registrada".
+
+DISTINTIVIDAD INTRÍNSECA Y DESCRIPTIVIDAD (ANÁLISIS OBLIGATORIO — TAN IMPORTANTE COMO LA CONFUNDIBILIDAD):
+El análisis NO se agota en buscar conflictos con terceros. ANTES de eso, evaluá si el
+propio signo es registrable y qué tan fuerte es. Es un error grave dar viabilidad alta a
+una marca descriptiva solo porque no aparecen antecedentes. En CADA informe:
+
+1. DESCRIPTIVIDAD / USO GENERAL: identificá qué palabras del conjunto describen la
+   naturaleza, función, calidad o características de los servicios/productos del rubro, o
+   son de uso general en ese sector. Esas palabras NO son monopolizables (Art. 2 incs. a y
+   b, Ley 22.362). Advertí EXPLÍCITAMENTE que el cliente NO obtendrá derechos exclusivos
+   sobre esos términos, aunque el conjunto se registre.
+
+2. ELEMENTO DISTINTIVO PREDOMINANTE: determiná cuál es el único (o principal) elemento con
+   capacidad distintiva del conjunto (una sigla, un término de fantasía, una combinación
+   original). Aclará que el análisis de antecedentes y el riesgo de oposición dependen CASI
+   EXCLUSIVAMENTE de ese elemento, porque los términos descriptivos se descartan en el
+   cotejo. Ej: en "RC Finanzas & COMEX" para consultoría financiera, el peso recae en "RC";
+   el conflicto real sería con otras "RC" en esas clases, no con "Finanzas" ni "COMEX".
+
+3. MARCA FUERTE vs. DÉBIL: clasificá el signo. Un conjunto de términos descriptivos + un
+   elemento distintivo mínimo (pocas letras / una sigla) es una MARCA DÉBIL: se puede
+   registrar, pero su protección es limitada y será difícil impedir que terceros usen
+   conjuntos parecidos. Decíselo al cliente con claridad, sin tecnicismos.
+
+4. LIMITACIÓN DE OFICIO PROBABLE DEL INPI: cuando el conjunto incluye términos que
+   describen la naturaleza o función del servicio, el INPI suele exigir de oficio que el
+   solicitante NO reclame derechos exclusivos sobre esos términos (disclaimer / limitación).
+   Si es probable acá, advertilo y preparalo — que no lo sorprenda una vista después.
+
+5. ESTRATEGIA PARA SUPERAR LA DEBILIDAD: si la denominación carece de fuerte distintividad
+   por sí sola, recomendá NO presentarla como marca denominativa pura, sino incorporar un
+   logotipo, diseño o tipografía original (marca MIXTA) para dotarla de distintividad
+   extrínseca y un trámite más sólido. Esta recomendación va en "proximos_pasos" del
+   cliente cuando aplique.
+
+IMPACTO OBLIGATORIO EN VIABILIDAD Y RIESGO:
+- Una marca descriptiva/débil NO puede llevar viabilidad 85-90 ni nivel_riesgo "bajo" por
+  el solo hecho de no tener antecedentes: la debilidad intrínseca y la probable limitación
+  de oficio son riesgos reales. Bajá la viabilidad (típicamente 55-75) y usá nivel_riesgo
+  "medio" cuando el signo sea descriptivo/débil.
+- Reflejalo en distintividad_intrinseca (nivel "baja"/"media"), en prohibiciones_absolutas
+  (flags "descriptiva"/"uso_general") y en confundibilidad.regla_predominante (mención al
+  elemento distintivo predominante), siempre con comentario concreto del caso.
 
 ${DOCTRINA_INPI}
 
@@ -522,6 +628,16 @@ Cómo armar los bloques típicos según el caso:
     · Especialidad/clases: por qué las clases elegidas cubren el rubro y no chocan
       con registros de otras clases. Ej: "LAS CLASES CUBREN TU ACTIVIDAD".
   Cada bloque debe decir algo CONCRETO del caso, no una generalidad.
+- MARCA DESCRIPTIVA / DÉBIL (obligatorio si el signo tiene términos que describen el
+  rubro) → SIEMPRE incluí un bloque "warning", aunque no haya conflicto con terceros. En
+  lenguaje llano tiene que decir: (a) que sobre las palabras descriptivas (nombralas: ej
+  "Finanzas", "COMEX") no vas a tener uso exclusivo —cualquier competidor puede usarlas—;
+  (b) que la fuerza de la marca recae en el elemento distintivo (nombralo: ej la sigla
+  "RC"); (c) que por eso es una marca "débil" y su protección es más limitada; (d) que el
+  INPI probablemente pida no reclamar exclusividad sobre esos términos. Y en
+  "proximos_pasos" sumá la sugerencia de presentarla como marca MIXTA (con logo/diseño
+  propio) para fortalecerla. NO uses las palabras "descriptividad", "distintividad
+  intrínseca" ni "disclaimer" — explicalo con palabras del día a día.
 - Cliente con coincidencia exacta → bloque "fail" con la marca chocante
   + datos del titular + analogía si ayuda.
 - Cliente con coincidencia fonética/cross-clase → bloque "warning".
