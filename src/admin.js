@@ -1189,6 +1189,16 @@ function mountAdminRoutes(app) {
       out.ping_gemini = { ok: false, error: 'GEMINI_API_KEY no seteada — no se puede hacer ping.' };
     }
 
+    // ?informe=1 reproduce la llamada REAL del informe (prompt grande) y
+    // devuelve el cuerpo crudo del error — para ver la cuota exacta del 429.
+    if (req.query.informe === '1') {
+      try {
+        out.ping_informe = await require('./matching/informe').diagnosticarGemini();
+      } catch (err) {
+        out.ping_informe = { ok: false, error: err.message };
+      }
+    }
+
     res.json(ok(out));
   });
 

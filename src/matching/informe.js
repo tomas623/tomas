@@ -851,8 +851,53 @@ async function generar(marca, candidatasInput = []) {
   return informe;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Diagnóstico: reproduce EXACTAMENTE la llamada del informe (prompt grande,
+// responseMimeType json, maxOutputTokens, thinkingConfig) y devuelve el status
+// y el cuerpo crudo — sin fallback a stub. Sirve para ver el nombre exacto de
+// la cuota cuando Gemini responde 429 al informe pero no al ping chico.
+// ──────────────────────────────────────────────────────────────────────────────
+async function diagnosticarGemini() {
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) return { ok: false, error: 'GEMINI_API_KEY no seteada' };
+  const model = (process.env.GEMINI_MODEL_INFORME || 'gemini-2.5-flash').trim();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+
+  const marca = { denominacion: 'MARCA DE PRUEBA', clases: [35], rubro: 'diagnóstico', tipo: 'denominativa' };
+  const userPrompt = construirUserPrompt({
+    marca, candidatas_principales: [], candidatas_otras_clases: [], flagsLeyesEspeciales: [],
+  });
+  const body = {
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+    generationConfig: {
+      temperature: 0.2, responseMimeType: 'application/json',
+      maxOutputTokens: 32768, thinkingConfig: { thinkingBudget: 0 },
+    },
+  };
+
+  const t0 = Date.now();
+  try {
+    const res = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const ms = Date.now() - t0;
+    const txt = await res.text().catch(() => '');
+    // Aproximación del tamaño del prompt en tokens (chars/4).
+    const promptTokensAprox = Math.round((SYSTEM_PROMPT.length + userPrompt.length) / 4);
+    return {
+      ok: res.ok, http: res.status, ms, modelo: model,
+      prompt_tokens_aprox: promptTokensAprox,
+      body: txt.slice(0, 800),
+    };
+  } catch (err) {
+    return { ok: false, error: err.message, ms: Date.now() - t0 };
+  }
+}
+
 module.exports = {
   generar,
+  diagnosticarGemini,
   // Exporto internals para testing.
   _internals: { SYSTEM_PROMPT, construirUserPrompt, stubInforme, FEW_SHOT_EXAMPLES },
 };
