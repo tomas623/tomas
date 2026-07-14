@@ -585,6 +585,14 @@ app.post('/api/pagos/webhook', express.json(), async (req, res) => {
 
   res.status(200).json({ ok: true }); // ACK rápido a MP
 
+  // Registramos en Auditoría SOLO los avisos que nos importan (pago/suscripción),
+  // no los eventos de ruido (order, fraude, envíos, etc. que MP también manda).
+  // Así en el panel se ve el flujo real "MP avisó → lead → informe".
+  const esRelevante = ['payment', 'subscription_preapproval', 'preapproval', 'subscription_authorized_payment'].includes(type);
+  if (esRelevante) {
+    try { audit.log(null, 'webhook.recibido', { detalle: { type, externalId } }); } catch {}
+  }
+
   try {
     if (type === 'payment' && externalId) {
       await procesarPago(externalId);
@@ -596,6 +604,7 @@ app.post('/api/pagos/webhook', express.json(), async (req, res) => {
     }
   } catch (err) {
     console.error('[webhook] error:', err.message);
+    try { audit.log(null, 'webhook.error', { detalle: { type, externalId, error: err.message } }); } catch {}
   }
 });
 
@@ -614,6 +623,12 @@ async function procesarPago(paymentId) {
     db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
       .run(String(paymentId), lead.id);
     console.log(`[webhook] lead ${lead.id} (${lead.tipo}, ${lead.marca}) marcado pagado.`);
+    try {
+      audit.log(null, 'webhook.pago_aprobado', {
+        entidad: 'leads', entidad_id: lead.id,
+        detalle: { marca: lead.marca, tipo: lead.tipo, payment_ref: String(paymentId), dispara_informe: lead.tipo === 'informe' },
+      });
+    } catch {}
 
     // Dispara el orquestador del informe pago en background — sin await,
     // para no demorar el ACK al webhook de MP (que tiene timeout corto).
