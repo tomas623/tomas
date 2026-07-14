@@ -301,7 +301,7 @@ Pre-checks especiales: ninguno.`,
             subbloques: [
               {
                 titulo: '¿Qué puede pasar en el trámite?',
-                mensaje: 'Es probable que el INPI te pida expresamente que no reclames uso exclusivo sobre "Logística" y "Express". Es normal en estos casos y conviene que lo sepas de antemano para que no te sorprenda.',
+                mensaje: 'Tu derecho exclusivo se va a centrar en "VB" y no sobre "Logística" y "Express". Incluso, hay posibilidad de que te pidan una aclaración en la tramitación en ese sentido. Es un procedimiento habitual en estos casos y no impide el registro del conjunto, pero limita la protección sobre esos términos.',
               },
             ],
           },
@@ -630,14 +630,16 @@ Cómo armar los bloques típicos según el caso:
   Cada bloque debe decir algo CONCRETO del caso, no una generalidad.
 - MARCA DESCRIPTIVA / DÉBIL (obligatorio si el signo tiene términos que describen el
   rubro) → SIEMPRE incluí un bloque "warning", aunque no haya conflicto con terceros. En
-  lenguaje llano tiene que decir: (a) que sobre las palabras descriptivas (nombralas: ej
-  "Finanzas", "COMEX") no vas a tener uso exclusivo —cualquier competidor puede usarlas—;
-  (b) que la fuerza de la marca recae en el elemento distintivo (nombralo: ej la sigla
-  "RC"); (c) que por eso es una marca "débil" y su protección es más limitada; (d) que el
-  INPI probablemente pida no reclamar exclusividad sobre esos términos. Y en
-  "proximos_pasos" sumá la sugerencia de presentarla como marca MIXTA (con logo/diseño
-  propio) para fortalecerla. NO uses las palabras "descriptividad", "distintividad
-  intrínseca" ni "disclaimer" — explicalo con palabras del día a día.
+  lenguaje llano tiene que decir: (a) que el derecho exclusivo se va a centrar en el
+  elemento distintivo (nombralo: ej la sigla "RC") y NO sobre las palabras descriptivas
+  (nombralas: ej "Finanzas", "COMEX"), que cualquier competidor del rubro puede usar; (b)
+  que por eso es una marca "débil" y su protección es más limitada; (c) que es posible que
+  el INPI pida una aclaración en la tramitación en ese sentido —es un procedimiento
+  habitual que NO impide el registro del conjunto, pero limita la protección sobre esos
+  términos—. Enmarcalo en tono tranquilo, no alarmista. Y en "proximos_pasos" sumá la
+  sugerencia de presentarla como marca MIXTA (con logo/diseño propio) para fortalecerla.
+  NO uses las palabras "descriptividad", "distintividad intrínseca" ni "disclaimer" —
+  explicalo con palabras del día a día.
 - Cliente con coincidencia exacta → bloque "fail" con la marca chocante
   + datos del titular + analogía si ayuda.
 - Cliente con coincidencia fonética/cross-clase → bloque "warning".
