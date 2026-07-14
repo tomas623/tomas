@@ -381,14 +381,14 @@ function dibujarMetodologia(doc) {
 function medirCardCTA(doc, { titulo, parrafos }) {
   const padX = 24;
   const wTexto = ANCHO_CONTENIDO - padX - 18;
-  let alto = 18;
+  let alto = 14;
   doc.font('titulo').fontSize(13);
-  alto += doc.heightOfString(titulo, { width: wTexto, lineGap: 2 }) + 10;
+  alto += doc.heightOfString(titulo, { width: wTexto, lineGap: 2 }) + 6;
   for (const p of parrafos) {
     doc.font(p.bold ? 'demi' : 'cuerpo').fontSize(10);
-    alto += doc.heightOfString(p.txt, { width: wTexto, lineGap: 2.5 }) + 8;
+    alto += doc.heightOfString(p.txt, { width: wTexto, lineGap: 2.5 }) + 6;
   }
-  alto += 10 + 22 + 16;
+  alto += 8 + 22 + 12;
   return alto;
 }
 
@@ -413,16 +413,16 @@ function dibujarCardCTA(doc, opts) {
   doc.restore();
 
   doc.font('titulo').fontSize(13).fillColor(tituloColor)
-    .text(titulo, X_MARGEN + padX, y + 18, { width: wTexto, lineGap: 2 });
-  doc.moveDown(0.35);
+    .text(titulo, X_MARGEN + padX, y + 14, { width: wTexto, lineGap: 2 });
+  doc.moveDown(0.2);
   for (const p of parrafos) {
     doc.font(p.bold ? 'demi' : 'cuerpo').fontSize(10).fillColor(p.bold ? COLORES.navy : COLORES.textoCuerpo)
       .text(p.txt, X_MARGEN + padX, doc.y, { width: wTexto, lineGap: 2.5 });
-    doc.moveDown(0.3);
+    doc.moveDown(0.2);
   }
 
   const wBoton = doc.font('cuerpo-bold').fontSize(9).widthOfString(etiquetaBoton) + 34;
-  const yBtn = doc.y + 8;
+  const yBtn = doc.y + 6;
   doc.save();
   doc.roundedRect(X_MARGEN + padX, yBtn, wBoton, 22, 11).fillColor(botonColor).fill();
   doc.fillColor('#ffffff').font('cuerpo-bold').fontSize(9)
@@ -432,7 +432,7 @@ function dibujarCardCTA(doc, opts) {
     doc.link(X_MARGEN + padX, yBtn, wBoton, 22, link);
   }
 
-  doc.y = y + alto + 12;
+  doc.y = y + alto + 10;
 }
 
 // "Qué implica registrar tu marca" — versión compacta en grilla 2x3.
@@ -448,15 +448,12 @@ function dibujarQueImplicaRegistro(doc) {
   ];
 
   const colW = (ANCHO_CONTENIDO - 14) / 2;
-  const rowH = 48;
+  const rowH = 46;
   const filas = Math.ceil(items.length / 2);
 
-  asegurarEspacio(doc, filas * rowH + 60);
+  asegurarEspacio(doc, filas * rowH + 36);
   dibujarTituloSeccion(doc, 'QUÉ INCLUYE EL REGISTRO');
-  doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
-    .text('Lo que obtenés cuando avanzás con el registro de marca:',
-      X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
-  doc.y += 20;
+  doc.y += 14;
 
   const yStart = doc.y;
   items.forEach((item, i) => {
@@ -513,18 +510,19 @@ function dibujarCTAs(doc, cliente) {
   // sección no arranque con el título solo al pie y las cards en la página
   // siguiente. El título+intro real mide ~70pt (título 18 + intro ~2 líneas +
   // separación); reservamos 88 con margen para forzar el salto cuando está justo.
-  const altoBloque = 88 + medirCardCTA(doc, card1) + 12 + medirCardCTA(doc, card2) + 24;
+  // Reservamos el bloque completo (título + intro + 2 cards) para que la sección
+  // no arranque con el título solo al pie. "Qué incluye" fluye justo después:
+  // con las cards compactas suele entrar en la misma página.
+  const altoBloque = 72 + medirCardCTA(doc, card1) + 10 + medirCardCTA(doc, card2) + 16;
   const yAntes = doc.y;
   asegurarEspacio(doc, altoBloque);
-  // Aire antes del título — pero solo si NO hubo salto de página (si saltó,
-  // doc.y quedó en el margen superior y no queremos un hueco extra arriba).
-  if (doc.y === yAntes) doc.moveDown(1);
+  if (doc.y === yAntes) doc.moveDown(0.6);
 
   dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGALPACERS');
   doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
     .text('Te acompañamos en lo que sigue. Estas son las dos vías habituales a partir de este informe:',
       X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
-  doc.y += 22;
+  doc.y += 18;
 
   dibujarCardCTA(doc, card1);
   dibujarCardCTA(doc, card2);
@@ -857,8 +855,12 @@ function generarPDF(informe, cliente, contexto = {}) {
       for (const b of bloques) dibujarBloque(doc, b);
 
       dibujarContextoDigital(doc, contexto);
-      dibujarProximosPasos(doc, informe);
+      // BASE LEGAL va acá, cerrando el análisis técnico, para ocupar el espacio
+      // en blanco al pie de la página del análisis (antes quedaba media página
+      // vacía porque el bloque "Qué te recomendamos" no entraba y saltaba solo).
       dibujarApendiceLegal(doc, informe);
+      dibujarProximosPasos(doc, informe);
+      // "Próximos pasos" + "Qué incluye" son la parte comercial; van juntos.
       dibujarCTAs(doc, cliente);
       dibujarQueImplicaRegistro(doc);
       dibujarContactoCierre(doc);
