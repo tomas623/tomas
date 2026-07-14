@@ -786,7 +786,9 @@ function mountAdminRoutes(app) {
       db.prepare('DELETE FROM informes WHERE id = ?').run(id);
       const { procesarInformePago } = require('./jobs/informe-pago');
       // notificarCliente:false → regenerar NO le re-manda "recibimos tu pago".
-      const r = await procesarInformePago(row.lead_id, { notificarCliente: false });
+      // forzar:true → salta el caché (si el intento anterior falló y quedó
+      // cacheado, queremos una llamada fresca a Gemini, no el fallo viejo).
+      const r = await procesarInformePago(row.lead_id, { notificarCliente: false, forzar: true });
       const nuevo = r?.informeId ? db.prepare('SELECT informe_json FROM informes WHERE id = ?').get(r.informeId) : null;
       let stub = null, motivo = null;
       if (nuevo) {

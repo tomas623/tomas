@@ -811,9 +811,11 @@ async function callGemini(marca, candidatas_principales, candidatas_otras_clases
  * @param {Array|object} candidatasInput - puede ser:
  *   - Array (legacy): se trata como candidatas_principales, sin otras_clases.
  *   - Object: { principales: Array, otras_clases: Array }
+ * @param {object} [opts]
+ * @param {boolean} [opts.forzar=false] - salta el caché y regenera.
  * @returns {Promise<object>} informe JSON estructurado
  */
-async function generar(marca, candidatasInput = []) {
+async function generar(marca, candidatasInput = [], { forzar = false } = {}) {
   let principales, otras_clases;
   if (Array.isArray(candidatasInput)) {
     principales = candidatasInput;
@@ -829,10 +831,22 @@ async function generar(marca, candidatasInput = []) {
   const cacheKey = `informe:${marca.denominacion}:${(marca.clases || []).join(',')}`
     + `:p=${principales.map(c => c.id || c.denominacion).join('|')}`
     + `:o=${otras_clases.map(c => c.id || c.denominacion).join('|')}`;
-  const row = db.prepare('SELECT detalle FROM audit_log WHERE accion = ? AND entidad = ? LIMIT 1')
-    .get('informe_cache', cacheKey);
-  if (row && row.detalle) {
-    try { return { ...JSON.parse(row.detalle), cached: true }; } catch {}
+  // `forzar` salta el caché (regeneración manual desde el panel: el agente
+  // quiere una llamada fresca sí o sí).
+  if (!forzar) {
+    const row = db.prepare('SELECT detalle FROM audit_log WHERE accion = ? AND entidad = ? LIMIT 1')
+      .get('informe_cache', cacheKey);
+    if (row && row.detalle) {
+      try {
+        const cacheado = JSON.parse(row.detalle);
+        // NO servir un fallo cacheado: si el resultado guardado es un stub
+        // (Gemini falló cuando se generó), lo ignoramos y regeneramos. Antes,
+        // un 429 transitorio quedaba pegado en el caché para siempre.
+        if (cacheado && cacheado.stub !== true) {
+          return { ...cacheado, cached: true };
+        }
+      } catch {}
+    }
   }
 
   const informe = await callGemini(marca, principales, otras_clases, flagsLeyesEspeciales);
@@ -845,8 +859,13 @@ async function generar(marca, candidatasInput = []) {
     candidatas_otras_clases: otras_clases.length,
   };
 
-  db.prepare(`INSERT INTO audit_log (accion, entidad, entidad_id, detalle) VALUES (?,?,?,?)`)
-    .run('informe_cache', cacheKey, null, JSON.stringify(informe));
+  // Solo cacheamos resultados REALES (stub:false). Nunca guardamos un fallo,
+  // para que un 429/parse_error transitorio no quede pegado y se pueda reintentar.
+  if (informe.stub !== true) {
+    db.prepare(`DELETE FROM audit_log WHERE accion = ? AND entidad = ?`).run('informe_cache', cacheKey);
+    db.prepare(`INSERT INTO audit_log (accion, entidad, entidad_id, detalle) VALUES (?,?,?,?)`)
+      .run('informe_cache', cacheKey, null, JSON.stringify(informe));
+  }
 
   return informe;
 }

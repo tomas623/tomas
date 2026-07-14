@@ -119,9 +119,11 @@ function htmlMailEquipo({ informeId, marca, nivel, viab, solicitante, email }) {
  * @param {boolean} [opts.notificarCliente=true] - manda el mail de acuse al
  *   cliente. En regeneraciones lo pasamos en false para no re-mandarle
  *   "recibimos tu pago" cada vez.
+ * @param {boolean} [opts.forzar=false] - salta el caché del informe (para
+ *   regeneraciones manuales: queremos una llamada fresca a Gemini).
  * @returns {Promise<{informeId:number, estado:string}|null>}
  */
-async function procesarInformePago(leadId, { notificarCliente = true } = {}) {
+async function procesarInformePago(leadId, { notificarCliente = true, forzar = false } = {}) {
   const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(leadId);
   if (!lead) {
     console.error(`[informe-pago] lead ${leadId} no encontrado`);
@@ -159,7 +161,7 @@ async function procesarInformePago(leadId, { notificarCliente = true } = {}) {
     // 3. Gemini + dominios + redes en paralelo.
     const marca = { denominacion: lead.marca, clases, rubro: lead.rubro, tipo: 'denominativa' };
     const [informe, dominios, redes] = await Promise.all([
-      generarInforme(marca, { principales, otras_clases: otras }),
+      generarInforme(marca, { principales, otras_clases: otras }, { forzar }),
       chequearDominios(lead.marca).catch(err => ({ error: err.message })),
       chequearRedes(lead.marca).catch(err => ({ error: err.message })),
     ]);
