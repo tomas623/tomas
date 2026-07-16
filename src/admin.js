@@ -49,6 +49,7 @@ function mountAdminRoutes(app) {
       SELECT l.id, l.tipo, l.marca, l.email, l.telefono, l.clases, l.rubro, l.monto, l.estado,
              l.payment_ref, l.external_reference, l.pagado_at, l.created_at,
              l.pipeline_estado, l.notas, l.proximo_contacto_at, l.asignado_a, l.follow_up_at,
+             l.veredicto_free, l.riesgo_free,
              l.utm_source, l.utm_medium, l.utm_campaign, l.utm_content, l.utm_term,
              u.email AS asignado_email
       FROM leads l

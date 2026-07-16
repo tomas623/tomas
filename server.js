@@ -262,13 +262,17 @@ function extraerUtm(body) {
 }
 
 app.post('/api/marca/lead-free', async (req, res) => {
-  const { marca, email, telefono, clases, rubro, veredicto, mensaje } = req.body || {};
+  const { marca, email, telefono, clases, rubro, veredicto, mensaje, riesgo } = req.body || {};
   if (!marca || !String(marca).trim()) return res.status(400).json(fail('Falta la marca'));
   if (!email || !EMAIL_RE.test(String(email).trim())) return res.status(400).json(fail('Email inválido'));
 
   const marcaLimpia = String(marca).trim();
   const emailLimpio = String(email).trim().toLowerCase();
   const clasesArr = Array.isArray(clases) ? clases.filter(Number.isFinite) : [];
+  // Guardamos el resultado del chequeo para verlo en el panel (no solo la marca).
+  const VEREDICTOS_OK = ['probablemente_disponible', 'necesita_analisis', 'no_disponible'];
+  const veredictoFree = VEREDICTOS_OK.includes(veredicto) ? veredicto : null;
+  const riesgoFree = Number.isFinite(Number(riesgo)) ? Math.round(Number(riesgo)) : null;
 
   // Dedupe: si la persona ya guardó esta misma marca, refrescamos created_at
   // (vuelve a entrar al tope de la cola de follow-up) en vez de duplicar el lead.
@@ -285,6 +289,8 @@ app.post('/api/marca/lead-free', async (req, res) => {
       UPDATE leads SET
         telefono = COALESCE(?, telefono),
         clases = ?, rubro = ?, created_at = datetime('now'),
+        veredicto_free = COALESCE(?, veredicto_free),
+        riesgo_free = COALESCE(?, riesgo_free),
         utm_source   = COALESCE(utm_source, ?),
         utm_medium   = COALESCE(utm_medium, ?),
         utm_campaign = COALESCE(utm_campaign, ?),
@@ -292,6 +298,7 @@ app.post('/api/marca/lead-free', async (req, res) => {
         utm_term     = COALESCE(utm_term, ?)
       WHERE id = ?
     `).run(telefono || null, JSON.stringify(clasesArr), rubro || null,
+           veredictoFree, riesgoFree,
            utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content, utm.utm_term,
            existente.id);
     leadId = existente.id;
@@ -299,9 +306,11 @@ app.post('/api/marca/lead-free', async (req, res) => {
     const externalReference = `free-${crypto.randomBytes(8).toString('hex')}`;
     const info = db.prepare(`
       INSERT INTO leads (tipo, marca, email, telefono, clases, rubro, estado, external_reference,
+                         veredicto_free, riesgo_free,
                          utm_source, utm_medium, utm_campaign, utm_content, utm_term)
-      VALUES ('free', ?, ?, ?, ?, ?, 'lead_free', ?, ?, ?, ?, ?, ?)
+      VALUES ('free', ?, ?, ?, ?, ?, 'lead_free', ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(marcaLimpia, emailLimpio, telefono || null, JSON.stringify(clasesArr), rubro || null, externalReference,
+           veredictoFree, riesgoFree,
            utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content, utm.utm_term);
     leadId = info.lastInsertRowid;
   }

@@ -1377,6 +1377,7 @@ function landing() {
             clases: this.form.clases, rubro: this.form.rubro,
             veredicto: this.resultado?.veredicto,
             mensaje: (this.resultado?.mensaje || '').replace(/<[^>]+>/g, ''),
+            riesgo: this.resultado?.tease?.riesgo_estimado,
             utm: getUtm(),
           }),
         }).then(res => res.json());

@@ -376,6 +376,9 @@ for (const [col, ddl] of [
   ['utm_campaign',        `ALTER TABLE leads ADD COLUMN utm_campaign TEXT`],
   ['utm_content',         `ALTER TABLE leads ADD COLUMN utm_content TEXT`],
   ['utm_term',            `ALTER TABLE leads ADD COLUMN utm_term TEXT`],
+  // Resultado del chequeo free, para verlo en el panel (no solo la marca).
+  ['veredicto_free',      `ALTER TABLE leads ADD COLUMN veredicto_free TEXT`],
+  ['riesgo_free',         `ALTER TABLE leads ADD COLUMN riesgo_free INTEGER`],
 ]) {
   if (!columnExists('leads', col)) db.exec(ddl);
 }
