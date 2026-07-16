@@ -48,6 +48,21 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_leads_external_ref ON leads(external_reference);
 
+  -- Chequeos gratuitos (incluye los anónimos, sin email). Un registro por cada
+  -- consulta al pre-check, para medir demanda: cuántos chequean y qué marcas.
+  CREATE TABLE IF NOT EXISTS chequeos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    marca TEXT NOT NULL,
+    clases TEXT,
+    rubro TEXT,
+    veredicto TEXT,
+    riesgo INTEGER,
+    con_email INTEGER NOT NULL DEFAULT 0,
+    ip TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_chequeos_created ON chequeos(created_at);
+
   -- ===== Motor de vigilancia (Parte 2) =====
   CREATE TABLE IF NOT EXISTS packs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

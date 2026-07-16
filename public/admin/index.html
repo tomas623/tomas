@@ -176,6 +176,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
     <button class="tab" data-tab="alertas">Alertas <span class="badge" id="badgeAlertas" hidden></span></button>
     <button class="tab" data-tab="informes">Informes <span class="badge" id="badgeInformes" hidden></span></button>
     <button class="tab" data-tab="leads">Leads</button>
+    <button class="tab" data-tab="chequeos">Chequeos</button>
     <button class="tab" data-tab="usuarios">Usuarios</button>
     <button class="tab" data-tab="marcas">Marcas vigiladas</button>
     <button class="tab" data-tab="hitos">Hitos legales <span class="badge" id="badgeHitos" hidden></span></button>
@@ -192,6 +193,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
   <div id="panel-alertas" class="panel" hidden></div>
   <div id="panel-informes" class="panel" hidden></div>
   <div id="panel-leads" class="panel" hidden></div>
+  <div id="panel-chequeos" class="panel" hidden></div>
   <div id="panel-usuarios" class="panel" hidden></div>
   <div id="panel-marcas" class="panel" hidden></div>
   <div id="panel-hitos" class="panel" hidden></div>
@@ -290,7 +292,7 @@ function selectTab(name) {
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   $$('.panel').forEach(p => p.hidden = p.id !== `panel-${name}`);
   const fn = { resumen: loadResumen, alertas: loadAlertas, informes: loadInformes,
-    leads: loadLeads, usuarios: loadUsuarios, marcas: loadMarcas, hitos: loadHitos, packs: loadPacks,
+    leads: loadLeads, chequeos: loadChequeos, usuarios: loadUsuarios, marcas: loadMarcas, hitos: loadHitos, packs: loadPacks,
     boletines: loadBoletines, audit: loadAudit }[name];
   if (fn) fn();
 }
@@ -794,6 +796,58 @@ function chequeoChip(l) {
   if (!c) return '<span class="muted">—</span>';
   const riesgo = (l.riesgo_free != null) ? `<div class="muted" style="font-size:11px">riesgo ~${l.riesgo_free}</div>` : '';
   return `<span class="chip ${c.cls}">${c.txt}</span>${riesgo}`;
+}
+// Chip para la tabla de chequeos (usa el campo 'veredicto' directo).
+function veredictoChip(v, riesgo) {
+  const c = CHEQUEO_CHIP[v];
+  if (!c) return '<span class="muted">—</span>';
+  const r = (riesgo != null) ? ` <span class="muted" style="font-size:11px">~${riesgo}</span>` : '';
+  return `<span class="chip ${c.cls}">${c.txt}</span>${r}`;
+}
+
+async function loadChequeos() {
+  const [rc, rr] = await Promise.all([api('/api/admin/chequeos'), api('/api/admin/resumen')]);
+  if (!rc.ok) { $('#panel-chequeos').innerHTML = '<div class="empty">No se pudieron cargar los chequeos.</div>'; return; }
+  const d = rc.data;
+  const s = rr.ok ? rr.data : {};
+  const conv = s.chequeos_total ? Math.round((s.chequeos_con_email / s.chequeos_total) * 100) : 0;
+
+  const stat = (label, val) => `<div style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:16px">
+    <div style="font-size:24px;font-weight:800;color:#fff">${val}</div>
+    <div class="muted" style="font-size:12px;margin-top:2px">${label}</div></div>`;
+
+  const clasesTxt = c => { try { const a = JSON.parse(c || '[]'); return a.length ? a.join(', ') : '—'; } catch { return '—'; } };
+  const filasRecientes = d.recientes.map(x => `<tr>
+    <td><strong>${esc(x.marca)}</strong></td>
+    <td>${veredictoChip(x.veredicto, x.riesgo)}</td>
+    <td class="muted" style="font-size:12px">${esc(x.rubro || '—')}</td>
+    <td class="muted" style="font-size:12px">${clasesTxt(x.clases)}</td>
+    <td>${x.con_email ? '<span class="chip green">Sí</span>' : '<span class="muted">—</span>'}</td>
+    <td class="muted" style="font-size:11.5px">${fmtDate(x.created_at)}</td>
+  </tr>`).join('');
+  const filasTop = d.topMarcas.map(x => `<tr>
+    <td><strong>${esc(x.marca)}</strong></td>
+    <td><span class="chip blue">${x.veces}</span></td>
+    <td class="muted" style="font-size:11.5px">${fmtDate(x.ultimo)}</td>
+  </tr>`).join('');
+
+  $('#panel-chequeos').innerHTML = `
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+      ${stat('Chequeos totales', s.chequeos_total || 0)}
+      ${stat('Hoy', s.chequeos_hoy || 0)}
+      ${stat('Últimos 7 días', s.chequeos_7d || 0)}
+      ${stat('Dejaron mail', `${s.chequeos_con_email || 0} · ${conv}%`)}
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start">
+      <div>
+        <h3 style="font-size:14px;margin-bottom:10px">Últimos chequeos</h3>
+        ${d.recientes.length ? `<table><thead><tr><th>Marca</th><th>Resultado</th><th>Rubro</th><th>Clases</th><th>Dejó mail</th><th>Cuándo</th></tr></thead><tbody>${filasRecientes}</tbody></table>` : '<div class="empty">Todavía no hay chequeos registrados.</div>'}
+      </div>
+      <div>
+        <h3 style="font-size:14px;margin-bottom:10px">Marcas más chequeadas</h3>
+        ${d.topMarcas.length ? `<table><thead><tr><th>Marca</th><th>Veces</th><th>Último</th></tr></thead><tbody>${filasTop}</tbody></table>` : '<div class="empty">—</div>'}
+      </div>
+    </div>`;
 }
 
 function leadsQuery() {

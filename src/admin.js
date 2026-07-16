@@ -31,7 +31,27 @@ function mountAdminRoutes(app) {
       marcas_inpi:        count(`SELECT COUNT(*) AS n FROM marcas_inpi`),
       informes_cola:      count(`SELECT COUNT(*) AS n FROM informes WHERE estado IN ('borrador','generando','error')`),
       informes_enviados:  count(`SELECT COUNT(*) AS n FROM informes WHERE estado='enviado'`),
+      chequeos_total:     count(`SELECT COUNT(*) AS n FROM chequeos`),
+      chequeos_hoy:       count(`SELECT COUNT(*) AS n FROM chequeos WHERE date(created_at) = date('now')`),
+      chequeos_7d:        count(`SELECT COUNT(*) AS n FROM chequeos WHERE created_at >= datetime('now','-7 days')`),
+      chequeos_con_email: count(`SELECT COUNT(*) AS n FROM chequeos WHERE con_email = 1`),
     }));
+  });
+
+  // ===== Chequeos gratuitos (incluye anónimos) — demanda real =====
+  app.get('/api/admin/chequeos', guard, (req, res) => {
+    const recientes = db.prepare(`
+      SELECT id, marca, clases, rubro, veredicto, riesgo, con_email, created_at
+      FROM chequeos ORDER BY id DESC LIMIT 200
+    `).all();
+    const topMarcas = db.prepare(`
+      SELECT marca, COUNT(*) AS veces, MAX(created_at) AS ultimo
+      FROM chequeos GROUP BY lower(marca) ORDER BY veces DESC, ultimo DESC LIMIT 20
+    `).all();
+    const porVeredicto = db.prepare(`
+      SELECT veredicto, COUNT(*) AS n FROM chequeos GROUP BY veredicto
+    `).all();
+    res.json(ok({ recientes, topMarcas, porVeredicto }));
   });
 
   // ===== Leads + CRM-lite =====

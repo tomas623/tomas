@@ -223,6 +223,26 @@ app.post('/api/marca/check', (req, res) => {
     riesgo_estimado: riesgoEstimado,
   };
 
+  // Registramos el chequeo (incluye los anónimos) para medir demanda. No debe
+  // romper la respuesta si algo falla.
+  try {
+    const xff = req.headers['x-forwarded-for'];
+    const ip = xff ? String(xff).split(',')[0].trim() : (req.socket?.remoteAddress || null);
+    db.prepare(`
+      INSERT INTO chequeos (marca, clases, rubro, veredicto, riesgo, ip)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      String(marca).trim(),
+      JSON.stringify(clasesUsuario),
+      rubro ? String(rubro).slice(0, 200) : null,
+      veredicto,
+      Number.isFinite(Number(riesgoEstimado)) ? Math.round(Number(riesgoEstimado)) : null,
+      ip ? String(ip).slice(0, 60) : null,
+    );
+  } catch (err) {
+    console.error('[check] no se pudo registrar el chequeo:', err.message);
+  }
+
   res.json(ok({
     veredicto,
     mensaje,
@@ -314,6 +334,15 @@ app.post('/api/marca/lead-free', async (req, res) => {
            utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content, utm.utm_term);
     leadId = info.lastInsertRowid;
   }
+
+  // Marcamos como "convertido" el chequeo anónimo más reciente de esta marca,
+  // para medir cuántos chequeos terminan dejando el mail (best-effort).
+  try {
+    db.prepare(`
+      UPDATE chequeos SET con_email = 1
+      WHERE id = (SELECT id FROM chequeos WHERE lower(marca) = lower(?) AND con_email = 0 ORDER BY id DESC LIMIT 1)
+    `).run(marcaLimpia);
+  } catch {}
 
   // Mail al usuario con el resumen + CTA al informe pago. No bloquea el response.
   const { enviarMailGenerico } = require('./src/notificaciones');
