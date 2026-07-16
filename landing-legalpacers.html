@@ -24,6 +24,7 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-KG37NB45C4', { anonymize_ip: true });
+    gtag('config', 'AW-18025556269'); // Google Ads — seguimiento de conversiones
   </script>
 
   <!-- ===== LinkedIn Insight Tag ===== -->
@@ -1172,6 +1173,29 @@ const UTM_KEYS = ['utm_source','utm_medium','utm_campaign','utm_content','utm_te
       const v = params.get(k);
       if (v && !stored[k]) { stored[k] = v.slice(0, 100); cambio = true; }
     }
+    // Si no vino utm_source explícito, deducimos el origen del click-id de la
+    // plataforma (Google Ads usa gclid; LinkedIn, li_fat_id; etc.). Así sabemos
+    // de dónde llega el lead aunque la campaña no tenga UTMs.
+    const CLICK_IDS = { gclid:'google', gbraid:'google', wbraid:'google', li_fat_id:'linkedin', fbclid:'facebook', msclkid:'bing', ttclid:'tiktok' };
+    if (!stored.utm_source) {
+      for (const [param, src] of Object.entries(CLICK_IDS)) {
+        if (params.get(param)) { stored.utm_source = src; stored.utm_medium = stored.utm_medium || 'cpc'; cambio = true; break; }
+      }
+    }
+    // Último recurso: el referrer externo (tráfico orgánico/no etiquetado).
+    if (!stored.utm_source && document.referrer) {
+      try {
+        const refHost = new URL(document.referrer).hostname.replace(/^www\./, '');
+        if (refHost && !location.hostname.includes(refHost) && !refHost.includes(location.hostname)) {
+          if (/google\./.test(refHost)) stored.utm_source = 'google';
+          else if (/linkedin\./.test(refHost)) stored.utm_source = 'linkedin';
+          else if (/facebook\.|instagram\.|fb\./.test(refHost)) stored.utm_source = refHost.split('.')[0];
+          else stored.utm_source = refHost;
+          stored.utm_medium = stored.utm_medium || 'referral';
+          cambio = true;
+        }
+      } catch (e) {}
+    }
     if (cambio) sessionStorage.setItem('lp_utm', JSON.stringify(stored));
   } catch (e) {}
 })();
@@ -1197,6 +1221,11 @@ const LINKEDIN_CONVERSIONS = {
   // 'lp:lead_free':       87654321,  // micro-conversión
 };
 
+// Conversiones de Google Ads: mapean un evento interno a su "send_to".
+const GOOGLE_ADS_CONVERSIONS = {
+  'lp:lead_free': 'AW-18025556269/cPsRCNOTzr8cEK3SoJND',
+};
+
 function trackEvent(name, payload) {
   const detalle = payload || {};
   try { window.dispatchEvent(new CustomEvent(name, { detail: detalle })); } catch (e) {}
@@ -1205,6 +1234,13 @@ function trackEvent(name, payload) {
     if (typeof gtag === 'function') {
       const gaName = name.replace(/^lp:/, '').replace(/[^a-zA-Z0-9_]/g, '_');
       gtag('event', gaName, detalle);
+    }
+  } catch (e) {}
+  // Google Ads — dispara la conversión si el evento está mapeado.
+  try {
+    const sendTo = GOOGLE_ADS_CONVERSIONS[name];
+    if (sendTo && typeof gtag === 'function') {
+      gtag('event', 'conversion', { send_to: sendTo });
     }
   } catch (e) {}
   // LinkedIn — solo dispara si hay conversion_id mapeado.

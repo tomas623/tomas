@@ -797,6 +797,16 @@ function chequeoChip(l) {
   const riesgo = (l.riesgo_free != null) ? `<div class="muted" style="font-size:11px">riesgo ~${l.riesgo_free}</div>` : '';
   return `<span class="chip ${c.cls}">${c.txt}</span>${riesgo}`;
 }
+// Origen del lead (de dónde llegó: Google Ads, LinkedIn, etc.).
+const ORIGEN_LABEL = { google: 'Google', linkedin: 'LinkedIn', facebook: 'Facebook', instagram: 'Instagram', bing: 'Bing', tiktok: 'TikTok' };
+function origenChip(l) {
+  if (!l.utm_source) return '<span class="muted">directo</span>';
+  const label = ORIGEN_LABEL[l.utm_source] || l.utm_source;
+  const medio = l.utm_medium ? ` <span class="muted" style="font-size:11px">${esc(l.utm_medium)}</span>` : '';
+  const camp = l.utm_campaign ? `<div class="muted" style="font-size:10.5px">${esc(l.utm_campaign)}</div>` : '';
+  return `<span class="chip blue">${esc(label)}</span>${medio}${camp}`;
+}
+
 // Chip para la tabla de chequeos (usa el campo 'veredicto' directo).
 function veredictoChip(v, riesgo) {
   const c = CHEQUEO_CHIP[v];
@@ -900,6 +910,7 @@ async function loadLeads() {
       <td><span class="chip blue">${esc(l.tipo)}</span></td>
       <td><strong>${esc(l.marca)}</strong></td>
       <td>${chequeoChip(l)}</td>
+      <td>${origenChip(l)}</td>
       <td>${esc(l.email || '—')}${l.telefono ? `<div class="muted" style="font-size:11.5px">${esc(l.telefono)}</div>` : ''}</td>
       <td><span class="chip ${pipe.cls}">${pipe.txt}</span></td>
       <td><span class="chip ${l.estado === 'pagado' ? 'green' : l.estado === 'rechazado' ? 'red' : 'muted'}">${esc(l.estado)}</span></td>
@@ -913,7 +924,7 @@ async function loadLeads() {
   $('#panel-leads').innerHTML = filtros + `
     <table>
       <thead><tr>
-        <th>ID</th><th>Tipo</th><th>Marca</th><th>Chequeo</th><th>Contacto</th>
+        <th>ID</th><th>Tipo</th><th>Marca</th><th>Chequeo</th><th>Origen</th><th>Contacto</th>
         <th>Pipeline</th><th>Pago</th><th>Próx. contacto</th><th>Creado</th><th></th>
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -956,6 +967,7 @@ async function abrirLead(id) {
             ${esc(l.tipo)} · ${esc(l.email || '—')}${l.telefono ? ' · ' + esc(l.telefono) : ''}
             · creado ${fmtDate(l.created_at)}${l.pagado_at ? ' · pagado ' + fmtDate(l.pagado_at) : ''}
           </div>
+          <div style="margin-top:6px">Origen: ${origenChip(l)}</div>
         </div>
         <button class="btn outline tiny" onclick="$('#leadDetalle').innerHTML=''">Cerrar</button>
       </div>

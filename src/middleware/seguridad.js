@@ -25,10 +25,10 @@ function securityHeaders(req, res, next) {
   // los dominios de GA, LinkedIn y Mercado Pago que sí cargamos.
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://snap.licdn.com https://cdn.jsdelivr.net https://unpkg.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://snap.licdn.com https://cdn.jsdelivr.net https://unpkg.com",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
-    "connect-src 'self' https://www.google-analytics.com https://px.ads.linkedin.com https://region1.google-analytics.com",
+    "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://px.ads.linkedin.com",
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self' https://www.mercadopago.com.ar https://mpago.la",
