@@ -776,13 +776,26 @@ function mountAdminRoutes(app) {
   // Regenera el ANÁLISIS completo (re-llama a Gemini + PDF), no solo el PDF.
   // Corre dentro del proceso de la app (código + env confiables), con los
   // reintentos ante 429. Útil cuando el informe salió en modo stub.
-  app.post('/api/admin/informes/:id/regenerar-completo', guard, async (req, res) => {
+  app.post('/api/admin/informes/:id/regenerar-completo', guard, express.json(), async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const row = db.prepare('SELECT lead_id, estado FROM informes WHERE id = ?').get(id);
     if (!row) return res.status(404).json(fail('Informe no encontrado'));
     if (row.estado === 'enviado') return res.status(409).json(fail('Informe ya enviado, no se regenera'));
     if (!row.lead_id) return res.status(400).json(fail('El informe no tiene lead asociado'));
     try {
+      // Corrección de clases: si el Agente mandó clases nuevas, actualizamos el
+      // lead ANTES de reprocesar, así el análisis se rehace sobre las clases
+      // correctas (el matching y la IA leen lead.clases).
+      if (Array.isArray(req.body?.clases)) {
+        const clases = req.body.clases
+          .map(n => parseInt(n, 10))
+          .filter(n => Number.isFinite(n) && n >= 1 && n <= 45);
+        if (clases.length) {
+          const clasesUnicas = [...new Set(clases)];
+          db.prepare('UPDATE leads SET clases = ? WHERE id = ?').run(JSON.stringify(clasesUnicas), row.lead_id);
+          audit.log(req.user.id, 'informe.clases_corregidas', { entidad: 'informes', entidad_id: id, detalle: { clases: clasesUnicas } });
+        }
+      }
       db.prepare('DELETE FROM informes WHERE id = ?').run(id);
       const { procesarInformePago } = require('./jobs/informe-pago');
       // notificarCliente:false → regenerar NO le re-manda "recibimos tu pago".

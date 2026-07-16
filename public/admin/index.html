@@ -562,6 +562,9 @@ async function abrirInforme(id) {
           <input id="fEmail" value="${esc(i.email || '')}"></label>
         <label class="field" style="grid-column:1/-1"><span>Descripción de productos/servicios</span>
           <input id="fRubro" value="${esc(i.rubro || '')}"></label>
+        <label class="field" style="grid-column:1/-1"><span>Clases Niza (separadas por coma) · corregí acá si están mal</span>
+          <input id="fClases" value="${esc(clasesArr.join(', '))}" placeholder="ej: 36, 35">
+          <span class="muted" style="font-size:11px;margin-top:4px">Si cambiás las clases, apretá <strong>🔄 Regenerar análisis completo</strong> para que el análisis se rehaga sobre las clases correctas.</span></label>
       </div>
 
       ${(i.informe_json && (i.estado === 'borrador' || i.estado === 'revisado')) ? `
@@ -730,9 +733,16 @@ async function regenerarPDF(id) {
 // Re-corre el análisis completo (Gemini + PDF) dentro de la app. Puede tardar
 // si Gemini reintenta por rate limit. Genera un informe NUEVO (otro id).
 async function regenerarCompleto(id, btn) {
-  if (!confirm('¿Regenerar el análisis completo desde cero? Vuelve a llamar a la IA (puede tardar hasta ~2 min si hay rate limit).')) return;
+  // Leemos las clases del campo (por si el Agente las corrigió) para regenerar
+  // el análisis sobre las clases correctas.
+  const clasesTxt = ($('#fClases')?.value || '').trim();
+  const clases = clasesTxt
+    ? clasesTxt.split(',').map(s => parseInt(s.trim(), 10)).filter(n => Number.isFinite(n) && n >= 1 && n <= 45)
+    : [];
+  const avisoClases = clasesTxt ? `\n\nClases a usar: ${clases.join(', ') || '(inválidas — se mantienen las actuales)'}` : '';
+  if (!confirm('¿Regenerar el análisis completo desde cero? Vuelve a llamar a la IA (puede tardar hasta ~2 min si hay rate limit).' + avisoClases)) return;
   const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Regenerando… (no cierres)';
-  const r = await api(`/api/admin/informes/${id}/regenerar-completo`, { method: 'POST', body: '{}' });
+  const r = await api(`/api/admin/informes/${id}/regenerar-completo`, { method: 'POST', body: JSON.stringify({ clases }) });
   btn.disabled = false; btn.textContent = orig;
   if (!r.ok) { alert(r.error || 'No se pudo regenerar'); return; }
   if (r.data.stub === true) {

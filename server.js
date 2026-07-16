@@ -73,13 +73,13 @@ const RUBRO_CLASES = [
   { re: /(clinica|consultorio|odontolog|medico|kinesi|psicolog|terapia)/,   clases: [44] },
   // Tecnología
   { re: /(app|software|saas|tecnologi|tecnología|web|sistema|plataforma|aplicacion)/, clases: [9, 42] },
-  { re: /(consultor|asesor|servicio profesional|gestor)/,                   clases: [35, 42] },
   { re: /(educacion|educación|curso|capacitacion|colegio|instituto|escuela|talleres)/, clases: [41] },
   // Comercio y servicios
   { re: /(tienda online|ecommerce|marketplace|reventa|venta minorista|comercio)/, clases: [35] },
   { re: /(logistic|transporte|cadeter|distribu|courier|mudanza)/,           clases: [39] },
   { re: /(inmobiliari|alquiler|hospedaje|hotel|hosteler|hostel|airbnb)/,    clases: [36, 43] },
-  { re: /(financier|banco|seguro|inversi|fintech|criptomoneda)/,            clases: [36] },
+  { re: /(financ|finanz|banco|bancari|seguro|inversi|fintech|cripto|contab|impuesto|tributar)/, clases: [36] },
+  { re: /(comercio exterior|comex|aduan|import|export|despachante)/,        clases: [35] },
   { re: /(construc|albañiler|reforma|pintur)/,                              clases: [37] },
   // Industria y materiales
   { re: /(automotor|auto |moto |vehiculo|bici|repuestos)/,                  clases: [12] },
@@ -87,6 +87,10 @@ const RUBRO_CLASES = [
   { re: /(libro|editorial|revista|imprenta)/,                               clases: [16] },
   { re: /(mueble|colchon|decoracion|hogar)/,                                clases: [20] },
   { re: /(mascota|petshop|veterinari|alimento balanceado)/,                 clases: [31, 44] },
+  // Genérico al final: solo cae acá si ninguna regla de rubro específico matcheó
+  // (ej "consultoría en finanzas" matchea finanzas → 36 antes que esto). Clase 35
+  // (gestión de negocios) es el default razonable para consultoría/asesoría a secas.
+  { re: /(consultor|asesor|servicio profesional|gestor)/,                   clases: [35] },
 ];
 
 function detectarClasesPorRubro(rubro) {
