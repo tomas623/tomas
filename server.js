@@ -228,15 +228,17 @@ app.post('/api/marca/check', (req, res) => {
   try {
     const xff = req.headers['x-forwarded-for'];
     const ip = xff ? String(xff).split(',')[0].trim() : (req.socket?.remoteAddress || null);
+    const utm = extraerUtm(req.body);
     db.prepare(`
-      INSERT INTO chequeos (marca, clases, rubro, veredicto, riesgo, ip)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO chequeos (marca, clases, rubro, veredicto, riesgo, utm_source, utm_medium, utm_campaign, ip)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       String(marca).trim(),
       JSON.stringify(clasesUsuario),
       rubro ? String(rubro).slice(0, 200) : null,
       veredicto,
       Number.isFinite(Number(riesgoEstimado)) ? Math.round(Number(riesgoEstimado)) : null,
+      utm.utm_source, utm.utm_medium, utm.utm_campaign,
       ip ? String(ip).slice(0, 60) : null,
     );
   } catch (err) {

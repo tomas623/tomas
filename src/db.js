@@ -58,6 +58,9 @@ db.exec(`
     veredicto TEXT,
     riesgo INTEGER,
     con_email INTEGER NOT NULL DEFAULT 0,
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
     ip TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -399,5 +402,14 @@ for (const [col, ddl] of [
 }
 db.exec(`CREATE INDEX IF NOT EXISTS idx_leads_pipeline ON leads(pipeline_estado, created_at)`);
 db.exec(`CREATE INDEX IF NOT EXISTS idx_leads_proximo ON leads(proximo_contacto_at) WHERE proximo_contacto_at IS NOT NULL`);
+
+// Origen del chequeo (la tabla ya pudo haberse creado sin estas columnas).
+for (const [col, ddl] of [
+  ['utm_source',   `ALTER TABLE chequeos ADD COLUMN utm_source TEXT`],
+  ['utm_medium',   `ALTER TABLE chequeos ADD COLUMN utm_medium TEXT`],
+  ['utm_campaign', `ALTER TABLE chequeos ADD COLUMN utm_campaign TEXT`],
+]) {
+  if (!columnExists('chequeos', col)) db.exec(ddl);
+}
 
 module.exports = db;

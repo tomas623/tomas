@@ -1390,7 +1390,7 @@ function landing() {
       try {
         const r = await fetch('/api/marca/check', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ marca: this.form.marca, clases: this.form.clases, rubro: this.form.rubro })
+          body: JSON.stringify({ marca: this.form.marca, clases: this.form.clases, rubro: this.form.rubro, utm: getUtm() })
         }).then(res => res.json());
         if (r.ok) this.resultado = r.data;
         else this.searchError = r.error || 'No pudimos hacer el chequeo. Probá de nuevo.';

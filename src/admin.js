@@ -41,7 +41,8 @@ function mountAdminRoutes(app) {
   // ===== Chequeos gratuitos (incluye anónimos) — demanda real =====
   app.get('/api/admin/chequeos', guard, (req, res) => {
     const recientes = db.prepare(`
-      SELECT id, marca, clases, rubro, veredicto, riesgo, con_email, created_at
+      SELECT id, marca, clases, rubro, veredicto, riesgo, con_email,
+             utm_source, utm_medium, utm_campaign, created_at
       FROM chequeos ORDER BY id DESC LIMIT 200
     `).all();
     const topMarcas = db.prepare(`
@@ -51,7 +52,11 @@ function mountAdminRoutes(app) {
     const porVeredicto = db.prepare(`
       SELECT veredicto, COUNT(*) AS n FROM chequeos GROUP BY veredicto
     `).all();
-    res.json(ok({ recientes, topMarcas, porVeredicto }));
+    const porOrigen = db.prepare(`
+      SELECT COALESCE(utm_source, 'directo') AS origen, COUNT(*) AS n
+      FROM chequeos GROUP BY COALESCE(utm_source, 'directo') ORDER BY n DESC
+    `).all();
+    res.json(ok({ recientes, topMarcas, porVeredicto, porOrigen }));
   });
 
   // ===== Leads + CRM-lite =====
