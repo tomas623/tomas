@@ -1053,9 +1053,47 @@ async function diagnosticarGemini() {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Sugerencia de clases Niza por IA — se usa cuando el rubro no cae en ninguna
+// regla de palabras clave. La IA es más robusta que la lista fija.
+// ──────────────────────────────────────────────────────────────────────────────
+async function sugerirClases(marca, rubro) {
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) return { clases: [], razon: 'sin API key' };
+  const model = (process.env.GEMINI_MODEL_INFORME || 'gemini-2.5-flash').trim();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+
+  const sys = `Sos experto en la Clasificación de Niza para el registro de marcas en Argentina (INPI).
+Dada una marca y la descripción de sus productos/servicios, indicá la o las clases Niza correctas.
+Reglas:
+- Devolvé la clase PRINCIPAL primero. Sumá secundarias SOLO si son claramente necesarias para cubrir la actividad descripta; no incluyas clases "por las dudas".
+- Servicios financieros / seguros / inversiones / comercio de dinero → clase 36. Consultoría de negocios, publicidad, gestión comercial → 35. Software y servicios tecnológicos → 42 (productos de software → 9). NO confundas consultoría financiera (36) con tecnología (42).
+- Máximo 3 clases.
+Devolvé SOLO un JSON: {"clases":[números],"razon":"1 frase corta"}.`;
+  const userPrompt = `Marca: "${marca}"\nProductos/servicios: "${rubro || '(no especificado)'}"`;
+  const body = {
+    systemInstruction: { parts: [{ text: sys }] },
+    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+    generationConfig: { temperature: 0.1, responseMimeType: 'application/json', maxOutputTokens: 400, thinkingConfig: { thinkingBudget: 0 } },
+  };
+  try {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) return { clases: [], razon: `HTTP ${res.status}` };
+    const json = await res.json();
+    const txt = json?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const parsed = JSON.parse(txt);
+    const clases = (Array.isArray(parsed.clases) ? parsed.clases : [])
+      .map(n => parseInt(n, 10)).filter(n => Number.isFinite(n) && n >= 1 && n <= 45);
+    return { clases: [...new Set(clases)].slice(0, 3), razon: String(parsed.razon || '').slice(0, 200) };
+  } catch (err) {
+    return { clases: [], razon: err.message };
+  }
+}
+
 module.exports = {
   generar,
   diagnosticarGemini,
+  sugerirClases,
   // Exporto internals para testing.
   _internals: { SYSTEM_PROMPT, construirUserPrompt, stubInforme, FEW_SHOT_EXAMPLES },
 };

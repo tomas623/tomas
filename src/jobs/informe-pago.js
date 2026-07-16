@@ -141,7 +141,26 @@ async function procesarInformePago(leadId, { notificarCliente = true, forzar = f
     return { informeId: existente.id, estado: existente.estado };
   }
 
-  const clases = parsearClases(lead.clases);
+  let clases = parsearClases(lead.clases);
+
+  // Si el lead vino sin clases (el rubro no cayó en ninguna regla conocida),
+  // la IA sugiere la clase Niza a partir de la marca + rubro. Así el análisis
+  // se hace sobre clases razonables en vez de quedar vacío. El Agente igual
+  // las puede corregir en el panel y regenerar.
+  if (!clases.length) {
+    try {
+      const { sugerirClases } = require('../matching/informe');
+      const sug = await sugerirClases(lead.marca, lead.rubro);
+      if (sug.clases && sug.clases.length) {
+        clases = sug.clases;
+        db.prepare('UPDATE leads SET clases = ? WHERE id = ?').run(JSON.stringify(clases), leadId);
+        console.log(`[informe-pago] clases sugeridas por IA para lead ${leadId}: ${clases.join(', ')} (${sug.razon})`);
+        audit.log(null, 'informe_pago.clases_ia', { entidad: 'leads', entidad_id: leadId, detalle: { clases, razon: sug.razon } });
+      }
+    } catch (err) {
+      console.error(`[informe-pago] sugerencia de clases IA falló (lead ${leadId}):`, err.message);
+    }
+  }
 
   // 1. Reserva la fila para que aparezca en la cola enseguida.
   const ins = db.prepare(`
