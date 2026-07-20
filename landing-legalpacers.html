@@ -353,9 +353,11 @@
     .teaser-row:last-child{border:none}
     .teaser-mask{font-family:ui-monospace,monospace;font-size:14px;color:var(--text-soft);letter-spacing:2px;font-weight:600}
 
-    .garantia-pill{display:inline-flex;align-items:center;gap:8px;background:var(--green-soft);
-                   border:1px solid rgba(16,185,129,.35);color:#6ee7b7;padding:9px 16px;border-radius:99px;
-                   font-size:13px;font-weight:600;margin-top:14px;text-align:left}
+    .garantia-pill{display:flex;align-items:flex-start;gap:10px;background:var(--green-soft);
+                   border:1px solid rgba(16,185,129,.35);color:#6ee7b7;padding:12px 15px;border-radius:12px;
+                   font-size:12.5px;font-weight:500;line-height:1.55;margin-top:16px;text-align:left}
+    .garantia-pill strong{color:#a7f3d0}
+    .garantia-pill .g-ico{font-size:16px;line-height:1.2;flex:0 0 auto}
 
     .save-check-box{margin-top:18px;padding:16px 18px;border-radius:12px;background:var(--bg-soft);border:1px dashed var(--border);text-align:left}
     .save-check-title{font-weight:700;font-size:14px;color:var(--text)}
@@ -681,7 +683,8 @@
           </div>
 
           <div class="garantia-pill">
-            🛡️ <strong>Garantía Preventiva:</strong> Si el informe da riesgo ALTO, pedís el informe completo de otra variante de nombre 100% gratis.
+            <span class="g-ico">🛡️</span>
+            <span><strong>Garantía preventiva:</strong> si el informe da riesgo ALTO, te hacemos el informe de otra variante de nombre <strong>100% gratis</strong>.</span>
           </div>
 
           <!-- Dos caminos claros según lo que necesita la persona -->
