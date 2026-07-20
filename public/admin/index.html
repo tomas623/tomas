@@ -1191,12 +1191,13 @@ async function loadMarcas() {
   if (!r.ok) return;
   if (!r.data.marcas.length) { $('#panel-marcas').innerHTML = '<div class="empty">Ningún cliente cargó marcas todavía.</div>'; return; }
   $('#panel-marcas').innerHTML = tabla(
-    ['#','Denominación','Clases','Tipo','Acta','Concesión','Estado','Cliente','Creado'],
+    ['#','Denominación','Clases','Tipo','Origen','Acta','Concesión','Estado','Cliente','Creado'],
     r.data.marcas.map(m => [
       `<span class="mono">${m.id}</span>`,
       `<strong>${esc(m.denominacion)}</strong>`,
       esc(m.clases),
       esc(m.tipo || '—'),
+      m.origen === 'informe' ? '<span class="chip yellow">Informe</span>' : '<span class="muted">Cliente</span>',
       esc(m.numero_acta || '—'),
       m.fecha_concesion ? fmtDate(m.fecha_concesion) : '<span class="muted">—</span>',
       `<span class="chip ${m.estado === 'activa' ? 'green' : m.estado === 'pausada' ? 'yellow' : 'blue'}">${esc(m.estado)}</span>`,

@@ -448,7 +448,7 @@ function mountAdminRoutes(app) {
   app.get('/api/admin/marcas-vigiladas', guard, (req, res) => {
     const rows = db.prepare(`
       SELECT mv.id, mv.denominacion, mv.clases, mv.tipo, mv.estado, mv.created_at,
-             mv.numero_acta, mv.fecha_concesion,
+             mv.numero_acta, mv.fecha_concesion, mv.origen, mv.origen_ref,
              CASE WHEN mv.fecha_concesion IS NOT NULL
                   THEN date(mv.fecha_concesion, '+5 years') END  AS dju_due_at,
              CASE WHEN mv.fecha_concesion IS NOT NULL

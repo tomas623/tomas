@@ -19,7 +19,7 @@
 const path = require('path');
 const fs = require('fs/promises');
 const db = require('../db');
-const { matching } = require('../matching/etapa1');
+const { matching, normalizar } = require('../matching/etapa1');
 const { generar: generarInforme } = require('../matching/informe');
 const { chequear: chequearDominios } = require('../external/dominios');
 const { chequear: chequearRedes } = require('../external/redes');
@@ -28,6 +28,48 @@ const { enviarMailGenerico } = require('../notificaciones');
 const audit = require('../audit');
 
 const DIR_PDFS = path.join(__dirname, '..', '..', 'data', 'informes');
+
+// Cuenta dueña de las marcas que se auto-vigilan al pedir un informe. Debe ser
+// una cuenta 'cliente' para que aparezcan también en el portal cliente; si no
+// existe, caemos a cualquier cuenta con ese email y por último a un admin.
+function ownerVigilanciaInforme() {
+  const email = (process.env.VIGILANCIA_INFORME_OWNER_EMAIL || 'tomas@legalpacers.com').trim().toLowerCase();
+  return (
+    db.prepare("SELECT id FROM usuarios WHERE lower(email) = ? AND rol = 'cliente' LIMIT 1").get(email)
+    || db.prepare('SELECT id FROM usuarios WHERE lower(email) = ? LIMIT 1').get(email)
+    || db.prepare("SELECT id FROM usuarios WHERE rol = 'admin' ORDER BY id LIMIT 1").get()
+    || null
+  )?.id || null;
+}
+
+// Agrega la marca del informe a la vigilancia (marcas_vigiladas), bajo la cuenta
+// dueña, marcada con origen='informe'. Idempotente: no duplica si ya existe.
+function agregarMarcaAVigilancia(denominacion, clases, informeId) {
+  if ((process.env.VIGILAR_INFORMES || 'true').toLowerCase() === 'false') return;
+  const ownerId = ownerVigilanciaInforme();
+  if (!ownerId) { console.warn('[informe-pago] no hay cuenta dueña para auto-vigilar'); return; }
+  const den = String(denominacion || '').trim();
+  if (!den) return;
+  const denNorm = normalizar(den);
+  const clasesJson = JSON.stringify((clases || []).map(Number).filter(Number.isFinite));
+
+  const dup = db.prepare(`
+    SELECT id FROM marcas_vigiladas
+    WHERE usuario_id = ? AND denominacion_norm = ? AND clases = ? AND estado != 'baja'
+  `).get(ownerId, denNorm, clasesJson);
+  if (dup) return;
+
+  const info = db.prepare(`
+    INSERT INTO marcas_vigiladas
+      (usuario_id, denominacion, denominacion_norm, clases, tipo, estado, origen, origen_ref)
+    VALUES (?, ?, ?, ?, 'denominativa', 'activa', 'informe', ?)
+  `).run(ownerId, den, denNorm, clasesJson, `informe:${informeId}`);
+  audit.log(null, 'vigilancia.auto_informe', {
+    entidad: 'marcas_vigiladas', entidad_id: info.lastInsertRowid,
+    detalle: { denominacion: den, clases, informe_id: informeId, owner_id: ownerId },
+  });
+  console.log(`[informe-pago] "${den}" agregada a vigilancia (marca_vigilada #${info.lastInsertRowid}, owner ${ownerId})`);
+}
 const MAIL_EQUIPO = (process.env.MAIL_EQUIPO_LEGAL || 'contacto@legalpacers.com').trim();
 const PUBLIC_URL = (process.env.PUBLIC_URL || 'https://legalpacers.com').replace(/\/$/, '');
 
@@ -222,6 +264,15 @@ async function procesarInformePago(leadId, { notificarCliente = true, forzar = f
       informeId,
     );
     audit.log(null, 'informe_pago.borrador', { entidad: 'informes', entidad_id: informeId });
+
+    // Auto-vigilancia: la marca que pidió informe entra al radar (panel admin +
+    // cliente dueño), así el monitoreo semanal la escanea y avisa si aparece un
+    // conflicto. No debe romper el flujo si falla.
+    try {
+      agregarMarcaAVigilancia(lead.marca, clases, informeId);
+    } catch (err) {
+      console.error(`[informe-pago] auto-vigilancia falló (informe ${informeId}):`, err.message);
+    }
 
     // 6. Notificaciones (no bloquean — los errores se loguean).
     // El acuse al cliente ("recibimos tu pago") se manda SOLO en la generación

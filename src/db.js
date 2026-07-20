@@ -412,4 +412,13 @@ for (const [col, ddl] of [
   if (!columnExists('chequeos', col)) db.exec(ddl);
 }
 
+// Origen de la marca vigilada: 'cliente' (alta normal) o 'informe' (se agregó
+// sola al pedir un informe pago). origen_ref guarda la referencia (ej informe:12).
+for (const [col, ddl] of [
+  ['origen',     `ALTER TABLE marcas_vigiladas ADD COLUMN origen TEXT NOT NULL DEFAULT 'cliente'`],
+  ['origen_ref', `ALTER TABLE marcas_vigiladas ADD COLUMN origen_ref TEXT`],
+]) {
+  if (!columnExists('marcas_vigiladas', col)) db.exec(ddl);
+}
+
 module.exports = db;
