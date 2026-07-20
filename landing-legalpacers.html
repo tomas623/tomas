@@ -596,6 +596,11 @@
         </div>
       </div>
 
+      <div class="input-group" style="margin-top:4px">
+        <label for="emailOpt">Email <span style="color:var(--text-dim);font-weight:400;text-transform:none">— opcional. Si lo dejás, te enviamos el resultado y novedades.</span></label>
+        <input id="emailOpt" type="email" x-model="form.email" placeholder="tu@email.com (opcional)" @keydown.enter="buscar()" autocomplete="email">
+      </div>
+
       <div class="clases-chip" x-show="form.rubro.trim().length >= 2" x-cloak>
         <template x-if="clasesDetectadas.length > 0">
           <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
@@ -679,31 +684,55 @@
             🛡️ <strong>Garantía Preventiva:</strong> Si el informe da riesgo ALTO, pedís el informe completo de otra variante de nombre 100% gratis.
           </div>
 
-          <!-- Captación de lead free: guardamos el chequeo y lo mandamos por mail -->
-          <div class="save-check-box" x-show="!emailGuardado" x-cloak>
-            <div class="save-check-title">📬 Guardá este resultado en tu mail</div>
-            <div class="save-check-sub">Te enviamos una copia del veredicto para que lo tengas a mano cuando lo necesites. Sin spam.</div>
+          <!-- Dos caminos claros según lo que necesita la persona -->
+          <div style="font-size:13px;font-weight:700;color:var(--text-muted);text-align:center;margin:22px 0 12px;text-transform:uppercase;letter-spacing:.04em">¿Cómo seguimos?</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap">
+
+            <div style="flex:1;min-width:280px;background:var(--surface);border:1.5px solid var(--accent, #1B6EF3);border-radius:14px;padding:20px;position:relative">
+              <div style="position:absolute;top:-10px;left:20px;background:var(--accent, #1B6EF3);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px">Recomendado</div>
+              <h4 style="font-size:16px;margin:4px 0 2px">Informe completo de viabilidad</h4>
+              <div style="font-size:20px;font-weight:800;color:#fff">$19.900 <span style="font-size:12px;font-weight:500;color:var(--text-muted)">· lo firma un Agente matriculado · en 24 h</span></div>
+              <ul style="margin:14px 0;padding-left:18px;font-size:13px;color:var(--text-soft);line-height:1.75">
+                <li>Cruce fonético, visual y conceptual contra la base del INPI</li>
+                <li>Choque con marcas notorias y leyes especiales</li>
+                <li>Nivel de riesgo real + viabilidad estimada</li>
+                <li>Dictamen del Agente + variantes viables si hay conflicto</li>
+                <li>Dominios y redes disponibles para tu marca</li>
+              </ul>
+              <button class="btn btn-primary" @click="openInforme()" style="width:100%;padding:13px">Pedir informe completo →</button>
+              <div style="font-size:11.5px;color:var(--text-dim);margin-top:8px;text-align:center">El valor del informe se descuenta del registro.</div>
+            </div>
+
+            <div style="flex:1;min-width:280px;background:var(--bg-soft, var(--surface));border:1px solid var(--border-soft);border-radius:14px;padding:20px">
+              <h4 style="font-size:16px;margin:4px 0 2px">Registrar la marca</h4>
+              <div style="font-size:20px;font-weight:800;color:#fff">$120.000 <span style="font-size:12px;font-weight:500;color:var(--text-muted)">· honorario, 1ª clase incluida (+$30.000 por clase extra)</span></div>
+              <ul style="margin:14px 0;padding-left:18px;font-size:13px;color:var(--text-soft);line-height:1.75">
+                <li>Armado y presentación del expediente ante el INPI</li>
+                <li>Seguimiento del trámite y contestación de vistas de forma</li>
+                <li>Te acompaña un Agente de la Propiedad Industrial matriculado</li>
+              </ul>
+              <button class="btn btn-dark" @click="iniciarRegistroDirecto()" style="width:100%;padding:13px;font-weight:700">🚀 Iniciar registro</button>
+              <div style="font-size:11.5px;color:var(--text-dim);margin-top:8px;text-align:center">Ideal si ya tenés claro el nombre y querés avanzar.</div>
+            </div>
+
+          </div>
+
+          <!-- Fallback: solo si NO dejó el mail arriba, ofrecemos guardarlo -->
+          <div class="save-check-box" x-show="!emailGuardado && !form.email" x-cloak style="margin-top:16px">
+            <div class="save-check-title">📬 ¿Preferís pensarlo?</div>
+            <div class="save-check-sub">Dejanos tu mail y te enviamos el resultado para que lo tengas a mano. Sin spam.</div>
             <div class="save-check-form">
               <input type="email" x-model="seguimientoEmail" placeholder="tu@email.com"
                      @keyup.enter="guardarSeguimiento()" :disabled="guardandoEmail">
               <button class="btn btn-dark save-check-btn" @click="guardarSeguimiento()" :disabled="guardandoEmail">
-                <span x-show="!guardandoEmail">Enviarme el chequeo</span>
+                <span x-show="!guardandoEmail">Enviarme el resultado</span>
                 <span x-show="guardandoEmail" x-cloak>Guardando…</span>
               </button>
             </div>
             <div class="save-check-err" x-show="emailError" x-text="emailError" x-cloak></div>
           </div>
-          <div class="save-check-ok" x-show="emailGuardado" x-cloak>
-            ✓ Listo. Te enviamos el resumen a <strong x-text="seguimientoEmail"></strong>. Revisá tu bandeja en unos minutos.
-          </div>
-
-          <div class="result-cta">
-            <button class="btn btn-primary" @click="openInforme()" style="flex:2; min-width:240px; padding:14px">
-              Pedir informe completo · $19.900
-            </button>
-            <button class="btn btn-dark" @click="iniciarRegistroDirecto()" style="flex:1; min-width:160px; font-weight:700">
-              🚀 Iniciar registro
-            </button>
+          <div class="save-check-ok" x-show="emailGuardado" x-cloak style="margin-top:16px">
+            ✓ Te enviamos el resultado a <strong x-text="seguimientoEmail"></strong>. Revisá tu bandeja en unos minutos.
           </div>
         </div>
       </template>
@@ -1256,7 +1285,7 @@ function landing() {
   const _params = new URLSearchParams(location.search);
   return {
     NIZA_TITLES, PRECIO_INFORME_BASE, PRECIO_REGISTRO_BASE,
-    form: {marca: _params.get('marca') || '', rubro: '', clases: []},
+    form: {marca: _params.get('marca') || '', rubro: '', clases: [], email: ''},
     clasesDetectadas: [], seguimientoEmail: '', emailGuardado: false, guardandoEmail: false, emailError: '',
     informeMarca: '', informeEmail: '', informeEmailError: '', promoCode: _params.get('promo') || '', precioInforme: null,
     resultado: null, cargando: false, iniciandoPago: false, iniciandoRegistro: false, errorMsg: '', searchError: '', rateLimited: false,
@@ -1351,18 +1380,21 @@ function landing() {
         [/(medicamento|farmaceut|suplemento|vitamina|salud)/,              [5]],
         [/(clinica|consultorio|odontolog|medico|kinesi|psicolog|terapia)/, [44]],
         [/(app|software|saas|tecnologi|web|sistema|plataforma|aplicacion)/, [9, 42]],
-        [/(consultor|asesor|servicio profesional|gestor)/,                 [35, 42]],
         [/(educacion|curso|capacitacion|colegio|instituto|escuela|talleres)/, [41]],
         [/(tienda online|ecommerce|marketplace|reventa|venta minorista|comercio)/, [35]],
         [/(logistic|transporte|cadeter|distribu|courier|mudanza)/,         [39]],
         [/(inmobiliari|alquiler|hospedaje|hotel|hosteler|hostel|airbnb)/,  [36, 43]],
-        [/(financier|banco|seguro|inversi|fintech|criptomoneda)/,          [36]],
+        [/(financ|finanz|banco|bancari|seguro|inversi|fintech|cripto|contab|impuesto|tributar)/, [36]],
+        [/(comercio exterior|comex|aduan|import|export|despachante)/,      [35]],
         [/(construc|albañiler|reforma|pintur)/,                            [37]],
         [/(automotor|auto |moto |vehiculo|bici|repuestos)/,                [12]],
         [/(juguet|juego de mesa|peluche)/,                                 [28]],
         [/(libro|editorial|revista|imprenta)/,                             [16]],
         [/(mueble|colchon|decoracion|hogar)/,                              [20]],
         [/(mascota|petshop|veterinari|alimento balanceado)/,               [31, 44]],
+        // Genérico al final: consultoría/asesoría a secas → 35 (gestión de
+        // negocios). Las reglas de rubro específico de arriba ganan primero.
+        [/(consultor|asesor|servicio profesional|gestor)/,                 [35]],
       ];
       for (const [re, clases] of tabla) if (re.test(q)) return clases;
       return [];
@@ -1392,7 +1424,16 @@ function landing() {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ marca: this.form.marca, clases: this.form.clases, rubro: this.form.rubro, utm: getUtm() })
         }).then(res => res.json());
-        if (r.ok) this.resultado = r.data;
+        if (r.ok) {
+          this.resultado = r.data;
+          // Si dejó el mail (opcional) arriba, guardamos el lead automáticamente
+          // — sin obligarlo a volver a escribirlo.
+          const em = (this.form.email || '').trim();
+          if (em && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+            this.seguimientoEmail = em;
+            this.guardarSeguimiento();
+          }
+        }
         else this.searchError = r.error || 'No pudimos hacer el chequeo. Probá de nuevo.';
       } catch(e) { this.searchError = 'Error de red. Probá de nuevo.'; }
       finally { this.cargando = false; }
