@@ -60,7 +60,7 @@ async function enviarWhatsApp({ alertaId, to, marca, nivel, panel_url }) {
   return { ok: true, disabled: true };
 }
 
-module.exports = { enviarMail, enviarWhatsApp, enviarMailGenerico };
+module.exports = { enviarMail, enviarWhatsApp, enviarMailGenerico, enviarConfirmacionRegistro };
 
 /**
  * Envío de mail genérico (subject/HTML arbitrario + adjuntos opcionales).
@@ -114,4 +114,30 @@ async function enviarMailGenerico({ to, subject, html, attachments, from, replyT
     console.error(`[mail/${tagFinal}] error red:`, err.message);
     return { ok: false, error: err.message };
   }
+}
+
+// Acuse de pago para REGISTRO de marca. El registro no genera un PDF como el
+// informe; sólo avisamos que recibimos el pago y que un Agente se contacta para
+// arrancar el trámite.
+async function enviarConfirmacionRegistro({ email, marca, solicitante }) {
+  if (!email) return { ok: false, error: 'sin email' };
+  const html = `
+    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+      <h2 style="color:#1B6EF3">Recibimos tu pago</h2>
+      <p>Hola${solicitante ? ' ' + solicitante : ''},</p>
+      <p>Confirmamos la acreditación del pago para el <strong>registro de tu marca "${marca}"</strong> ante el INPI. ¡Gracias por confiar en LegalPacers!</p>
+      <p>Un Agente de la Propiedad Industrial matriculado se pondrá en contacto a la brevedad para pedirte los datos necesarios y arrancar el trámite.</p>
+      <p>Cualquier consulta, podés responder este mail o escribirnos por WhatsApp al +54 9 11 2877-4200.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="font-size:12px;color:#64748b">
+        LegalPacers · Consultora de Propiedad Industrial<br>
+        contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+      </p>
+    </div>`;
+  return enviarMailGenerico({
+    to: email,
+    subject: `Recibimos tu pago — registro de "${marca}"`,
+    html,
+    tag: 'registro_acuse',
+  });
 }

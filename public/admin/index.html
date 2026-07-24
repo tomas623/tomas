@@ -958,6 +958,14 @@ async function loadLeads() {
   `;
 }
 
+async function enviarAcuseRegistro(id, btn) {
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando…';
+  const r = await api(`/api/admin/leads/${id}/acuse-registro`, { method: 'POST', body: '{}' });
+  btn.disabled = false; btn.textContent = orig;
+  if (!r.ok) { alert(r.error || 'No se pudo enviar'); return; }
+  alert(r.data.stub ? 'Enviado (modo STUB — sin Resend).' : `✓ Confirmación enviada a ${r.data.email}.`);
+}
+
 async function confirmarPagoManual(id, btn) {
   if (!confirm('¿Confirmar que este pago se acreditó en Mercado Pago? Se marca el lead como pagado y, si es informe, se genera el borrador.')) return;
   const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Procesando…';
@@ -1010,6 +1018,13 @@ async function abrirLead(id) {
       </div>
 
       ${informeBox}
+
+      ${(l.tipo === 'registro' && l.estado === 'pagado') ? `
+      <div style="background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-weight:700;margin-bottom:4px">Registro pagado</div>
+        <div class="muted" style="font-size:12.5px;margin-bottom:10px">Podés enviarle (o reenviarle) al cliente el acuse de "recibimos tu pago del registro".</div>
+        <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Enviar confirmación de pago al cliente</button>
+      </div>` : ''}
 
       ${(l.estado === 'pendiente' && (l.tipo === 'informe' || l.tipo === 'registro')) ? `
       <div style="background:var(--red-soft);border:1px solid var(--red);border-radius:10px;padding:14px;margin-bottom:14px">

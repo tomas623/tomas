@@ -714,6 +714,11 @@ async function procesarPago(paymentId) {
           console.error(`[webhook] orquestador informe lead ${lead.id} falló:`, err),
         );
       });
+    } else if (lead.tipo === 'registro' && lead.email) {
+      // Registro: no genera PDF, pero le avisamos al cliente que recibimos el pago.
+      const { enviarConfirmacionRegistro } = require('./src/notificaciones');
+      enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca })
+        .catch(err => console.error(`[webhook] acuse registro lead ${lead.id}:`, err.message));
     }
   } else {
     db.prepare(`UPDATE leads SET estado = ?, payment_ref = ? WHERE id = ?`)

@@ -154,8 +154,27 @@ function mountAdminRoutes(app) {
         console.error(`[admin] confirmar-pago informe lead ${id}:`, err);
         return res.status(500).json(fail('Se marcó pagado pero falló la generación: ' + err.message));
       }
+    } else if (lead.tipo === 'registro' && lead.email) {
+      const { enviarConfirmacionRegistro } = require('./notificaciones');
+      await enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, solicitante: lead.solicitante })
+        .catch(err => console.error(`[admin] acuse registro lead ${id}:`, err.message));
     }
     res.json(ok({ id, tipo: lead.tipo, informe }));
+  });
+
+  // Reenviar (o enviar por primera vez) el acuse de pago de un registro. Útil
+  // para leads de registro que ya estaban marcados pagados antes de este aviso.
+  app.post('/api/admin/leads/:id/acuse-registro', guard, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
+    if (!lead) return res.status(404).json(fail('Lead no encontrado'));
+    if (lead.tipo !== 'registro') return res.status(400).json(fail('El lead no es de tipo registro'));
+    if (!lead.email) return res.status(400).json(fail('El lead no tiene email'));
+    const { enviarConfirmacionRegistro } = require('./notificaciones');
+    const r = await enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, solicitante: lead.solicitante });
+    if (!r.ok) return res.status(502).json(fail('No se pudo enviar: ' + r.error));
+    audit.log(req.user.id, 'registro.acuse_enviado', { entidad: 'leads', entidad_id: id, detalle: { email: lead.email } });
+    res.json(ok({ id, email: lead.email, stub: !!r.stub }));
   });
 
   // CRM: editar campos manuales (pipeline, notas, próximo contacto, asignación).
