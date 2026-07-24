@@ -210,6 +210,19 @@ function mountAdminRoutes(app) {
     res.sendFile(path.resolve(lead.registro_logo_path));
   });
 
+  // Sirve la documentación societaria (constitutiva / representación) de un titular.
+  app.get('/api/admin/leads/:id/registro-doc', guard, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const tit = parseInt(req.query.tit, 10) || 0;
+    const key = req.query.tipo === 'rep' ? '_doc_representacion_path' : '_doc_constitutiva_path';
+    const lead = db.prepare('SELECT registro_datos FROM leads WHERE id = ?').get(id);
+    if (!lead || !lead.registro_datos) return res.status(404).send('Sin datos');
+    let d; try { d = JSON.parse(lead.registro_datos); } catch { return res.status(400).send('Datos inválidos'); }
+    const p = d.titulares && d.titulares[tit] && d.titulares[tit][key];
+    if (!p || !fs.existsSync(p)) return res.status(404).send('Sin documento');
+    res.sendFile(path.resolve(p));
+  });
+
   // CRM: editar campos manuales (pipeline, notas, próximo contacto, asignación).
   app.patch('/api/admin/leads/:id', guard, express.json(), (req, res) => {
     const id = parseInt(req.params.id, 10);

@@ -635,7 +635,7 @@ app.get('/api/registro/datos/:ref', (req, res) => {
   }));
 });
 
-app.post('/api/registro/datos/:ref', express.json({ limit: '8mb' }), (req, res) => {
+app.post('/api/registro/datos/:ref', express.json({ limit: '30mb' }), (req, res) => {
   const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
   if (!lead) return res.status(404).json(fail('No encontramos tu registro.'));
   const body = req.body || {};
@@ -643,24 +643,39 @@ app.post('/api/registro/datos/:ref', express.json({ limit: '8mb' }), (req, res) 
     return res.status(400).json(fail('Faltan los datos del titular.'));
   }
 
-  // Guardar el logo (si vino como data URL) en el volumen persistente.
-  let logoPath = lead.registro_logo_path || null;
-  if (typeof body.logo === 'string' && body.logo.startsWith('data:image/')) {
-    try {
-      const fs = require('fs');
-      const m = body.logo.match(/^data:(image\/[a-z.+-]+);base64,(.+)$/i);
-      if (m) {
-        const ext = m[1].split('/')[1].replace('+xml', '').replace('jpeg', 'jpg').replace('svg.xml', 'svg');
-        const base = path.dirname(db.name || (process.env.SQLITE_PATH || './data/legalpacers.db'));
-        const dir = path.join(base, 'registros');
-        fs.mkdirSync(dir, { recursive: true });
-        logoPath = path.join(dir, `logo-${lead.id}.${ext}`);
-        fs.writeFileSync(logoPath, Buffer.from(m[2], 'base64'));
-      }
-    } catch (err) { console.error('[registro/datos] logo:', err.message); }
-  }
+  const fs = require('fs');
+  const base = path.dirname(db.name || (process.env.SQLITE_PATH || './data/legalpacers.db'));
+  const dir = path.join(base, 'registros');
+  try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+  // Guarda un data URL (imagen o pdf) a disco y devuelve la ruta, o null.
+  const guardar = (dataUrl, nombre) => {
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+    const m = dataUrl.match(/^data:([a-z0-9.+/-]+);base64,(.+)$/i);
+    if (!m) return null;
+    let ext = m[1].split('/')[1] || 'bin';
+    ext = ext.replace('+xml', '').replace('jpeg', 'jpg').replace('svg.xml', 'svg').replace('vnd.', '');
+    const p = path.join(dir, `${nombre}.${ext}`);
+    try { fs.writeFileSync(p, Buffer.from(m[2], 'base64')); return p; } catch (e) { console.error('[registro/datos] file:', e.message); return null; }
+  };
 
-  const datos = { ...body }; delete datos.logo;
+  const logoPath = guardar(body.logo, `logo-${lead.id}`) || lead.registro_logo_path || null;
+
+  // Datos a persistir: reemplazamos el base64 de los docs por su ruta en disco.
+  const datos = { ...body };
+  delete datos.logo;
+  datos.titulares = (body.titulares || []).map((t, i) => {
+    const out = { ...t };
+    if (t.tipo === 'juridica') {
+      const c = guardar(t.doc_constitutiva, `tit${i}-constitutiva-${lead.id}`);
+      const r = guardar(t.doc_representacion, `tit${i}-representacion-${lead.id}`);
+      out.doc_constitutiva = c ? path.basename(c) : null;
+      out.doc_representacion = r ? path.basename(r) : null;
+      out._doc_constitutiva_path = c;
+      out._doc_representacion_path = r;
+    }
+    return out;
+  });
+
   db.prepare("UPDATE leads SET registro_datos = ?, registro_datos_at = datetime('now'), registro_logo_path = ? WHERE id = ?")
     .run(JSON.stringify(datos), logoPath, lead.id);
   audit.log(null, 'registro.datos_cargados', { entidad: 'leads', entidad_id: lead.id, detalle: { marca: lead.marca } });

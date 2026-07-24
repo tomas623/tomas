@@ -989,9 +989,15 @@ function renderRegistroBox(l) {
   const linkDatos = `${location.origin}/registro/datos?ref=${encodeURIComponent(l.external_reference || '')}`;
   let d = null; try { d = l.registro_datos ? JSON.parse(l.registro_datos) : null; } catch {}
   if (d) {
-    const tits = (d.titulares || []).map(t => t.tipo === 'juridica'
-      ? `<li><strong>${esc(t.razon_social)}</strong> · CUIT ${esc(t.cuit)} · Rep.: ${esc(t.representante)} (${esc(t.cargo)}) · ${esc(t.domicilio?.calle)}, ${esc(t.domicilio?.ciudad)}, ${esc(t.domicilio?.provincia)} ${esc(t.domicilio?.cp)}</li>`
-      : `<li><strong>${esc(t.nombre)}</strong> · DNI ${esc(t.dni)} · CUIT ${esc(t.cuit)} · ${esc(t.estado_civil)}${t.conyuge ? ` · cónyuge: ${esc(t.conyuge)}` : ''} · ${esc(t.domicilio?.calle)}, ${esc(t.domicilio?.ciudad)}, ${esc(t.domicilio?.provincia)} ${esc(t.domicilio?.cp)} · ${esc(t.email)} · ${esc(t.telefono)}</li>`).join('');
+    const tits = (d.titulares || []).map((t, i) => {
+      const pct = (d.cantidad_titulares === 'varios' && t.porcentaje != null) ? ` · <strong>${esc(t.porcentaje)}%</strong>` : '';
+      const dom = `${esc(t.domicilio?.calle)}, ${esc(t.domicilio?.ciudad)}, ${esc(t.domicilio?.provincia)} ${esc(t.domicilio?.cp)}`;
+      if (t.tipo === 'juridica') {
+        const docs = `${t.doc_constitutiva ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=const" target="_blank" style="color:#93c5fd">📎 Estatuto</a>` : ' · <span style="color:#f87171">⚠ sin estatuto</span>'}${t.doc_representacion ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=rep" target="_blank" style="color:#93c5fd">📎 Representación</a>` : ' · <span style="color:#f87171">⚠ sin acta</span>'}`;
+        return `<li><strong>${esc(t.razon_social)}</strong> (empresa)${pct} · CUIT ${esc(t.cuit)} · Firma: ${esc(t.representante)} (${esc(t.cargo)}) · ${dom}${docs}</li>`;
+      }
+      return `<li><strong>${esc(t.nombre)}</strong>${pct} · DNI ${esc(t.dni)} · CUIT ${esc(t.cuit)} · ${esc(t.estado_civil)}${t.conyuge ? ` · cónyuge: ${esc(t.conyuge)}` : ''} · ${dom} · ${esc(t.email)} · ${esc(t.telefono)}</li>`;
+    }).join('');
     return `<div style="background:var(--bg-soft);border:1px solid var(--green);border-radius:10px;padding:16px;margin-bottom:14px">
       <div style="font-weight:700;color:#6ee7b7;margin-bottom:8px">📋 Datos del registro cargados</div>
       <div style="font-size:13px;line-height:1.7">
