@@ -177,6 +177,29 @@ function mountAdminRoutes(app) {
     res.json(ok({ id, email: lead.email, stub: !!r.stub }));
   });
 
+  // Genera el Poder Especial (PDF) a partir de los datos cargados por el cliente.
+  app.get('/api/admin/leads/:id/poder', guard, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const lead = db.prepare('SELECT marca, registro_datos FROM leads WHERE id = ?').get(id);
+    if (!lead) return res.status(404).send('Lead no encontrado');
+    if (!lead.registro_datos) return res.status(400).send('El cliente todavía no cargó sus datos.');
+    let datos;
+    try { datos = JSON.parse(lead.registro_datos); } catch { return res.status(400).send('Datos inválidos'); }
+    try {
+      const { generarPoder } = require('./pdf/poder-pdf');
+      const buf = await generarPoder(datos);
+      const nombre = (datos.titulares?.[0]?.nombre || datos.titulares?.[0]?.razon_social || lead.marca || 'poder')
+        .replace(/[^a-zA-Z0-9]+/g, '_');
+      audit.log(req.user.id, 'registro.poder_generado', { entidad: 'leads', entidad_id: id });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="Poder_${nombre}.pdf"`);
+      res.send(buf);
+    } catch (err) {
+      console.error('[admin] generar poder:', err);
+      res.status(500).send('No se pudo generar el poder: ' + err.message);
+    }
+  });
+
   // Sirve el logo que subió el cliente en el formulario de datos del registro.
   app.get('/api/admin/leads/:id/registro-logo', guard, (req, res) => {
     const id = parseInt(req.params.id, 10);

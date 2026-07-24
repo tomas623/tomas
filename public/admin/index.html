@@ -1002,10 +1002,11 @@ function renderRegistroBox(l) {
         ${d.comentarios ? `<div><strong>Comentarios:</strong> ${esc(d.comentarios)}</div>` : ''}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <a class="btn tiny green" href="/api/admin/leads/${l.id}/poder" target="_blank">📄 Generar poder (PDF)</a>
         ${l.registro_logo_path ? `<a class="btn tiny" href="/api/admin/leads/${l.id}/registro-logo" target="_blank">🖼️ Ver logo</a>` : ''}
         <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Reenviar acuse/link</button>
       </div>
-      <div class="muted" style="font-size:11.5px;margin-top:10px">💡 El armado del <strong>poder</strong> con estos datos lo automatizamos aparte (pendiente tu plantilla).</div>
+      <div class="muted" style="font-size:11.5px;margin-top:10px">El poder se genera pre-llenado con estos datos; revisalo y mandáselo a firmar.</div>
     </div>`;
   }
   // Sin datos todavía
