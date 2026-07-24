@@ -22,8 +22,9 @@ function domicilioTxt(dom) {
 // Frase de presentación de cada otorgante en el encabezado del poder.
 function frasePresentacion(t) {
   if (t.tipo === 'juridica') {
+    const dni = t.representante_dni ? `, DNI ${t.representante_dni}` : '';
     return `${(t.razon_social || '').toUpperCase()}, CUIT ${t.cuit || '—'}, con domicilio en `
-      + `${domicilioTxt(t.domicilio)}, representada en este acto por ${t.representante || '—'} `
+      + `${domicilioTxt(t.domicilio)}, representada en este acto por ${t.representante || '—'}${dni} `
       + `en su carácter de ${t.cargo || 'representante legal'}`;
   }
   return `${(t.nombre || '').toUpperCase()}, argentino/a, DNI ${t.dni || '—'}, con domicilio en `

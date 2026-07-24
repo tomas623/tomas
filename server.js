@@ -631,8 +631,43 @@ app.get('/api/registro/datos/:ref', (req, res) => {
   try { const c = JSON.parse(lead.clases || '[]'); clasesTxt = Array.isArray(c) ? c.join(', ') : ''; } catch {}
   res.json(ok({
     marca: lead.marca, email: lead.email, telefono: lead.telefono,
-    clases: clasesTxt, completado: !!lead.registro_datos,
+    clases: clasesTxt, completado: !!lead.registro_datos, poder_firmado: !!lead.registro_poder_path,
   }));
+});
+
+// Subida del poder firmado por el cliente.
+app.post('/api/registro/poder-firmado/:ref', express.json({ limit: '20mb' }), (req, res) => {
+  const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
+  if (!lead) return res.status(404).json(fail('No encontramos tu registro.'));
+  const archivo = req.body && req.body.archivo;
+  if (typeof archivo !== 'string' || !archivo.startsWith('data:')) return res.status(400).json(fail('Falta el archivo.'));
+  const m = archivo.match(/^data:([a-z0-9.+/-]+);base64,(.+)$/i);
+  if (!m) return res.status(400).json(fail('Archivo inválido.'));
+  try {
+    const fs = require('fs');
+    const base = path.dirname(db.name || (process.env.SQLITE_PATH || './data/legalpacers.db'));
+    const dir = path.join(base, 'registros');
+    fs.mkdirSync(dir, { recursive: true });
+    let ext = (m[1].split('/')[1] || 'pdf').replace('+xml', '').replace('jpeg', 'jpg');
+    const p = path.join(dir, `poder-firmado-${lead.id}.${ext}`);
+    fs.writeFileSync(p, Buffer.from(m[2], 'base64'));
+    db.prepare("UPDATE leads SET registro_poder_path = ?, registro_poder_at = datetime('now') WHERE id = ?").run(p, lead.id);
+    audit.log(null, 'registro.poder_firmado', { entidad: 'leads', entidad_id: lead.id });
+    // Avisar al admin.
+    try {
+      const { enviarMailGenerico } = require('./src/notificaciones');
+      enviarMailGenerico({
+        to: (process.env.MAIL_ADMIN || 'tomas@legalpacers.com').trim(),
+        subject: `✍️ Poder firmado recibido — "${lead.marca}"`,
+        html: `<div style="font-family:system-ui,sans-serif"><h2 style="color:#1B6EF3">Llegó el poder firmado</h2><p><strong>Marca:</strong> ${lead.marca}</p><p>Descargalo desde el panel (Leads → ${lead.marca}) y presentá el trámite.</p></div>`,
+        tag: 'poder_firmado_admin',
+      }).catch(() => {});
+    } catch {}
+    res.json(ok({ saved: true }));
+  } catch (err) {
+    console.error('[registro/poder-firmado]:', err.message);
+    res.status(500).json(fail('No se pudo guardar.'));
+  }
 });
 
 app.post('/api/registro/datos/:ref', express.json({ limit: '30mb' }), (req, res) => {

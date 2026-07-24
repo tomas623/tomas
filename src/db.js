@@ -402,6 +402,8 @@ for (const [col, ddl] of [
   ['registro_datos',      `ALTER TABLE leads ADD COLUMN registro_datos TEXT`],
   ['registro_datos_at',   `ALTER TABLE leads ADD COLUMN registro_datos_at TEXT`],
   ['registro_logo_path',  `ALTER TABLE leads ADD COLUMN registro_logo_path TEXT`],
+  ['registro_poder_path', `ALTER TABLE leads ADD COLUMN registro_poder_path TEXT`],
+  ['registro_poder_at',   `ALTER TABLE leads ADD COLUMN registro_poder_at TEXT`],
 ]) {
   if (!columnExists('leads', col)) db.exec(ddl);
 }

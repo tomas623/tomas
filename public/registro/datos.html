@@ -55,7 +55,19 @@
   <div id="okScreen" class="ok-screen hide">
     <div class="big">✅</div>
     <h1>¡Datos recibidos!</h1>
-    <p class="sub">Ya tenemos todo para armar tu solicitud. Un Agente matriculado revisa la información y te contacta para los próximos pasos (incluida la firma del poder).</p>
+    <p class="sub">Un Agente matriculado revisa la información y te prepara el <strong>poder</strong> para que lo firmes.</p>
+
+    <div class="card" style="text-align:left;max-width:480px;margin:22px auto 0">
+      <h2>📄 Poder firmado</h2>
+      <div id="poderYa" class="hide" style="color:#6ee7b7;font-size:14px">✓ Ya recibimos tu poder firmado. ¡Gracias!</div>
+      <div id="poderUpload">
+        <div class="hint">Cuando tengas el <strong>poder firmado</strong> (te lo enviamos por mail/WhatsApp), subilo acá — foto o PDF.</div>
+        <input id="poderFile" type="file" accept=".pdf,image/*" onchange="el('poderName').textContent=this.files[0]?this.files[0].name:''">
+        <div id="poderName" class="file-name"></div>
+        <div id="poderErr" class="err hide"></div>
+        <button type="button" class="btn btn-primary" id="poderBtn" style="margin-top:12px" onclick="subirPoder()">Subir poder firmado</button>
+      </div>
+    </div>
   </div>
 
   <form id="form" class="hide" onsubmit="return false">
@@ -164,7 +176,11 @@ function titularHTML(uid){
       </div>
       <div class="row">
         <div><label>¿Quién firma en representación?</label><input class="j-rep" type="text" placeholder="Nombre y apellido"></div>
-        <div><label>Cargo</label><input class="j-cargo" type="text" placeholder="Ej: Presidente, Socio Gerente"></div>
+        <div><label>DNI del firmante</label><input class="j-rep-dni" type="text" inputmode="numeric"></div>
+      </div>
+      <div class="row">
+        <div><label>Cargo en la empresa</label><input class="j-cargo" type="text" placeholder="Ej: Presidente, Socio Gerente"></div>
+        <div><label>CUIT/CUIL del firmante <span style="font-weight:400;color:var(--dim)">(opcional)</span></label><input class="j-rep-cuit" type="text" inputmode="numeric"></div>
       </div>
       <div class="note" style="background:rgba(27,110,243,.08);border-color:rgba(27,110,243,.3);color:#93c5fd">
         Necesitamos la documentación de la empresa para acreditar su existencia y quién la representa (PDF o foto legible).
@@ -281,7 +297,7 @@ function recolectar(){
     };
     tits.push(juridica ? {
       tipo: 'juridica', razon_social: g('.j-razon'), cuit: g('.j-cuit'),
-      representante: g('.j-rep'), cargo: g('.j-cargo'),
+      representante: g('.j-rep'), representante_dni: g('.j-rep-dni'), representante_cuit: g('.j-rep-cuit'), cargo: g('.j-cargo'),
       doc_constitutiva: docFiles[`${uid}-const`] || null,
       doc_representacion: docFiles[`${uid}-rep`] || null,
       ...base,
@@ -310,7 +326,7 @@ function validar(d){
     if (t.tipo === 'fisica' && (!t.nombre || !t.dni)) return `Completá nombre y DNI del titular ${i+1}.`;
     if (t.tipo === 'juridica') {
       if (!t.razon_social || !t.cuit) return `Completá razón social y CUIT del titular ${i+1}.`;
-      if (!t.representante) return `Indicá quién firma en representación (titular ${i+1}).`;
+      if (!t.representante || !t.representante_dni) return `Completá nombre y DNI de quién firma por la empresa (titular ${i+1}).`;
       if (!t.doc_constitutiva) return `Subí el contrato social / estatuto del titular ${i+1}.`;
       if (!t.doc_representacion) return `Subí el acta o poder del firmante del titular ${i+1}.`;
     }
@@ -338,12 +354,32 @@ async function enviar(){
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...d, logo: logoDataUrl }),
     }).then(x => x.json());
-    if (r.ok) { el('form').classList.add('hide'); el('okScreen').classList.remove('hide'); window.scrollTo(0,0); }
+    if (r.ok) { mostrarOk(); window.scrollTo(0,0); }
     else { el('formErr').textContent = r.error || 'No se pudo enviar.'; el('formErr').classList.remove('hide'); btn.disabled = false; btn.textContent = 'Enviar mis datos'; }
   } catch (e) {
     el('formErr').textContent = 'Error de red. Probá de nuevo.'; el('formErr').classList.remove('hide');
     btn.disabled = false; btn.textContent = 'Enviar mis datos';
   }
+}
+
+async function subirPoder(){
+  el('poderErr').classList.add('hide');
+  const f = el('poderFile').files[0];
+  if (!f) { el('poderErr').textContent = 'Elegí el archivo del poder firmado.'; el('poderErr').classList.remove('hide'); return; }
+  if (f.size > 15 * 1024 * 1024) { el('poderErr').textContent = 'El archivo supera 15 MB.'; el('poderErr').classList.remove('hide'); return; }
+  const btn = el('poderBtn'); btn.disabled = true; btn.textContent = 'Subiendo…';
+  const dataUrl = await new Promise(res => { const rd = new FileReader(); rd.onload = () => res(rd.result); rd.readAsDataURL(f); });
+  try {
+    const r = await fetch(`/api/registro/poder-firmado/${encodeURIComponent(REF)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ archivo: dataUrl }),
+    }).then(x => x.json());
+    if (r.ok) { el('poderUpload').classList.add('hide'); el('poderYa').classList.remove('hide'); }
+    else { el('poderErr').textContent = r.error || 'No se pudo subir.'; el('poderErr').classList.remove('hide'); btn.disabled = false; btn.textContent = 'Subir poder firmado'; }
+  } catch (e) { el('poderErr').textContent = 'Error de red.'; el('poderErr').classList.remove('hide'); btn.disabled = false; btn.textContent = 'Subir poder firmado'; }
+}
+function mostrarOk(){
+  el('loading').classList.add('hide'); el('form').classList.add('hide'); el('okScreen').classList.remove('hide');
+  if (lead && lead.poder_firmado) { el('poderUpload').classList.add('hide'); el('poderYa').classList.remove('hide'); }
 }
 
 async function init(){
@@ -352,7 +388,7 @@ async function init(){
     const r = await fetch(`/api/registro/datos/${encodeURIComponent(REF)}`).then(x => x.json());
     if (!r.ok) { el('loading').textContent = r.error || 'No encontramos tu registro.'; return; }
     lead = r.data;
-    if (lead.completado) { el('loading').classList.add('hide'); el('okScreen').classList.remove('hide'); return; }
+    if (lead.completado) { mostrarOk(); return; }
     el('marcaTitle').textContent = `"${lead.marca}"`;
     el('denominacion');
     el('loading').classList.add('hide'); el('form').classList.remove('hide');

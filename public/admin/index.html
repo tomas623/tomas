@@ -994,7 +994,7 @@ function renderRegistroBox(l) {
       const dom = `${esc(t.domicilio?.calle)}, ${esc(t.domicilio?.ciudad)}, ${esc(t.domicilio?.provincia)} ${esc(t.domicilio?.cp)}`;
       if (t.tipo === 'juridica') {
         const docs = `${t.doc_constitutiva ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=const" target="_blank" style="color:#93c5fd">📎 Estatuto</a>` : ' · <span style="color:#f87171">⚠ sin estatuto</span>'}${t.doc_representacion ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=rep" target="_blank" style="color:#93c5fd">📎 Representación</a>` : ' · <span style="color:#f87171">⚠ sin acta</span>'}`;
-        return `<li><strong>${esc(t.razon_social)}</strong> (empresa)${pct} · CUIT ${esc(t.cuit)} · Firma: ${esc(t.representante)} (${esc(t.cargo)}) · ${dom}${docs}</li>`;
+        return `<li><strong>${esc(t.razon_social)}</strong> (empresa)${pct} · CUIT ${esc(t.cuit)} · Firma: ${esc(t.representante)}${t.representante_dni ? ` (DNI ${esc(t.representante_dni)})` : ''} — ${esc(t.cargo)} · ${dom}${docs}</li>`;
       }
       return `<li><strong>${esc(t.nombre)}</strong>${pct} · DNI ${esc(t.dni)} · CUIT ${esc(t.cuit)} · ${esc(t.estado_civil)}${t.conyuge ? ` · cónyuge: ${esc(t.conyuge)}` : ''} · ${dom} · ${esc(t.email)} · ${esc(t.telefono)}</li>`;
     }).join('');
@@ -1007,12 +1007,17 @@ function renderRegistroBox(l) {
         <div><strong>¿Cómo nos conoció?:</strong> ${esc(d.como_conociste || '—')}</div>
         ${d.comentarios ? `<div><strong>Comentarios:</strong> ${esc(d.comentarios)}</div>` : ''}
       </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-soft)">
+        <strong>Poder firmado:</strong> ${l.registro_poder_path
+          ? `<span style="color:#34d399">✍️ recibido</span> · <a href="/api/admin/leads/${l.id}/poder-firmado" target="_blank" style="color:#93c5fd">Descargar</a>`
+          : '<span class="muted">pendiente — el cliente lo sube por el mismo link</span>'}
+      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         <a class="btn tiny green" href="/api/admin/leads/${l.id}/poder" target="_blank">📄 Generar poder (PDF)</a>
         ${l.registro_logo_path ? `<a class="btn tiny" href="/api/admin/leads/${l.id}/registro-logo" target="_blank">🖼️ Ver logo</a>` : ''}
         <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Reenviar acuse/link</button>
       </div>
-      <div class="muted" style="font-size:11.5px;margin-top:10px">El poder se genera pre-llenado con estos datos; revisalo y mandáselo a firmar.</div>
+      <div class="muted" style="font-size:11.5px;margin-top:10px">Generá el poder pre-llenado, mandáselo a firmar, y el cliente lo sube por el mismo link (aparece acá).</div>
     </div>`;
   }
   // Sin datos todavía

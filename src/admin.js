@@ -210,6 +210,16 @@ function mountAdminRoutes(app) {
     res.sendFile(path.resolve(lead.registro_logo_path));
   });
 
+  // Sirve el poder firmado que subió el cliente.
+  app.get('/api/admin/leads/:id/poder-firmado', guard, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const lead = db.prepare('SELECT registro_poder_path FROM leads WHERE id = ?').get(id);
+    if (!lead || !lead.registro_poder_path || !fs.existsSync(lead.registro_poder_path)) {
+      return res.status(404).send('Sin poder firmado');
+    }
+    res.sendFile(path.resolve(lead.registro_poder_path));
+  });
+
   // Sirve la documentación societaria (constitutiva / representación) de un titular.
   app.get('/api/admin/leads/:id/registro-doc', guard, (req, res) => {
     const id = parseInt(req.params.id, 10);
