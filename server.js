@@ -685,6 +685,16 @@ async function procesarPago(paymentId) {
       const tipoTxt = lead.tipo === 'informe' ? 'Informe de viabilidad'
         : lead.tipo === 'registro' ? 'Registro de marca' : (lead.tipo || 'Pago');
       const montoTxt = lead.monto ? ` · $${Number(lead.monto).toLocaleString('es-AR')}` : '';
+      // Botón "Escribile por WhatsApp" con el teléfono del cliente + mensaje.
+      let waBtn = '';
+      if (lead.telefono) {
+        let d = String(lead.telefono).replace(/\D/g, '');
+        if (d && !d.startsWith('54')) { d = d.replace(/^0/, ''); if (!d.startsWith('9')) d = '9' + d; d = '54' + d; }
+        const msg = lead.tipo === 'registro'
+          ? `Hola, te escribo de LegalPacers por el registro de tu marca "${lead.marca}". Recibimos tu pago. Para arrancar el trámite necesito confirmarte algunos datos.`
+          : `Hola, te escribo de LegalPacers por tu marca "${lead.marca}".`;
+        if (d) waBtn = `<p style="margin-top:16px"><a href="https://wa.me/${d}?text=${encodeURIComponent(msg)}" style="background:#25D366;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600">💬 Escribile por WhatsApp</a></p>`;
+      }
       enviarMailGenerico({
         to: MAIL_ADMIN,
         subject: `💰 Pago acreditado: ${tipoTxt} — "${lead.marca}"`,
@@ -697,6 +707,7 @@ async function procesarPago(paymentId) {
           <p style="margin-top:14px">${lead.tipo === 'informe'
             ? 'El informe se está generando — revisalo y aprobalo en el panel.'
             : 'Contactá al cliente para arrancar el trámite.'}</p>
+          ${waBtn}
         </div>`,
         replyTo: lead.email || undefined,
         tag: 'admin_pago',

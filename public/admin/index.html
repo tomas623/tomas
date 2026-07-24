@@ -958,6 +958,31 @@ async function loadLeads() {
   `;
 }
 
+// Arma un link wa.me con el teléfono normalizado a formato internacional
+// argentino (54 9 <area><numero>). Best-effort: si el número quedó raro,
+// WhatsApp lo muestra y lo corregís a mano.
+function waLink(tel, msg) {
+  let d = String(tel || '').replace(/\D/g, '');
+  if (!d) return null;
+  if (!d.startsWith('54')) {
+    d = d.replace(/^0/, '');
+    if (!d.startsWith('9')) d = '9' + d;
+    d = '54' + d;
+  }
+  return `https://wa.me/${d}${msg ? '?text=' + encodeURIComponent(msg) : ''}`;
+}
+// Mensaje pre-armado según el tipo de lead.
+function waMensaje(l) {
+  const marca = l.marca || 'tu marca';
+  if (l.tipo === 'registro') {
+    return `Hola, te escribo de LegalPacers por el registro de tu marca "${marca}". Recibimos tu pago 🙌 Para arrancar el trámite ante el INPI necesito confirmarte algunos datos. ¿Tenés un momento?`;
+  }
+  if (l.tipo === 'informe') {
+    return `Hola, te escribo de LegalPacers por tu informe de viabilidad de la marca "${marca}". ¿Cómo estás? Cualquier duda del informe, quedo a disposición.`;
+  }
+  return `Hola, te escribo de LegalPacers por tu consulta sobre la marca "${marca}". ¿Cómo estás?`;
+}
+
 async function enviarAcuseRegistro(id, btn) {
   const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando…';
   const r = await api(`/api/admin/leads/${id}/acuse-registro`, { method: 'POST', body: '{}' });
@@ -1014,7 +1039,10 @@ async function abrirLead(id) {
           </div>
           <div style="margin-top:6px">Origen: ${origenChip(l)}</div>
         </div>
-        <button class="btn outline tiny" onclick="$('#leadDetalle').innerHTML=''">Cerrar</button>
+        <div style="display:flex;gap:8px">
+          ${l.telefono ? `<a class="btn tiny" style="background:#25D366;color:#fff;text-decoration:none" href="${esc(waLink(l.telefono, waMensaje(l)) || '#')}" target="_blank">💬 WhatsApp</a>` : ''}
+          <button class="btn outline tiny" onclick="$('#leadDetalle').innerHTML=''">Cerrar</button>
+        </div>
       </div>
 
       ${informeBox}
