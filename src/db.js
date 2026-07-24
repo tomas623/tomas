@@ -397,6 +397,11 @@ for (const [col, ddl] of [
   // Resultado del chequeo free, para verlo en el panel (no solo la marca).
   ['veredicto_free',      `ALTER TABLE leads ADD COLUMN veredicto_free TEXT`],
   ['riesgo_free',         `ALTER TABLE leads ADD COLUMN riesgo_free INTEGER`],
+  // Onboarding del registro: datos del titular/marca que carga el cliente en el
+  // formulario post-pago (JSON), fecha de carga y ruta del logo subido.
+  ['registro_datos',      `ALTER TABLE leads ADD COLUMN registro_datos TEXT`],
+  ['registro_datos_at',   `ALTER TABLE leads ADD COLUMN registro_datos_at TEXT`],
+  ['registro_logo_path',  `ALTER TABLE leads ADD COLUMN registro_logo_path TEXT`],
 ]) {
   if (!columnExists('leads', col)) db.exec(ddl);
 }

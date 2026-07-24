@@ -975,12 +975,49 @@ function waLink(tel, msg) {
 function waMensaje(l) {
   const marca = l.marca || 'tu marca';
   if (l.tipo === 'registro') {
-    return `Hola, te escribo de LegalPacers por el registro de tu marca "${marca}". Recibimos tu pago 🙌 Para arrancar el trámite ante el INPI necesito confirmarte algunos datos. ¿Tenés un momento?`;
+    const link = `${location.origin}/registro/datos?ref=${encodeURIComponent(l.external_reference || '')}`;
+    return `Hola, te escribo de LegalPacers por el registro de tu marca "${marca}". Recibimos tu pago 🙌 Para arrancar el trámite ante el INPI, completá tus datos en este formulario (5 min): ${link}`;
   }
   if (l.tipo === 'informe') {
     return `Hola, te escribo de LegalPacers por tu informe de viabilidad de la marca "${marca}". ¿Cómo estás? Cualquier duda del informe, quedo a disposición.`;
   }
   return `Hola, te escribo de LegalPacers por tu consulta sobre la marca "${marca}". ¿Cómo estás?`;
+}
+
+// Caja del registro en el detalle del lead: datos cargados o estado de espera.
+function renderRegistroBox(l) {
+  const linkDatos = `${location.origin}/registro/datos?ref=${encodeURIComponent(l.external_reference || '')}`;
+  let d = null; try { d = l.registro_datos ? JSON.parse(l.registro_datos) : null; } catch {}
+  if (d) {
+    const tits = (d.titulares || []).map(t => t.tipo === 'juridica'
+      ? `<li><strong>${esc(t.razon_social)}</strong> · CUIT ${esc(t.cuit)} · Rep.: ${esc(t.representante)} (${esc(t.cargo)}) · ${esc(t.domicilio?.calle)}, ${esc(t.domicilio?.ciudad)}, ${esc(t.domicilio?.provincia)} ${esc(t.domicilio?.cp)}</li>`
+      : `<li><strong>${esc(t.nombre)}</strong> · DNI ${esc(t.dni)} · CUIT ${esc(t.cuit)} · ${esc(t.estado_civil)}${t.conyuge ? ` · cónyuge: ${esc(t.conyuge)}` : ''} · ${esc(t.domicilio?.calle)}, ${esc(t.domicilio?.ciudad)}, ${esc(t.domicilio?.provincia)} ${esc(t.domicilio?.cp)} · ${esc(t.email)} · ${esc(t.telefono)}</li>`).join('');
+    return `<div style="background:var(--bg-soft);border:1px solid var(--green);border-radius:10px;padding:16px;margin-bottom:14px">
+      <div style="font-weight:700;color:#6ee7b7;margin-bottom:8px">📋 Datos del registro cargados</div>
+      <div style="font-size:13px;line-height:1.7">
+        <div><strong>Marca:</strong> ${esc(d.marca?.denominacion)} · ${esc(d.marca?.tipo)}</div>
+        <div><strong>Titular(es)</strong> (${d.cantidad_titulares === 'varios' ? 'varios' : 'único'}):<ul style="margin:4px 0 4px 0;padding-left:18px">${tits}</ul></div>
+        <div><strong>Clases:</strong> ${esc(d.clases || '—')}</div>
+        <div><strong>¿Cómo nos conoció?:</strong> ${esc(d.como_conociste || '—')}</div>
+        ${d.comentarios ? `<div><strong>Comentarios:</strong> ${esc(d.comentarios)}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        ${l.registro_logo_path ? `<a class="btn tiny" href="/api/admin/leads/${l.id}/registro-logo" target="_blank">🖼️ Ver logo</a>` : ''}
+        <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Reenviar acuse/link</button>
+      </div>
+      <div class="muted" style="font-size:11.5px;margin-top:10px">💡 El armado del <strong>poder</strong> con estos datos lo automatizamos aparte (pendiente tu plantilla).</div>
+    </div>`;
+  }
+  // Sin datos todavía
+  return `<div style="background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:14px;margin-bottom:14px">
+    <div style="font-weight:700;margin-bottom:4px">Registro${l.estado === 'pagado' ? ' pagado' : ''} · datos pendientes</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px">El cliente todavía no cargó sus datos. Le mandamos el link por mail; podés reenviárselo o pasárselo por WhatsApp.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Enviar acuse + link al cliente</button>
+      <a class="btn tiny outline" href="${linkDatos}" target="_blank">Abrir formulario</a>
+    </div>
+    <div class="muted" style="font-size:11px;word-break:break-all">Link: ${esc(linkDatos)}</div>
+  </div>`;
 }
 
 async function enviarAcuseRegistro(id, btn) {
@@ -1047,12 +1084,7 @@ async function abrirLead(id) {
 
       ${informeBox}
 
-      ${(l.tipo === 'registro' && l.estado === 'pagado') ? `
-      <div style="background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:14px;margin-bottom:14px">
-        <div style="font-weight:700;margin-bottom:4px">Registro pagado</div>
-        <div class="muted" style="font-size:12.5px;margin-bottom:10px">Podés enviarle (o reenviarle) al cliente el acuse de "recibimos tu pago del registro".</div>
-        <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Enviar confirmación de pago al cliente</button>
-      </div>` : ''}
+      ${l.tipo === 'registro' ? renderRegistroBox(l) : ''}
 
       ${(l.estado === 'pendiente' && (l.tipo === 'informe' || l.tipo === 'registro')) ? `
       <div style="background:var(--red-soft);border:1px solid var(--red);border-radius:10px;padding:14px;margin-bottom:14px">

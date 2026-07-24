@@ -119,14 +119,23 @@ async function enviarMailGenerico({ to, subject, html, attachments, from, replyT
 // Acuse de pago para REGISTRO de marca. El registro no genera un PDF como el
 // informe; sólo avisamos que recibimos el pago y que un Agente se contacta para
 // arrancar el trámite.
-async function enviarConfirmacionRegistro({ email, marca, solicitante }) {
+async function enviarConfirmacionRegistro({ email, marca, solicitante, ref }) {
   if (!email) return { ok: false, error: 'sin email' };
+  const base = (process.env.PUBLIC_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+  const linkDatos = ref ? `${base}/registro/datos?ref=${encodeURIComponent(ref)}` : null;
+  const botonDatos = linkDatos ? `
+      <p style="margin:22px 0">
+        <a href="${linkDatos}" style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
+           text-decoration:none;display:inline-block;font-weight:600">Completar mis datos para el registro →</a>
+      </p>
+      <p style="font-size:13px;color:#475569">Cargá los datos del titular y la marca en el formulario (5 minutos). Con eso preparamos tu solicitud y el poder para que firmes.</p>` : '';
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
       <h2 style="color:#1B6EF3">Recibimos tu pago</h2>
       <p>Hola${solicitante ? ' ' + solicitante : ''},</p>
       <p>Confirmamos la acreditación del pago para el <strong>registro de tu marca "${marca}"</strong> ante el INPI. ¡Gracias por confiar en LegalPacers!</p>
-      <p>Un Agente de la Propiedad Industrial matriculado se pondrá en contacto a la brevedad para pedirte los datos necesarios y arrancar el trámite.</p>
+      ${botonDatos}
+      <p>Un Agente de la Propiedad Industrial matriculado revisa tus datos y te acompaña en el resto del trámite.</p>
       <p>Cualquier consulta, podés responder este mail o escribirnos por WhatsApp al +54 9 11 2877-4200.</p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
@@ -136,7 +145,7 @@ async function enviarConfirmacionRegistro({ email, marca, solicitante }) {
     </div>`;
   return enviarMailGenerico({
     to: email,
-    subject: `Recibimos tu pago — registro de "${marca}"`,
+    subject: `Recibimos tu pago — completá tus datos para el registro de "${marca}"`,
     html,
     tag: 'registro_acuse',
   });

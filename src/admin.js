@@ -156,7 +156,7 @@ function mountAdminRoutes(app) {
       }
     } else if (lead.tipo === 'registro' && lead.email) {
       const { enviarConfirmacionRegistro } = require('./notificaciones');
-      await enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, solicitante: lead.solicitante })
+      await enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, solicitante: lead.solicitante, ref: lead.external_reference })
         .catch(err => console.error(`[admin] acuse registro lead ${id}:`, err.message));
     }
     res.json(ok({ id, tipo: lead.tipo, informe }));
@@ -171,10 +171,20 @@ function mountAdminRoutes(app) {
     if (lead.tipo !== 'registro') return res.status(400).json(fail('El lead no es de tipo registro'));
     if (!lead.email) return res.status(400).json(fail('El lead no tiene email'));
     const { enviarConfirmacionRegistro } = require('./notificaciones');
-    const r = await enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, solicitante: lead.solicitante });
+    const r = await enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, solicitante: lead.solicitante, ref: lead.external_reference });
     if (!r.ok) return res.status(502).json(fail('No se pudo enviar: ' + r.error));
     audit.log(req.user.id, 'registro.acuse_enviado', { entidad: 'leads', entidad_id: id, detalle: { email: lead.email } });
     res.json(ok({ id, email: lead.email, stub: !!r.stub }));
+  });
+
+  // Sirve el logo que subió el cliente en el formulario de datos del registro.
+  app.get('/api/admin/leads/:id/registro-logo', guard, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const lead = db.prepare('SELECT registro_logo_path FROM leads WHERE id = ?').get(id);
+    if (!lead || !lead.registro_logo_path || !fs.existsSync(lead.registro_logo_path)) {
+      return res.status(404).send('Sin logo');
+    }
+    res.sendFile(path.resolve(lead.registro_logo_path));
   });
 
   // CRM: editar campos manuales (pipeline, notas, próximo contacto, asignación).

@@ -619,6 +619,72 @@ app.post('/api/marca/registro/iniciar', async (req, res) => {
   }
 });
 
+// ===== Onboarding del registro: formulario de datos post-pago =====
+// El cliente entra con el link ?ref=<external_reference> del lead de registro.
+app.get('/registro/datos', (req, res) =>
+  res.sendFile(path.join(ROOT_DIR, 'public', 'registro', 'datos.html')));
+
+app.get('/api/registro/datos/:ref', (req, res) => {
+  const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
+  if (!lead) return res.status(404).json(fail('No encontramos tu registro.'));
+  let clasesTxt = '';
+  try { const c = JSON.parse(lead.clases || '[]'); clasesTxt = Array.isArray(c) ? c.join(', ') : ''; } catch {}
+  res.json(ok({
+    marca: lead.marca, email: lead.email, telefono: lead.telefono,
+    clases: clasesTxt, completado: !!lead.registro_datos,
+  }));
+});
+
+app.post('/api/registro/datos/:ref', express.json({ limit: '8mb' }), (req, res) => {
+  const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
+  if (!lead) return res.status(404).json(fail('No encontramos tu registro.'));
+  const body = req.body || {};
+  if (!Array.isArray(body.titulares) || !body.titulares.length) {
+    return res.status(400).json(fail('Faltan los datos del titular.'));
+  }
+
+  // Guardar el logo (si vino como data URL) en el volumen persistente.
+  let logoPath = lead.registro_logo_path || null;
+  if (typeof body.logo === 'string' && body.logo.startsWith('data:image/')) {
+    try {
+      const fs = require('fs');
+      const m = body.logo.match(/^data:(image\/[a-z.+-]+);base64,(.+)$/i);
+      if (m) {
+        const ext = m[1].split('/')[1].replace('+xml', '').replace('jpeg', 'jpg').replace('svg.xml', 'svg');
+        const base = path.dirname(db.name || (process.env.SQLITE_PATH || './data/legalpacers.db'));
+        const dir = path.join(base, 'registros');
+        fs.mkdirSync(dir, { recursive: true });
+        logoPath = path.join(dir, `logo-${lead.id}.${ext}`);
+        fs.writeFileSync(logoPath, Buffer.from(m[2], 'base64'));
+      }
+    } catch (err) { console.error('[registro/datos] logo:', err.message); }
+  }
+
+  const datos = { ...body }; delete datos.logo;
+  db.prepare("UPDATE leads SET registro_datos = ?, registro_datos_at = datetime('now'), registro_logo_path = ? WHERE id = ?")
+    .run(JSON.stringify(datos), logoPath, lead.id);
+  audit.log(null, 'registro.datos_cargados', { entidad: 'leads', entidad_id: lead.id, detalle: { marca: lead.marca } });
+
+  // Avisar al admin que llegaron los datos.
+  try {
+    const MAIL_ADMIN = (process.env.MAIL_ADMIN || 'tomas@legalpacers.com').trim();
+    const { enviarMailGenerico } = require('./src/notificaciones');
+    enviarMailGenerico({
+      to: MAIL_ADMIN,
+      subject: `📋 Datos de registro recibidos — "${lead.marca}"`,
+      html: `<div style="font-family:system-ui,sans-serif;max-width:520px;color:#0f1f3d">
+        <h2 style="color:#1B6EF3">Llegaron los datos del registro</h2>
+        <p><strong>Marca:</strong> ${lead.marca}</p>
+        <p><strong>Titulares:</strong> ${body.titulares.length}</p>
+        <p>Revisalos en el panel (Leads → ${lead.marca}) para armar el poder y presentar.</p>
+      </div>`,
+      tag: 'registro_datos_admin',
+    }).catch(() => {});
+  } catch {}
+
+  res.json(ok({ saved: true }));
+});
+
 // ===== Webhook de Mercado Pago =====
 // Soporta dos tipos de eventos:
 //   - { type: "payment", data: { id } }         → pagos únicos (informe, registro)
@@ -726,9 +792,9 @@ async function procesarPago(paymentId) {
         );
       });
     } else if (lead.tipo === 'registro' && lead.email) {
-      // Registro: no genera PDF, pero le avisamos al cliente que recibimos el pago.
+      // Registro: no genera PDF, pero le mandamos el link para cargar sus datos.
       const { enviarConfirmacionRegistro } = require('./src/notificaciones');
-      enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca })
+      enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, ref: lead.external_reference })
         .catch(err => console.error(`[webhook] acuse registro lead ${lead.id}:`, err.message));
     }
   } else {

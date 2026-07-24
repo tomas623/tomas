@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Datos para el registro · LegalPacers</title>
+<style>
+  :root{--bg:#0b1220;--surface:#111c34;--soft:#0f1830;--border:#22304f;--border-soft:#1a2742;
+        --text:#e8eefc;--muted:#93a4c8;--dim:#63739a;--accent:#1B6EF3;--green:#10b981;--red:#f87171}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}
+  .wrap{max-width:720px;margin:0 auto;padding:28px 18px 80px}
+  .brand{font-weight:800;font-size:18px;margin-bottom:4px}.brand b{color:var(--accent)}
+  h1{font-size:22px;margin:18px 0 6px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:22px}
+  .card{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:18px;margin-bottom:16px}
+  .card h2{font-size:15px;margin:0 0 4px}
+  .card .hint{color:var(--muted);font-size:12.5px;margin-bottom:14px}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px;font-weight:600}
+  input,select,textarea{width:100%;padding:10px 12px;background:var(--soft);border:1px solid var(--border);
+        border-radius:9px;color:var(--text);font-size:14px;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row{grid-template-columns:1fr}}
+  .radios{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .radios label{display:inline-flex;align-items:center;gap:7px;margin:0;padding:9px 14px;border:1px solid var(--border);
+        border-radius:9px;cursor:pointer;color:var(--text);font-weight:500;font-size:13.5px}
+  .radios input{width:auto}
+  .radios label.on{border-color:var(--accent);background:rgba(27,110,243,.12)}
+  .titular{border:1px solid var(--border);border-radius:11px;padding:14px;margin-bottom:12px;background:var(--soft)}
+  .titular-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .titular-head b{font-size:13px}
+  .btn{border:none;border-radius:9px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn-primary{background:var(--accent);color:#fff;width:100%;padding:14px}
+  .btn-ghost{background:transparent;border:1px dashed var(--border);color:var(--muted);width:100%;padding:11px}
+  .btn-x{background:transparent;border:none;color:var(--red);cursor:pointer;font-size:12px}
+  .note{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;
+        border-radius:10px;padding:11px 14px;font-size:12.5px;margin-top:10px}
+  .warn{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);color:#fdba74;
+        border-radius:10px;padding:11px 14px;font-size:12.5px}
+  .hide{display:none!important}
+  .ok-screen{text-align:center;padding:50px 20px}
+  .ok-screen .big{font-size:40px}
+  .err{color:var(--red);font-size:13px;margin-top:10px}
+  .file-name{font-size:12px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Legal<b>Pacers</b></div>
+
+  <div id="loading" class="sub">Cargando…</div>
+
+  <div id="okScreen" class="ok-screen hide">
+    <div class="big">✅</div>
+    <h1>¡Datos recibidos!</h1>
+    <p class="sub">Ya tenemos todo para armar tu solicitud. Un Agente matriculado revisa la información y te contacta para los próximos pasos (incluida la firma del poder).</p>
+  </div>
+
+  <form id="form" class="hide" onsubmit="return false">
+    <h1>Datos para el registro de <span id="marcaTitle"></span></h1>
+    <p class="sub">Completá estos datos para que preparemos tu solicitud ante el INPI. Toda la info es confidencial.</p>
+
+    <div class="card">
+      <h2>Titularidad</h2>
+      <div class="hint">¿La marca la registra una sola persona/empresa o varias?</div>
+      <div class="radios" id="titRadios">
+        <label><input type="radio" name="cantidadTit" value="unico" checked onchange="setCantidad('unico')"> Un solo titular</label>
+        <label><input type="radio" name="cantidadTit" value="varios" onchange="setCantidad('varios')"> Varios titulares</label>
+      </div>
+    </div>
+
+    <div id="titulares"></div>
+    <button type="button" id="addTit" class="btn-ghost hide" onclick="addTitular()">+ Agregar otro titular</button>
+
+    <div class="card" style="margin-top:16px">
+      <h2>La marca</h2>
+      <label>Denominación exacta (cómo se escribe, respetando mayúsculas)</label>
+      <input id="denominacion" type="text" placeholder="Ej: BodyClear">
+      <label>Tipo de marca</label>
+      <div class="radios" id="tipoMarcaRadios">
+        <label><input type="radio" name="tipoMarca" value="denominativa" checked onchange="setTipoMarca()"> Denominativa (solo texto)</label>
+        <label><input type="radio" name="tipoMarca" value="mixta" onchange="setTipoMarca()"> Mixta (texto + logo)</label>
+        <label><input type="radio" name="tipoMarca" value="figurativa" onchange="setTipoMarca()"> Figurativa (solo logo)</label>
+      </div>
+      <div id="logoWrap" class="hide">
+        <label>Logo en alta resolución (PNG, JPG o SVG)</label>
+        <input id="logo" type="file" accept="image/png,image/jpeg,image/svg+xml" onchange="onLogo()">
+        <div id="logoName" class="file-name"></div>
+      </div>
+      <label style="margin-top:14px">Clases y productos/servicios que querés proteger</label>
+      <input id="clases" type="text" placeholder="Ej: 3 - cosméticos">
+      <div class="note" id="claseNote">Tu pago cubre <b>1 clase</b>. Cada clase adicional se cotiza aparte (<b>$30.000</b> por clase). Si necesitás más de una, aclarálo abajo y lo coordinamos.</div>
+    </div>
+
+    <div class="card">
+      <h2>¿Cómo nos conociste?</h2>
+      <div class="hint">Nos ayuda un montón a mejorar.</div>
+      <select id="comoConociste">
+        <option value="">Elegí una opción…</option>
+        <option>Google / búsqueda</option>
+        <option>Instagram</option>
+        <option>Facebook</option>
+        <option>LinkedIn</option>
+        <option>TikTok</option>
+        <option>Recomendación de un conocido</option>
+        <option>Ya era cliente</option>
+        <option>Otro</option>
+      </select>
+      <label>Comentarios (opcional)</label>
+      <textarea id="comentarios" rows="3" placeholder="Cualquier aclaración que quieras sumar…"></textarea>
+    </div>
+
+    <div id="formErr" class="err hide"></div>
+    <button type="button" class="btn btn-primary" id="submitBtn" onclick="enviar()">Enviar mis datos</button>
+    <p class="sub" style="text-align:center;margin-top:12px">🔒 Tus datos se usan solo para tramitar tu registro.</p>
+  </form>
+</div>
+
+<script>
+const REF = new URLSearchParams(location.search).get('ref') || '';
+let lead = null;
+let logoDataUrl = null;
+let cantidad = 'unico';
+
+function el(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+const PROVINCIAS = ['CABA','Buenos Aires','Catamarca','Chaco','Chubut','Córdoba','Corrientes','Entre Ríos','Formosa','Jujuy','La Pampa','La Rioja','Mendoza','Misiones','Neuquén','Río Negro','Salta','San Juan','San Luis','Santa Cruz','Santa Fe','Santiago del Estero','Tierra del Fuego','Tucumán'];
+
+function titularHTML(i){
+  return `<div class="card titular" data-i="${i}">
+    <div class="titular-head"><b>Titular ${i+1}</b>${i>0?`<button type="button" class="btn-x" onclick="removeTitular(${i})">Quitar</button>`:''}</div>
+    <label>¿Persona física o empresa?</label>
+    <div class="radios">
+      <label><input type="radio" name="tipoPersona${i}" value="fisica" checked onchange="setPersona(${i})"> Persona física</label>
+      <label><input type="radio" name="tipoPersona${i}" value="juridica" onchange="setPersona(${i})"> Empresa (persona jurídica)</label>
+    </div>
+    <div class="fisica" data-i="${i}">
+      <div class="row">
+        <div><label>Nombre y apellido</label><input class="f-nombre" type="text"></div>
+        <div><label>DNI</label><input class="f-dni" type="text" inputmode="numeric"></div>
+      </div>
+      <div class="row">
+        <div><label>CUIT / CUIL</label><input class="f-cuit" type="text" inputmode="numeric" placeholder="20-XXXXXXXX-X"></div>
+        <div><label>Estado civil</label>
+          <select class="f-civil" onchange="setCivil(${i})">
+            <option value="soltero/a">Soltero/a</option>
+            <option value="casado/a">Casado/a</option>
+            <option value="divorciado/a">Divorciado/a</option>
+            <option value="viudo/a">Viudo/a</option>
+          </select>
+        </div>
+      </div>
+      <div class="conyuge hide" data-i="${i}"><label>Nombre y apellido del cónyuge</label><input class="f-conyuge" type="text"></div>
+    </div>
+    <div class="juridica hide" data-i="${i}">
+      <div class="row">
+        <div><label>Razón social</label><input class="j-razon" type="text"></div>
+        <div><label>CUIT</label><input class="j-cuit" type="text" inputmode="numeric" placeholder="30-XXXXXXXX-X"></div>
+      </div>
+      <div class="row">
+        <div><label>Representante legal</label><input class="j-rep" type="text"></div>
+        <div><label>Cargo</label><input class="j-cargo" type="text" placeholder="Ej: Presidente"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <div><label>Domicilio (calle y número)</label><input class="d-calle" type="text"></div>
+      <div><label>Ciudad / Localidad</label><input class="d-ciudad" type="text"></div>
+    </div>
+    <div class="row">
+      <div><label>Provincia</label><select class="d-prov">${PROVINCIAS.map(p=>`<option>${p}</option>`).join('')}</select></div>
+      <div><label>Código postal</label><input class="d-cp" type="text" inputmode="numeric"></div>
+    </div>
+    <div class="row">
+      <div><label>Email</label><input class="c-email" type="email"></div>
+      <div><label>Teléfono</label><input class="c-tel" type="tel"></div>
+    </div>
+  </div>`;
+}
+
+function renderTitulares(n){
+  const cont = el('titulares');
+  const actuales = cont.querySelectorAll('.titular').length;
+  if (actuales === 0) {
+    cont.innerHTML = titularHTML(0);
+    // prefill primer titular con datos del lead
+    if (lead) {
+      cont.querySelector('.c-email').value = lead.email || '';
+      cont.querySelector('.c-tel').value = lead.telefono || '';
+    }
+  }
+}
+function addTitular(){
+  const cont = el('titulares');
+  const i = cont.querySelectorAll('.titular').length;
+  cont.insertAdjacentHTML('beforeend', titularHTML(i));
+}
+function removeTitular(i){
+  const nodes = el('titulares').querySelectorAll('.titular');
+  if (nodes[i]) nodes[i].remove();
+}
+function setCantidad(v){
+  cantidad = v;
+  el('addTit').classList.toggle('hide', v !== 'varios');
+  if (v === 'unico') {
+    const nodes = el('titulares').querySelectorAll('.titular');
+    for (let k = nodes.length - 1; k >= 1; k--) nodes[k].remove();
+  }
+}
+function setPersona(i){
+  const node = el('titulares').querySelectorAll('.titular')[i];
+  const juridica = node.querySelector(`input[name="tipoPersona${i}"]:checked`).value === 'juridica';
+  node.querySelector('.fisica').classList.toggle('hide', juridica);
+  node.querySelector('.juridica').classList.toggle('hide', !juridica);
+}
+function setCivil(i){
+  const node = el('titulares').querySelectorAll('.titular')[i];
+  const casado = node.querySelector('.f-civil').value === 'casado/a';
+  node.querySelector('.conyuge').classList.toggle('hide', !casado);
+}
+function setTipoMarca(){
+  const v = document.querySelector('input[name="tipoMarca"]:checked').value;
+  el('logoWrap').classList.toggle('hide', v === 'denominativa');
+}
+function onLogo(){
+  const f = el('logo').files[0];
+  if (!f) { logoDataUrl = null; el('logoName').textContent = ''; return; }
+  if (f.size > 5 * 1024 * 1024) { el('logoName').textContent = 'El archivo supera 5 MB.'; return; }
+  const r = new FileReader();
+  r.onload = () => { logoDataUrl = r.result; el('logoName').textContent = f.name; };
+  r.readAsDataURL(f);
+}
+
+function recolectar(){
+  const tits = [];
+  el('titulares').querySelectorAll('.titular').forEach((node, i) => {
+    const juridica = node.querySelector(`input[name="tipoPersona${i}"]:checked`).value === 'juridica';
+    const g = sel => (node.querySelector(sel)?.value || '').trim();
+    tits.push(juridica ? {
+      tipo: 'juridica', razon_social: g('.j-razon'), cuit: g('.j-cuit'),
+      representante: g('.j-rep'), cargo: g('.j-cargo'),
+      domicilio: { calle: g('.d-calle'), ciudad: g('.d-ciudad'), provincia: g('.d-prov'), cp: g('.d-cp') },
+      email: g('.c-email'), telefono: g('.c-tel'),
+    } : {
+      tipo: 'fisica', nombre: g('.f-nombre'), dni: g('.f-dni'), cuit: g('.f-cuit'),
+      estado_civil: g('.f-civil'), conyuge: g('.f-civil') === 'casado/a' ? g('.f-conyuge') : '',
+      domicilio: { calle: g('.d-calle'), ciudad: g('.d-ciudad'), provincia: g('.d-prov'), cp: g('.d-cp') },
+      email: g('.c-email'), telefono: g('.c-tel'),
+    });
+  });
+  return {
+    cantidad_titulares: cantidad,
+    titulares: tits,
+    marca: {
+      denominacion: el('denominacion').value.trim(),
+      tipo: document.querySelector('input[name="tipoMarca"]:checked').value,
+    },
+    clases: el('clases').value.trim(),
+    como_conociste: el('comoConociste').value,
+    comentarios: el('comentarios').value.trim(),
+  };
+}
+
+function validar(d){
+  if (!d.titulares.length) return 'Cargá al menos un titular.';
+  for (const [i, t] of d.titulares.entries()) {
+    if (t.tipo === 'fisica' && (!t.nombre || !t.dni)) return `Completá nombre y DNI del titular ${i+1}.`;
+    if (t.tipo === 'juridica' && (!t.razon_social || !t.cuit)) return `Completá razón social y CUIT del titular ${i+1}.`;
+  }
+  if (!d.marca.denominacion) return 'Ingresá la denominación de la marca.';
+  if (d.marca.tipo !== 'denominativa' && !logoDataUrl) return 'Subí el logo (la marca es mixta o figurativa).';
+  return null;
+}
+
+async function enviar(){
+  el('formErr').classList.add('hide');
+  const d = recolectar();
+  const err = validar(d);
+  if (err) { el('formErr').textContent = err; el('formErr').classList.remove('hide'); return; }
+  const btn = el('submitBtn'); btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    const r = await fetch(`/api/registro/datos/${encodeURIComponent(REF)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...d, logo: logoDataUrl }),
+    }).then(x => x.json());
+    if (r.ok) { el('form').classList.add('hide'); el('okScreen').classList.remove('hide'); window.scrollTo(0,0); }
+    else { el('formErr').textContent = r.error || 'No se pudo enviar.'; el('formErr').classList.remove('hide'); btn.disabled = false; btn.textContent = 'Enviar mis datos'; }
+  } catch (e) {
+    el('formErr').textContent = 'Error de red. Probá de nuevo.'; el('formErr').classList.remove('hide');
+    btn.disabled = false; btn.textContent = 'Enviar mis datos';
+  }
+}
+
+async function init(){
+  if (!REF) { el('loading').textContent = 'Link inválido.'; return; }
+  try {
+    const r = await fetch(`/api/registro/datos/${encodeURIComponent(REF)}`).then(x => x.json());
+    if (!r.ok) { el('loading').textContent = r.error || 'No encontramos tu registro.'; return; }
+    lead = r.data;
+    if (lead.completado) { el('loading').classList.add('hide'); el('okScreen').classList.remove('hide'); return; }
+    el('marcaTitle').textContent = `"${lead.marca}"`;
+    el('denominacion');
+    el('loading').classList.add('hide'); el('form').classList.remove('hide');
+    renderTitulares(1);
+    if (lead.marca) el('denominacion').value = lead.marca;
+    if (lead.clases) el('clases').value = lead.clases;
+  } catch (e) { el('loading').textContent = 'Error cargando el formulario.'; }
+}
+init();
+</script>
+</body>
+</html>
