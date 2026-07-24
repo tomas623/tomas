@@ -105,6 +105,32 @@ function mountAdminRoutes(app) {
     res.json(ok({ lead, informe, historial }));
   });
 
+  // Confirmación MANUAL de pago — rescate para cuando el webhook de MP no marcó
+  // el lead como pagado (links de pago que no devuelven el external_reference).
+  // Marca pagado y, si es informe, dispara la generación del borrador.
+  app.post('/api/admin/leads/:id/confirmar-pago', guard, express.json(), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(id);
+    if (!lead) return res.status(404).json(fail('Lead no encontrado'));
+    if (lead.estado !== 'pagado') {
+      db.prepare("UPDATE leads SET estado = 'pagado', pagado_at = COALESCE(pagado_at, datetime('now')) WHERE id = ?").run(id);
+    }
+    audit.log(req.user.id, 'lead.pago_confirmado_manual', {
+      entidad: 'leads', entidad_id: id, detalle: { marca: lead.marca, tipo: lead.tipo },
+    });
+    let informe = null;
+    if (lead.tipo === 'informe') {
+      try {
+        const { procesarInformePago } = require('./jobs/informe-pago');
+        informe = await procesarInformePago(id, { notificarCliente: true });
+      } catch (err) {
+        console.error(`[admin] confirmar-pago informe lead ${id}:`, err);
+        return res.status(500).json(fail('Se marcó pagado pero falló la generación: ' + err.message));
+      }
+    }
+    res.json(ok({ id, tipo: lead.tipo, informe }));
+  });
+
   // CRM: editar campos manuales (pipeline, notas, próximo contacto, asignación).
   app.patch('/api/admin/leads/:id', guard, express.json(), (req, res) => {
     const id = parseInt(req.params.id, 10);
