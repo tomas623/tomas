@@ -10,6 +10,33 @@ const audit = require('./audit');
 function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400) { return { ok: false, error: msg, code }; }
 
+// HTML del mail con el informe listo para el cliente (usado al aprobar y al
+// reenviar). row = fila de informes.
+function htmlInformeListo(row) {
+  const informe = (() => { try { return JSON.parse(row.informe_json || '{}'); } catch { return {}; } })();
+  const nivel = informe.nivel_riesgo || row.nivel_riesgo || 'medio';
+  const colorNivel = nivel === 'alto' ? '#dc2626' : nivel === 'medio' ? '#d97706' : '#059669';
+  return `
+    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
+      <h2 style="color:#1B6EF3">Tu informe de viabilidad está listo</h2>
+      <p>Hola${row.solicitante ? ' ' + row.solicitante : ''},</p>
+      <p>Adjuntamos el informe de viabilidad de registro de tu marca
+         <strong>${row.marca}</strong>.</p>
+      <p><strong>Nivel de riesgo:</strong>
+        <span style="color:${colorNivel};font-weight:600">${nivel.toUpperCase()}</span>
+        ${row.viabilidad_estimada != null ? ` · Viabilidad estimada: ${row.viabilidad_estimada}%` : ''}
+      </p>
+      <p>Cualquier consulta, podés respondernos directamente a este mail o agendarte
+         una reunión con un abogado en
+         <a href="https://calendar.app.google/rx6vHWyyjFoEr7Vx9">este link</a>.</p>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="font-size:12px;color:#64748b">
+        LegalPacers · Consultora de Propiedad Industrial<br>
+        contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
+      </p>
+    </div>`;
+}
+
 function mountAdminRoutes(app) {
   const guard = requireAuth('admin', 'operador');
 
@@ -883,29 +910,7 @@ function mountAdminRoutes(app) {
     }
 
     const { enviarMailGenerico } = require('./notificaciones');
-    const informe = (() => { try { return JSON.parse(row.informe_json || '{}'); } catch { return {}; } })();
-    const nivel = informe.nivel_riesgo || row.nivel_riesgo || 'medio';
-    const colorNivel = nivel === 'alto' ? '#dc2626' : nivel === 'medio' ? '#d97706' : '#059669';
-
-    const html = `
-      <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
-        <h2 style="color:#1B6EF3">Tu informe de viabilidad está listo</h2>
-        <p>Hola${row.solicitante ? ' ' + row.solicitante : ''},</p>
-        <p>Adjuntamos el informe de viabilidad de registro de tu marca
-           <strong>${row.marca}</strong>.</p>
-        <p><strong>Nivel de riesgo:</strong>
-          <span style="color:${colorNivel};font-weight:600">${nivel.toUpperCase()}</span>
-          ${row.viabilidad_estimada != null ? ` · Viabilidad estimada: ${row.viabilidad_estimada}%` : ''}
-        </p>
-        <p>Cualquier consulta, podés respondernos directamente a este mail o agendarte
-           una reunión con un abogado en
-           <a href="https://calendar.app.google/rx6vHWyyjFoEr7Vx9">este link</a>.</p>
-        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
-        <p style="font-size:12px;color:#64748b">
-          LegalPacers · Consultora de Propiedad Industrial<br>
-          contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
-        </p>
-      </div>`;
+    const html = htmlInformeListo(row);
 
     const pdfBuf = fs.readFileSync(row.pdf_path);
     const result = await enviarMailGenerico({
@@ -934,6 +939,41 @@ function mountAdminRoutes(app) {
     `).run(req.user.email, id);
     audit.log(req.user.id, 'informe.enviado', { entidad: 'informes', entidad_id: id, detalle: row.email });
     res.json(ok({ id, estado: 'enviado', stub: !!result.stub }));
+  });
+
+  // Reenvío / corrección de email — funciona AUNQUE ya esté enviado (para cuando
+  // salió con el email mal). Corrige el email si viene uno nuevo y reenvía el PDF.
+  app.post('/api/admin/informes/:id/reenviar', guard, express.json(), async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const row = db.prepare('SELECT * FROM informes WHERE id = ?').get(id);
+    if (!row) return res.status(404).json(fail('Informe no encontrado'));
+
+    const nuevoEmail = (req.body?.email || '').trim();
+    if (nuevoEmail) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevoEmail)) return res.status(400).json(fail('Email inválido'));
+      db.prepare('UPDATE informes SET email = ? WHERE id = ?').run(nuevoEmail, id);
+      row.email = nuevoEmail;
+    }
+    if (!row.email) return res.status(400).json(fail('Falta el email del cliente'));
+    if (!row.pdf_path || !fs.existsSync(row.pdf_path)) return res.status(400).json(fail('No hay PDF generado para enviar'));
+
+    const { enviarMailGenerico } = require('./notificaciones');
+    const pdfBuf = fs.readFileSync(row.pdf_path);
+    const result = await enviarMailGenerico({
+      to: row.email,
+      subject: `Tu informe de viabilidad — ${row.marca}`,
+      html: htmlInformeListo(row),
+      attachments: [{
+        filename: `informe-${row.marca.replace(/[^a-zA-Z0-9]+/g, '_')}.pdf`,
+        content: pdfBuf,
+      }],
+      tag: 'informe_reenvio',
+    });
+    if (!result.ok) return res.status(502).json(fail(`No se pudo reenviar: ${result.error}`));
+
+    db.prepare("UPDATE informes SET estado = 'enviado', enviado_at = datetime('now') WHERE id = ?").run(id);
+    audit.log(req.user.id, 'informe.reenviado', { entidad: 'informes', entidad_id: id, detalle: { email: row.email } });
+    res.json(ok({ id, email: row.email, stub: !!result.stub }));
   });
 
   // Reintenta la generación si quedó en 'error'.
