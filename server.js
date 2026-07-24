@@ -674,6 +674,35 @@ async function procesarPago(paymentId) {
       });
     } catch {}
 
+    // Aviso al ADMIN (a vos) por CUALQUIER pago — informe, registro o lo que sea.
+    // Va aparte del mail de equipo (contacto@) para que no dependa de que revises
+    // esa casilla. Configurable con MAIL_ADMIN.
+    try {
+      const MAIL_ADMIN = (process.env.MAIL_ADMIN || 'tomas@legalpacers.com').trim();
+      const { enviarMailGenerico } = require('./src/notificaciones');
+      const tipoTxt = lead.tipo === 'informe' ? 'Informe de viabilidad'
+        : lead.tipo === 'registro' ? 'Registro de marca' : (lead.tipo || 'Pago');
+      const montoTxt = lead.monto ? ` · $${Number(lead.monto).toLocaleString('es-AR')}` : '';
+      enviarMailGenerico({
+        to: MAIL_ADMIN,
+        subject: `💰 Pago acreditado: ${tipoTxt} — "${lead.marca}"`,
+        html: `<div style="font-family:system-ui,sans-serif;max-width:520px;color:#0f1f3d">
+          <h2 style="color:#1B6EF3">Se acreditó un pago</h2>
+          <p><strong>Tipo:</strong> ${tipoTxt}${montoTxt}</p>
+          <p><strong>Marca:</strong> ${lead.marca}</p>
+          <p><strong>Cliente:</strong> ${lead.email || '—'}${lead.telefono ? ' · ' + lead.telefono : ''}</p>
+          <p><strong>Pago MP:</strong> ${paymentId}</p>
+          <p style="margin-top:14px">${lead.tipo === 'informe'
+            ? 'El informe se está generando — revisalo y aprobalo en el panel.'
+            : 'Contactá al cliente para arrancar el trámite.'}</p>
+        </div>`,
+        replyTo: lead.email || undefined,
+        tag: 'admin_pago',
+      }).catch(err => console.error('[webhook] mail admin pago:', err.message));
+    } catch (err) {
+      console.error('[webhook] no se pudo avisar al admin del pago:', err.message);
+    }
+
     // Dispara el orquestador del informe pago en background — sin await,
     // para no demorar el ACK al webhook de MP (que tiene timeout corto).
     if (lead.tipo === 'informe') {

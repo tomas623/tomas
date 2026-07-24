@@ -87,7 +87,11 @@ async function enviarMailGenerico({ to, subject, html, attachments, from, replyT
 
   try {
     const body = { from: fromAddr, to, subject, html };
-    if (replyTo) body.reply_to = replyTo;
+    // Reply-to: explícito, o el default configurable. Así cuando un cliente
+    // responde el mail, la respuesta cae en una casilla que sí se lee (no en
+    // el 'from' de envío, que puede ser no-reply).
+    const rt = (replyTo || process.env.MAIL_REPLY_TO || '').trim();
+    if (rt) body.reply_to = rt;
     if (Array.isArray(attachments) && attachments.length) {
       body.attachments = attachments.map(a => ({
         filename: a.filename,
