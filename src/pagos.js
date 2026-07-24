@@ -38,18 +38,24 @@ function linkPackSuscripcion(codigoPack, externalReference, ciclo = 'mensual') {
 }
 
 async function crearPreferencia({ titulo, precio, externalReference, email, baseUrl, tipo }) {
-  // Si hay un link fijo configurado para este tipo, devolvemos ese antes de
-  // hablar con la API de MP. Caso típico: usás Link de pago hosted por MP.
-  if (tipo === 'informe') {
-    const link = linkInformeUnico(externalReference);
-    if (link) return { stub: false, preference_id: null, init_point: link, source: 'link_fijo' };
-  }
-  if (tipo === 'registro') {
-    const link = linkRegistroUnico(externalReference);
-    if (link) return { stub: false, preference_id: null, init_point: link, source: 'link_fijo' };
-  }
-
   const token = (process.env.MP_ACCESS_TOKEN || '').trim();
+
+  // Links de pago FIJOS: solo si se piden explícitamente (MP_USE_FIXED_LINKS=true).
+  // Están DESACTIVADOS por defecto porque no atan el pago al lead: no llevan
+  // external_reference ni notification_url, así que el webhook nunca matchea el
+  // pago (el cliente paga y no se genera nada). Las preferencias dinámicas de
+  // abajo sí lo resuelven.
+  const usarLinksFijos = (process.env.MP_USE_FIXED_LINKS || '').toLowerCase() === 'true';
+  if (usarLinksFijos) {
+    if (tipo === 'informe') {
+      const link = linkInformeUnico(externalReference);
+      if (link) return { stub: false, preference_id: null, init_point: link, source: 'link_fijo' };
+    }
+    if (tipo === 'registro') {
+      const link = linkRegistroUnico(externalReference);
+      if (link) return { stub: false, preference_id: null, init_point: link, source: 'link_fijo' };
+    }
+  }
 
   if (!token) {
     const stubId = `STUB-${crypto.randomBytes(6).toString('hex')}`;
@@ -59,6 +65,12 @@ async function crearPreferencia({ titulo, precio, externalReference, email, base
       init_point: `${baseUrl}/pagos/stub?ref=${encodeURIComponent(externalReference)}&monto=${precio}&titulo=${encodeURIComponent(titulo)}`,
     };
   }
+
+  // Base pública para el aviso a MP: nunca localhost.
+  const publica = (process.env.PUBLIC_URL || process.env.BASE_URL || baseUrl || '').replace(/\/+$/, '');
+  const notifBase = (!publica || /localhost|127\.0\.0\.1/.test(publica))
+    ? 'https://marcas.legalpacers.com'
+    : publica;
 
   const body = {
     items: [{
@@ -75,7 +87,10 @@ async function crearPreferencia({ titulo, precio, externalReference, email, base
       pending: `${baseUrl}/pagos/pendiente?ref=${encodeURIComponent(externalReference)}`,
     },
     auto_return: 'approved',
-    notification_url: `${baseUrl}/api/pagos/webhook`,
+    // notification_url DEBE ser público y alcanzable por MP. Si BASE_URL no está
+    // seteado apunta a localhost (MP no puede llamarlo), así que caemos al dominio
+    // de producción. Configurable con PUBLIC_URL.
+    notification_url: `${notifBase}/api/pagos/webhook`,
   };
 
   const res = await fetch(`${MP_API}/checkout/preferences`, {

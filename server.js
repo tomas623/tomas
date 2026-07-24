@@ -623,18 +623,18 @@ app.post('/api/marca/registro/iniciar', async (req, res) => {
 // Soporta dos tipos de eventos:
 //   - { type: "payment", data: { id } }         → pagos únicos (informe, registro)
 //   - { type: "subscription_preapproval", ... } → activación de plan de suscripción (packs)
-app.post('/api/pagos/webhook', express.json(), async (req, res) => {
-  const type = req.body?.type || req.query?.type || req.body?.topic;
+async function manejarWebhookMP(req, res) {
+  // MP notifica de dos formas: Webhooks (POST body {type, data:{id}}) e IPN de la
+  // notification_url de la preferencia (GET/POST con ?topic=payment&id=). Leemos
+  // el tipo y el id de TODAS las variantes (body y query).
+  const type = req.body?.type || req.query?.type || req.body?.topic || req.query?.topic;
   const externalId = req.body?.data?.id || req.query?.['data.id'] || req.query?.id;
 
   res.status(200).json({ ok: true }); // ACK rápido a MP
 
-  // Registramos en Auditoría SOLO los avisos que nos importan (pago/suscripción),
-  // no los eventos de ruido (order, fraude, envíos, etc. que MP también manda).
-  // Así en el panel se ve el flujo real "MP avisó → lead → informe".
   const esRelevante = ['payment', 'subscription_preapproval', 'preapproval', 'subscription_authorized_payment'].includes(type);
   if (esRelevante) {
-    try { audit.log(null, 'webhook.recibido', { detalle: { type, externalId } }); } catch {}
+    try { audit.log(null, 'webhook.recibido', { detalle: { type, externalId, metodo: req.method } }); } catch {}
   }
 
   try {
@@ -643,14 +643,16 @@ app.post('/api/pagos/webhook', express.json(), async (req, res) => {
     } else if ((type === 'subscription_preapproval' || type === 'preapproval') && externalId) {
       await procesarSuscripcion(externalId);
     } else if (type === 'subscription_authorized_payment' && externalId) {
-      // Cobro recurrente de una suscripción ya activa — sólo log por ahora.
       console.log(`[webhook] cobro recurrente de suscripción ${externalId}`);
     }
   } catch (err) {
     console.error('[webhook] error:', err.message);
     try { audit.log(null, 'webhook.error', { detalle: { type, externalId, error: err.message } }); } catch {}
   }
-});
+}
+// Aceptamos POST (Webhooks) y GET (IPN de la notification_url de la preferencia).
+app.post('/api/pagos/webhook', express.json(), manejarWebhookMP);
+app.get('/api/pagos/webhook', manejarWebhookMP);
 
 async function procesarPago(paymentId) {
   const { obtenerPago } = require('./src/pagos');
