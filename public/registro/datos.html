@@ -180,7 +180,7 @@ function titularHTML(uid){
       </div>
       <div class="row">
         <div><label>Cargo en la empresa</label><input class="j-cargo" type="text" placeholder="Ej: Presidente, Socio Gerente"></div>
-        <div><label>CUIT/CUIL del firmante <span style="font-weight:400;color:var(--dim)">(opcional)</span></label><input class="j-rep-cuit" type="text" inputmode="numeric"></div>
+        <div><label>CUIT/CUIL del firmante</label><input class="j-rep-cuit" type="text" inputmode="numeric"></div>
       </div>
       <div class="note" style="background:rgba(27,110,243,.08);border-color:rgba(27,110,243,.3);color:#93c5fd">
         Necesitamos la documentación de la empresa para acreditar su existencia y quién la representa (PDF o foto legible).
@@ -323,10 +323,10 @@ function recolectar(){
 function validar(d){
   if (!d.titulares.length) return 'Cargá al menos un titular.';
   for (const [i, t] of d.titulares.entries()) {
-    if (t.tipo === 'fisica' && (!t.nombre || !t.dni)) return `Completá nombre y DNI del titular ${i+1}.`;
+    if (t.tipo === 'fisica' && (!t.nombre || !t.dni || !t.cuit)) return `Completá nombre, DNI y CUIT/CUIL del titular ${i+1} (el INPI pide los dos).`;
     if (t.tipo === 'juridica') {
       if (!t.razon_social || !t.cuit) return `Completá razón social y CUIT del titular ${i+1}.`;
-      if (!t.representante || !t.representante_dni) return `Completá nombre y DNI de quién firma por la empresa (titular ${i+1}).`;
+      if (!t.representante || !t.representante_dni || !t.representante_cuit) return `Completá nombre, DNI y CUIT/CUIL de quién firma por la empresa (titular ${i+1}).`;
       if (!t.doc_constitutiva) return `Subí el contrato social / estatuto del titular ${i+1}.`;
       if (!t.doc_representacion) return `Subí el acta o poder del firmante del titular ${i+1}.`;
     }
