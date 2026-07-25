@@ -210,6 +210,18 @@ function mountAdminRoutes(app) {
     res.sendFile(path.resolve(lead.registro_logo_path));
   });
 
+  // Prompt para cargar la marca en el INPI con la extensión de Claude.
+  app.get('/api/admin/leads/:id/prompt-inpi', guard, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const lead = db.prepare('SELECT marca, clases, registro_datos FROM leads WHERE id = ?').get(id);
+    if (!lead || !lead.registro_datos) return res.status(400).json(fail('El cliente todavía no cargó sus datos.'));
+    let datos; try { datos = JSON.parse(lead.registro_datos); } catch { return res.status(400).json(fail('Datos inválidos')); }
+    let clasesTxt = '';
+    try { const c = JSON.parse(lead.clases || '[]'); clasesTxt = Array.isArray(c) ? c.join(', ') : ''; } catch {}
+    const { construirPromptINPI } = require('./registro-prompt');
+    res.json(ok({ prompt: construirPromptINPI(datos, lead.marca, clasesTxt) }));
+  });
+
   // Sirve el poder firmado que subió el cliente.
   app.get('/api/admin/leads/:id/poder-firmado', guard, (req, res) => {
     const id = parseInt(req.params.id, 10);

@@ -976,6 +976,9 @@ function waMensaje(l) {
   const marca = l.marca || 'tu marca';
   if (l.tipo === 'registro') {
     const link = `${location.origin}/registro/datos?ref=${encodeURIComponent(l.external_reference || '')}`;
+    if (l.registro_datos) {
+      return `Hola, te escribo de LegalPacers por el registro de "${marca}". Te paso el poder para firmar. Cuando lo tengas firmado (a mano o digital), subilo en el mismo link que usaste antes — abajo del todo está el botón "Subir poder firmado": ${link} ¡Gracias!`;
+    }
     return `Hola, te escribo de LegalPacers por el registro de tu marca "${marca}". Recibimos tu pago 🙌 Para arrancar el trámite ante el INPI, completá tus datos en este formulario (5 min): ${link}`;
   }
   if (l.tipo === 'informe') {
@@ -1014,6 +1017,7 @@ function renderRegistroBox(l) {
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         <a class="btn tiny green" href="/api/admin/leads/${l.id}/poder" target="_blank">📄 Generar poder (PDF)</a>
+        <button class="btn tiny" onclick="copiarPromptINPI(${l.id}, this)">🤖 Copiar prompt para el INPI</button>
         ${l.registro_logo_path ? `<a class="btn tiny" href="/api/admin/leads/${l.id}/registro-logo" target="_blank">🖼️ Ver logo</a>` : ''}
         <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Reenviar acuse/link</button>
       </div>
@@ -1030,6 +1034,22 @@ function renderRegistroBox(l) {
     </div>
     <div class="muted" style="font-size:11px;word-break:break-all">Link: ${esc(linkDatos)}</div>
   </div>`;
+}
+
+async function copiarPromptINPI(id, btn) {
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Generando…';
+  const r = await api(`/api/admin/leads/${id}/prompt-inpi`);
+  btn.disabled = false;
+  if (!r.ok) { btn.textContent = orig; alert(r.error || 'No se pudo generar'); return; }
+  try {
+    await navigator.clipboard.writeText(r.data.prompt);
+    btn.textContent = '✓ Copiado — pegalo en la extensión';
+    setTimeout(() => { btn.textContent = orig; }, 3000);
+  } catch (e) {
+    // Fallback: mostrar el prompt para copiar a mano.
+    prompt('Copiá el prompt (Ctrl+C):', r.data.prompt);
+    btn.textContent = orig;
+  }
 }
 
 async function enviarAcuseRegistro(id, btn) {

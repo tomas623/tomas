@@ -715,22 +715,29 @@ app.post('/api/registro/datos/:ref', express.json({ limit: '30mb' }), (req, res)
     .run(JSON.stringify(datos), logoPath, lead.id);
   audit.log(null, 'registro.datos_cargados', { entidad: 'leads', entidad_id: lead.id, detalle: { marca: lead.marca } });
 
-  // Avisar al admin que llegaron los datos.
+  // Avisar al admin que llegaron los datos + el prompt listo para la extensión
+  // de Claude (cargar la marca en el INPI).
   try {
     const MAIL_ADMIN = (process.env.MAIL_ADMIN || 'tomas@legalpacers.com').trim();
     const { enviarMailGenerico } = require('./src/notificaciones');
+    const { construirPromptINPI } = require('./src/registro-prompt');
+    let clasesTxt = '';
+    try { const c = JSON.parse(lead.clases || '[]'); clasesTxt = Array.isArray(c) ? c.join(', ') : ''; } catch {}
+    const prompt = construirPromptINPI(datos, lead.marca, clasesTxt);
+    const promptHtml = prompt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     enviarMailGenerico({
       to: MAIL_ADMIN,
       subject: `📋 Datos de registro recibidos — "${lead.marca}"`,
-      html: `<div style="font-family:system-ui,sans-serif;max-width:520px;color:#0f1f3d">
+      html: `<div style="font-family:system-ui,sans-serif;max-width:640px;color:#0f1f3d">
         <h2 style="color:#1B6EF3">Llegaron los datos del registro</h2>
-        <p><strong>Marca:</strong> ${lead.marca}</p>
-        <p><strong>Titulares:</strong> ${body.titulares.length}</p>
-        <p>Revisalos en el panel (Leads → ${lead.marca}) para armar el poder y presentar.</p>
+        <p><strong>Marca:</strong> ${lead.marca} · <strong>Titulares:</strong> ${body.titulares.length}</p>
+        <p>Revisalos en el panel (Leads → ${lead.marca}) para armar el poder.</p>
+        <p style="margin-top:18px"><strong>Prompt para cargar la marca en el INPI</strong> (copialo y pegalo en la extensión de Claude para Chrome):</p>
+        <pre style="white-space:pre-wrap;word-break:break-word;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:14px;font-size:12.5px;line-height:1.5">${promptHtml}</pre>
       </div>`,
       tag: 'registro_datos_admin',
     }).catch(() => {});
-  } catch {}
+  } catch (err) { console.error('[registro/datos] mail admin:', err.message); }
 
   res.json(ok({ saved: true }));
 });
