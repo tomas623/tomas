@@ -742,6 +742,34 @@ app.post('/api/registro/datos/:ref', express.json({ limit: '30mb' }), (req, res)
   res.json(ok({ saved: true }));
 });
 
+// ===== Webhook del bot de WhatsApp (Meta Cloud API) =====
+// Verificación del webhook (Meta hace un GET con un challenge al configurarlo).
+app.get('/api/whatsapp/webhook', (req, res) => {
+  const wa = require('./src/bot/whatsapp');
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+  if (mode === 'subscribe' && token && token === wa.config().verifyToken) {
+    return res.status(200).send(challenge);
+  }
+  return res.sendStatus(403);
+});
+
+// Recepción de mensajes. ACK inmediato + procesamiento en background.
+app.post('/api/whatsapp/webhook',
+  express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }),
+  (req, res) => {
+    const wa = require('./src/bot/whatsapp');
+    if (!wa.firmaValida(req.rawBody, req.headers['x-hub-signature-256'])) {
+      return res.sendStatus(403);
+    }
+    res.sendStatus(200); // Meta espera un 200 rápido.
+    try {
+      const { manejarEntrada } = require('./src/bot/whatsapp-handler');
+      setImmediate(() => manejarEntrada(req.body).catch(err => console.error('[wa] handler:', err.message)));
+    } catch (err) { console.error('[wa] webhook:', err.message); }
+  });
+
 // ===== Webhook de Mercado Pago =====
 // Soporta dos tipos de eventos:
 //   - { type: "payment", data: { id } }         → pagos únicos (informe, registro)

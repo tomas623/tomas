@@ -903,8 +903,30 @@ function loadBot() {
         <button class="btn primary" onclick="botEnviar()" id="botSend">Enviar</button>
       </div>
       <div style="margin-top:8px"><button class="btn tiny outline" onclick="loadBot()">↻ Reiniciar conversación</button></div>
+      <div id="waConvs" style="margin-top:28px"></div>
     </div>`;
   botBurbuja('bot', 'hola 👋 escribime como si fueras un cliente y te respondo con el manual cargado. probá con "cuánto sale registrar una marca?"');
+  loadConversacionesWA();
+}
+async function loadConversacionesWA() {
+  const box = $('#waConvs');
+  const r = await api('/api/admin/whatsapp/conversaciones');
+  if (!r.ok || !r.data.conversaciones.length) { box.innerHTML = ''; return; }
+  const filas = r.data.conversaciones.map(c => `<tr>
+    <td><strong>${esc(c.nombre || c.telefono)}</strong><div class="muted" style="font-size:11px">${esc(c.telefono)}</div></td>
+    <td class="muted" style="font-size:12px;max-width:220px">${esc((c.ultimo_msg || '').slice(0, 80))}</td>
+    <td>${c.pausado ? '<span class="chip yellow">con humano</span>' : '<span class="chip green">bot activo</span>'}</td>
+    <td class="muted" style="font-size:11px">${fmtDate(c.ultimo_at)}</td>
+    <td>${c.pausado ? `<button class="btn tiny outline" onclick="reactivarBot('${esc(c.telefono)}', this)">Reactivar bot</button>` : ''}</td>
+  </tr>`).join('');
+  box.innerHTML = `<h3 style="font-size:14px;margin-bottom:8px">Conversaciones de WhatsApp</h3>
+    <table><thead><tr><th>Contacto</th><th>Último mensaje</th><th>Estado</th><th>Cuándo</th><th></th></tr></thead><tbody>${filas}</tbody></table>`;
+}
+async function reactivarBot(telefono, btn) {
+  btn.disabled = true;
+  const r = await api('/api/admin/whatsapp/reactivar', { method: 'POST', body: JSON.stringify({ telefono }) });
+  if (!r.ok) { btn.disabled = false; alert(r.error || 'Error'); return; }
+  loadConversacionesWA();
 }
 function botBurbuja(rol, texto) {
   const chat = $('#botChat');

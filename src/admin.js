@@ -1349,6 +1349,28 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // Conversaciones reales de WhatsApp (cuando el bot está conectado a Meta).
+  app.get('/api/admin/whatsapp/conversaciones', guard, (req, res) => {
+    const rows = db.prepare(`
+      SELECT c.telefono, c.nombre, c.pausado, c.ultimo_at,
+        (SELECT texto FROM wa_mensajes m WHERE m.telefono = c.telefono ORDER BY m.id DESC LIMIT 1) AS ultimo_msg
+      FROM wa_contactos c ORDER BY c.ultimo_at DESC LIMIT 100
+    `).all();
+    res.json(ok({ conversaciones: rows }));
+  });
+  app.get('/api/admin/whatsapp/mensajes', guard, (req, res) => {
+    const tel = (req.query.telefono || '').trim();
+    const rows = db.prepare('SELECT rol, texto, created_at FROM wa_mensajes WHERE telefono = ? ORDER BY id ASC LIMIT 300').all(tel);
+    res.json(ok({ mensajes: rows }));
+  });
+  app.post('/api/admin/whatsapp/reactivar', guard, express.json(), (req, res) => {
+    const tel = ((req.body && req.body.telefono) || '').trim();
+    if (!tel) return res.status(400).json(fail('Falta el teléfono'));
+    db.prepare("UPDATE wa_contactos SET pausado = 0, pausado_at = NULL WHERE telefono = ?").run(tel);
+    audit.log(req.user.id, 'wa.reactivado', { detalle: { telefono: tel } });
+    res.json(ok({ telefono: tel }));
+  });
+
   // Diagnóstico de configuración: confirma que las integraciones críticas
   // (Gemini, Mercado Pago, Resend) estén seteadas. Con ?ping=1 hace una
   // llamada real y liviana a Gemini para verificar que la key funcione —

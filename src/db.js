@@ -428,4 +428,25 @@ for (const [col, ddl] of [
   if (!columnExists('marcas_vigiladas', col)) db.exec(ddl);
 }
 
+// ===== Bot de WhatsApp: contactos + historial de mensajes =====
+db.exec(`
+  CREATE TABLE IF NOT EXISTS wa_contactos (
+    telefono TEXT PRIMARY KEY,
+    nombre TEXT,
+    pausado INTEGER NOT NULL DEFAULT 0,   -- 1 = lo maneja un humano (bot en silencio)
+    pausado_at TEXT,
+    ultimo_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS wa_mensajes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telefono TEXT NOT NULL,
+    rol TEXT NOT NULL,                     -- 'cliente' | 'bot' | 'humano'
+    texto TEXT,
+    wa_msg_id TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_wa_msg_tel ON wa_mensajes(telefono, id);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_wa_msg_waid ON wa_mensajes(wa_msg_id) WHERE wa_msg_id IS NOT NULL;
+`);
+
 module.exports = db;
