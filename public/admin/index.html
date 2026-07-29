@@ -177,6 +177,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
     <button class="tab" data-tab="informes">Informes <span class="badge" id="badgeInformes" hidden></span></button>
     <button class="tab" data-tab="leads">Leads</button>
     <button class="tab" data-tab="chequeos">Chequeos</button>
+    <button class="tab" data-tab="bot">Bot 🤖</button>
     <button class="tab" data-tab="usuarios">Usuarios</button>
     <button class="tab" data-tab="marcas">Marcas vigiladas</button>
     <button class="tab" data-tab="hitos">Hitos legales <span class="badge" id="badgeHitos" hidden></span></button>
@@ -194,6 +195,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
   <div id="panel-informes" class="panel" hidden></div>
   <div id="panel-leads" class="panel" hidden></div>
   <div id="panel-chequeos" class="panel" hidden></div>
+  <div id="panel-bot" class="panel" hidden></div>
   <div id="panel-usuarios" class="panel" hidden></div>
   <div id="panel-marcas" class="panel" hidden></div>
   <div id="panel-hitos" class="panel" hidden></div>
@@ -292,7 +294,7 @@ function selectTab(name) {
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   $$('.panel').forEach(p => p.hidden = p.id !== `panel-${name}`);
   const fn = { resumen: loadResumen, alertas: loadAlertas, informes: loadInformes,
-    leads: loadLeads, chequeos: loadChequeos, usuarios: loadUsuarios, marcas: loadMarcas, hitos: loadHitos, packs: loadPacks,
+    leads: loadLeads, chequeos: loadChequeos, bot: loadBot, usuarios: loadUsuarios, marcas: loadMarcas, hitos: loadHitos, packs: loadPacks,
     boletines: loadBoletines, audit: loadAudit }[name];
   if (fn) fn();
 }
@@ -883,6 +885,60 @@ async function loadChequeos() {
         ${d.topMarcas.length ? `<table><thead><tr><th>Marca</th><th>Veces</th><th>Último</th></tr></thead><tbody>${filasTop}</tbody></table>` : '<div class="empty">—</div>'}
       </div>
     </div>`;
+}
+
+// ===== Simulador del bot de WhatsApp =====
+let botMensajes = [];
+function loadBot() {
+  botMensajes = [];
+  $('#panel-bot').innerHTML = `
+    <div style="max-width:560px;margin:0 auto">
+      <div class="muted" style="font-size:13px;margin-bottom:12px">
+        Probá el bot como si fueras un cliente escribiendo por WhatsApp. Usa el manual + Gemini.
+        No manda nada a nadie — es solo para calibrar tono y respuestas.
+      </div>
+      <div id="botChat" style="background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:14px;padding:16px;height:460px;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input id="botInput" placeholder="Escribí como cliente… (ej: hola, cuánto sale registrar?)" style="flex:1" onkeydown="if(event.key==='Enter')botEnviar()">
+        <button class="btn primary" onclick="botEnviar()" id="botSend">Enviar</button>
+      </div>
+      <div style="margin-top:8px"><button class="btn tiny outline" onclick="loadBot()">↻ Reiniciar conversación</button></div>
+    </div>`;
+  botBurbuja('bot', 'hola 👋 escribime como si fueras un cliente y te respondo con el manual cargado. probá con "cuánto sale registrar una marca?"');
+}
+function botBurbuja(rol, texto) {
+  const chat = $('#botChat');
+  const esCliente = rol === 'cliente';
+  // El bot puede mandar varios mensajes cortos separados por línea en blanco.
+  const partes = esCliente ? [texto] : texto.split(/\n\s*\n/).filter(t => t.trim());
+  for (const p of partes) {
+    const div = document.createElement('div');
+    div.style.cssText = `max-width:80%;padding:9px 13px;border-radius:12px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;` +
+      (esCliente
+        ? 'align-self:flex-end;background:var(--accent,#1B6EF3);color:#fff;border-bottom-right-radius:3px'
+        : 'align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:3px');
+    div.textContent = p.trim();
+    chat.appendChild(div);
+  }
+  chat.scrollTop = chat.scrollHeight;
+}
+async function botEnviar() {
+  const inp = $('#botInput');
+  const texto = (inp.value || '').trim();
+  if (!texto) return;
+  inp.value = '';
+  botBurbuja('cliente', texto);
+  botMensajes.push({ rol: 'cliente', texto });
+  const btn = $('#botSend'); btn.disabled = true; btn.textContent = '…';
+  const escribiendo = document.createElement('div');
+  escribiendo.className = 'muted'; escribiendo.style.cssText = 'align-self:flex-start;font-size:12px;padding:4px 8px'; escribiendo.textContent = 'escribiendo…';
+  $('#botChat').appendChild(escribiendo); $('#botChat').scrollTop = $('#botChat').scrollHeight;
+  const r = await api('/api/admin/bot/probar', { method: 'POST', body: JSON.stringify({ mensajes: botMensajes }) });
+  escribiendo.remove();
+  btn.disabled = false; btn.textContent = 'Enviar';
+  if (!r.ok) { botBurbuja('bot', '⚠ error: ' + (r.error || 'no se pudo responder')); return; }
+  botBurbuja('bot', r.data.texto);
+  botMensajes.push({ rol: 'bot', texto: r.data.texto });
 }
 
 function leadsQuery() {

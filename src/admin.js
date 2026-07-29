@@ -1335,6 +1335,20 @@ function mountAdminRoutes(app) {
     }
   });
 
+  // Simulador del bot de WhatsApp: responde una conversación de prueba usando el
+  // manual + Gemini. No manda nada a nadie, es solo para calibrar el bot.
+  app.post('/api/admin/bot/probar', guard, express.json(), async (req, res) => {
+    const mensajes = Array.isArray(req.body && req.body.mensajes) ? req.body.mensajes.slice(-20) : [];
+    try {
+      const { responder } = require('./bot/responder');
+      const r = await responder(mensajes);
+      if (!r.ok) return res.status(502).json(fail(r.error));
+      res.json(ok({ texto: r.texto }));
+    } catch (err) {
+      res.status(500).json(fail(err.message));
+    }
+  });
+
   // Diagnóstico de configuración: confirma que las integraciones críticas
   // (Gemini, Mercado Pago, Resend) estén seteadas. Con ?ping=1 hace una
   // llamada real y liviana a Gemini para verificar que la key funcione —
