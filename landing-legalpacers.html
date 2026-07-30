@@ -390,7 +390,7 @@
 
     /* Selector de pack en modal de vigilancia */
     /* Toggle Mensual / Anual debajo del selector de pack. El "Anual" lleva
-       un tag verde "2 meses gratis" que aparece arriba de la card. */
+       un tag verde "3 meses gratis" que aparece arriba de la card. */
     .vig-ciclo-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
     .vig-ciclo-opt{background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;padding:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;transition:all .15s;color:var(--text-soft)}
     .vig-ciclo-opt strong{font-size:14.5px;color:#fff;font-weight:700}
@@ -1066,7 +1066,7 @@
         <li>Pre-análisis e informe de riesgo previo firmado por un Agente de la Propiedad Industrial matriculado</li>
         <li>Armado del expediente y presentación oficial en el día</li>
         <li>Contestación técnica de vistas de forma</li>
-        <li><strong>🎁 2 meses de vigilancia de la marca gratis</strong></li>
+        <li><strong>🎁 3 meses de vigilancia de la marca gratis</strong></li>
       </ul>
     </div>
 
@@ -1085,7 +1085,7 @@
       <h4>¿Cuál es el flujo del trámite tras el pago?</h4>
       <div class="onboarding-step"><div class="n">1</div><div class="body"><div class="t">Asignación Directa de Abogado</div><div class="d">Un especialista de nuestro equipo te contacta por WhatsApp en menos de 2 horas para validar el encuadre de tus productos o servicios.</div></div></div>
       <div class="onboarding-step"><div class="n">2</div><div class="body"><div class="t">Verificación de Viabilidad y Estrategia de Clases</div><div class="d">Chequeamos a fondo que tu marca se pueda registrar y definimos juntos en qué clases conviene protegerla. Si no es viable, elegimos otro nombre o te devolvemos la plata. Si está OK, presentamos el expediente y te pasamos el número de acta.</div></div></div>
-      <div class="onboarding-step"><div class="n">3</div><div class="body"><div class="t">Activación del Monitoreo Semanal</div><div class="d">Tu marca ingresa a nuestro software de escaneo de boletines oficiales con los primeros 2 meses 100% bonificados.</div></div></div>
+      <div class="onboarding-step"><div class="n">3</div><div class="body"><div class="t">Activación de la vigilancia</div><div class="d">Tu marca ingresa a nuestro software de escaneo de boletines oficiales con los primeros 3 meses 100% bonificados.</div></div></div>
     </div>
   </div>
 </div>
@@ -1118,7 +1118,7 @@
         <span x-text="'$' + vigForm.packPrecio.toLocaleString('es-AR') + '/mes'"></span>
       </button>
       <button type="button" class="vig-ciclo-opt destacado" :class="{ activo: vigForm.ciclo === 'anual' }" @click="vigForm.ciclo = 'anual'">
-        <span class="vig-ciclo-tag">2 meses gratis</span>
+        <span class="vig-ciclo-tag">3 meses gratis</span>
         <strong>Anual</strong>
         <span x-text="'$' + (vigForm.packPrecio * 10).toLocaleString('es-AR') + '/año'"></span>
       </button>
