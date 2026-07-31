@@ -47,7 +47,7 @@ const PRACTICES = [
   {
     slug: "derecho-societario", no: "01", axis: "empresas", art: "arch",
     title: "Derecho societario",
-    short: "Constitución, gobierno corporativo, acuerdos de socios y reorganizaciones. La estructura sobre la que se apoya el resto.",
+    short: "Constitución, gobierno corporativo, acuerdos de socios y reorganizaciones. La estructura sobre la que se apoya todo lo demás.",
     intro: "La forma societaria no es un trámite: define quién decide, cómo se reparte el valor y qué pasa cuando los intereses dejan de estar alineados. Diseñamos y ordenamos estructuras que sostienen el crecimiento y anticipan el conflicto.",
     body: [
       { h: "Estructura como decisión estratégica", p: "Elegir el tipo societario, distribuir el capital y definir las reglas de gobierno son decisiones que condicionan una empresa durante años. Trabajamos sobre el diseño —no sobre el formulario— para que la estructura acompañe el plan de negocio y no lo limite." },
@@ -84,7 +84,7 @@ const PRACTICES = [
     slug: "propiedad-intelectual", no: "03", axis: "empresas", art: "nodes",
     title: "Propiedad intelectual",
     short: "Marcas, software, contenidos y activos intangibles: identificar el valor que no está en el balance y protegerlo.",
-    intro: "En buena parte de las empresas actuales, el valor está en lo intangible: la marca, el código, los datos, la reputación. Ayudamos a identificar esos activos, registrarlos donde corresponde y ordenar su titularidad.",
+    intro: "Hoy buena parte del valor de una empresa es intangible: la marca, el código, los datos, la reputación. Ayudamos a identificar esos activos, registrarlos donde corresponde y dejar en claro de quién son.",
     body: [
       { h: "Proteger antes de escalar", p: "Registrar una marca o clarificar la titularidad del software es más barato y más simple antes de crecer que después de un conflicto. Definimos una estrategia de protección proporcional a la etapa y al plan de la empresa." },
       { h: "Titularidad y cesión de derechos", p: "Fundadores, empleados y proveedores generan activos intelectuales todos los días. Estructuramos las cesiones y licencias para que la empresa sea, sin ambigüedad, dueña de lo que produce." },
@@ -158,7 +158,7 @@ const PRACTICES = [
     short: "Planificación patrimonial, sucesiones y derecho de familia para ordenar el patrimonio y proteger a las próximas generaciones.",
     intro: "Ayudamos a familias y personas con patrimonios relevantes a ordenar hoy lo que de otro modo se resuelve en el peor momento. Planificación, sucesión y familia con confidencialidad y una mirada de décadas, no de trámites.",
     body: [
-      { h: "Planificar en calma, no en crisis", p: "La planificación patrimonial es la diferencia entre decidir con tiempo y criterio, o dejar que la ley y los tiempos judiciales decidan por la familia. Estructuramos la transmisión de bienes, empresas y participaciones cuidando la carga fiscal y la continuidad." },
+      { h: "Planificar en calma, no en crisis", p: "La planificación patrimonial es la diferencia entre decidir con tiempo y criterio y dejar que la ley y los tiempos judiciales decidan por la familia. Estructuramos la transmisión de bienes, empresas y participaciones cuidando la carga fiscal y la continuidad." },
       { h: "Empresa familiar y protocolo", p: "Cuando el patrimonio incluye una empresa, ordenar la relación entre familia, propiedad y gestión es clave para que sobreviva a la siguiente generación. Redactamos protocolos familiares y estructuras de gobierno que separan lo afectivo de lo societario." },
       { h: "Sucesiones y familia", p: "Acompañamos procesos sucesorios y cuestiones de derecho de familia —régimen patrimonial, acuerdos y conflictos— con discreción y con foco en preservar tanto el patrimonio como los vínculos." },
     ],
@@ -441,14 +441,14 @@ function homeBody() {
     <div>
       <p class="eyebrow reveal">Estudio jurídico boutique · ${FIRM.city.split(",")[0]}</p>
       <h1 class="display hero__title reveal" data-d="1">Decisiones complejas.<br><span class="line2">Criterio claro.</span></h1>
-      <p class="lead hero__sub reveal" data-d="2">Acompañamos a empresas, fundadores e inversores —y a las familias que construyen patrimonio— en las decisiones jurídicas que definen su crecimiento y protegen su valor.</p>
+      <p class="lead hero__sub reveal" data-d="2">Asesoramos a empresas, fundadores e inversores —y a las familias que construyen patrimonio— en las decisiones jurídicas que definen su crecimiento y protegen lo que construyeron.</p>
       <div class="hero__actions reveal" data-d="3">
         <a href="${b}areas/index.html" class="btn btn--solid">Áreas de práctica ${ARROW}</a>
         <a href="${b}quienes-somos.html" class="link-arrow">Cómo trabajamos ${ARROW}</a>
       </div>
       <div class="hero__meta reveal" data-d="4">
-        <div><b>Dos ejes</b><span>Empresas &amp; tecnología · Family office</span></div>
-        <div><b>Criterio</b><span>Profundidad jurídica con lógica de negocio</span></div>
+        <div><b>Dos ejes</b><span>Empresas y tecnología · Family office</span></div>
+        <div><b>Criterio</b><span>Profundidad jurídica y lógica de negocio</span></div>
       </div>
     </div>
     <div class="hero__figure reveal" data-d="2">
@@ -498,10 +498,10 @@ function homeBody() {
     </div>
     <div class="reveal" data-d="1">
       <div class="enfoque-list">
-        <div class="enfoque-item"><span class="enfoque-item__n">01</span><div><h3>Entendemos el negocio, no solo el expediente</h3><p>Antes de redactar, preguntamos qué está en juego. El asesoramiento parte de los objetivos comerciales y patrimoniales, no de un formulario.</p></div></div>
+        <div class="enfoque-item"><span class="enfoque-item__n">01</span><div><h3>Entendemos el negocio, no solo el expediente</h3><p>Antes de redactar, preguntamos qué está en juego. Partimos de los objetivos comerciales y patrimoniales, no de un formulario.</p></div></div>
         <div class="enfoque-item"><span class="enfoque-item__n">02</span><div><h3>Anticipamos en lugar de reaccionar</h3><p>Estructuramos hoy lo que evita el conflicto de mañana: acuerdos claros, decisiones documentadas y riesgos repartidos con criterio.</p></div></div>
-        <div class="enfoque-item"><span class="enfoque-item__n">03</span><div><h3>Claridad por sobre la formalidad</h3><p>Explicamos en términos de decisiones, no de tecnicismos. Un cliente que entiende sus opciones decide mejor.</p></div></div>
-        <div class="enfoque-item"><span class="enfoque-item__n">04</span><div><h3>Cerca, con dedicación de socio</h3><p>Al ser un estudio boutique, quien piensa el caso es quien lo lleva. Trato directo, tiempos reales y foco en el resultado.</p></div></div>
+        <div class="enfoque-item"><span class="enfoque-item__n">03</span><div><h3>Claridad antes que formalidad</h3><p>Explicamos en términos de decisiones y consecuencias, no de tecnicismos. Quien entiende sus opciones decide mejor.</p></div></div>
+        <div class="enfoque-item"><span class="enfoque-item__n">04</span><div><h3>Dedicación de socio</h3><p>En un estudio boutique, quien piensa el caso es quien lo lleva. Trato directo, tiempos reales y foco en el resultado.</p></div></div>
       </div>
       <div style="margin-top:38px"><a href="${b}quienes-somos.html" class="btn btn--light">Quiénes somos ${ARROW}</a></div>
     </div>
@@ -651,7 +651,7 @@ function nosotrosBody() {
 <section class="section" style="padding-top:0">
   <div class="container split">
     <div class="reveal">
-      <p class="pull">Entendemos el derecho como una <em>herramienta</em>: sirve para construir organizaciones sólidas y para acompañar decisiones complejas.</p>
+      <p class="pull">Entendemos el derecho como una <em>herramienta</em>: para construir organizaciones sólidas y para acompañar decisiones complejas.</p>
     </div>
     <div class="reveal" data-d="1">
       <p class="lead">No creemos en el asesoramiento que empieza por el artículo del código. Empieza por la pregunta correcta: qué quiere lograr una empresa, qué quiere proteger una familia, qué está realmente en juego en una decisión.</p>
