@@ -883,3 +883,114 @@ pages.forEach(pg => {
   console.log("  ✓", pg.file);
 });
 console.log(`\nBuilt ${count} pages into ${OUT}`);
+
+/* ============================================================
+   Single-file bundle (self-contained, hash-routed)
+   For easy viewing / sharing: firma/preview.html
+   ============================================================ */
+function fileToRoute(file) {
+  if (file === "index.html") return "/";
+  if (file === "areas/index.html") return "/areas";
+  const m = file.match(/^areas\/(.+)\.html$/);
+  if (m) return "/areas/" + m[1];
+  return "/" + file.replace(/\.html$/, "");
+}
+function rewriteLinks(html) {
+  return html.replace(/href="([^"]+\.html)"/g, (m, h) => {
+    const clean = h.replace(/^(\.\.\/)+/, "").replace(/^\.\//, "");
+    return 'href="#' + fileToRoute(clean) + '"';
+  });
+}
+
+const css = fs.readFileSync(path.join(OUT, "assets/css/style.css"), "utf8");
+const navBundle = NAV.map(n => {
+  const r = fileToRoute(n.href);
+  return `<a href="#${r}" class="nav-link" data-route="${r}">${n.label}</a>`;
+}).join("\n        ");
+
+const routesHtml = pages.map(pg => {
+  const route = fileToRoute(pg.file);
+  return `<div class="route" data-route="${route}" data-title="${pg.title.replace(/"/g, "&quot;")}">\n<main>${pg.body}</main>\n</div>`;
+}).join("\n");
+
+const headerFinal = `
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="#/" class="brand" aria-label="${FIRM.name} ${FIRM.sub} — inicio">
+      <span class="brand__name">${FIRM.name}</span>
+      <span class="brand__bar">|</span>
+      <span class="brand__sub">${FIRM.sub}</span>
+    </a>
+    <nav class="nav" aria-label="Principal">
+        ${navBundle}
+        <span class="nav__cta"><a href="#/contacto">Conversemos</a></span>
+    </nav>
+    <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>`;
+const footerBundle = rewriteLinks(footer({ base: "" })).replace(/<script[\s\S]*?<\/script>/g, "");
+
+const bundle = `<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${FIRM.name} ${FIRM.sub} — Estudio jurídico boutique</title>
+<meta name="description" content="Estudio jurídico boutique. Derecho empresarial, tecnología y family office.">
+<meta name="theme-color" content="#14181e">
+<link rel="icon" href="${FAVICON}">
+<style>
+/* System-font stack for offline/self-contained rendering (no webfont CDN). */
+:root { --serif: "Spectral", Georgia, "Iowan Old Style", "Times New Roman", serif; --sans: "Inter", system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+${css}
+/* Bundle: content is shown per-route, no scroll-reveal dependency */
+.reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+.route { display: none; }
+.route.is-active { display: block; }
+</style>
+</head>
+<body>
+${headerFinal}
+<div id="app">
+${routesHtml}
+</div>
+${footerBundle}
+<script>
+(function () {
+  "use strict";
+  var header = document.querySelector(".site-header");
+  var toggle = document.querySelector(".nav-toggle");
+  var body = document.body;
+
+  function onScroll(){ if(!header) return; if(window.scrollY>24) header.classList.add("is-solid"); else header.classList.remove("is-solid"); }
+  window.addEventListener("scroll", onScroll, { passive:true }); onScroll();
+
+  if (toggle) toggle.addEventListener("click", function(){ body.classList.toggle("nav-open"); toggle.setAttribute("aria-expanded", body.classList.contains("nav-open")?"true":"false"); });
+
+  var routes = Array.prototype.slice.call(document.querySelectorAll(".route"));
+  function currentRoute(){ var h=location.hash.replace(/^#/,""); return h || "/"; }
+  function show(route){
+    var found=false;
+    routes.forEach(function(el){
+      var match = el.getAttribute("data-route")===route;
+      el.classList.toggle("is-active", match);
+      if(match){ found=true; document.title=el.getAttribute("data-title"); }
+    });
+    if(!found){ if(routes[0]) routes[0].classList.add("is-active"); route="/"; }
+    document.querySelectorAll(".nav-link").forEach(function(a){
+      a.classList.toggle("is-active", a.getAttribute("data-route")===route);
+    });
+    body.classList.remove("nav-open");
+    window.scrollTo({ top:0, behavior:"auto" });
+  }
+  window.addEventListener("hashchange", function(){ show(currentRoute()); });
+  show(currentRoute());
+
+  var y=document.querySelector("[data-year]"); if(y) y.textContent=new Date().getFullYear();
+})();
+</script>
+</body>
+</html>`;
+
+fs.writeFileSync(path.join(OUT, "preview.html"), bundle);
+console.log("  ✓ preview.html (single-file bundle)");
