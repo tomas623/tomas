@@ -307,6 +307,7 @@ function art(kind, opts) {
    Shared partials
    ============================================================ */
 const ARROW = '<svg class="arw" width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true"><path d="M12 1l5 5-5 5M17 6H0" stroke="currentColor" stroke-width="1.3"/></svg>';
+const WA_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.6 4.7-1.2A10 10 0 1012 2zm5.8 14.2c-.2.7-1.4 1.3-2 1.4-.5.1-1.2.1-1.9-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5.1-4.5-.1-.2-1.2-1.5-1.2-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5-.3.3c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.4.1.6-.1l.8-1c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.1.1.6-.1 1.2z"/></svg>';
 
 const FAVICON = "data:image/svg+xml," + encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='#14181e'/><text x='50' y='72' font-family='Georgia,serif' font-size='64' fill='#fff' text-anchor='middle'>R</text><rect x='30' y='82' width='40' height='3' fill='#4e5836'/></svg>`
@@ -625,7 +626,10 @@ function practiceBody(p) {
           <ul>
         ${aside}
           </ul>
-          <div style="margin-top:26px"><a href="${b}contacto.html" class="link-arrow">Consultar ${ARROW}</a></div>
+          <div style="margin-top:26px;display:flex;flex-direction:column;gap:16px;align-items:flex-start">
+            <a href="${b}contacto.html" class="link-arrow">Consultar ${ARROW}</a>
+            <a class="wa-share" data-wa-share data-wa-msg="Área de ${p.title} · ${FIRM.name} ${FIRM.sub}" href="https://wa.me/" target="_blank" rel="noopener">${WA_ICON} Compartir por WhatsApp</a>
+          </div>
         </div>
       </aside>
     </div>
@@ -979,6 +983,10 @@ ${footerBundle}
     if(!found){ if(routes[0]) routes[0].classList.add("is-active"); route="/"; }
     document.querySelectorAll(".nav-link").forEach(function(a){
       a.classList.toggle("is-active", a.getAttribute("data-route")===route);
+    });
+    document.querySelectorAll("[data-wa-share]").forEach(function(a){
+      var msg=a.getAttribute("data-wa-msg")||document.title;
+      a.href="https://wa.me/?text="+encodeURIComponent(msg+"\\n"+location.href);
     });
     body.classList.remove("nav-open");
     window.scrollTo({ top:0, behavior:"auto" });

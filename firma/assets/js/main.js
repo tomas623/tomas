@@ -45,6 +45,12 @@
     }, 2600);
   }
 
+  /* WhatsApp share: build a wa.me link with this page's title + URL */
+  document.querySelectorAll("[data-wa-share]").forEach(function (a) {
+    var msg = a.getAttribute("data-wa-msg") || document.title;
+    a.href = "https://wa.me/?text=" + encodeURIComponent(msg + "\n" + location.href);
+  });
+
   /* Year in footer */
   var y = document.querySelector("[data-year]");
   if (y) y.textContent = new Date().getFullYear();

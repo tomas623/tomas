@@ -313,6 +313,10 @@ p { margin: 0; }
 .aside-card a:hover { color: var(--accent); }
 .aside-card a.is-current { color: var(--accent); font-weight: 500; }
 
+.wa-share { display: inline-flex; align-items: center; gap: 9px; font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--accent); transition: color .35s var(--ease); }
+.wa-share:hover { color: var(--accent-2); }
+.wa-share svg { flex: none; }
+
 .detail-layout { display: grid; grid-template-columns: 1fr 320px; gap: clamp(40px, 6vw, 90px); align-items: start; }
 @media (max-width: 900px) { .detail-layout { grid-template-columns: 1fr; } .aside-card { position: static; } }
 
