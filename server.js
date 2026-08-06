@@ -1151,6 +1151,14 @@ app.get('/sitemap.xml', (req, res) => {
 app.get('/favicon.ico', (req, res) => {
   res.sendFile(path.join(ROOT_DIR, 'static', 'logo-icon.png'));
 });
+// Alpine.js self-hosteado (mismo dominio) para que Googlebot renderice la
+// landing igual que los usuarios y no dispare falsos flags de "encubrimiento".
+// Se instala vía npm (dependencia alpinejs). La landing tiene fallback al CDN.
+app.get('/static/alpine.js', (req, res) => {
+  res.sendFile(path.join(ROOT_DIR, 'node_modules', 'alpinejs', 'dist', 'cdn.min.js'), (err) => {
+    if (err && !res.headersSent) res.sendStatus(404);
+  });
+});
 app.use('/static', express.static(path.join(ROOT_DIR, 'static')));
 
 // Páginas legales. /terminos, /privacidad y /cookies aliasean a los HTML

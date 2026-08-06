@@ -64,7 +64,9 @@
   <meta name="twitter:description" content="El INPI no devuelve las tasas si rechaza tu marca. Pre-check gratis en 30 segundos.">
   <meta name="twitter:image" content="https://legalpacers.com/static/og-image.png">
 
-  <script defer src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <!-- Alpine self-hosteado (same-origin) para que Google renderice igual que los
+       usuarios. Si el archivo no está, cae al CDN (nunca rompe la landing). -->
+  <script defer src="/static/alpine.js" onerror="var f=document.createElement('script');f.defer=true;f.src='https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js';document.head.appendChild(f);"></script>
 
   <!-- ============================================================
        DATOS ESTRUCTURADOS (JSON-LD) — completá los ⟨placeholders⟩.
