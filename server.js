@@ -52,45 +52,69 @@ mountClienteRoutes(app);
 // bug de "gaseosa" → 35 en lugar de 32).
 const RUBRO_CLASES = [
   // Bebidas
-  { re: /(gaseosa|bebida|agua mineral|jugo|refresco|smoothie|isotonica)/, clases: [32] },
+  // NOTA: el rubro se normaliza SIN acentos ni ñ (á→a, ñ→n) antes de testear,
+  // así que TODOS los patrones van sin acentos y con "n" en vez de "ñ".
+  // Esta tabla debe quedar IGUAL a detectarClases() del buscador (landing).
+  { re: /(gaseosa|bebida|agua mineral|jugo|refresco|smoothie|isotonica|energizante|kombucha)/, clases: [32] },
   { re: /(cerveza|sidra)/,                                                clases: [32] },
-  { re: /(vino|champagne|espumante|licor|whisky|aguardiente|gin|vermut)/, clases: [33] },
-  // Alimentación
-  { re: /(restaurante|delivery|gastronom|comida|catering|food truck|bar\b)/, clases: [43] },
-  { re: /(cafe|café|pasteler|panader|conf?iter|helader|chocolater)/,      clases: [30, 43] },
-  { re: /(carne|fiambre|embutid|pescado|lacte|lácteo|queso|yogur)/,        clases: [29] },
-  { re: /(pan |harina|fideo|pasta|arroz|cereal|galletit|snack|condiment|salsa)/, clases: [30] },
-  { re: /(verdura|hortaliza|fruta|granos|semilla|forraje)/,                clases: [31] },
-  // Indumentaria y accesorios
-  { re: /(ropa|indumentaria|remera|jean|pantalon|moda|vestido|abrig|camis)/, clases: [25, 35] },
-  { re: /(calzado|zapatilla|zapato|botin|sandalia)/,                       clases: [25] },
-  { re: /(joyer|reloj|bijou|accesorio)/,                                   clases: [14] },
-  { re: /(cartera|mochila|valija|marroquin|bolso)/,                        clases: [18] },
-  // Cosmética y salud
-  { re: /(cosmetic|cosmética|skincare|maquillaje|perfume|fragancia|jabon)/, clases: [3, 44] },
-  { re: /(peluquer|barber|estetic|spa|masaje|salon de belleza)/,            clases: [44] },
-  { re: /(medicamento|farmaceut|suplemento|vitamina|salud)/,                clases: [5] },
-  { re: /(clinica|consultorio|odontolog|medico|kinesi|psicolog|terapia)/,   clases: [44] },
-  // Tecnología
-  { re: /(app|software|saas|tecnologi|tecnología|web|sistema|plataforma|aplicacion)/, clases: [9, 42] },
-  { re: /(educacion|educación|curso|capacitacion|colegio|instituto|escuela|talleres)/, clases: [41] },
-  // Comercio y servicios
-  { re: /(tienda online|ecommerce|marketplace|reventa|venta minorista|comercio)/, clases: [35] },
-  { re: /(logistic|transporte|cadeter|distribu|courier|mudanza)/,           clases: [39] },
-  { re: /(inmobiliari|alquiler|hospedaje|hotel|hosteler|hostel|airbnb)/,    clases: [36, 43] },
-  { re: /(financ|finanz|banco|bancari|seguro|inversi|fintech|cripto|contab|impuesto|tributar)/, clases: [36] },
+  { re: /(vino|champagne|espumante|licor|whisky|aguardiente|\bgin\b|vermut|fernet|aperitivo)/, clases: [33] },
+  // Alimentación (servicios y productos)
+  { re: /(restaurante|delivery|gastronom|comida|catering|food truck|\bbar\b|rotiser|vianda|cerveceria)/, clases: [43] },
+  { re: /(cafe|pasteler|panader|conf?iter|helader|chocolater|reposter|bomboner)/, clases: [30, 43] },
+  { re: /(carne|carnicer|fiambre|embutid|pescad|marisco|lacte|queso|yogur|crema de leche|manteca|huevo)/, clases: [29] },
+  { re: /(\bpan\b|harina|fideo|pasta|arroz|cereal|galletit|snack|condiment|salsa|especia|azucar|miel|yerba|infusion)/, clases: [30] },
+  { re: /(verdura|hortaliza|\bfruta|granos|semilla|forraje|planta|\bflor|vivero)/, clases: [31] },
+  // Indumentaria, calzado y accesorios
+  { re: /(ropa|indumentaria|remera|\bjean|pantalon|\bmoda\b|vestido|abrig|camis|lenceria|ropa interior|\bmedias\b|malla|uniforme|sombrero|gorra|cinturon|guante|bufanda|corbata)/, clases: [25, 35] },
+  { re: /(calzado|zapatilla|zapato|botin|sandalia|ojota)/,                 clases: [25] },
+  { re: /(joyer|reloj|bijou|alhaja|anillo|\boro\b|\bplata\b)/,             clases: [14] },
+  { re: /(cartera|mochila|valija|marroquin|bolso|billetera|paraguas)/,     clases: [18] },
+  // Cosmética, higiene y limpieza (productos)
+  { re: /(cosmetic|skincare|maquillaje|perfume|fragancia|\bcrema|serum|locion|protector solar|shampoo|acondicionador|desodorante|esmalte|labial|\brimel|cosmetiquer)/, clases: [3] },
+  { re: /(jabon|detergente|producto de limpieza|lavandina|suavizante|articulos de limpieza)/, clases: [3] },
+  // Belleza y salud (servicios)
+  { re: /(peluquer|barber|estetic|\bspa\b|masaje|salon de belleza|manicur|depilacion|tatuaje|tattoo|maquillador|cosmetolog)/, clases: [44] },
+  { re: /(medicamento|farmaceut|suplemento|vitamina|dietetic|remedio|desinfectante)/, clases: [5] },
+  { re: /(clinica|consultorio|odontolog|medic|kinesi|psicolog|nutricion|terapia|enfermer|fonoaudiolog)/, clases: [44] },
+  // Óptica y tecnología
+  { re: /(anteojo|\blente|optica|\bgafas)/,                                clases: [9, 10] },
+  { re: /(app\b|software|saas|tecnologi|\bweb\b|sistema|plataforma|aplicacion|programacion|hosting)/, clases: [9, 42] },
+  { re: /(electronic|celular|smartphone|notebook|computadora|hardware|gadget|parlante|auricular)/, clases: [9] },
+  { re: /(educacion|curso|capacitacion|colegio|instituto|escuela|taller de|academia|coaching|jardin de infantes)/, clases: [41] },
+  // Comercio, marketing y servicios
+  { re: /(tienda online|ecommerce|e-commerce|marketplace|reventa|venta minorista|comercio|kiosco|kiosko|almacen|distribuidora|mayorista|dietetica)/, clases: [35] },
+  { re: /(publicidad|marketing|community manager|redes sociales|branding|diseno grafico|agencia de)/, clases: [35] },
+  { re: /(logistic|transporte|cadeter|distribu|courier|mudanza|\bflete|encomienda)/, clases: [39] },
+  { re: /(inmobiliari|alquiler|hospedaje|hotel|hosteler|hostel|airbnb|cabana|posada)/, clases: [36, 43] },
+  { re: /(financ|finanz|banco|bancari|seguro|inversi|fintech|cripto|contab|impuesto|tributar|prestamo|casa de cambio)/, clases: [36] },
   { re: /(comercio exterior|comex|aduan|import|export|despachante)/,        clases: [35] },
-  { re: /(construc|albañiler|reforma|pintur)/,                              clases: [37] },
-  // Industria y materiales
-  { re: /(automotor|auto |moto |vehiculo|bici|repuestos)/,                  clases: [12] },
-  { re: /(juguet|juego de mesa|peluche)/,                                   clases: [28] },
-  { re: /(libro|editorial|revista|imprenta)/,                               clases: [16] },
-  { re: /(mueble|colchon|decoracion|hogar)/,                                clases: [20] },
-  { re: /(mascota|petshop|veterinari|alimento balanceado)/,                 clases: [31, 44] },
+  { re: /(construc|albanil|reforma|plomer|electricista|herrer|refaccion|obra en construccion)/, clases: [37] },
+  { re: /(servicio de limpieza|limpieza de|lavadero|tintoreria|fumigacion)/, clases: [37] },
+  { re: /(jardiner|paisajismo|vivero de plantas|horticultura)/,             clases: [44] },
+  { re: /(seguridad|vigilancia|alarma|custodia|cerrajer)/,                  clases: [45] },
+  { re: /(abogad|estudio juridico|\blegal|escriban|notari)/,               clases: [45] },
+  { re: /(evento|fiesta|casamiento|salon de fiesta|\bdj\b|productora|espectaculo|catering de)/, clases: [41] },
+  { re: /(gimnasio|\bgym\b|fitness|entrenamiento|crossfit|\byoga\b|pilates|deporte|club deportivo)/, clases: [41] },
+  { re: /(fotografia|fotograf|filmacion|audiovisual|productora de video)/,  clases: [41] },
+  { re: /(turismo|agencia de viajes|excursion|\bviaje)/,                    clases: [39, 43] },
+  { re: /(telecomunicac|telefonia|proveedor de internet|streaming)/,        clases: [38] },
+  // Industria, materiales y hogar
+  { re: /(automotor|\bauto\b|\bmoto\b|vehiculo|\bbici|bicicleta|repuesto|neumatico|autoparte|lubricante)/, clases: [12] },
+  { re: /(herramient|ferreteria|maquinaria|\bmaquina)/,                     clases: [7, 8] },
+  { re: /(juguet|juego de mesa|peluche|\bhobby)/,                           clases: [28] },
+  { re: /(instrumento[s]? musical|guitarra|\bpiano\b|\bbateria\b|violin|teclado musical)/, clases: [15] },
+  { re: /(libro|editorial|revista|imprenta|papeler|cuaderno|libreria)/,     clases: [16] },
+  { re: /(mueble|colchon|decoracion|\bhogar|\bbazar|vajilla|utensilio|menaje|\bdeco\b)/, clases: [20, 21] },
+  { re: /(\bvela|aromatizante|sahumerio|difusor de aroma)/,                 clases: [4] },
+  { re: /(\btela\b|textil|sabana|\btoalla|manta|ropa de cama|manteler|cortina|blanqueria)/, clases: [24] },
+  { re: /(alfombra|\btapiz|revestimiento de piso)/,                         clases: [27] },
+  { re: /(pintura|\bbarniz|esmalte para|laca\b)/,                           clases: [2] },
+  { re: /(cigarr|tabaco|vaper|vapeador|cigarrillo electr)/,                 clases: [34] },
+  { re: /(mascota|petshop|pet shop|veterinari|alimento balanceado)/,        clases: [31, 44] },
   // Genérico al final: solo cae acá si ninguna regla de rubro específico matcheó
   // (ej "consultoría en finanzas" matchea finanzas → 36 antes que esto). Clase 35
   // (gestión de negocios) es el default razonable para consultoría/asesoría a secas.
-  { re: /(consultor|asesor|servicio profesional|gestor)/,                   clases: [35] },
+  { re: /(consultor|asesor|servicio profesional|gestor|coworking)/,         clases: [35] },
 ];
 
 function detectarClasesPorRubro(rubro) {
