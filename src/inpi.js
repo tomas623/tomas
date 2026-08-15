@@ -99,7 +99,9 @@ function buscarPalabraEmbebida(marca, clases) {
   if (palabra.length < 3) return [];
 
   // Patrones: la palabra al inicio, al final, en el medio, o sola. Insensitive.
-  const upper = palabra.toUpperCase();
+  // Sin tildes: en la base las denominaciones están sin acentos, así que
+  // normalizamos la palabra buscada para que "yeshúa" matchee igual que "yeshua".
+  const upper = palabra.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
   const conds = [];
   const params = [];
 
