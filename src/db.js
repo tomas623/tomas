@@ -428,6 +428,18 @@ for (const [col, ddl] of [
   if (!columnExists('marcas_vigiladas', col)) db.exec(ddl);
 }
 
+// ===== Caché de clasificación de rubro → clase Niza por IA =====
+// Cuando la tabla de reglas no reconoce un rubro, se consulta a Gemini y se
+// guarda acá para no volver a pagar/esperar por el mismo rubro.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS rubro_clase_cache (
+    rubro_norm TEXT PRIMARY KEY,
+    clases TEXT NOT NULL,
+    fuente TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
 // ===== Bot de WhatsApp: contactos + historial de mensajes =====
 db.exec(`
   CREATE TABLE IF NOT EXISTS wa_contactos (

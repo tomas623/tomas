@@ -6,6 +6,7 @@ const express = require('express');
 const db = require('./src/db');
 const audit = require('./src/audit');
 const { buscarEnINPI, listaCorta, buscarPalabraEmbebida, enmascararActa, enmascararDenominacion } = require('./src/inpi');
+const { clasificarRubroIA } = require('./src/matching/clasificar-ia');
 const { crearPreferencia, obtenerPago } = require('./src/pagos');
 const { mountAuthRoutes } = require('./src/auth');
 const { mountAdminRoutes } = require('./src/admin');
@@ -156,23 +157,34 @@ app.get('/api/marca/precio-informe', (req, res) => {
 });
 
 // ===== 2.2 Pre-check gratis =====
-app.post('/api/marca/check', (req, res) => {
+app.post('/api/marca/check', async (req, res) => {
   const { marca, clases, rubro } = req.body || {};
   if (!marca || !String(marca).trim()) {
     return res.status(400).json(fail('Falta la marca a chequear'));
   }
 
-  const clasesUsuario = Array.isArray(clases) ? clases.filter(Number.isFinite) : [];
+  let clasesUsuario = Array.isArray(clases) ? clases.filter(Number.isFinite) : [];
+  const rubroIngresado = !!(rubro && String(rubro).trim());
+
+  // Si el frontend no reconoció el rubro (mandó clases vacías), lo derivamos acá:
+  // primero la tabla de reglas del server; si tampoco, fallback a IA (cacheado).
+  if (!clasesUsuario.length && rubroIngresado) {
+    const dt = detectarClasesPorRubro(rubro);
+    if (dt.length) clasesUsuario = dt;
+    else {
+      try { const ia = await clasificarRubroIA(rubro); if (ia.length) clasesUsuario = ia; }
+      catch (e) { console.error('[check] clasificarRubroIA:', e.message); }
+    }
+  }
   const clasesSugeridas = detectarClasesPorRubro(rubro);
 
-  // Búsqueda en las clases que pidió el frontend (las "sugeridas").
+  // Búsqueda en las clases del rubro (usuario / tabla / IA).
   const hitsClase = buscarEnINPI(marca, clasesUsuario);
-  // Búsqueda global (cualquier clase) para detectar coincidencias fuera de las clases buscadas.
+  // Búsqueda global (cualquier clase) para detectar coincidencias fuera de esas clases.
   const hitsTodos = buscarEnINPI(marca, null);
 
-  const rubroConocido = !!rubro && rubroEsConocido(rubro);
-  const rubroIngresado = !!(rubro && String(rubro).trim());
-  const clasesNoMatchean = rubroIngresado && !rubroConocido;
+  // Si aun con la IA no pudimos determinar ninguna clase, no damos un "LIBRE" honesto.
+  const clasesNoMatchean = rubroIngresado && !clasesUsuario.length;
 
   // Búsqueda complementaria: la palabra consultada dentro de denominaciones
   // compuestas, en las clases del usuario. Atrapa los casos como "CORE" vs
