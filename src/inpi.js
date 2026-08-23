@@ -20,6 +20,33 @@ const { matching, normalizar } = require('./matching/etapa1');
 //
 // Resultado típico: pre-check global pasó de ~8700ms a <100ms.
 
+// Primeras letras ORTOGRÁFICAS que pueden sonar igual al inicio, para que el
+// prefiltro traiga variantes fonéticas (baca/vaca, casa/kasa, yerba/hierba, etc.)
+// aunque empiecen con otra letra. Sin esto, el prefiltro agresivo filtraba por
+// primer char exacto y se perdían justamente esas.
+const GRUPOS_INICIAL = {
+  b: ['b', 'v'], v: ['b', 'v'],
+  c: ['c', 'k', 'q', 's', 'z'], k: ['c', 'k', 'q'], q: ['c', 'k', 'q'],
+  s: ['s', 'c', 'z'], z: ['s', 'c', 'z'],
+  g: ['g', 'j'], j: ['g', 'j'],
+  y: ['y', 'i', 'l', 'h'], i: ['i', 'y', 'h'], l: ['l', 'y'],
+};
+function inicialesFoneticas(denomNorm) {
+  const out = new Set();
+  const c = denomNorm[0];
+  out.add(c);
+  (GRUPOS_INICIAL[c] || []).forEach(x => out.add(x));
+  // Vocal inicial → puede haber una 'h' muda adelante (ache/hache).
+  if ('aeiou'.includes(c)) out.add('h');
+  // Inicial 'h' muda → la que suena es la 2da letra; sumamos su grupo también.
+  if (c === 'h' && denomNorm[1]) {
+    const c1 = denomNorm[1];
+    out.add(c1);
+    (GRUPOS_INICIAL[c1] || []).forEach(x => out.add(x));
+  }
+  return [...out];
+}
+
 function cargarUniverso(clases, denomNorm, opts = {}) {
   const conds = [];
   const params = [];
@@ -31,7 +58,6 @@ function cargarUniverso(clases, denomNorm, opts = {}) {
   }
 
   if (denomNorm && denomNorm.length >= 2) {
-    const primerChar = denomNorm[0];
     const len = denomNorm.length;
     const aggressive = opts.aggressive !== false;
     // Tolerancia de longitud: ±2 para minScore alto, ±4 para fonético amplio.
@@ -40,15 +66,16 @@ function cargarUniverso(clases, denomNorm, opts = {}) {
     const lenMax = len + lenDelta;
 
     if (aggressive) {
-      // Match exacto OR (primer char + longitud ±2)
+      // Match exacto OR (primer char fonéticamente equivalente + longitud ±2).
+      const iniciales = inicialesFoneticas(denomNorm);
       conds.push(`(
         denominacion_norm = ?
         OR (
-          substr(denominacion_norm, 1, 1) = ?
+          substr(denominacion_norm, 1, 1) IN (${iniciales.map(() => '?').join(',')})
           AND length(denominacion_norm) BETWEEN ? AND ?
         )
       )`);
-      params.push(denomNorm, primerChar, lenMin, lenMax);
+      params.push(denomNorm, ...iniciales, lenMin, lenMax);
     } else {
       // Modo fonético-friendly: solo longitud (no filtramos por primer char
       // porque rompe Cielo/Sielo, Yamada/Llamada).
