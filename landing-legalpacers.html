@@ -337,6 +337,7 @@
     /* RESULT CARD */
     .result-card{margin-top:22px;padding:24px;border-radius:14px;background:var(--surface);border:1px solid var(--border-soft)}
     .result-card.good{background:linear-gradient(180deg,rgba(16,185,129,.08),var(--surface));border-color:rgba(16,185,129,.4)}
+    .result-card.warn{background:linear-gradient(180deg,rgba(245,158,11,.10),var(--surface));border-color:rgba(245,158,11,.45)}
     .result-card.bad{background:linear-gradient(180deg,rgba(239,68,68,.1),var(--surface));border-color:rgba(239,68,68,.4)}
     .verdict-icon{font-size:34px;margin-bottom:8px}
     .verdict-title{font-size:21px;font-weight:800;margin-bottom:8px}
@@ -629,9 +630,9 @@
       <p class="micro" style="font-size:12px; color:var(--text-dim); margin-top:10px">Búsqueda directa de coincidencias exactas en bases de datos de propiedad intelectual</p>
 
       <template x-if="resultado">
-        <div class="result-card" :class="{good: resultado.veredicto==='probablemente_disponible', bad: resultado.veredicto==='no_disponible' || resultado.veredicto==='necesita_analisis'}">
-          <div class="verdict-icon" x-text="resultado.veredicto==='probablemente_disponible' ? '🟢' : '🔴'"></div>
-          <div class="verdict-title" x-text="resultado.veredicto==='probablemente_disponible' ? 'Coincidencias exactas: LIBRE' : 'Conflicto detectado en la base de datos' "></div>
+        <div class="result-card" :class="{good: resultado.veredicto==='probablemente_disponible', warn: resultado.veredicto==='necesita_analisis', bad: resultado.veredicto==='no_disponible'}">
+          <div class="verdict-icon" x-text="resultado.veredicto==='probablemente_disponible' ? '🟢' : (resultado.veredicto==='necesita_analisis' ? '🟡' : '🔴')"></div>
+          <div class="verdict-title" x-text="resultado.veredicto==='probablemente_disponible' ? 'Sin coincidencias exactas: LIBRE' : (resultado.veredicto==='necesita_analisis' ? 'Requiere análisis profesional' : 'Conflicto detectado en la base de datos')"></div>
           <div class="verdict-msg" x-html="resultado.mensaje"></div>
 
           <template x-if="resultado.veredicto==='no_disponible' && colisionPrincipal">
