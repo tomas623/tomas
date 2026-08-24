@@ -353,6 +353,15 @@
     @media(min-width:721px){.sticky-cta{display:none!important}}
     /* En mobile, cuando aparece el bar, ocultamos el FAB de WhatsApp para no duplicar. */
     @media(max-width:720px){body.cta-fija .wa-fab-mini{display:none}}
+    /* Skeleton de carga del chequeo (shimmer) */
+    .check-skeleton{margin-top:22px;padding:20px;border-radius:14px;background:var(--surface);border:1px solid var(--border-soft)}
+    .check-skeleton .sk-line,.check-skeleton .sk-row{border-radius:8px;
+      background:linear-gradient(90deg,var(--bg-soft) 25%,rgba(255,255,255,.07) 37%,var(--bg-soft) 63%);
+      background-size:400% 100%;animation:sk 1.3s ease infinite}
+    .check-skeleton .sk-line{height:15px;margin-bottom:16px}
+    .check-skeleton .sk-row{height:40px;margin-bottom:10px}
+    .check-skeleton .sk-cap{font-size:12.5px;color:var(--text-dim);margin-top:6px;text-align:center}
+    @keyframes sk{0%{background-position:100% 0}100%{background-position:0 0}}
 
     .colision-box{
       margin-top:18px;background:linear-gradient(180deg,rgba(239,68,68,.15),rgba(239,68,68,.04));
@@ -634,14 +643,22 @@
         </template>
       </div>
 
-      <button class="btn btn-primary" @click="buscar()" :disabled="cargando">
+      <button class="btn btn-primary" @click="buscar()" :disabled="cargando || !form.marca.trim()">
         <span x-show="!cargando">Chequear marca gratis →</span>
         <span x-show="cargando" x-cloak>Cruzando registros de marca en tiempo real…</span>
       </button>
       <div x-show="searchError" x-cloak class="search-error" x-text="searchError"></div>
       <p class="micro" style="font-size:12px; color:var(--text-dim); margin-top:10px">Búsqueda directa de coincidencias exactas en bases de datos de propiedad intelectual</p>
 
-      <template x-if="resultado">
+      <div x-show="cargando" x-cloak class="check-skeleton">
+        <div class="sk-line" style="width:55%"></div>
+        <div class="sk-row"></div>
+        <div class="sk-row" style="width:92%"></div>
+        <div class="sk-row" style="width:80%"></div>
+        <div class="sk-cap">Cruzando registros del INPI en tiempo real…</div>
+      </div>
+
+      <template x-if="resultado && !cargando">
         <div class="result-card" :class="{good: resultado.veredicto==='probablemente_disponible', warn: resultado.veredicto==='necesita_analisis', bad: resultado.veredicto==='no_disponible'}">
           <div class="verdict-icon" x-text="resultado.veredicto==='probablemente_disponible' ? '🟢' : (resultado.veredicto==='necesita_analisis' ? '🟡' : '🔴')"></div>
           <div class="verdict-title" x-text="resultado.veredicto==='probablemente_disponible' ? 'Sin coincidencias exactas: LIBRE' : (resultado.veredicto==='necesita_analisis' ? 'Requiere análisis profesional' : 'Conflicto detectado en la base de datos')"></div>
@@ -1723,6 +1740,15 @@ function landing() {
     ]
   };
 }
+
+// Foco automático en el campo de marca al cargar — solo desktop con mouse
+// (en mobile abriría el teclado y taparía contenido).
+(function () {
+  if (window.matchMedia('(min-width:721px) and (pointer:fine)').matches) {
+    const el = document.getElementById('marca');
+    if (el) setTimeout(() => el.focus({ preventScroll: true }), 300);
+  }
+})();
 
 // CTA fijo mobile: mostrar cuando el buscador quedó por encima del viewport.
 (function () {
