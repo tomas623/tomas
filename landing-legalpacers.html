@@ -298,6 +298,15 @@
       background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(27,110,243,.15), transparent 70%), var(--bg);
     }
     .hero-inner{max-width:980px;margin:0 auto;text-align:center}
+    /* Entrada animada del héroe (aparece con un fade-up escalonado) */
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+    .hero-inner > *{animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both}
+    .hero-inner > *:nth-child(1){animation-delay:.04s}
+    .hero-inner > *:nth-child(2){animation-delay:.10s}
+    .hero-inner > *:nth-child(3){animation-delay:.16s}
+    .hero-inner > *:nth-child(4){animation-delay:.22s}
+    .hero-inner > *:nth-child(5){animation-delay:.28s}
+    @media(prefers-reduced-motion:reduce){.hero-inner > *{animation:none}}
     .eyebrow{display:inline-flex;align-items:center;gap:8px;background:var(--blue-soft);
              color:#60a5fa;border:1px solid rgba(27,110,243,.35);padding:7px 14px;border-radius:99px;
              font-size:12.5px;font-weight:600;margin-bottom:22px}
@@ -813,7 +822,7 @@
       <div class="plan featured">
         <span class="plan-step">Etapa 2 · Registrar</span>
         <h3>Inicio del registro</h3>
-        <div class="plan-price">$120.000<small>Honorarios · incluye la marca en 1 clase. Cada clase adicional: $30.000. + Tasa oficial del INPI por clase a precio de costo (~$40.000 = 100 UMAPI, se actualiza por IPC cada mes).</small></div>
+        <div class="plan-price">$120.000<small>Honorarios · incluye 1 clase. +$30.000 por clase extra. Tasa del INPI aparte, a precio de costo.</small></div>
         <p class="plan-desc">Tramitación legal llave en mano firmada por un Agente de la Propiedad Industrial matriculado.</p>
         <div class="plan-ideal"><strong>Ideal si…</strong>Ya decidiste tu marca y querés presentarla ante el INPI sin pelearte con burocracia.</div>
         <ul>
