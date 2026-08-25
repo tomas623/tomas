@@ -719,7 +719,7 @@
                 Acta <span x-text="colisionPrincipal.acta || '—'"></span> · Titular: <span x-text="colisionPrincipal.titular || '—'"></span> · Clase <span x-text="colisionPrincipal.clase || '—'"></span> · Registro Vigente
               </div>
               <div class="colision-warn">
-                <strong>Riesgo de rechazo inminente.</strong> Presentar este nombre idéntico causará que el Registro Nacional deniegue el trámite de oficio. Te sugerimos realizar una auditoría profunda para estructurar variantes viables.
+                <strong>Riesgo de rechazo inminente.</strong> Presentar este nombre idéntico causará que el Registro Nacional deniegue el trámite de oficio. Te sugerimos una auditoría profesional para evaluar el riesgo real y decidir cómo avanzar antes de presentar.
               </div>
             </div>
           </template>
@@ -757,14 +757,14 @@
                 <div style="height:6px;border-radius:99px;background:var(--surface);overflow:hidden">
                   <div :style="`width:${Math.min(100, resultado.tease.riesgo_estimado)}%; height:100%; background:${colorRiesgo(resultado.tease.riesgo_estimado)}`"></div>
                 </div>
-                <p style="margin-top:8px;font-size:11.5px">El informe completo confirma si estos parecidos son un riesgo real frente al INPI y propone variantes viables si lo son.</p>
+                <p style="margin-top:8px;font-size:11.5px">El informe completo confirma si estos parecidos son un riesgo real frente al INPI y qué tan viable es presentar tu marca.</p>
               </div>
             </template>
           </div>
 
           <div class="garantia-pill">
             <span class="g-ico">🛡️</span>
-            <span><strong>Garantía preventiva:</strong> si el informe da riesgo ALTO, te hacemos el informe de otra variante de nombre <strong>100% gratis</strong>.</span>
+            <span><strong>Garantía preventiva:</strong> si el informe da riesgo ALTO, te hacemos el informe de otro nombre que elijas <strong>100% gratis</strong>.</span>
           </div>
 
           <!-- Dos caminos claros según lo que necesita la persona -->
@@ -779,7 +779,7 @@
                 <li>Cruce fonético, visual y conceptual contra la base del INPI</li>
                 <li>Choque con marcas notorias y leyes especiales</li>
                 <li>Nivel de riesgo real + viabilidad estimada</li>
-                <li>Dictamen del Agente + variantes viables si hay conflicto</li>
+                <li>Dictamen del Agente con recomendación de cómo avanzar</li>
                 <li>Dominios y redes disponibles para tu marca</li>
               </ul>
               <button class="btn btn-primary" @click="openInforme()" style="width:100%;padding:13px">Pedir informe completo →</button>
@@ -825,9 +825,9 @@
 
 <section id="informe-preview" style="background:var(--bg-soft)">
   <div class="container">
-    <div class="section-eyebrow">Lo que recibís</div>
+    <div class="section-eyebrow">Etapa 1 · el paso previo al registro</div>
     <h2 class="section-title">Así se ve tu informe de viabilidad</h2>
-    <p class="section-sub">Un análisis profesional, no un semáforo automático. Lo firma un Agente de la Propiedad Industrial matriculado y lo tenés en 24 h hábiles.</p>
+    <p class="section-sub">Es el filtro <em>antes</em> de registrar: un análisis profesional que te dice si tu marca es viable, para no gastar de más. Lo firma un Agente matriculado y lo tenés en 24 h. Y si avanzás, te acompañamos en todo el resto: registro, protección y renovación <span style="color:var(--text-dim)">(su valor se descuenta del registro)</span>.</p>
 
     <div class="informe-showcase">
       <div class="doc-mock" aria-hidden="true">
@@ -847,10 +847,10 @@
         </div>
         <div class="doc-dictamen">
           <div class="doc-dictamen-h">Dictamen del Agente</div>
-          <div class="doc-blur">La denominación presenta baja probabilidad de rechazo en la clase solicitada. Se recomienda avanzar con la presentación contemplando las variantes propuestas para reforzar…</div>
+          <div class="doc-blur">La denominación presenta baja probabilidad de rechazo en la clase solicitada. Se recomienda avanzar con la presentación, teniendo en cuenta la marca notoria detectada y el nivel de riesgo indicado…</div>
         </div>
         <div class="doc-foot">
-          <div class="doc-variants">Variantes viables: <b>FOCCA</b> · <b>FOKKA</b> · <b>FOCCA GO</b></div>
+          <div class="doc-variants">Conclusión: <b>viable para presentar</b> en Clase 25 · revisar 1 notoria</div>
           <div class="doc-sign">Agente P.I. · Mat. 3457</div>
         </div>
       </div>
@@ -859,7 +859,7 @@
         <ul>
           <li><span class="fi-ic">✓</span> <span><b>Riesgo real de rechazo</b> — cruce fonético, visual y conceptual contra la base del INPI.</span></li>
           <li><span class="fi-ic">✓</span> <span><b>Marcas notorias y leyes especiales</b> que un examinador podría oponer.</span></li>
-          <li><span class="fi-ic">✓</span> <span><b>Dictamen del Agente matriculado</b> + variantes viables si hay conflicto.</span></li>
+          <li><span class="fi-ic">✓</span> <span><b>Dictamen del Agente matriculado</b> con una recomendación clara de cómo avanzar.</span></li>
           <li><span class="fi-ic">✓</span> <span><b>Dominios y redes</b> disponibles para tu marca.</span></li>
         </ul>
         <button @click="openInforme()" class="btn btn-primary" style="padding:14px 24px">Pedir mi informe →</button>
