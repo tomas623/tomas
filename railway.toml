@@ -1,23 +1,25 @@
 # Railway deployment config — https://docs.railway.app/reference/config-as-code
+#
+# IMPORTANTE: Railway lee este archivo SIEMPRE desde la raíz del repositorio,
+# aunque el "Root Directory" del servicio apunte a una subcarpeta.
+# En ESTA rama (claude/generarsi-railway-deploy-oppox4) la config arma el
+# backend de GenerarSí (Python/Flask), que vive en la subcarpeta
+# generarsi-backend/. El "Root Directory" del servicio en Railway debe estar
+# seteado en: generarsi-backend
+#
+# El proyecto Legal Pacers (Node) se despliega desde OTRA rama con su propia
+# config. NO fusionar esta rama con la principal: pisaría esa config.
 
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+builder = "NIXPACKS"
 
 [deploy]
-startCommand = "node server.js"
-healthcheckPath = "/api/health"
+startCommand = "gunicorn app:app --bind 0.0.0.0:$PORT"
+healthcheckPath = "/"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 
-# Volumen persistente: Railway monta el disk en /app/data por convención.
-# Setear en el dashboard: Service → Volumes → New Volume → mount /app/data.
-# Variables obligatorias en Railway → Service → Variables:
-#   BASE_URL=https://<tu-dominio>
-#   SESSION_SECRET=<32+ caracteres random>
-#   SEED_ADMIN_EMAIL=<tu mail>
-#   SEED_ADMIN_PASSWORD=<password fuerte>
-#   ADMIN_TOKEN=<token random para crear operadores>
-#   MP_ACCESS_TOKEN=<token productivo Mercado Pago>
-#   PYTHON_DB_PATH=                   # vacío si no usás el puente Python
+# La clave de Gemini se carga en Railway → Service → Variables:
+#   GEMINI_API_KEY=<tu clave>
+# NUNCA se escribe en el código ni se sube a git.
