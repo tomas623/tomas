@@ -1,0 +1,14 @@
+# Secretos — NUNCA subir claves
+.env
+*.key
+secrets.*
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Sistema
+.DS_Store
+Thumbs.db
