@@ -168,8 +168,10 @@ async function enviarMensaje(texto){
             agregarBurbuja("asistente", data.respuesta.trim());
             conversacion.push({quien:"asistente", texto:data.respuesta.trim()});
         } else {
-            agregarBurbuja("asistente",
-                "Uf, algo se me trabó de este lado. Probá de nuevo en un ratito. Si es urgente, podés llamar al 147 (24 hs) o entrar a sanisidro.gob.ar.");
+            let msg = "Uf, algo se me trabó de este lado. Probá de nuevo en un ratito.";
+            // Modo diagnóstico: mostramos el detalle técnico para poder arreglarlo.
+            if (data && data.error){ msg += "\n\n(Detalle técnico: " + data.error + ")"; }
+            agregarBurbuja("asistente", msg);
         }
     } catch (e){
         sacarEscribiendo();

@@ -1,17 +1,24 @@
 """
-GenerarSí — Backend mínimo (Etapa 1)
-------------------------------------
-Un servidor chiquito que recibe un mensaje del vecino, se lo pasa a Gemini
-con las instrucciones del asistente, y devuelve la respuesta.
+GenerarSí — Backend (Etapa 1)
+-----------------------------
+Un servidor chiquito que recibe un mensaje del vecino, se lo pasa a la IA de
+Google (Gemini) con las instrucciones del copiloto, y devuelve la respuesta.
 
 NO guarda nada todavía (eso es la Etapa 2).
 La clave de Gemini se lee de una variable de entorno — NUNCA va escrita acá.
 """
 
 import os
-import google.generativeai as genai
+import logging
+
+from google import genai
+from google.genai import types
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+
+# --- Registros (para ver qué pasa en los logs de Railway) ---
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger("generarsi")
 
 # --- Configuración ---
 app = Flask(__name__)
@@ -19,8 +26,17 @@ CORS(app)  # permite que tu página web (en otro dominio) le hable a este servid
 
 # La clave se lee del entorno de Railway. Si no está, avisa con claridad.
 API_KEY = os.environ.get("GEMINI_API_KEY")
-if API_KEY:
-    genai.configure(api_key=API_KEY)
+cliente = genai.Client(api_key=API_KEY) if API_KEY else None
+
+# Modelos a intentar, en orden, hasta que uno funcione. Los nombres de Gemini
+# cambian con el tiempo; probamos varios para no depender de uno solo.
+# Se puede forzar uno concreto con la variable de entorno GEMINI_MODEL.
+_modelo_fijo = os.environ.get("GEMINI_MODEL")
+MODELOS = ([_modelo_fijo] if _modelo_fijo else []) + [
+    "gemini-flash-latest",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+]
 
 # Instrucciones del asistente: quién es y cómo se comporta.
 SISTEMA = """
@@ -74,32 +90,44 @@ primer paso bien dado y con una propuesta sólida. Cerrás siempre con aliento,
 sin exagerar.
 """
 
+
 @app.route("/")
 def home():
     # Ruta de prueba: si entrás a la URL en el navegador, ves esto.
     estado = "con clave" if API_KEY else "SIN CLAVE (falta configurar GEMINI_API_KEY)"
     return f"GenerarSí backend andando ✔ ({estado})"
 
+
 @app.route("/chat", methods=["POST"])
 def chat():
-    if not API_KEY:
+    if not cliente:
         return jsonify({"ok": False, "error": "Falta configurar la clave de Gemini."}), 500
 
-    try:
-        datos = request.get_json(force=True)
-        mensaje = (datos or {}).get("mensaje", "").strip()
-        if not mensaje:
-            return jsonify({"ok": False, "error": "No llegó ningún mensaje."}), 400
+    datos = request.get_json(force=True, silent=True) or {}
+    mensaje = (datos.get("mensaje") or "").strip()
+    if not mensaje:
+        return jsonify({"ok": False, "error": "No llegó ningún mensaje."}), 400
 
-        modelo = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=SISTEMA,
-        )
-        respuesta = modelo.generate_content(mensaje)
-        return jsonify({"ok": True, "respuesta": respuesta.text})
+    ultimo_error = None
+    for modelo in MODELOS:
+        try:
+            respuesta = cliente.models.generate_content(
+                model=modelo,
+                contents=mensaje,
+                config=types.GenerateContentConfig(system_instruction=SISTEMA),
+            )
+            texto = (respuesta.text or "").strip()
+            if texto:
+                return jsonify({"ok": True, "respuesta": texto, "modelo": modelo})
+            ultimo_error = f"El modelo {modelo} devolvió una respuesta vacía."
+            log.warning(ultimo_error)
+        except Exception as e:  # noqa: BLE001 — queremos capturar cualquier error de la IA
+            ultimo_error = f"{modelo}: {e}"
+            log.warning("Fallo con el modelo %s: %s", modelo, e)
 
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+    log.error("Ningún modelo funcionó. Último error: %s", ultimo_error)
+    return jsonify({"ok": False, "error": ultimo_error or "No se pudo generar la respuesta."}), 500
+
 
 if __name__ == "__main__":
     # Railway define el puerto en la variable PORT.
