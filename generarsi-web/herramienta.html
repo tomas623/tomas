@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GenerarSí — Contá lo tuyo</title>
+<title>GenerarSí — Armá tu propuesta para el barrio</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,12 +51,13 @@
 <!-- PRESENTACIÓN -->
 <section class="max-w-[900px] w-full mx-auto px-5 sm:px-8 pt-10 pb-6">
     <h1 class="mega text-4xl sm:text-6xl mb-4">
-        Contá lo tuyo. Lo convertimos en algo que se presenta.
+        Vos conocés tu barrio. Armemos la propuesta para mejorarlo.
     </h1>
     <p class="text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-2xl font-light">
-        ¿Algo no anda en tu barrio? ¿Tenés una idea para tu cuadra, tu plaza, tu ciudad?
-        Escribilo como te salga. Te ayudo a ordenarlo en un <span class="sub-si">reclamo</span>
-        o una <span class="sub-si">propuesta</span> lista para presentar. Sin vueltas y sin conocer a nadie.
+        ¿Hay algo que cambiarías de tu cuadra, tu plaza, tu ciudad? Contámelo como te salga.
+        Te acompaño paso a paso a convertir esa idea en una <span class="sub-si">propuesta concreta</span>
+        —con su presupuesto y su normativa— lista para presentar en el Concejo o una junta vecinal.
+        Vos ponés el barrio; yo, el método.
     </p>
 </section>
 
@@ -73,7 +74,7 @@
 <div class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-neutral-200">
     <div class="max-w-[900px] mx-auto px-5 sm:px-8 py-4">
         <form id="form" class="flex items-end gap-3">
-            <textarea id="entrada" rows="1" placeholder="Ej: En Beccar hay una vereda rota hace meses y un cochecito no puede pasar…"
+            <textarea id="entrada" rows="1" placeholder="Ej: Me gustaría que la plaza de Beccar tenga juegos y buena luz para que los chicos puedan ir a la tarde…"
                 class="flex-1 border-2 border-neutral-200 focus:border-neutral-800 focus:outline-none rounded-2xl px-4 py-3 text-base sm:text-lg"></textarea>
             <button id="enviar" type="submit"
                 class="shrink-0 display text-lg italic px-5 py-3 rounded-2xl text-tinta"
@@ -205,7 +206,7 @@ form.addEventListener("submit", (e)=>{
 // Saludo inicial del asistente.
 window.addEventListener("DOMContentLoaded", ()=>{
     agregarBurbuja("asistente",
-        "¡Hola! Soy el asistente de GenerarSí. Contame qué te pasa en tu barrio o qué idea tenés, con tus palabras. Yo te ayudo a darle forma para que lo puedas presentar. ¿Qué querés contarme?");
+        "¡Hola! Soy el copiloto de GenerarSí. Esto no es un buzón de quejas: te ayudo a convertir eso que te gustaría mejorar de tu barrio en una propuesta concreta y presentable. Contame: ¿qué te gustaría cambiar o mejorar?");
     entrada.focus();
 });
 </script>
