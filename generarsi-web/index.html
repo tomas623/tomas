@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generación Sí</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    :root{ --amarillo:#FFE000; --magenta:#FF3D8B; --cyan:#00C2D1; --tinta:#141414; }
+    *{ -webkit-font-smoothing:antialiased; }
+    body{ font-family:'Space Grotesk',sans-serif; color:var(--tinta); background:#fff; overflow-x:hidden; }
+    .display{ font-family:'Fraunces',serif; }
+    .mega{ font-family:'Fraunces',serif; font-weight:900; line-height:0.92; letter-spacing:-0.03em; }
+    ::selection{ background:var(--amarillo); }
+    .sub-si{ text-decoration:underline; text-decoration-color:var(--amarillo); text-decoration-thickness:0.12em; text-underline-offset:0.08em; }
+    a{ transition:color .2s ease, opacity .2s ease; }
+    .nav-link:hover{ color:var(--magenta); }
+    .placeholder-foto{ background:repeating-linear-gradient(45deg,#ededed,#ededed 12px,#e4e4e4 12px,#e4e4e4 24px); display:flex;align-items:center;justify-content:center; color:#9a9a9a;font-size:.75rem;letter-spacing:.05em;text-transform:uppercase; }
+    .placeholder-persona{ background:#ededed; display:flex;align-items:center;justify-content:center; color:#b0b0b0;font-size:.7rem;letter-spacing:.05em;text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<header class="absolute top-0 left-0 w-full z-40">
+    <div class="max-w-[1400px] mx-auto px-6 sm:px-10 py-7 flex items-center justify-between">
+        <a href="index.html" class="display text-2xl font-black tracking-tight text-white mix-blend-difference">Generación Sí</a>
+        <nav class="hidden md:flex items-center gap-10 text-sm font-medium text-white mix-blend-difference">
+            <a href="#programas" class="nav-link">Programas</a>
+            <a href="#equipo" class="nav-link">Equipo</a>
+            <a href="#sumate" class="nav-link">Sumate</a>
+        </nav>
+        <button id="mb" class="md:hidden text-white mix-blend-difference text-sm font-medium">Menú</button>
+    </div>
+    <div id="mm" class="hidden md:hidden bg-white px-6 py-6 flex-col gap-5 text-lg">
+        <a href="#programas" class="block py-1">Programas</a>
+        <a href="#equipo" class="block py-1">Equipo</a>
+        <a href="#sumate" class="block py-1">Sumate</a>
+    </div>
+</header>
+
+<!-- HERO -->
+<section class="relative w-full h-screen min-h-[640px]">
+    <div class="placeholder-foto absolute inset-0 w-full h-full">
+        <img src="URL_FOTO_HERO" alt="" class="w-full h-full object-cover grayscale" onerror="this.style.display='none'">
+        <span class="absolute">foto a pantalla completa</span>
+    </div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/20"></div>
+    <div class="relative z-10 h-full max-w-[1400px] mx-auto px-6 sm:px-10 flex flex-col justify-end pb-20 sm:pb-28">
+        <h1 class="mega text-white text-6xl sm:text-8xl lg:text-[10rem] max-w-5xl">
+            Vecinos que<br>dicen <span class="sub-si italic">sí</span>.
+        </h1>
+        <p class="text-white/90 text-xl sm:text-2xl max-w-xl mt-8 leading-relaxed font-light">
+            Sí a meterse, sí a proponer, sí a arreglar lo que no anda. Somos de San Isidro y preferimos hacer antes que esperar.
+        </p>
+    </div>
+</section>
+
+<!-- FRASE PUENTE -->
+<section class="max-w-[1400px] mx-auto px-6 sm:px-10 py-28 sm:py-40">
+    <p class="mega text-4xl sm:text-6xl lg:text-7xl max-w-4xl">
+        La ciudad pone trabas todos los días. Nosotros nos ocupamos de <span class="italic" style="color:var(--magenta)">sacarlas</span>.
+    </p>
+</section>
+
+<!-- PROGRAMAS: las tres patas concretas. Foto + texto, alternado. -->
+<section id="programas" class="bg-[#f7f7f5] py-24 sm:py-32">
+    <div class="max-w-[1400px] mx-auto px-6 sm:px-10">
+        
+        <!-- Activaciones -->
+        <div class="grid md:grid-cols-2 gap-10 lg:gap-20 items-center mb-24 sm:mb-32">
+            <div class="placeholder-foto aspect-[4/3] w-full">
+                <img src="URL_FOTO_ACTIVACIONES" alt="" class="w-full h-full object-cover grayscale" onerror="this.style.display='none'"><span class="absolute">foto</span>
+            </div>
+            <div>
+                <h3 class="mega text-4xl sm:text-6xl mb-5">Activaciones</h3>
+                <p class="text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-md font-light">
+                    Salir y hacer: recuperar una plaza, plantar, una jornada en el barrio, un encuentro. Actividades concretas, en la calle, con los vecinos.
+                </p>
+            </div>
+        </div>
+
+        <!-- Formación -->
+        <div class="grid md:grid-cols-2 gap-10 lg:gap-20 items-center mb-24 sm:mb-32">
+            <div class="md:order-2 placeholder-foto aspect-[4/3] w-full">
+                <img src="URL_FOTO_FORMACION" alt="" class="w-full h-full object-cover grayscale" onerror="this.style.display='none'"><span class="absolute">foto</span>
+            </div>
+            <div class="md:order-1">
+                <h3 class="mega text-4xl sm:text-6xl mb-5">Formación</h3>
+                <p class="text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-md font-light">
+                    Una escuela para los que quieren hacer. Herramientas concretas para llevar adelante un proyecto, entender la ciudad y no aflojar en el camino.
+                    <span class="block mt-3 text-sm text-neutral-400 italic">[Estamos armando los primeros cursos.]</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- GenerarSí -->
+        <div class="grid md:grid-cols-2 gap-10 lg:gap-20 items-center">
+            <div class="placeholder-foto aspect-[4/3] w-full">
+                <img src="URL_FOTO_GENERARSI" alt="" class="w-full h-full object-cover grayscale" onerror="this.style.display='none'"><span class="absolute">foto</span>
+            </div>
+            <div>
+                <h3 class="mega text-4xl sm:text-6xl mb-5">Generar<span style="color:var(--magenta)">Sí</span></h3>
+                <p class="text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-md font-light mb-6">
+                    Nuestra herramienta para que cualquier vecino pueda reclamar, proponer o contar qué le pasa en su barrio. Sin vueltas y sin conocer a nadie.
+                </p>
+                <a href="herramienta.html" class="display text-xl italic border-b-2 pb-1" style="border-color:var(--amarillo)">Probar GenerarSí</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- EQUIPO: foto + redes, casilleros para llenar -->
+<section id="equipo" class="py-24 sm:py-32">
+    <div class="max-w-[1400px] mx-auto px-6 sm:px-10">
+        <h2 class="mega text-5xl sm:text-7xl mb-6">El equipo</h2>
+        <p class="text-lg sm:text-2xl text-neutral-600 max-w-2xl leading-relaxed font-light mb-16">
+            Somos un grupo de vecinos de San Isidro que prefiere hacer antes que esperar. Esto se construye entre varios —y todavía hay lugar.
+        </p>
+        <!-- Borrá o sumá casilleros según la gente real que tengas. -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <!-- persona -->
+            <div>
+                <div class="placeholder-persona aspect-square w-full mb-4"><span>foto</span></div>
+                <p class="display text-xl font-semibold">[Nombre]</p>
+                <p class="text-sm text-neutral-500 mb-2">[Qué hace / de qué se ocupa]</p>
+                <div class="flex gap-3 text-sm text-neutral-400">
+                    <a href="#" class="hover:text-tinta" style="color:var(--magenta)">IG</a>
+                    <a href="#" class="hover:text-tinta">in</a>
+                </div>
+            </div>
+            <div>
+                <div class="placeholder-persona aspect-square w-full mb-4"><span>foto</span></div>
+                <p class="display text-xl font-semibold">[Nombre]</p>
+                <p class="text-sm text-neutral-500 mb-2">[Qué hace / de qué se ocupa]</p>
+                <div class="flex gap-3 text-sm text-neutral-400">
+                    <a href="#" class="hover:text-tinta" style="color:var(--magenta)">IG</a>
+                    <a href="#" class="hover:text-tinta">in</a>
+                </div>
+            </div>
+            <div>
+                <div class="placeholder-persona aspect-square w-full mb-4"><span>foto</span></div>
+                <p class="display text-xl font-semibold">[Nombre]</p>
+                <p class="text-sm text-neutral-500 mb-2">[Qué hace / de qué se ocupa]</p>
+                <div class="flex gap-3 text-sm text-neutral-400">
+                    <a href="#" class="hover:text-tinta" style="color:var(--magenta)">IG</a>
+                    <a href="#" class="hover:text-tinta">in</a>
+                </div>
+            </div>
+            <div>
+                <div class="placeholder-persona aspect-square w-full mb-4"><span>foto</span></div>
+                <p class="display text-xl font-semibold">[Nombre]</p>
+                <p class="text-sm text-neutral-500 mb-2">[Qué hace / de qué se ocupa]</p>
+                <div class="flex gap-3 text-sm text-neutral-400">
+                    <a href="#" class="hover:text-tinta" style="color:var(--magenta)">IG</a>
+                    <a href="#" class="hover:text-tinta">in</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SUMATE -->
+<section id="sumate" class="bg-tinta py-28 sm:py-40" style="background:var(--tinta)">
+    <div class="max-w-[700px] mx-auto px-6 sm:px-10 text-white">
+        <h2 class="mega text-5xl sm:text-7xl mb-6">Sumate.</h2>
+        <p class="text-xl text-white/70 mb-12 leading-relaxed font-light">Dejanos tus datos y hablamos. Te contamos qué se viene y cómo dar una mano.</p>
+        <form id="sf" class="space-y-8">
+            <div>
+                <label class="block text-sm font-medium text-white/50 mb-2">Nombre</label>
+                <input type="text" required class="w-full bg-transparent border-0 border-b-2 border-white/30 focus:border-white focus:outline-none py-3 text-2xl display text-white" placeholder="Tu nombre">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-white/50 mb-2">Email</label>
+                <input type="email" required class="w-full bg-transparent border-0 border-b-2 border-white/30 focus:border-white focus:outline-none py-3 text-2xl display text-white" placeholder="tu@email.com">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-white/50 mb-2">Tu barrio</label>
+                <input type="text" class="w-full bg-transparent border-0 border-b-2 border-white/30 focus:border-white focus:outline-none py-3 text-2xl display text-white" placeholder="Beccar, Boulogne, Martínez...">
+            </div>
+            <button type="submit" class="mega text-3xl sm:text-4xl italic pt-4 text-white">Sumarme <span style="color:var(--amarillo)">→</span></button>
+            <div id="fb" class="hidden text-xl display italic pt-4" style="color:var(--amarillo)">Recibido. Estamos construyendo esto y te vamos a escribir.</div>
+        </form>
+    </div>
+</section>
+
+<footer class="py-12">
+    <div class="max-w-[1400px] mx-auto px-6 sm:px-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+        <div>
+            <p class="display text-xl font-black">Generación Sí</p>
+            <p class="text-sm text-neutral-500 mt-1">Vecinos de San Isidro que prefieren hacer antes que esperar.</p>
+        </div>
+        <p class="text-xs text-neutral-400">© 2026 · San Isidro</p>
+    </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+    const mb=document.getElementById('mb'),mm=document.getElementById('mm');
+    if(mb)mb.addEventListener('click',()=>{mm.classList.toggle('hidden');mm.classList.toggle('flex');});
+    const sf=document.getElementById('sf'),fb=document.getElementById('fb');
+    if(sf)sf.addEventListener('submit',e=>{e.preventDefault();fb.classList.remove('hidden');sf.querySelector('button').style.display='none';});
+});
+</script>
+</body>
+</html>

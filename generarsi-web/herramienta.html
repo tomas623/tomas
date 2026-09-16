@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GenerarSí — Contá lo tuyo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    :root{ --amarillo:#FFE000; --magenta:#FF3D8B; --cyan:#00C2D1; --tinta:#141414; }
+    *{ -webkit-font-smoothing:antialiased; }
+    body{ font-family:'Space Grotesk',sans-serif; color:var(--tinta); background:#fff; }
+    .display{ font-family:'Fraunces',serif; }
+    .mega{ font-family:'Fraunces',serif; font-weight:900; line-height:0.95; letter-spacing:-0.03em; }
+    ::selection{ background:var(--amarillo); }
+    .sub-si{ text-decoration:underline; text-decoration-color:var(--amarillo); text-decoration-thickness:0.12em; text-underline-offset:0.08em; }
+    a{ transition:color .2s ease, opacity .2s ease; }
+    .nav-link:hover{ color:var(--magenta); }
+
+    /* Burbujas del chat */
+    .burbuja{ max-width:min(680px,90%); line-height:1.55; white-space:pre-wrap; word-wrap:break-word; }
+    .burbuja-vecino{ background:var(--tinta); color:#fff; border-radius:20px 20px 4px 20px; }
+    .burbuja-asistente{ background:#f4f4f2; color:var(--tinta); border-radius:20px 20px 20px 4px; }
+    .burbuja-asistente strong{ font-weight:600; }
+
+    /* Puntitos de "escribiendo" */
+    .puntos span{ display:inline-block; width:7px; height:7px; margin:0 2px; background:#b5b5b5; border-radius:50%; animation:latido 1.2s infinite ease-in-out both; }
+    .puntos span:nth-child(2){ animation-delay:.15s; }
+    .puntos span:nth-child(3){ animation-delay:.3s; }
+    @keyframes latido{ 0%,80%,100%{ transform:scale(.6); opacity:.4; } 40%{ transform:scale(1); opacity:1; } }
+
+    /* Scroll suave del panel */
+    #hilo{ scroll-behavior:smooth; }
+    #hilo::-webkit-scrollbar{ width:10px; }
+    #hilo::-webkit-scrollbar-thumb{ background:#e2e2e0; border-radius:999px; }
+    textarea{ resize:none; }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- ENCABEZADO -->
+<header class="border-b border-neutral-200">
+    <div class="max-w-[900px] mx-auto px-5 sm:px-8 py-5 flex items-center justify-between">
+        <a href="index.html" class="display text-xl sm:text-2xl font-black tracking-tight">Generación Sí</a>
+        <a href="index.html" class="nav-link text-sm font-medium text-neutral-500">← Volver al inicio</a>
+    </div>
+</header>
+
+<!-- PRESENTACIÓN -->
+<section class="max-w-[900px] w-full mx-auto px-5 sm:px-8 pt-10 pb-6">
+    <h1 class="mega text-4xl sm:text-6xl mb-4">
+        Contá lo tuyo. Lo convertimos en algo que se presenta.
+    </h1>
+    <p class="text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-2xl font-light">
+        ¿Algo no anda en tu barrio? ¿Tenés una idea para tu cuadra, tu plaza, tu ciudad?
+        Escribilo como te salga. Te ayudo a ordenarlo en un <span class="sub-si">reclamo</span>
+        o una <span class="sub-si">propuesta</span> lista para presentar. Sin vueltas y sin conocer a nadie.
+    </p>
+</section>
+
+<!-- CHAT -->
+<main class="flex-1 w-full">
+    <div class="max-w-[900px] mx-auto px-5 sm:px-8 pb-4">
+        <div id="hilo" class="flex flex-col gap-5 overflow-y-auto py-6" style="min-height:340px; max-height:56vh;">
+            <!-- Los mensajes se van agregando acá -->
+        </div>
+    </div>
+</main>
+
+<!-- BARRA DE ESCRITURA -->
+<div class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-neutral-200">
+    <div class="max-w-[900px] mx-auto px-5 sm:px-8 py-4">
+        <form id="form" class="flex items-end gap-3">
+            <textarea id="entrada" rows="1" placeholder="Ej: En Beccar hay una vereda rota hace meses y un cochecito no puede pasar…"
+                class="flex-1 border-2 border-neutral-200 focus:border-neutral-800 focus:outline-none rounded-2xl px-4 py-3 text-base sm:text-lg"></textarea>
+            <button id="enviar" type="submit"
+                class="shrink-0 display text-lg italic px-5 py-3 rounded-2xl text-tinta"
+                style="background:var(--amarillo)">Enviar →</button>
+        </form>
+        <p class="text-xs text-neutral-400 mt-3 leading-relaxed">
+            Para reclamos urgentes de San Isidro también está el <strong>147</strong> (24 hs) y
+            <a href="https://www.sanisidro.gob.ar" target="_blank" rel="noopener" class="underline hover:text-neutral-700">sanisidro.gob.ar</a>.
+        </p>
+    </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// Dirección del backend (servidor de GenerarSí en Railway).
+// Es una dirección pública: NO es un secreto. Si algún día cambia,
+// se cambia solamente esta línea.
+const BACKEND = "https://web-production-92519.up.railway.app";
+// ─────────────────────────────────────────────────────────────
+
+const hilo    = document.getElementById("hilo");
+const form    = document.getElementById("form");
+const entrada = document.getElementById("entrada");
+const boton   = document.getElementById("enviar");
+
+// Guardamos la charla para darle contexto al asistente en cada mensaje
+// (el servidor responde de a un mensaje por vez, así que le mandamos el
+//  resumen de lo hablado para que no se pierda el hilo).
+const conversacion = []; // {quien:'vecino'|'asistente', texto:''}
+
+// Convierte **negrita** simple en <strong> y escapa el resto.
+function formatear(texto){
+    const esc = texto
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
+function agregarBurbuja(quien, texto){
+    const fila = document.createElement("div");
+    fila.className = "flex " + (quien === "vecino" ? "justify-end" : "justify-start");
+    const b = document.createElement("div");
+    b.className = "burbuja px-4 py-3 " + (quien === "vecino" ? "burbuja-vecino" : "burbuja-asistente");
+    b.innerHTML = formatear(texto);
+    fila.appendChild(b);
+    hilo.appendChild(fila);
+    hilo.scrollTop = hilo.scrollHeight;
+    return b;
+}
+
+function mostrarEscribiendo(){
+    const fila = document.createElement("div");
+    fila.className = "flex justify-start";
+    fila.id = "escribiendo";
+    fila.innerHTML = '<div class="burbuja burbuja-asistente px-4 py-3"><span class="puntos"><span></span><span></span><span></span></span></div>';
+    hilo.appendChild(fila);
+    hilo.scrollTop = hilo.scrollHeight;
+}
+function sacarEscribiendo(){
+    const e = document.getElementById("escribiendo");
+    if (e) e.remove();
+}
+
+// Arma el texto que le mandamos al servidor: la charla hasta ahora.
+function armarMensaje(nuevo){
+    if (conversacion.length === 0) return nuevo;
+    let t = "Esta es la conversación con un vecino hasta ahora. Respondé al último mensaje siguiendo el hilo.\n\n";
+    for (const m of conversacion){
+        t += (m.quien === "vecino" ? "Vecino: " : "Asistente: ") + m.texto + "\n";
+    }
+    t += "Vecino: " + nuevo + "\nAsistente:";
+    return t;
+}
+
+async function enviarMensaje(texto){
+    agregarBurbuja("vecino", texto);
+    conversacion.push({quien:"vecino", texto});
+    entrada.value = "";
+    ajustarAlto();
+    boton.disabled = true; boton.style.opacity = ".5";
+    mostrarEscribiendo();
+
+    try {
+        const r = await fetch(BACKEND + "/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ mensaje: armarMensaje(texto) })
+        });
+        const data = await r.json();
+        sacarEscribiendo();
+        if (data && data.ok && data.respuesta){
+            agregarBurbuja("asistente", data.respuesta.trim());
+            conversacion.push({quien:"asistente", texto:data.respuesta.trim()});
+        } else {
+            agregarBurbuja("asistente",
+                "Uf, algo se me trabó de este lado. Probá de nuevo en un ratito. Si es urgente, podés llamar al 147 (24 hs) o entrar a sanisidro.gob.ar.");
+        }
+    } catch (e){
+        sacarEscribiendo();
+        agregarBurbuja("asistente",
+            "No pude conectarme con el servidor. Fijate que tengas internet y probá de nuevo. Si sigue, avisale a quien arma la página.");
+    } finally {
+        boton.disabled = false; boton.style.opacity = "1";
+        entrada.focus();
+    }
+}
+
+// La entrada crece con el texto (hasta un límite).
+function ajustarAlto(){
+    entrada.style.height = "auto";
+    entrada.style.height = Math.min(entrada.scrollHeight, 160) + "px";
+}
+entrada.addEventListener("input", ajustarAlto);
+
+// Enter envía; Shift+Enter hace salto de línea.
+entrada.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter" && !e.shiftKey){
+        e.preventDefault();
+        form.requestSubmit();
+    }
+});
+
+form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const texto = entrada.value.trim();
+    if (!texto) return;
+    enviarMensaje(texto);
+});
+
+// Saludo inicial del asistente.
+window.addEventListener("DOMContentLoaded", ()=>{
+    agregarBurbuja("asistente",
+        "¡Hola! Soy el asistente de GenerarSí. Contame qué te pasa en tu barrio o qué idea tenés, con tus palabras. Yo te ayudo a darle forma para que lo puedas presentar. ¿Qué querés contarme?");
+    entrada.focus();
+});
+</script>
+</body>
+</html>
