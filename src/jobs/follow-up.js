@@ -51,7 +51,7 @@ function copyStage1({ marca }) {
     <p>Por eso ofrecemos un <strong>informe completo de viabilidad</strong> que
        cruza todo: similitud fonética, ideológica, choque con marcas notorias,
        leyes especiales, disponibilidad de dominios y redes. Lo firma un Agente
-       de la Propiedad Industrial matriculado y queda en tu poder en 24 hs hábiles.</p>
+       de la Propiedad Industrial matriculado y queda en tu poder en 24 a 72 hs hábiles.</p>
     <p style="margin-top:24px">
       <a href="https://marcas.legalpacers.com/#informe"
          style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
@@ -118,7 +118,7 @@ function copyCheckoutPendiente({ marca, initPoint }) {
        <strong>${marca}</strong> pero el pago no se acreditó.</p>
     <p>Tu solicitud sigue activa: en cuanto se acredite el pago, generamos el
        informe y te lo enviamos revisado por un Agente de la Propiedad Industrial
-       dentro de 24 hs hábiles.</p>
+       dentro de 24 a 72 hs hábiles.</p>
     <p style="margin-top:24px">
       <a href="${linkPago}"
          style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;

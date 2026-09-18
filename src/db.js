@@ -186,7 +186,7 @@ db.exec(`
 
   -- ===== Informes pagos (Sprint 2) =====
   -- Snapshot completo del análisis pago, en cola para revisión humana
-  -- antes del envío al cliente (SLA 24hs).
+  -- antes del envío al cliente (SLA 24-72hs).
   CREATE TABLE IF NOT EXISTS informes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     lead_id INTEGER REFERENCES leads(id) ON DELETE SET NULL,

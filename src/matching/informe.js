@@ -858,7 +858,7 @@ async function callGemini(marca, candidatas_principales, candidatas_otras_clases
 
   const stubArgs = [marca, candidatas_principales, candidatas_otras_clases, flagsLeyesEspeciales];
 
-  // El informe corre en background (el cliente espera 24 hs), así que ante un
+  // El informe corre en background (el cliente espera 24-72 hs hábiles), así que ante un
   // 429 (rate limit por minuto del free tier) esperamos y reintentamos en vez
   // de caer al stub. Backoff: 20s, 45s, 90s. Configurable con GEMINI_REINTENTOS.
   const maxIntentos = 1 + parseInt(process.env.GEMINI_REINTENTOS || '3', 10);

@@ -13,7 +13,7 @@
 //   5. Genera el PDF y lo guarda en data/informes/{id}.pdf.
 //   6. UPDATE informes a estado='borrador' con todos los datos.
 //   7. Envía 2 emails:
-//      - cliente: "recibimos tu pago, en 24h te llega el informe revisado".
+//      - cliente: "recibimos tu pago, en 24-72h hábiles te llega el informe revisado".
 //      - equipo: "hay un borrador para revisar".
 
 const path = require('path');
@@ -123,7 +123,7 @@ function htmlMailCliente({ marca }) {
       <h2 style="color:#1B6EF3">Recibimos tu pago</h2>
       <p>Gracias por confiar en LegalPacers para el análisis de viabilidad de tu marca <strong>${marca}</strong>.</p>
       <p>Tu informe ya está en proceso. Lo elabora un Agente de la Propiedad Industrial matriculado
-         y te llega revisado a este mismo mail <strong>dentro de las próximas 24 horas hábiles</strong>.</p>
+         y te llega revisado a este mismo mail <strong>dentro de las próximas 24 a 72 horas hábiles</strong>.</p>
       <p>Cualquier consulta, podés escribirnos a
          <a href="mailto:contacto@legalpacers.com">contacto@legalpacers.com</a>
          o por WhatsApp al +54 9 11 2877-4200.</p>
@@ -149,7 +149,7 @@ function htmlMailEquipo({ informeId, marca, nivel, viab, solicitante, email }) {
                   text-decoration:none;display:inline-block">Revisar borrador #${informeId}</a>
       </p>
       <p style="font-size:12px;color:#64748b;margin-top:24px">
-        SLA al cliente: 24 horas hábiles desde el pago.
+        SLA al cliente: 24 a 72 horas hábiles desde el pago.
       </p>
     </div>`;
 }
