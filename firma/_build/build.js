@@ -1,5 +1,5 @@
 /* ============================================================
-   Rodriguez | abogados — static site generator
+   WTR | abogados — static site generator
    Zero dependencies. Emits plain HTML into /firma.
    Run:  node firma/_build/build.js
    ============================================================ */
@@ -10,11 +10,12 @@ const OUT = path.resolve(__dirname, "..");
 
 /* ---- Firm data (edit these to update the whole site) ---- */
 const FIRM = {
-  name: "Rodriguez",
+  name: "WTR",
   sub: "abogados",
+  claim: "Derecho para decisiones que importan.",
   city: "Buenos Aires, Argentina",
   address: "Av. del Libertador 0000, Piso 00 — CABA", // placeholder
-  email: "estudio@rodriguezabogados.com.ar",           // placeholder
+  email: "estudio@wtrabogados.com.ar",                 // placeholder — confirmar dominio
   phone: "+54 9 11 0000 0000",                          // placeholder
   waNumber: "5491100000000",                            // placeholder (wa.me)
   linkedin: "https://www.linkedin.com/",                // placeholder
@@ -33,13 +34,13 @@ const NAV = [
 const AXES = {
   empresas: {
     eyebrow: "Eje 01",
-    title: "Empresas, startups y pymes",
-    intro: "Acompañamos la vida de una organización: cómo se constituye, cómo contrata, cómo protege lo que crea y cómo resuelve lo que se rompe. Derecho pensado desde la lógica del negocio.",
+    title: "Negocios que nacen y se reinventan",
+    intro: "Acompañamos a empresas y fundadores en toda la vida del negocio: cómo se arma, cómo contrata, cómo protege lo que crea y cómo resuelve lo que se complica. Derecho pensado desde el negocio.",
   },
   family: {
     eyebrow: "Eje 02",
-    title: "Family office",
-    intro: "Ordenamos el patrimonio de familias y personas antes de que las decisiones se vuelvan urgentes. Planificación, sucesiones y familia con una mirada de largo plazo.",
+    title: "Patrimonio, familia y sucesión",
+    intro: "Detrás de cada negocio hay una persona y una familia. Ordenamos el patrimonio, la sucesión y las cuestiones de familia antes de que se vuelvan urgentes, con una mirada de largo plazo.",
   },
 };
 
@@ -47,176 +48,176 @@ const PRACTICES = [
   {
     slug: "derecho-societario", no: "01", axis: "empresas", art: "arch",
     title: "Derecho societario",
-    short: "Constitución, gobierno corporativo, acuerdos de socios y reorganizaciones. La estructura sobre la que se apoya todo lo demás.",
-    intro: "La forma societaria no es un trámite: define quién decide, cómo se reparte el valor y qué pasa cuando los intereses dejan de estar alineados. Diseñamos y ordenamos estructuras que sostienen el crecimiento y anticipan el conflicto.",
+    short: "Armar la sociedad, ordenar el gobierno de la empresa, acordar entre socios y reorganizar cuando hace falta. La estructura sobre la que se apoya todo lo demás.",
+    intro: "La forma de tu sociedad no es un trámite: define quién decide, cómo se reparte lo que se genera y qué pasa cuando los socios dejan de estar de acuerdo. Diseñamos y ordenamos esa estructura para que acompañe el crecimiento y anticipe el conflicto.",
     body: [
-      { h: "Estructura como decisión estratégica", p: "Elegir el tipo societario, distribuir el capital y definir las reglas de gobierno son decisiones que condicionan una empresa durante años. Trabajamos sobre el diseño —no sobre el formulario— para que la estructura acompañe el plan de negocio y no lo limite." },
-      { h: "Acuerdos entre socios", p: "La mayoría de los conflictos societarios no nacen de la ley, sino de lo que nunca se puso por escrito. Redactamos acuerdos de accionistas, pactos de socios y estatutos que definen mayorías, salidas, valuación y resolución de bloqueos antes de que hagan falta." },
+      { h: "La estructura es una decisión, no un formulario", p: "Elegir el tipo de sociedad, repartir la participación y fijar las reglas de decisión condiciona a la empresa durante años. Trabajamos sobre el diseño para que la estructura te sirva, no que te limite." },
+      { h: "Acordar entre socios, a tiempo", p: "La mayoría de los conflictos entre socios no nacen de la ley, sino de lo que nunca se puso por escrito. Definimos por adelantado cómo se toman las decisiones, cómo entra y sale un socio y cómo se valúa su parte." },
     ],
     checklist: [
-      "Constitución de SAS, SRL y SA y elección de estructura",
-      "Acuerdos de accionistas y pactos de socios",
-      "Gobierno corporativo, directorios y órganos de decisión",
-      "Aumentos de capital, aportes y reorganizaciones",
-      "Fusiones, escisiones y transformaciones",
-      "Due diligence societario y saneamiento",
+      "Constitución de la sociedad y elección de estructura (SAS, SRL, SA)",
+      "Acuerdo de socios y estatutos",
+      "Gobierno de la empresa: directorio y toma de decisiones",
+      "Aumentos de capital y aportes",
+      "Fusiones, escisiones y reorganizaciones",
+      "Revisión societaria y puesta en orden",
     ],
   },
   {
     slug: "contratos-comerciales", no: "02", axis: "empresas", art: "strata",
     title: "Contratos comerciales",
-    short: "Los acuerdos que sostienen la operación diaria: distribución, servicios, proveedores, alianzas y financiamiento.",
-    intro: "Un contrato bien hecho reparte riesgos con claridad y evita que cada relación comercial dependa de la buena voluntad. Redactamos y negociamos los acuerdos que estructuran ingresos, obligaciones y responsabilidades.",
+    short: "Los acuerdos que sostienen el día a día del negocio: clientes, proveedores, distribución, alianzas y financiamiento.",
+    intro: "Un buen contrato reparte los riesgos con claridad y evita que cada relación dependa de la buena voluntad. Redactamos y negociamos los acuerdos que ordenan tus ingresos, tus obligaciones y tus responsabilidades.",
     body: [
-      { h: "Contratos que anticipan, no que reaccionan", p: "Nos concentramos en las cláusulas que importan cuando algo sale distinto de lo previsto: precio, plazos, incumplimiento, límites de responsabilidad y salida. El objetivo es que el contrato trabaje a favor del negocio, no que lo trabe." },
-      { h: "Negociación con criterio comercial", p: "Entendemos qué está realmente en juego en cada operación y dónde conviene ceder y dónde no. Traducimos objetivos de negocio en términos jurídicos precisos, sin fricción innecesaria." },
+      { h: "Contratos que piensan en el día que algo sale distinto", p: "Nos enfocamos en las cláusulas que importan cuando algo no sale como estaba previsto: precio, plazos, incumplimiento, límites de responsabilidad y salida. La idea es que el contrato juegue a favor del negocio, no en contra." },
+      { h: "Negociar con criterio comercial", p: "Entendemos qué está realmente en juego en cada operación y dónde conviene ceder y dónde no. Traducimos tus objetivos a términos precisos, sin fricción de más." },
     ],
     checklist: [
       "Distribución, agencia, franquicia y representación",
       "Prestación de servicios y acuerdos con proveedores",
-      "Contratos SaaS, licencias y términos y condiciones",
-      "Joint ventures y acuerdos de colaboración",
-      "Confidencialidad (NDA) y cartas de intención",
-      "Financiamiento, mutuos y garantías",
+      "Contratos de software, licencias y términos de uso",
+      "Alianzas y acuerdos de colaboración",
+      "Confidencialidad y cartas de intención",
+      "Financiamiento, préstamos y garantías",
     ],
   },
   {
     slug: "propiedad-intelectual", no: "03", axis: "empresas", art: "nodes",
     title: "Propiedad intelectual",
-    short: "Marcas, software, contenidos y activos intangibles: identificar el valor que no está en el balance y protegerlo.",
-    intro: "Hoy buena parte del valor de una empresa es intangible: la marca, el código, los datos, la reputación. Ayudamos a identificar esos activos, registrarlos donde corresponde y dejar en claro de quién son.",
+    short: "Marca, software, contenidos y todo el valor que no aparece en el balance: identificarlo, protegerlo y dejar en claro de quién es.",
+    intro: "Hoy buena parte del valor de una empresa es intangible: la marca, el código, los datos, la reputación. Ayudamos a identificar esos activos, protegerlos donde corresponde y dejar en claro de quién son.",
     body: [
-      { h: "Proteger antes de escalar", p: "Registrar una marca o clarificar la titularidad del software es más barato y más simple antes de crecer que después de un conflicto. Definimos una estrategia de protección proporcional a la etapa y al plan de la empresa." },
-      { h: "Titularidad y cesión de derechos", p: "Fundadores, empleados y proveedores generan activos intelectuales todos los días. Estructuramos las cesiones y licencias para que la empresa sea, sin ambigüedad, dueña de lo que produce." },
+      { h: "Proteger antes de crecer", p: "Ordenar la marca o dejar en claro de quién es el software cuesta menos y es más simple antes de crecer que después de un conflicto. Definimos una estrategia de protección acorde al momento y al plan de la empresa." },
+      { h: "De quién es lo que se crea", p: "Fundadores, empleados y proveedores generan valor intelectual todos los días. Ordenamos las cesiones y licencias para que la empresa sea, sin dudas, dueña de lo que produce." },
     ],
     checklist: [
-      "Registro y defensa de marcas en el INPI",
-      "Estrategia de portafolio de marcas",
-      "Derechos de autor sobre software y contenidos",
-      "Cesión de derechos de empleados y proveedores",
-      "Acuerdos de licencia y transferencia de tecnología",
-      "Oposiciones, cese de uso y conflictos de marca",
+      "Estrategia de protección de la marca",
+      "Derechos sobre el software y los contenidos",
+      "Titularidad: cesiones de empleados y proveedores",
+      "Licencias y transferencia de tecnología",
+      "Contratos de propiedad intelectual",
+      "Conflictos de marca y uso indebido",
     ],
   },
   {
     slug: "startups", no: "04", axis: "empresas", art: "columns",
     title: "Startups",
-    short: "Desde la constitución hasta la ronda: cap table, vesting, acuerdos de inversión y todo lo que revisa un inversor.",
-    intro: "Acompañamos a fundadores en las decisiones jurídicas que definen una startup: cómo se reparte el equity, cómo entran los inversores y cómo se prepara la empresa para una due diligence sin sorpresas.",
+    short: "Para el negocio que arranca: armar la sociedad, repartir la propiedad entre quienes fundan, sumar socios o empleados con parte de la empresa y estar listos cuando llega un inversor.",
+    intro: "Acompañamos a quienes están creando un negocio en las decisiones que después son difíciles de revertir: cómo se reparte la propiedad de la empresa, cómo se suman los primeros socios y cómo se ordena todo para cuando entre un inversor.",
     body: [
-      { h: "El cap table como decisión temprana", p: "La forma en que se reparte el capital entre fundadores, empleados y primeros inversores es una de las decisiones más difíciles de revertir. La estructuramos desde el inicio, con vesting, pool de opciones y reglas claras de salida." },
-      { h: "Preparados para la ronda", p: "Cuando llega el inversor, la empresa se revisa entera. Ordenamos la documentación societaria, la propiedad intelectual y los contratos laborales para que el proceso confirme el valor de la compañía en lugar de erosionarlo en la negociación." },
+      { h: "Repartir la propiedad, temprano y bien", p: "Cómo se divide la empresa entre quienes la fundan —y cuánto se reserva para futuros socios o empleados clave— es una de las decisiones más difíciles de deshacer. La ordenamos desde el principio, con reglas claras de permanencia y de salida." },
+      { h: "Listos para cuando entre un inversor", p: "Cuando aparece un inversor, revisa la empresa entera. Dejamos en orden la sociedad, la propiedad intelectual y los contratos para que ese proceso confirme el valor del negocio, en lugar de complicarlo." },
     ],
     checklist: [
-      "Constitución y acuerdo de fundadores",
-      "Cap table, vesting y planes de opciones (ESOP)",
-      "SAFE, convertibles y acuerdos de inversión",
-      "Term sheets: lectura y negociación",
-      "Due diligence legal previa a la ronda",
-      "Estructuras para expansión regional",
+      "Armado de la sociedad y acuerdo entre fundadores",
+      "Reparto de la propiedad y participación para socios o empleados clave",
+      "Ingreso de inversores y acuerdos de inversión",
+      "Lectura y negociación de las condiciones que propone el inversor",
+      "Puesta en orden legal antes de buscar inversión",
+      "Estructura para crecer en otros países",
     ],
   },
   {
     slug: "tecnologia-ia", no: "05", axis: "empresas", art: "grid",
     title: "Tecnología e inteligencia artificial",
-    short: "Datos personales, gobernanza de IA, responsabilidad y contratos de tecnología en un marco todavía en construcción.",
-    intro: "La tecnología avanza más rápido que la regulación. Ayudamos a empresas que desarrollan o incorporan inteligencia artificial y productos digitales a moverse con criterio: cumpliendo lo que existe y anticipando lo que viene.",
+    short: "Datos personales, uso responsable de inteligencia artificial, responsabilidad y contratos de tecnología, en un marco que todavía se está escribiendo.",
+    intro: "La tecnología avanza más rápido que las reglas. Acompañamos a empresas que desarrollan o incorporan inteligencia artificial y productos digitales a moverse con criterio: cumpliendo lo que ya existe y anticipando lo que viene.",
     body: [
-      { h: "Gobernanza de datos y de IA", p: "Definimos cómo se recolectan, tratan y protegen los datos, y qué controles necesita un sistema de IA para operar con responsabilidad. Menos declaraciones de principios y más decisiones concretas de diseño y contrato." },
-      { h: "Responsabilidad y contratos tecnológicos", p: "¿Quién responde cuando un modelo se equivoca? Estructuramos la responsabilidad en contratos de desarrollo, integración y uso de IA, y en los términos con usuarios y clientes." },
+      { h: "Datos e inteligencia artificial con reglas claras", p: "Definimos cómo se juntan, se usan y se protegen los datos, y qué controles necesita un sistema de inteligencia artificial para funcionar con responsabilidad. Menos declaración de principios, más decisiones concretas." },
+      { h: "¿Quién responde cuando algo falla?", p: "Cuando un sistema se equivoca, la pregunta es quién responde. Lo dejamos definido en los contratos de desarrollo, integración y uso de inteligencia artificial, y en las condiciones con tus usuarios y clientes." },
     ],
     checklist: [
       "Protección de datos personales y privacidad",
-      "Gobernanza y políticas de uso de IA",
+      "Uso responsable de inteligencia artificial y políticas internas",
       "Contratos de desarrollo e integración de software",
       "Términos de uso, licencias y responsabilidad",
-      "Propiedad intelectual sobre modelos y datasets",
-      "Análisis de riesgo regulatorio y cumplimiento",
+      "Propiedad intelectual sobre modelos y datos",
+      "Riesgo regulatorio y cumplimiento",
     ],
   },
   {
     slug: "resolucion-de-conflictos", no: "06", axis: "empresas", art: "contour",
     title: "Resolución de conflictos",
-    short: "Negociación, mediación, arbitraje y litigio. Resolver disputas cuidando el valor, el tiempo y las relaciones.",
-    intro: "Cuando un conflicto es inevitable, la estrategia importa tanto como el derecho. Evaluamos con frialdad qué está en juego y elegimos el camino —acuerdo, arbitraje o juicio— que mejor protege los intereses del cliente.",
+    short: "Negociación, mediación, arbitraje y, cuando hace falta, juicio. Resolver el conflicto cuidando el valor, el tiempo y las relaciones.",
+    intro: "Cuando un conflicto es inevitable, la estrategia importa tanto como el derecho. Miramos con frialdad qué está en juego y elegimos el camino —acuerdo, arbitraje o juicio— que mejor protege tus intereses.",
     body: [
-      { h: "Decidir antes de litigar", p: "No todo conflicto se gana en tribunales. Analizamos costos, plazos, exposición y probabilidad antes de recomendar un curso de acción, y muchas veces el mejor resultado es un acuerdo bien negociado." },
-      { h: "Litigio y arbitraje con estrategia", p: "Cuando hay que litigar, lo hacemos con preparación y foco. Representamos a empresas y personas en disputas societarias, comerciales, patrimoniales y familiares, con una mirada puesta en el resultado, no en el trámite." },
+      { h: "Antes de litigar, buscamos la mejor salida", p: "No todo conflicto se resuelve en tribunales. Analizamos costos, plazos y probabilidades antes de recomendar un camino, y muchas veces la mejor salida es un buen acuerdo." },
+      { h: "Cuando hay que litigar, con estrategia", p: "Si hay que ir a juicio, vamos preparados y con foco. Representamos a empresas y personas en conflictos societarios, comerciales, patrimoniales y de familia, con la mirada puesta en el resultado." },
     ],
     checklist: [
       "Negociación y mediación previa",
-      "Conflictos societarios y entre socios",
+      "Conflictos entre socios",
       "Disputas comerciales y contractuales",
       "Arbitraje nacional e institucional",
-      "Litigio civil y comercial",
-      "Conflictos sucesorios y patrimoniales",
+      "Juicios civiles y comerciales",
+      "Conflictos de sucesión y de familia",
     ],
   },
   {
     slug: "sucesiones-planificacion-patrimonial", no: "07", axis: "family", art: "strata",
     title: "Sucesiones y planificación patrimonial",
-    short: "Planificación patrimonial, sucesiones y derecho de familia para ordenar el patrimonio y proteger a las próximas generaciones.",
-    intro: "Ayudamos a familias y personas con patrimonios relevantes a ordenar hoy lo que de otro modo se resuelve en el peor momento. Planificación, sucesión y familia con confidencialidad y una mirada de décadas, no de trámites.",
+    short: "Ordenar el patrimonio, la sucesión y las cuestiones de familia con tiempo, para proteger lo construido y a los que vienen.",
+    intro: "Detrás de cada negocio hay una persona y una familia. Ayudamos a ordenar hoy —con calma y reserva— lo que de otro modo se termina resolviendo en el peor momento: el patrimonio, la sucesión y la familia.",
     body: [
-      { h: "Planificar en calma, no en crisis", p: "La planificación patrimonial es la diferencia entre decidir con tiempo y criterio y dejar que la ley y los tiempos judiciales decidan por la familia. Estructuramos la transmisión de bienes, empresas y participaciones cuidando la carga fiscal y la continuidad." },
-      { h: "Empresa familiar y protocolo", p: "Cuando el patrimonio incluye una empresa, ordenar la relación entre familia, propiedad y gestión es clave para que sobreviva a la siguiente generación. Redactamos protocolos familiares y estructuras de gobierno que separan lo afectivo de lo societario." },
-      { h: "Sucesiones y familia", p: "Acompañamos procesos sucesorios y cuestiones de derecho de familia —régimen patrimonial, acuerdos y conflictos— con discreción y con foco en preservar tanto el patrimonio como los vínculos." },
+      { h: "Planificar con tiempo, no en la urgencia", p: "Planificar es la diferencia entre decidir con criterio y dejar que la ley y los tiempos judiciales decidan por tu familia. Ordenamos cómo se transmiten los bienes, la empresa y las participaciones, cuidando los impuestos y la continuidad." },
+      { h: "La empresa de familia", p: "Cuando el patrimonio incluye una empresa, ordenar la relación entre familia, propiedad y gestión es clave para que llegue bien a la próxima generación. Armamos las reglas que separan lo familiar de lo societario." },
+      { h: "Sucesión y familia", p: "Acompañamos sucesiones y cuestiones de familia —régimen patrimonial, acuerdos y conflictos— con discreción, cuidando tanto el patrimonio como los vínculos." },
     ],
     checklist: [
-      "Planificación patrimonial y sucesoria",
-      "Testamentos y estructuras de transmisión",
-      "Protocolo de empresa familiar",
+      "Planificación del patrimonio y la sucesión",
+      "Testamentos y formas de transmisión",
+      "Reglas para la empresa de familia",
       "Fideicomisos y vehículos patrimoniales",
-      "Procesos sucesorios",
+      "Sucesiones",
       "Régimen patrimonial del matrimonio y acuerdos",
-      "Conflictos de familia y patrimoniales",
+      "Conflictos de familia y de patrimonio",
     ],
   },
 ];
 
-/* ---- Team (placeholder partners — replace names, bios and photos) ---- */
+/* ---- Team (Walter y Tomás son reales; confirmar/ajustar bios y áreas) ---- */
 const TEAM = [
   {
-    name: "Martín Rodríguez", role: "Socio · Empresas y M&A",
-    bio: "Estructura operaciones societarias, rondas de inversión y transacciones. Trabaja con fundadores e inversores traduciendo objetivos de negocio en estructuras jurídicas.",
-    tags: ["Societario", "M&A", "Startups"], art: "arch",
+    name: "Walter Rodríguez", role: "Socio fundador",
+    bio: "Acompaña a empresas y familias en las decisiones de fondo: la estructura de la sociedad, el patrimonio y la sucesión. Trabaja cerca del cliente, como un abogado propio, en relaciones que duran.",
+    tags: ["Sociedades", "Patrimonio", "Sucesiones"], art: "arch",
   },
   {
-    name: "Socia — nombre", role: "Socia · Tecnología y PI",
-    bio: "Lidera la práctica de tecnología, datos e inteligencia artificial y propiedad intelectual. Asesora a empresas de base tecnológica en producto, contratos y cumplimiento.",
-    tags: ["Tecnología e IA", "Datos", "Propiedad intelectual"], art: "nodes",
+    name: "Tomás Rodríguez", role: "Socio fundador",
+    bio: "Trabaja con los negocios que nacen y se reinventan: sociedades, contratos, tecnología e inteligencia artificial. Traduce los objetivos del negocio en decisiones jurídicas concretas.",
+    tags: ["Nuevos negocios", "Tecnología e IA", "Contratos"], art: "nodes",
   },
   {
-    name: "Socio — nombre", role: "Socio · Family office",
-    bio: "Conduce la práctica de planificación patrimonial, sucesiones y empresa familiar. Acompaña a familias y personas en decisiones patrimoniales de largo plazo.",
-    tags: ["Patrimonial", "Sucesiones", "Familia"], art: "contour",
+    name: "Un lugar reservado", role: "Socio · por incorporar",
+    bio: "Dejamos espacio para un tercer socio que sume una mirada complementaria, con el mismo criterio: rigor técnico y cercanía.",
+    tags: ["Espacio reservado"], art: "contour",
   },
 ];
 
 /* ---- Publications (placeholder editorial content) ---- */
 const PUBS = [
   {
-    kicker: "Startups", date: "Julio 2026",
-    title: "Cap table antes de la primera ronda: los errores que después no se deshacen",
-    excerpt: "Cómo repartir equity entre fundadores, prever un pool de opciones y llegar a la negociación con inversores sin sorpresas.",
+    kicker: "Nuevos negocios", date: "Julio 2026",
+    title: "Repartir la propiedad de la empresa antes de sumar un socio o un inversor",
+    excerpt: "Cómo dividir la empresa entre quienes la fundan, reservar una parte para el equipo y llegar sin sorpresas a la primera inversión.",
     art: "columns",
   },
   {
-    kicker: "Tecnología e IA", date: "Junio 2026",
-    title: "Gobernanza de IA en la empresa: qué decidir antes de poner un modelo en producción",
-    excerpt: "Datos, responsabilidad y controles concretos para incorporar inteligencia artificial con criterio jurídico.",
+    kicker: "Tecnología", date: "Junio 2026",
+    title: "Usar inteligencia artificial en la empresa: qué decidir antes de largarla",
+    excerpt: "Datos, responsabilidad y controles concretos para incorporar inteligencia artificial sin quedar expuesto.",
     art: "grid",
   },
   {
-    kicker: "Family office", date: "Mayo 2026",
-    title: "Protocolo familiar: ordenar el patrimonio antes de que sea urgente",
+    kicker: "Familia y patrimonio", date: "Mayo 2026",
+    title: "Empresa de familia: ordenarla antes de que sea urgente",
     excerpt: "Separar familia, propiedad y gestión para que la empresa y el patrimonio lleguen bien a la próxima generación.",
     art: "strata",
   },
   {
-    kicker: "Societario", date: "Abril 2026",
-    title: "Acuerdo de socios: las cláusulas que evitan el conflicto que todavía no existe",
-    excerpt: "Mayorías, salidas, valuación y bloqueos. Lo que conviene escribir cuando todo va bien.",
+    kicker: "Sociedades", date: "Abril 2026",
+    title: "Acuerdo de socios: lo que conviene poner por escrito cuando todo va bien",
+    excerpt: "Cómo se decide, cómo entra y sale un socio y cómo se valúa su parte. Las reglas que evitan el conflicto que todavía no existe.",
     art: "arch",
   },
 ];
@@ -310,7 +311,7 @@ const ARROW = '<svg class="arw" width="18" height="12" viewBox="0 0 18 12" fill=
 const WA_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.6 4.7-1.2A10 10 0 1012 2zm5.8 14.2c-.2.7-1.4 1.3-2 1.4-.5.1-1.2.1-1.9-.1-.4-.1-1-.3-1.7-.6-3-1.3-4.9-4.3-5.1-4.5-.1-.2-1.2-1.5-1.2-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.5-.3.3c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.4.1.6-.1l.8-1c.2-.2.4-.2.6-.1l2 .9c.2.1.4.2.4.3.1.1.1.6-.1 1.2z"/></svg>';
 
 const FAVICON = "data:image/svg+xml," + encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='#14181e'/><text x='50' y='72' font-family='Georgia,serif' font-size='64' fill='#fff' text-anchor='middle'>R</text><rect x='30' y='82' width='40' height='3' fill='#4e5836'/></svg>`
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='#14181e'/><text x='50' y='66' font-family='Georgia,serif' font-size='40' letter-spacing='1' fill='#fff' text-anchor='middle'>WTR</text><rect x='30' y='78' width='40' height='3' fill='#4e5836'/></svg>`
 );
 
 function head(page) {
@@ -369,7 +370,7 @@ function footer(page) {
     <div class="footer-top">
       <div class="footer-brand">
         <span class="brand"><span class="brand__name">${FIRM.name}</span><span class="brand__bar">|</span><span class="brand__sub" style="color:#8d9196">${FIRM.sub}</span></span>
-        <p>Estudio jurídico boutique. Derecho empresarial, tecnología y planificación patrimonial, con criterio de negocio.</p>
+        <p>Derecho y pensamiento estratégico para los negocios que nacen y se reinventan, y las personas y familias que están detrás.</p>
       </div>
       <div class="footer-col">
         <h5>Áreas</h5>
@@ -440,16 +441,16 @@ function homeBody() {
 <section class="hero" >
   <div class="container hero__inner">
     <div>
-      <p class="eyebrow reveal">Estudio jurídico boutique · ${FIRM.city.split(",")[0]}</p>
-      <h1 class="display hero__title reveal" data-d="1">Decisiones complejas.<br><span class="line2">Criterio claro.</span></h1>
-      <p class="lead hero__sub reveal" data-d="2">Asesoramos a empresas, fundadores e inversores —y a las familias que construyen patrimonio— en las decisiones jurídicas que definen su crecimiento y protegen lo que construyeron.</p>
+      <p class="eyebrow reveal">Estudio jurídico · ${FIRM.city.split(",")[0]}</p>
+      <h1 class="display hero__title reveal" data-d="1">Derecho para decisiones<br><span class="line2">que importan.</span></h1>
+      <p class="lead hero__sub reveal" data-d="2">Acompañamos a los negocios que nacen y a los que se reinventan, y a las personas y familias que están detrás. Derecho y pensamiento estratégico, con la cercanía de un abogado propio.</p>
       <div class="hero__actions reveal" data-d="3">
         <a href="${b}areas/index.html" class="btn btn--solid">Áreas de práctica ${ARROW}</a>
         <a href="${b}quienes-somos.html" class="link-arrow">Cómo trabajamos ${ARROW}</a>
       </div>
       <div class="hero__meta reveal" data-d="4">
-        <div><b>Dos ejes</b><span>Empresas y tecnología · Family office</span></div>
-        <div><b>Criterio</b><span>Profundidad jurídica y lógica de negocio</span></div>
+        <div><b>La empresa y la vida</b><span>Acompañamos las dos dimensiones</span></div>
+        <div><b>Cerca</b><span>Como un abogado propio, en el largo plazo</span></div>
       </div>
     </div>
     <div class="hero__figure reveal" data-d="2">
@@ -483,8 +484,8 @@ function homeBody() {
       ${family.map(card).join("")}
       <div class="card" style="background:var(--paper-2)">
         <span class="card__no">— / Enfoque</span>
-        <h3 class="card__title">Patrimonio, familia y empresa, en un mismo plan</h3>
-        <p class="card__desc">La planificación patrimonial, las sucesiones y el derecho de familia se trabajan juntos: decisiones de largo plazo que se piensan en calma, no en el conflicto.</p>
+        <h3 class="card__title">La empresa y la vida, en un mismo plan</h3>
+        <p class="card__desc">Quien construye un negocio también tiene patrimonio, familia y una sucesión que ordenar. Acompañamos las dos dimensiones, con la misma cabeza y a largo plazo.</p>
         <span class="card__foot"><a class="link-arrow" href="${b}areas/sucesiones-planificacion-patrimonial.html">Conocer el enfoque ${ARROW}</a></span>
       </div>
     </div>
@@ -495,14 +496,14 @@ function homeBody() {
   <div class="container split">
     <div class="statement reveal">
       <p class="eyebrow">El enfoque</p>
-      <p class="pull">El derecho como <em>herramienta</em> para construir organizaciones sólidas y acompañar decisiones complejas.</p>
+      <p class="pull">Unimos <em>rigor técnico</em> y cercanía: derecho para las decisiones del negocio y para las de tu vida.</p>
     </div>
     <div class="reveal" data-d="1">
       <div class="enfoque-list">
-        <div class="enfoque-item"><span class="enfoque-item__n">01</span><div><h3>Entendemos el negocio, no solo el expediente</h3><p>Antes de redactar, preguntamos qué está en juego. Partimos de los objetivos comerciales y patrimoniales, no de un formulario.</p></div></div>
-        <div class="enfoque-item"><span class="enfoque-item__n">02</span><div><h3>Anticipamos en lugar de reaccionar</h3><p>Estructuramos hoy lo que evita el conflicto de mañana: acuerdos claros, decisiones documentadas y riesgos repartidos con criterio.</p></div></div>
-        <div class="enfoque-item"><span class="enfoque-item__n">03</span><div><h3>Claridad antes que formalidad</h3><p>Explicamos en términos de decisiones y consecuencias, no de tecnicismos. Quien entiende sus opciones decide mejor.</p></div></div>
-        <div class="enfoque-item"><span class="enfoque-item__n">04</span><div><h3>Dedicación de socio</h3><p>En un estudio boutique, quien piensa el caso es quien lo lleva. Trato directo, tiempos reales y foco en el resultado.</p></div></div>
+        <div class="enfoque-item"><span class="enfoque-item__n">01</span><div><h3>Entendemos el negocio, no solo el expediente</h3><p>Antes de redactar, preguntamos qué querés lograr y qué está en juego. Partimos de tus objetivos, no de un formulario.</p></div></div>
+        <div class="enfoque-item"><span class="enfoque-item__n">02</span><div><h3>Anticipamos en lugar de reaccionar</h3><p>Ordenamos hoy lo que evita el conflicto de mañana: acuerdos claros, decisiones documentadas y riesgos repartidos con criterio.</p></div></div>
+        <div class="enfoque-item"><span class="enfoque-item__n">03</span><div><h3>Hablamos claro</h3><p>Explicamos en términos de decisiones y consecuencias, sin latín ni tecnicismos. Si entendés tus opciones, decidís mejor.</p></div></div>
+        <div class="enfoque-item"><span class="enfoque-item__n">04</span><div><h3>Cerca, como un abogado propio</h3><p>Trabajamos con pocos casos y nos metemos de lleno en cada uno. Quien piensa tu caso es quien lo lleva, en una relación de largo plazo.</p></div></div>
       </div>
       <div style="margin-top:38px"><a href="${b}quienes-somos.html" class="btn btn--light">Quiénes somos ${ARROW}</a></div>
     </div>
@@ -565,7 +566,7 @@ function areasIndexBody() {
         <p class="card__desc">${p.short}</p>
         <span class="card__foot"><span class="link-arrow" style="pointer-events:none">Ver práctica ${ARROW}</span></span>
       </a>`).join("")}
-      ${list.length === 1 ? `<div class="card" style="background:var(--paper-2)"><span class="card__no">— / Alcance</span><h3 class="card__title">Planificación, sucesiones y familia</h3><p class="card__desc">La práctica de family office integra la planificación patrimonial, los procesos sucesorios y el derecho de familia en una misma estrategia de largo plazo.</p></div>` : ""}
+      ${list.length === 1 ? `<div class="card" style="background:var(--paper-2)"><span class="card__no">— / Alcance</span><h3 class="card__title">Patrimonio, sucesión y familia</h3><p class="card__desc">Ordenamos el patrimonio, la sucesión y las cuestiones de familia en una misma estrategia de largo plazo, cuidando lo construido y a los que vienen.</p></div>` : ""}
     </div>`;
   };
 
@@ -574,7 +575,7 @@ function areasIndexBody() {
   <div class="container">
     <nav class="breadcrumb reveal"><a href="${b}index.html">Inicio</a><span>/</span><span>Áreas de práctica</span></nav>
     <h1 class="h-lg page-hero__title reveal">Áreas de práctica</h1>
-    <p class="lead page-hero__intro reveal" data-d="1">Trabajamos sobre dos ejes. En cada uno, el derecho es un medio: construir y proteger organizaciones, y ordenar y preservar patrimonios.</p>
+    <p class="lead page-hero__intro reveal" data-d="1">Trabajamos sobre dos ejes que casi siempre van juntos: el negocio, y la persona y la familia que están detrás. Acompañamos las dos dimensiones con la misma cabeza.</p>
   </div>
 </section>
 <section class="section" style="padding-top:0">
@@ -655,11 +656,11 @@ function nosotrosBody() {
 <section class="section" style="padding-top:0">
   <div class="container split">
     <div class="reveal">
-      <p class="pull">Entendemos el derecho como una <em>herramienta</em>: para construir organizaciones sólidas y para acompañar decisiones complejas.</p>
+      <p class="pull">Entendemos el derecho como una <em>herramienta</em>: para construir empresas sólidas y para acompañar las decisiones de tu vida.</p>
     </div>
     <div class="reveal" data-d="1">
-      <p class="lead">No creemos en el asesoramiento que empieza por el artículo del código. Empieza por la pregunta correcta: qué quiere lograr una empresa, qué quiere proteger una familia, qué está realmente en juego en una decisión.</p>
-      <p style="margin-top:20px;color:var(--muted)">Desde ahí, el derecho aparece donde tiene que aparecer —para dar estructura, repartir riesgos y sostener lo que se construye—, sin ruido ni tecnicismos innecesarios. Somos un estudio boutique por decisión: pocos asuntos, atención de socio y foco en el resultado.</p>
+      <p class="lead">No arrancamos por el artículo del código. Arrancamos por la pregunta correcta: qué querés lograr con tu empresa, qué querés proteger de tu patrimonio, qué está realmente en juego.</p>
+      <p style="margin-top:20px;color:var(--muted)">Desde ahí, el derecho aparece donde tiene que aparecer —para dar estructura, repartir riesgos y sostener lo que construís—, sin ruido ni tecnicismos. Trabajamos con pocos casos y nos metemos de lleno: quien piensa tu caso es quien lo lleva, en una relación de largo plazo.</p>
     </div>
   </div>
 </section>
@@ -668,10 +669,10 @@ function nosotrosBody() {
   <div class="container">
     <p class="eyebrow reveal">Principios</p>
     <div class="enfoque-list reveal" data-d="1" style="margin-top:20px">
-      <div class="enfoque-item"><span class="enfoque-item__n">01</span><div><h3>Criterio de negocio</h3><p>Combinamos profundidad jurídica con comprensión real de cómo funcionan las empresas y los patrimonios. El consejo legal se mide por la decisión que habilita.</p></div></div>
+      <div class="enfoque-item"><span class="enfoque-item__n">01</span><div><h3>Criterio de negocio</h3><p>Unimos rigor técnico con una comprensión real de cómo funcionan las empresas y los patrimonios. El consejo se mide por la decisión que te permite tomar.</p></div></div>
       <div class="enfoque-item"><span class="enfoque-item__n">02</span><div><h3>Anticipación</h3><p>Preferimos ordenar antes que reparar. La estructura correcta, el acuerdo bien redactado y la decisión documentada evitan la mayoría de los conflictos.</p></div></div>
-      <div class="enfoque-item"><span class="enfoque-item__n">03</span><div><h3>Claridad</h3><p>Explicamos en términos de opciones y consecuencias. Un cliente que entiende el terreno decide mejor y más rápido.</p></div></div>
-      <div class="enfoque-item"><span class="enfoque-item__n">04</span><div><h3>Discreción</h3><p>Trabajamos con información sensible de empresas y familias. La confidencialidad y el trato reservado son parte del servicio, no un agregado.</p></div></div>
+      <div class="enfoque-item"><span class="enfoque-item__n">03</span><div><h3>Claridad</h3><p>Explicamos en términos de opciones y consecuencias. Si entendés el terreno, decidís mejor y más rápido.</p></div></div>
+      <div class="enfoque-item"><span class="enfoque-item__n">04</span><div><h3>Cercanía</h3><p>Como un abogado propio: cerca, disponible y con reserva. La confianza y la discreción son parte del trabajo, no un extra.</p></div></div>
     </div>
   </div>
 </section>
@@ -681,8 +682,8 @@ function nosotrosBody() {
     <div class="axis-head reveal">
       <div>
         <p class="eyebrow">Equipo</p>
-        <h2 class="h-md">Quienes piensan cada caso</h2>
-        <p>Un equipo reducido de socios con experiencia en empresas, tecnología y patrimonio.</p>
+        <h2 class="h-md">Quiénes piensan cada caso</h2>
+        <p>Pocos socios, cada uno metido de lleno en los casos que lleva. Walter y Tomás Rodríguez, y espacio para un tercero.</p>
       </div>
       <a href="${b}equipo.html" class="link-arrow">Conocer al equipo ${ARROW}</a>
     </div>
@@ -709,7 +710,7 @@ function equipoBody() {
   <div class="container">
     <nav class="breadcrumb reveal"><a href="${b}index.html">Inicio</a><span>/</span><span>Equipo</span></nav>
     <h1 class="h-lg page-hero__title reveal">Equipo</h1>
-    <p class="lead page-hero__intro reveal" data-d="1">Un estudio boutique es su gente. Estos son los socios que piensan y llevan cada asunto, con experiencia, formación y foco en su área de especialización.</p>
+    <p class="lead page-hero__intro reveal" data-d="1">Un estudio es su gente. Somos pocos y nos metemos de lleno en cada caso: quien lo piensa es quien lo lleva. WTR son Walter y Tomás Rodríguez.</p>
   </div>
 </section>
 
@@ -725,15 +726,15 @@ function equipoBody() {
         <div class="member__tags">${m.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
       </article>`).join("")}
     </div>
-    <p class="figure-caption reveal" style="margin-top:40px;max-width:60ch">Retratos en blanco y negro — espacio reservado para las fotografías definitivas del equipo. Reemplazar las ilustraciones por retratos con tratamiento sobrio y uniforme.</p>
+    <p class="figure-caption reveal" style="margin-top:40px;max-width:60ch">Retratos en blanco y negro — espacio reservado para las fotos definitivas. Reemplazar las ilustraciones por retratos con un tratamiento sobrio y uniforme.</p>
   </div>
 </section>
 
 <section class="section section--dark">
   <div class="container cta-band reveal">
     <p class="eyebrow" style="justify-content:center">Sumate</p>
-    <h2 class="h-lg">Espacio para tres socios. Uno todavía por presentarse.</h2>
-    <p class="lead" style="margin:22px auto 0;max-width:52ch;color:#a7abb1">El equipo está pensado para crecer con perfiles que combinen rigor jurídico y comprensión de los negocios.</p>
+    <h2 class="h-lg">Hay lugar para un tercer socio.</h2>
+    <p class="lead" style="margin:22px auto 0;max-width:52ch;color:#a7abb1">Buscamos a alguien que sume una mirada complementaria, con el mismo criterio: rigor técnico y cercanía.</p>
     <a href="${b}contacto.html" class="btn btn--light" style="margin-top:36px">Escribinos ${ARROW}</a>
   </div>
 </section>`;
@@ -792,7 +793,7 @@ function contactoBody() {
   <div class="container">
     <nav class="breadcrumb reveal"><a href="${b}index.html">Inicio</a><span>/</span><span>Contacto</span></nav>
     <h1 class="h-lg page-hero__title reveal">Conversemos sobre tu decisión</h1>
-    <p class="lead page-hero__intro reveal" data-d="1">Contanos brevemente qué tenés por delante. Respondemos con una primera lectura y los próximos pasos.</p>
+    <p class="lead page-hero__intro reveal" data-d="1">Contanos en dos líneas qué tenés entre manos. Te respondemos con una primera lectura y los próximos pasos.</p>
   </div>
 </section>
 
@@ -840,7 +841,7 @@ function contactoBody() {
             <option>Tecnología e inteligencia artificial</option>
             <option>Propiedad intelectual</option>
             <option>Resolución de conflictos</option>
-            <option>Family office · patrimonio / sucesiones / familia</option>
+            <option>Patrimonio, familia y sucesión</option>
           </select>
         </div>
         <div class="field">
@@ -861,11 +862,11 @@ function contactoBody() {
    Build
    ============================================================ */
 const pages = [
-  { file: "index.html", base: "", key: "home", title: `${FIRM.name} ${FIRM.sub} — Estudio jurídico boutique`, desc: "Estudio jurídico boutique en Buenos Aires. Derecho empresarial, startups, tecnología e inteligencia artificial, y family office: patrimonio, sucesiones y familia.", headerDark: false, body: homeBody() },
-  { file: "areas/index.html", base: "../", key: "areas", title: `Áreas de práctica — ${FIRM.name} ${FIRM.sub}`, desc: "Áreas de práctica en dos ejes: empresas, startups y tecnología; y family office. Societario, contratos, propiedad intelectual, IA, conflictos y planificación patrimonial.", body: areasIndexBody() },
-  { file: "quienes-somos.html", base: "", key: "nosotros", title: `Quiénes somos — ${FIRM.name} ${FIRM.sub}`, desc: "Nuestra manera de trabajar: el derecho como herramienta para construir organizaciones sólidas y acompañar decisiones complejas.", body: nosotrosBody() },
-  { file: "equipo.html", base: "", key: "equipo", title: `Equipo — ${FIRM.name} ${FIRM.sub}`, desc: "Los socios del estudio: experiencia en empresas, tecnología y planificación patrimonial.", body: equipoBody() },
-  { file: "publicaciones.html", base: "", key: "pub", title: `Publicaciones — ${FIRM.name} ${FIRM.sub}`, desc: "Ideas sobre derecho, negocios y patrimonio. Escritas para founders, directores, inversores y familias.", body: publicacionesBody() },
+  { file: "index.html", base: "", key: "home", title: `${FIRM.name} ${FIRM.sub} — ${FIRM.claim}`, desc: "Estudio jurídico en Buenos Aires. Acompañamos los negocios que nacen y se reinventan —y las personas y familias que están detrás—: sociedades, contratos, tecnología, sucesión y patrimonio.", headerDark: false, body: homeBody() },
+  { file: "areas/index.html", base: "../", key: "areas", title: `Áreas de práctica — ${FIRM.name} ${FIRM.sub}`, desc: "Áreas de práctica en dos ejes: los negocios que nacen y se reinventan; y el patrimonio, la sucesión y la familia detrás de ellos.", body: areasIndexBody() },
+  { file: "quienes-somos.html", base: "", key: "nosotros", title: `Quiénes somos — ${FIRM.name} ${FIRM.sub}`, desc: "Cómo trabajamos: unimos rigor técnico y cercanía, con la dedicación de un abogado propio y una relación de largo plazo.", body: nosotrosBody() },
+  { file: "equipo.html", base: "", key: "equipo", title: `Equipo — ${FIRM.name} ${FIRM.sub}`, desc: "WTR son Walter y Tomás Rodríguez, socios fundadores. Pocos casos, con quien lo piensa llevándolo.", body: equipoBody() },
+  { file: "publicaciones.html", base: "", key: "pub", title: `Publicaciones — ${FIRM.name} ${FIRM.sub}`, desc: "Ideas sobre negocios, tecnología y patrimonio. Escritas para empresarios y familias, no para abogados.", body: publicacionesBody() },
   { file: "contacto.html", base: "", key: "contacto", title: `Contacto — ${FIRM.name} ${FIRM.sub}`, desc: "Conversemos sobre tu decisión. WhatsApp, celular y email.", body: contactoBody() },
 ];
 
@@ -939,8 +940,8 @@ const bundle = `<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${FIRM.name} ${FIRM.sub} — Estudio jurídico boutique</title>
-<meta name="description" content="Estudio jurídico boutique. Derecho empresarial, tecnología y family office.">
+<title>${FIRM.name} ${FIRM.sub} — ${FIRM.claim}</title>
+<meta name="description" content="Estudio jurídico en Buenos Aires. Negocios que nacen y se reinventan, y el patrimonio y la familia detrás.">
 <meta name="theme-color" content="#14181e">
 <link rel="icon" href="${FAVICON}">
 <style>
