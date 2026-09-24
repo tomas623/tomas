@@ -14,7 +14,7 @@ import logging
 
 from google import genai
 from google.genai import types
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, stream_with_context
 from flask_cors import CORS
 
 # --- Registros (para ver qué pasa en los logs de Railway) ---
@@ -34,9 +34,10 @@ cliente = genai.Client(api_key=API_KEY) if API_KEY else None
 # Se puede forzar uno concreto con la variable de entorno GEMINI_MODEL.
 _modelo_fijo = os.environ.get("GEMINI_MODEL")
 MODELOS = ([_modelo_fijo] if _modelo_fijo else []) + [
-    "gemini-3.6-flash",       # recomendado por Google como reemplazo actual
+    "gemini-3.5-flash-lite",  # liviano y rápido: ideal para un chat ágil
+    "gemini-flash-lite-latest",
+    "gemini-3.6-flash",       # más completo, de respaldo si falla el liviano
     "gemini-3.5-flash",
-    "gemini-3.8-flash",
     "gemini-flash-latest",    # alias de respaldo (a veces se satura: 503)
 ]
 
@@ -131,6 +132,48 @@ def diag():
             lineas.append(f"FALLO  {modelo}: {e}")
 
     return "\n".join(lineas), 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
+@app.route("/chat_stream", methods=["POST"])
+def chat_stream():
+    # Igual que /chat pero devuelve la respuesta "de a poco" (streaming), para
+    # que en la página aparezca escribiéndose y se sienta más rápido.
+    if not cliente:
+        return jsonify({"ok": False, "error": "Falta configurar la clave de Gemini."}), 500
+
+    datos = request.get_json(force=True, silent=True) or {}
+    mensaje = (datos.get("mensaje") or "").strip()
+    if not mensaje:
+        return jsonify({"ok": False, "error": "No llegó ningún mensaje."}), 400
+
+    def generar():
+        for modelo in MODELOS:
+            enviado = False
+            try:
+                flujo = cliente.models.generate_content_stream(
+                    model=modelo,
+                    contents=mensaje,
+                    config=types.GenerateContentConfig(system_instruction=SISTEMA),
+                )
+                for parte in flujo:
+                    texto = getattr(parte, "text", "") or ""
+                    if texto:
+                        enviado = True
+                        yield texto
+                return  # terminó bien
+            except Exception as e:  # noqa: BLE001
+                log.warning("Streaming falló con el modelo %s: %s", modelo, e)
+                if enviado:
+                    # Ya mandamos parte de la respuesta; no arrancamos otro modelo.
+                    return
+                continue
+        # Si ninguno funcionó no mandamos nada: la página reintenta por /chat.
+
+    return Response(
+        stream_with_context(generar()),
+        mimetype="text/plain; charset=utf-8",
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"},
+    )
 
 
 @app.route("/chat", methods=["POST"])

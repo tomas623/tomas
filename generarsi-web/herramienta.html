@@ -138,14 +138,14 @@ function sacarEscribiendo(){
     if (e) e.remove();
 }
 
-// Arma el texto que le mandamos al servidor: la charla hasta ahora.
-function armarMensaje(nuevo){
-    if (conversacion.length === 0) return nuevo;
+// Arma el texto que le mandamos al servidor: toda la charla hasta ahora.
+function armarMensaje(){
+    if (conversacion.length === 1) return conversacion[0].texto;
     let t = "Esta es la conversación con un vecino hasta ahora. Respondé al último mensaje siguiendo el hilo.\n\n";
     for (const m of conversacion){
         t += (m.quien === "vecino" ? "Vecino: " : "Asistente: ") + m.texto + "\n";
     }
-    t += "Vecino: " + nuevo + "\nAsistente:";
+    t += "Asistente:";
     return t;
 }
 
@@ -157,11 +157,56 @@ async function enviarMensaje(texto){
     boton.disabled = true; boton.style.opacity = ".5";
     mostrarEscribiendo();
 
+    const cuerpo = JSON.stringify({ mensaje: armarMensaje() });
+
+    try {
+        // 1) Modo "streaming": la respuesta aparece escribiéndose de a poco.
+        const r = await fetch(BACKEND + "/chat_stream", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: cuerpo
+        });
+        if (!r.ok || !r.body) throw new Error("sin stream");
+
+        sacarEscribiendo();
+        const burbuja = agregarBurbuja("asistente", "");
+        const lector = r.body.getReader();
+        const dec = new TextDecoder();
+        let acc = "";
+        while (true){
+            const {done, value} = await lector.read();
+            if (done) break;
+            acc += dec.decode(value, {stream:true});
+            burbuja.innerHTML = formatear(acc);
+            hilo.scrollTop = hilo.scrollHeight;
+        }
+        acc = acc.trim();
+        if (acc){
+            conversacion.push({quien:"asistente", texto:acc});
+        } else {
+            // No llegó nada por streaming: probamos el modo clásico.
+            if (burbuja.parentElement) burbuja.parentElement.remove();
+            await enviarClasico(cuerpo);
+        }
+    } catch (e){
+        // Si el streaming no anduvo (navegador viejo, red, etc.), caemos al
+        // modo clásico, que es más robusto.
+        sacarEscribiendo();
+        await enviarClasico(cuerpo);
+    } finally {
+        boton.disabled = false; boton.style.opacity = "1";
+        entrada.focus();
+    }
+}
+
+// Modo clásico (sin streaming): pide la respuesta completa de una sola vez.
+async function enviarClasico(cuerpo){
+    mostrarEscribiendo();
     try {
         const r = await fetch(BACKEND + "/chat", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ mensaje: armarMensaje(texto) })
+            body: cuerpo
         });
         const data = await r.json();
         sacarEscribiendo();
@@ -170,17 +215,13 @@ async function enviarMensaje(texto){
             conversacion.push({quien:"asistente", texto:data.respuesta.trim()});
         } else {
             let msg = "Uf, algo se me trabó de este lado. Probá de nuevo en un ratito.";
-            // Modo diagnóstico: mostramos el detalle técnico para poder arreglarlo.
             if (data && data.error){ msg += "\n\n(Detalle técnico: " + data.error + ")"; }
             agregarBurbuja("asistente", msg);
         }
     } catch (e){
         sacarEscribiendo();
         agregarBurbuja("asistente",
-            "No pude conectarme con el servidor. Fijate que tengas internet y probá de nuevo. Si sigue, avisale a quien arma la página.");
-    } finally {
-        boton.disabled = false; boton.style.opacity = "1";
-        entrada.focus();
+            "No pude conectarme con el servidor. Fijate que tengas internet y probá de nuevo.");
     }
 }
 
