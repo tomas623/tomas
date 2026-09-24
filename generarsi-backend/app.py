@@ -17,6 +17,8 @@ from google.genai import types
 from flask import Flask, request, jsonify, Response, stream_with_context
 from flask_cors import CORS
 
+import db  # nuestro módulo de base de datos (Etapa 2)
+
 # --- Registros (para ver qué pasa en los logs de Railway) ---
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("generarsi")
@@ -28,6 +30,19 @@ CORS(app)  # permite que tu página web (en otro dominio) le hable a este servid
 # La clave se lee del entorno de Railway. Si no está, avisa con claridad.
 API_KEY = os.environ.get("GEMINI_API_KEY")
 cliente = genai.Client(api_key=API_KEY) if API_KEY else None
+
+# Token de administración para borrar casos/aportes (moderación). Se pone como
+# variable de entorno ADMIN_TOKEN en Railway. Si no está, nadie puede borrar.
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
+
+# Preparamos las tablas al arrancar (si hay base). Si algo falla, el servidor
+# igual arranca: el chat funciona aunque la base todavía no esté lista.
+if db.hay_base():
+    try:
+        db.crear_tablas()
+        log.info("Base de datos lista.")
+    except Exception as e:  # noqa: BLE001
+        log.warning("No pude preparar la base al arrancar: %s", e)
 
 # Modelos a intentar, en orden, hasta que uno funcione. Los nombres de Gemini
 # cambian con el tiempo; probamos varios para no depender de uno solo.
@@ -132,6 +147,136 @@ def diag():
             lineas.append(f"FALLO  {modelo}: {e}")
 
     return "\n".join(lineas), 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
+# ─────────────────────────────────────────────────────────────
+#  Base de datos: casos (problemas/propuestas) y aportes
+# ─────────────────────────────────────────────────────────────
+
+REQUERIDOS_CASO = ("tipo", "titulo", "descripcion", "autor_nombre", "autor_edad", "autor_barrio")
+REQUERIDOS_APORTE = ("texto", "autor_nombre", "autor_edad", "autor_barrio")
+
+
+def _faltan(datos, campos):
+    return [c for c in campos if not str(datos.get(c) or "").strip()]
+
+
+def _es_admin(req):
+    if not ADMIN_TOKEN:
+        return False
+    tok = (req.headers.get("X-Admin-Token")
+           or req.args.get("token")
+           or (req.get_json(silent=True) or {}).get("token"))
+    return tok == ADMIN_TOKEN
+
+
+@app.route("/diag_db")
+def diag_db():
+    # Diagnóstico de la base: abrila en el navegador para confirmar que anda.
+    if not db.hay_base():
+        return ("SIN BASE DE DATOS: falta la variable DATABASE_URL en Railway.\n"
+                "Agregá una base PostgreSQL y su variable, y volvé a probar.",
+                500, {"Content-Type": "text/plain; charset=utf-8"})
+    lineas = []
+    try:
+        db.crear_tablas()
+        lineas.append("Conexión a la base: OK ✔")
+    except Exception as e:  # noqa: BLE001
+        return ("No pude conectar a la base:\n" + str(e),
+                500, {"Content-Type": "text/plain; charset=utf-8"})
+    try:
+        id_test = db.crear_caso({
+            "tipo": "problema", "titulo": "PRUEBA (se borra sola)",
+            "descripcion": "fila de prueba de diagnóstico", "barrio": "-",
+            "autor_nombre": "test", "autor_edad": 0, "autor_barrio": "-",
+        })
+        total = len(db.listar_casos())
+        db.borrar_caso(id_test)
+        lineas.append(f"Escritura y lectura: OK ✔ (probé guardar y borrar una fila; había {total} caso/s)")
+        lineas.append("")
+        lineas.append("La base está lista para guardar casos y aportes. 🎉")
+    except Exception as e:  # noqa: BLE001
+        lineas.append("Falló la prueba de escritura/lectura:\n" + str(e))
+    return "\n".join(lineas), 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
+@app.route("/casos", methods=["GET"])
+def listar_casos_endpoint():
+    if not db.hay_base():
+        return jsonify({"ok": True, "casos": []})
+    try:
+        return jsonify({"ok": True, "casos": db.listar_casos()})
+    except Exception as e:  # noqa: BLE001
+        log.error("Error listando casos: %s", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/casos", methods=["POST"])
+def crear_caso_endpoint():
+    if not db.hay_base():
+        return jsonify({"ok": False, "error": "La base de datos todavía no está configurada."}), 503
+    datos = request.get_json(force=True, silent=True) or {}
+    faltan = _faltan(datos, REQUERIDOS_CASO)
+    if faltan:
+        return jsonify({"ok": False, "error": "Faltan datos: " + ", ".join(faltan)}), 400
+    if datos.get("tipo") not in ("problema", "propuesta"):
+        return jsonify({"ok": False, "error": "El tipo debe ser 'problema' o 'propuesta'."}), 400
+    try:
+        nuevo = db.crear_caso(datos)
+        return jsonify({"ok": True, "id": nuevo})
+    except Exception as e:  # noqa: BLE001
+        log.error("Error creando caso: %s", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/casos/<int:caso_id>", methods=["GET"])
+def obtener_caso_endpoint(caso_id):
+    if not db.hay_base():
+        return jsonify({"ok": False, "error": "Sin base de datos."}), 503
+    try:
+        caso = db.obtener_caso(caso_id)
+        if not caso:
+            return jsonify({"ok": False, "error": "No existe ese caso."}), 404
+        return jsonify({"ok": True, "caso": caso})
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/casos/<int:caso_id>/aportes", methods=["POST"])
+def crear_aporte_endpoint(caso_id):
+    if not db.hay_base():
+        return jsonify({"ok": False, "error": "Sin base de datos."}), 503
+    datos = request.get_json(force=True, silent=True) or {}
+    faltan = _faltan(datos, REQUERIDOS_APORTE)
+    if faltan:
+        return jsonify({"ok": False, "error": "Faltan datos: " + ", ".join(faltan)}), 400
+    try:
+        nuevo = db.crear_aporte(caso_id, datos)
+        return jsonify({"ok": True, "id": nuevo})
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/casos/<int:caso_id>", methods=["DELETE"])
+def borrar_caso_endpoint(caso_id):
+    if not _es_admin(request):
+        return jsonify({"ok": False, "error": "No autorizado."}), 403
+    try:
+        db.borrar_caso(caso_id)
+        return jsonify({"ok": True})
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/aportes/<int:aporte_id>", methods=["DELETE"])
+def borrar_aporte_endpoint(aporte_id):
+    if not _es_admin(request):
+        return jsonify({"ok": False, "error": "No autorizado."}), 403
+    try:
+        db.borrar_aporte(aporte_id)
+        return jsonify({"ok": True})
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route("/chat_stream", methods=["POST"])
