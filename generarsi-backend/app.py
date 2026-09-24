@@ -9,6 +9,7 @@ La clave de Gemini se lee de una variable de entorno — NUNCA va escrita acá.
 """
 
 import os
+import time
 import logging
 
 from google import genai
@@ -142,22 +143,39 @@ def chat():
     if not mensaje:
         return jsonify({"ok": False, "error": "No llegó ningún mensaje."}), 400
 
+    # Palabras que indican "saturación pasajera" de Google (conviene reintentar).
+    transitorios = ("503", "unavailable", "429", "resource_exhausted",
+                    "overloaded", "high demand")
+
+    def es_transitorio(msg):
+        m = str(msg).lower()
+        return any(t in m for t in transitorios)
+
     ultimo_error = None
-    for modelo in MODELOS:
-        try:
-            respuesta = cliente.models.generate_content(
-                model=modelo,
-                contents=mensaje,
-                config=types.GenerateContentConfig(system_instruction=SISTEMA),
-            )
-            texto = (respuesta.text or "").strip()
-            if texto:
-                return jsonify({"ok": True, "respuesta": texto, "modelo": modelo})
-            ultimo_error = f"El modelo {modelo} devolvió una respuesta vacía."
-            log.warning(ultimo_error)
-        except Exception as e:  # noqa: BLE001 — queremos capturar cualquier error de la IA
-            ultimo_error = f"{modelo}: {e}"
-            log.warning("Fallo con el modelo %s: %s", modelo, e)
+    # Hacemos hasta 3 pasadas por la lista de modelos. Si el error es de
+    # saturación (503), esperamos un toque y reintentamos; así aguantamos picos.
+    for pasada in range(3):
+        for modelo in MODELOS:
+            try:
+                respuesta = cliente.models.generate_content(
+                    model=modelo,
+                    contents=mensaje,
+                    config=types.GenerateContentConfig(system_instruction=SISTEMA),
+                )
+                texto = (respuesta.text or "").strip()
+                if texto:
+                    return jsonify({"ok": True, "respuesta": texto, "modelo": modelo})
+                ultimo_error = f"El modelo {modelo} devolvió una respuesta vacía."
+                log.warning(ultimo_error)
+            except Exception as e:  # noqa: BLE001 — capturamos cualquier error de la IA
+                ultimo_error = f"{modelo}: {e}"
+                log.warning("Fallo con el modelo %s: %s", modelo, e)
+
+        # Toda la pasada falló. Si fue por saturación, esperamos y reintentamos.
+        if pasada < 2 and es_transitorio(ultimo_error):
+            time.sleep(1.5 * (pasada + 1))
+            continue
+        break
 
     log.error("Ningún modelo funcionó. Último error: %s", ultimo_error)
     return jsonify({"ok": False, "error": ultimo_error or "No se pudo generar la respuesta."}), 500
