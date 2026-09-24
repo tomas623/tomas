@@ -274,7 +274,7 @@ p { margin: 0; }
 /* ============================================================
    Team
    ============================================================ */
-.team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(28px, 3.5vw, 56px); }
+.team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(30px, 4vw, 64px); max-width: 880px; margin-inline: auto; }
 .member__photo { aspect-ratio: 4/5; background: var(--paper-2); border: 1px solid var(--line); overflow: hidden; filter: grayscale(1) contrast(1.02); transition: filter .6s var(--ease); }
 .member:hover .member__photo { filter: grayscale(.35); }
 .member__name { margin-top: 22px; font-size: 1.5rem; }

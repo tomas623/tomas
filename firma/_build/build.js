@@ -175,7 +175,7 @@ const PRACTICES = [
   },
 ];
 
-/* ---- Team (Walter y Tomás son reales; confirmar/ajustar bios y áreas) ---- */
+/* ---- Team (Walter y Tomás; confirmar/ajustar bios y áreas) ---- */
 const TEAM = [
   {
     name: "Walter Rodríguez", role: "Socio fundador",
@@ -186,11 +186,6 @@ const TEAM = [
     name: "Tomás Rodríguez", role: "Socio fundador",
     bio: "Trabaja con los negocios que nacen y se reinventan: sociedades, contratos, tecnología e inteligencia artificial. Traduce los objetivos del negocio en decisiones jurídicas concretas.",
     tags: ["Nuevos negocios", "Tecnología e IA", "Contratos"], art: "nodes",
-  },
-  {
-    name: "Un lugar reservado", role: "Socio · por incorporar",
-    bio: "Dejamos espacio para un tercer socio que sume una mirada complementaria, con el mismo criterio: rigor técnico y cercanía.",
-    tags: ["Espacio reservado"], art: "contour",
   },
 ];
 
@@ -683,7 +678,7 @@ function nosotrosBody() {
       <div>
         <p class="eyebrow">Equipo</p>
         <h2 class="h-md">Quiénes piensan cada caso</h2>
-        <p>Pocos socios, cada uno metido de lleno en los casos que lleva. Walter y Tomás Rodríguez, y espacio para un tercero.</p>
+        <p>Pocos casos, cada uno con quien lo piensa llevándolo de punta a punta. WTR son Walter y Tomás Rodríguez.</p>
       </div>
       <a href="${b}equipo.html" class="link-arrow">Conocer al equipo ${ARROW}</a>
     </div>
@@ -732,10 +727,10 @@ function equipoBody() {
 
 <section class="section section--dark">
   <div class="container cta-band reveal">
-    <p class="eyebrow" style="justify-content:center">Sumate</p>
-    <h2 class="h-lg">Hay lugar para un tercer socio.</h2>
-    <p class="lead" style="margin:22px auto 0;max-width:52ch;color:#a7abb1">Buscamos a alguien que sume una mirada complementaria, con el mismo criterio: rigor técnico y cercanía.</p>
-    <a href="${b}contacto.html" class="btn btn--light" style="margin-top:36px">Escribinos ${ARROW}</a>
+    <p class="eyebrow" style="justify-content:center">WTR | abogados</p>
+    <h2 class="h-lg">Derecho para decisiones que importan.</h2>
+    <p class="lead" style="margin:22px auto 0;max-width:52ch;color:#a7abb1">Si tenés una decisión por delante —en tu empresa o en tu vida—, empecemos por entenderla.</p>
+    <a href="${b}contacto.html" class="btn btn--light" style="margin-top:36px">Conversemos ${ARROW}</a>
   </div>
 </section>`;
 }
