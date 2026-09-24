@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,900&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
     :root{ --amarillo:#FFE000; --magenta:#FF3D8B; --cyan:#00C2D1; --tinta:#141414; }
-    *{ -webkit-font-smoothing:antialiased; box-sizing:border-box; }
+    *{ -webkit-font-smoothing:antialiased; }
     body{ font-family:'Space Grotesk',sans-serif; color:var(--tinta); background:#fff; }
     .display{ font-family:'Fraunces',serif; }
     .mega{ font-family:'Fraunces',serif; font-weight:900; line-height:0.95; letter-spacing:-0.03em; }
@@ -18,318 +18,241 @@
     .sub-si{ text-decoration:underline; text-decoration-color:var(--amarillo); text-decoration-thickness:0.12em; text-underline-offset:0.08em; }
     a{ transition:color .2s ease, opacity .2s ease; }
     .nav-link:hover{ color:var(--magenta); }
-    label span.oblig{ color:var(--magenta); }
-    input, textarea, select{
-        width:100%; border:2px solid #e6e6e4; border-radius:14px;
-        padding:12px 14px; font-size:1rem; font-family:inherit; background:#fff;
-    }
-    input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--tinta); }
-    textarea{ resize:vertical; min-height:90px; }
-    .btn-si{ background:var(--amarillo); }
-    .btn-si:hover{ filter:brightness(.96); }
-    .propuesta{ white-space:pre-wrap; line-height:1.6; }
-    .propuesta strong{ font-weight:600; }
+
+    /* Burbujas del chat */
+    .burbuja{ max-width:min(680px,90%); line-height:1.55; white-space:pre-wrap; word-wrap:break-word; }
+    .burbuja-vecino{ background:var(--tinta); color:#fff; border-radius:20px 20px 4px 20px; }
+    .burbuja-asistente{ background:#f4f4f2; color:var(--tinta); border-radius:20px 20px 20px 4px; }
+    .burbuja-asistente strong{ font-weight:600; }
+
+    /* Puntitos de "escribiendo" */
     .puntos span{ display:inline-block; width:7px; height:7px; margin:0 2px; background:#b5b5b5; border-radius:50%; animation:latido 1.2s infinite ease-in-out both; }
     .puntos span:nth-child(2){ animation-delay:.15s; }
     .puntos span:nth-child(3){ animation-delay:.3s; }
     @keyframes latido{ 0%,80%,100%{ transform:scale(.6); opacity:.4; } 40%{ transform:scale(1); opacity:1; } }
+
+    /* Scroll suave del panel */
+    #hilo{ scroll-behavior:smooth; }
+    #hilo::-webkit-scrollbar{ width:10px; }
+    #hilo::-webkit-scrollbar-thumb{ background:#e2e2e0; border-radius:999px; }
+    textarea{ resize:none; }
 </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
 <!-- ENCABEZADO -->
 <header class="border-b border-neutral-200">
-    <div class="max-w-[820px] mx-auto px-5 sm:px-8 py-5 flex items-center justify-between">
+    <div class="max-w-[900px] mx-auto px-5 sm:px-8 py-5 flex items-center justify-between">
         <a href="index.html" class="display text-xl sm:text-2xl font-black tracking-tight">Generación Sí</a>
         <a href="index.html" class="nav-link text-sm font-medium text-neutral-500">← Volver al inicio</a>
     </div>
 </header>
 
-<main class="max-w-[820px] mx-auto px-5 sm:px-8 py-10">
+<!-- PRESENTACIÓN -->
+<section class="max-w-[900px] w-full mx-auto px-5 sm:px-8 pt-10 pb-6">
+    <h1 class="mega text-4xl sm:text-6xl mb-4">
+        Vos conocés tu barrio. Armemos la propuesta para mejorarlo.
+    </h1>
+    <p class="text-lg sm:text-xl text-neutral-600 leading-relaxed max-w-2xl font-light">
+        ¿Hay algo que cambiarías de tu cuadra, tu plaza, tu ciudad? Contámelo como te salga.
+        Te acompaño paso a paso a convertir esa idea en una <span class="sub-si">propuesta concreta</span>
+        —con su presupuesto y su normativa— lista para presentar en el Concejo o una junta vecinal.
+        Vos ponés el barrio; yo, el método.
+    </p>
+</section>
 
-    <!-- PASO 1: EL CUESTIONARIO -->
-    <section id="paso-form">
-        <h1 class="mega text-4xl sm:text-6xl mb-4">
-            Vos conocés tu barrio. Armemos la propuesta.
-        </h1>
-        <p class="text-lg text-neutral-600 leading-relaxed max-w-2xl font-light mb-8">
-            Contestá estas preguntas cortas y te armo una <span class="sub-si">propuesta ordenada</span>
-            para mejorar tu barrio, lista para presentar. Si todavía no tenés la solución, no importa:
-            la publicás como problema y otros vecinos ayudan a resolverla.
-        </p>
-
-        <form id="form" class="flex flex-col gap-6">
-            <div>
-                <label class="block font-medium mb-2">¿Qué querés mejorar? <span class="oblig">*</span>
-                    <span class="block text-sm text-neutral-400 font-normal">En pocas palabras, como un título.</span>
-                </label>
-                <input id="f-titulo" type="text" maxlength="120" required
-                    placeholder="Ej: Más luz y juegos en la plaza de Beccar">
-            </div>
-
-            <div>
-                <label class="block font-medium mb-2">Contá el problema o la idea <span class="oblig">*</span>
-                    <span class="block text-sm text-neutral-400 font-normal">Con tus palabras, sin vueltas. ¿Qué pasa hoy? ¿Qué te gustaría?</span>
-                </label>
-                <textarea id="f-descripcion" required
-                    placeholder="Ej: La plaza está oscura de noche y no tiene juegos. Los chicos no pueden ir a la tarde y de noche da inseguridad."></textarea>
-            </div>
-
-            <div>
-                <label class="block font-medium mb-2">¿A quién afecta?
-                    <span class="block text-sm text-neutral-400 font-normal">Opcional. Vecinos, chicos, adultos mayores, comercios…</span>
-                </label>
-                <input id="f-afecta" type="text" maxlength="200"
-                    placeholder="Ej: Familias con chicos y vecinos de la zona.">
-            </div>
-
-            <div>
-                <label class="block font-medium mb-2">¿Dónde es? (barrio o zona) <span class="oblig">*</span></label>
-                <input id="f-barrio" type="text" maxlength="120" required
-                    placeholder="Ej: Beccar, cerca de la estación">
-            </div>
-
-            <div>
-                <label class="block font-medium mb-2">¿Ya tenés una idea de cómo resolverlo?
-                    <span class="block text-sm text-neutral-400 font-normal">Opcional. Si no se te ocurre, dejalo vacío: lo pensamos entre todos.</span>
-                </label>
-                <textarea id="f-solucion"
-                    placeholder="Ej: Poner luces LED y un juego para chicos. Tal vez con ayuda de los comercios de la cuadra."></textarea>
-            </div>
-
-            <div>
-                <button type="submit" id="btn-armar"
-                    class="btn-si display text-xl italic px-6 py-4 rounded-2xl self-start">
-                    Armar mi propuesta ✨
-                </button>
-            </div>
-        </form>
-    </section>
-
-    <!-- PASO 2: LA PROPUESTA -->
-    <section id="paso-resultado" hidden>
-        <h2 class="mega text-3xl sm:text-5xl mb-6">Tu propuesta</h2>
-        <div id="resultado" class="propuesta bg-[#f7f7f5] rounded-2xl p-6 sm:p-8 mb-6"></div>
-
-        <div id="acciones" class="flex flex-wrap gap-3" hidden>
-            <button id="btn-publicar" class="btn-si display text-lg italic px-5 py-3 rounded-2xl">
-                Publicar en el mapa →
-            </button>
-            <button id="btn-otra" class="display text-lg italic px-5 py-3 rounded-2xl border-2 border-neutral-200">
-                Empezar otra
-            </button>
+<!-- CHAT -->
+<main class="flex-1 w-full">
+    <div class="max-w-[900px] mx-auto px-5 sm:px-8 pb-4">
+        <div id="hilo" class="flex flex-col gap-5 overflow-y-auto py-6" style="min-height:340px; max-height:56vh;">
+            <!-- Los mensajes se van agregando acá -->
         </div>
-
-        <!-- Datos para publicar -->
-        <form id="form-publicar" class="mt-8 border-t border-neutral-200 pt-8 flex flex-col gap-5" hidden>
-            <p class="text-neutral-600 font-light">
-                Para publicarla en el mapa del barrio, dejanos tus datos. El <strong>mail y el teléfono
-                no se muestran</strong>: son solo para avisarte novedades.
-            </p>
-            <div class="grid sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block font-medium mb-2">Nombre <span class="oblig">*</span></label>
-                    <input id="p-nombre" type="text" required placeholder="Tu nombre">
-                </div>
-                <div>
-                    <label class="block font-medium mb-2">Edad <span class="oblig">*</span></label>
-                    <input id="p-edad" type="number" min="1" max="120" required placeholder="Ej: 34">
-                </div>
-                <div>
-                    <label class="block font-medium mb-2">Tu barrio <span class="oblig">*</span></label>
-                    <input id="p-barrio" type="text" required placeholder="Ej: Beccar">
-                </div>
-            </div>
-            <div class="grid sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block font-medium mb-2">Email <span class="text-neutral-400 font-normal text-sm">(opcional)</span></label>
-                    <input id="p-email" type="email" placeholder="tu@email.com">
-                </div>
-                <div>
-                    <label class="block font-medium mb-2">Teléfono <span class="text-neutral-400 font-normal text-sm">(opcional)</span></label>
-                    <input id="p-telefono" type="text" placeholder="Ej: 11 5555 5555">
-                </div>
-            </div>
-            <div>
-                <button type="submit" id="btn-confirmar" class="btn-si display text-lg italic px-6 py-3 rounded-2xl self-start">
-                    Confirmar y publicar
-                </button>
-            </div>
-            <p id="aviso-publicar" class="text-sm" hidden></p>
-        </form>
-    </section>
-
+    </div>
 </main>
 
-<footer class="max-w-[820px] mx-auto px-5 sm:px-8 py-8 text-xs text-neutral-400 leading-relaxed">
-    Esta herramienta es para bajar a tierra ideas y convertirlas en proyectos. Para reclamos,
-    comunicate con el municipio (<strong>147</strong> o
-    <a href="https://www.sanisidro.gob.ar" target="_blank" rel="noopener" class="underline hover:text-neutral-700">sanisidro.gob.ar</a>).
-</footer>
+<!-- BARRA DE ESCRITURA -->
+<div class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-neutral-200">
+    <div class="max-w-[900px] mx-auto px-5 sm:px-8 py-4">
+        <form id="form" class="flex items-end gap-3">
+            <textarea id="entrada" rows="1" placeholder="Ej: Me gustaría que la plaza de Beccar tenga juegos y buena luz para que los chicos puedan ir a la tarde…"
+                class="flex-1 border-2 border-neutral-200 focus:border-neutral-800 focus:outline-none rounded-2xl px-4 py-3 text-base sm:text-lg"></textarea>
+            <button id="enviar" type="submit"
+                class="shrink-0 display text-lg italic px-5 py-3 rounded-2xl text-tinta"
+                style="background:var(--amarillo)">Enviar →</button>
+        </form>
+        <p class="text-xs text-neutral-400 mt-3 leading-relaxed">
+            Esta herramienta es para bajar a tierra ideas y convertirlas en proyectos. Para reclamos,
+            comunicate con el municipio (<strong>147</strong> o
+            <a href="https://www.sanisidro.gob.ar" target="_blank" rel="noopener" class="underline hover:text-neutral-700">sanisidro.gob.ar</a>).
+        </p>
+    </div>
+</div>
 
 <script>
 // ─────────────────────────────────────────────────────────────
 // Dirección del backend (servidor de GenerarSí en Railway).
-// Es pública, NO es un secreto.
+// Es una dirección pública: NO es un secreto. Si algún día cambia,
+// se cambia solamente esta línea.
 const BACKEND = "https://web-production-92519.up.railway.app";
 // ─────────────────────────────────────────────────────────────
 
-const $ = (id) => document.getElementById(id);
+const hilo    = document.getElementById("hilo");
+const form    = document.getElementById("form");
+const entrada = document.getElementById("entrada");
+const boton   = document.getElementById("enviar");
 
-// Datos que guardamos entre "armar" y "publicar".
-let propuestaTexto = "";
-let datosCaso = { tipo: "propuesta", titulo: "", barrio: "" };
+// Guardamos la charla para darle contexto al asistente en cada mensaje
+// (el servidor responde de a un mensaje por vez, así que le mandamos el
+//  resumen de lo hablado para que no se pierda el hilo).
+const conversacion = []; // {quien:'vecino'|'asistente', texto:''}
 
-function escapar(t){
-    return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-function formatear(t){
-    return escapar(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-}
-
-// Arma el pedido para la IA a partir del formulario.
-function armarPrompt(){
-    const titulo = $("f-titulo").value.trim();
-    const desc   = $("f-descripcion").value.trim();
-    const afecta = $("f-afecta").value.trim();
-    const barrio = $("f-barrio").value.trim();
-    const solu   = $("f-solucion").value.trim();
-
-    datosCaso.titulo = titulo;
-    datosCaso.barrio = barrio;
-    datosCaso.tipo = solu ? "propuesta" : "problema";
-
-    let p = "Un vecino de San Isidro completó este formulario para mejorar su barrio.\n\n";
-    p += "QUÉ QUIERE MEJORAR: " + titulo + "\n";
-    p += "EL PROBLEMA O LA IDEA: " + desc + "\n";
-    if (afecta) p += "A QUIÉN AFECTA: " + afecta + "\n";
-    p += "DÓNDE: " + barrio + "\n";
-    if (solu) p += "IDEA DE SOLUCIÓN DEL VECINO: " + solu + "\n";
-    p += "\nCon esto, armá DIRECTAMENTE la propuesta final, en tono vecinal y claro, ";
-    p += "con estas secciones cortas y en este orden: **Título**, **El problema**, ";
-    p += "**A quién afecta**, **La propuesta**, **Cómo se haría**, **Presupuesto (estimado)**, ";
-    p += "**Normativa (a revisar)**, **Primeros pasos**. ";
-    if (!solu) p += "Como el vecino no trajo una solución, en 'La propuesta' planteá 1 a 3 caminos posibles. ";
-    p += "No inventes cifras ni números de ordenanza: si no se saben, marcá 'a confirmar'.";
-    return p;
+// Convierte **negrita** simple en <strong> y escapa el resto.
+function formatear(texto){
+    const esc = texto
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return esc.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
-// Muestra la propuesta (con streaming si se puede; si no, de una).
-async function armarPropuesta(){
-    const prompt = armarPrompt();
-    $("paso-form").hidden = true;
-    $("paso-resultado").hidden = false;
-    $("acciones").hidden = true;
-    $("form-publicar").hidden = true;
-    const caja = $("resultado");
-    caja.innerHTML = '<span class="puntos"><span></span><span></span><span></span></span>';
-    window.scrollTo({ top: 0, behavior: "smooth" });
+function agregarBurbuja(quien, texto){
+    const fila = document.createElement("div");
+    fila.className = "flex " + (quien === "vecino" ? "justify-end" : "justify-start");
+    const b = document.createElement("div");
+    b.className = "burbuja px-4 py-3 " + (quien === "vecino" ? "burbuja-vecino" : "burbuja-asistente");
+    b.innerHTML = formatear(texto);
+    fila.appendChild(b);
+    hilo.appendChild(fila);
+    hilo.scrollTop = hilo.scrollHeight;
+    return b;
+}
 
-    const cuerpo = JSON.stringify({ mensaje: prompt });
-    let texto = "";
+function mostrarEscribiendo(){
+    const fila = document.createElement("div");
+    fila.className = "flex justify-start";
+    fila.id = "escribiendo";
+    fila.innerHTML = '<div class="burbuja burbuja-asistente px-4 py-3"><span class="puntos"><span></span><span></span><span></span></span></div>';
+    hilo.appendChild(fila);
+    hilo.scrollTop = hilo.scrollHeight;
+}
+function sacarEscribiendo(){
+    const e = document.getElementById("escribiendo");
+    if (e) e.remove();
+}
+
+// Arma el texto que le mandamos al servidor: toda la charla hasta ahora.
+function armarMensaje(){
+    if (conversacion.length === 1) return conversacion[0].texto;
+    let t = "Esta es la conversación con un vecino hasta ahora. Respondé al último mensaje siguiendo el hilo.\n\n";
+    for (const m of conversacion){
+        t += (m.quien === "vecino" ? "Vecino: " : "Asistente: ") + m.texto + "\n";
+    }
+    t += "Asistente:";
+    return t;
+}
+
+async function enviarMensaje(texto){
+    agregarBurbuja("vecino", texto);
+    conversacion.push({quien:"vecino", texto});
+    entrada.value = "";
+    ajustarAlto();
+    boton.disabled = true; boton.style.opacity = ".5";
+    mostrarEscribiendo();
+
+    const cuerpo = JSON.stringify({ mensaje: armarMensaje() });
+
     try {
+        // 1) Modo "streaming": la respuesta aparece escribiéndose de a poco.
         const r = await fetch(BACKEND + "/chat_stream", {
-            method: "POST", headers: {"Content-Type": "application/json"}, body: cuerpo
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: cuerpo
         });
         if (!r.ok || !r.body) throw new Error("sin stream");
-        caja.innerHTML = "";
+
+        sacarEscribiendo();
+        const burbuja = agregarBurbuja("asistente", "");
         const lector = r.body.getReader();
         const dec = new TextDecoder();
+        let acc = "";
         while (true){
             const {done, value} = await lector.read();
             if (done) break;
-            texto += dec.decode(value, {stream:true});
-            caja.innerHTML = formatear(texto);
-            window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+            acc += dec.decode(value, {stream:true});
+            burbuja.innerHTML = formatear(acc);
+            hilo.scrollTop = hilo.scrollHeight;
+        }
+        acc = acc.trim();
+        if (acc){
+            conversacion.push({quien:"asistente", texto:acc});
+        } else {
+            // No llegó nada por streaming: probamos el modo clásico.
+            if (burbuja.parentElement) burbuja.parentElement.remove();
+            await enviarClasico(cuerpo);
         }
     } catch (e){
-        // Fallback: modo clásico (una sola respuesta).
-        try {
-            const r = await fetch(BACKEND + "/chat", {
-                method: "POST", headers: {"Content-Type": "application/json"}, body: cuerpo
-            });
-            const data = await r.json();
-            texto = (data && data.ok && data.respuesta) ? data.respuesta : "";
-            if (!texto) throw new Error(data && data.error ? data.error : "sin respuesta");
-            caja.innerHTML = formatear(texto);
-        } catch (e2){
-            caja.innerHTML = "Uf, no pude armar la propuesta ahora mismo. Probá de nuevo en un ratito.";
-            $("acciones").hidden = false;
-            $("btn-publicar").style.display = "none";
-            return;
-        }
+        // Si el streaming no anduvo (navegador viejo, red, etc.), caemos al
+        // modo clásico, que es más robusto.
+        sacarEscribiendo();
+        await enviarClasico(cuerpo);
+    } finally {
+        boton.disabled = false; boton.style.opacity = "1";
+        entrada.focus();
     }
-
-    propuestaTexto = texto.trim();
-    $("acciones").hidden = false;
-    $("btn-publicar").style.display = "";
 }
 
-// --- Publicar en el mapa ---
-async function publicar(e){
-    e.preventDefault();
-    const aviso = $("aviso-publicar");
-    const nombre = $("p-nombre").value.trim();
-    const edad   = $("p-edad").value.trim();
-    const barrio = $("p-barrio").value.trim();
-    if (!nombre || !edad || !barrio){
-        aviso.hidden = false; aviso.style.color = "#c0264e";
-        aviso.textContent = "Completá nombre, edad y barrio para publicar.";
-        return;
-    }
-    $("btn-confirmar").disabled = true; $("btn-confirmar").style.opacity = ".5";
-    aviso.hidden = false; aviso.style.color = "#666"; aviso.textContent = "Publicando…";
-
-    const caso = {
-        tipo: datosCaso.tipo,
-        titulo: datosCaso.titulo,
-        descripcion: propuestaTexto,
-        barrio: datosCaso.barrio,
-        autor_nombre: nombre,
-        autor_edad: parseInt(edad, 10),
-        autor_barrio: barrio,
-        autor_email: $("p-email").value.trim(),
-        autor_telefono: $("p-telefono").value.trim()
-    };
-
+// Modo clásico (sin streaming): pide la respuesta completa de una sola vez.
+async function enviarClasico(cuerpo){
+    mostrarEscribiendo();
     try {
-        const r = await fetch(BACKEND + "/casos", {
-            method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(caso)
+        const r = await fetch(BACKEND + "/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: cuerpo
         });
         const data = await r.json();
-        if (data && data.ok){
-            aviso.style.color = "#127a3e";
-            aviso.textContent = "¡Listo! Tu propuesta quedó publicada en el mapa del barrio. 🎉";
-            $("form-publicar").querySelectorAll("input").forEach(i => i.disabled = true);
+        sacarEscribiendo();
+        if (data && data.ok && data.respuesta){
+            agregarBurbuja("asistente", data.respuesta.trim());
+            conversacion.push({quien:"asistente", texto:data.respuesta.trim()});
         } else {
-            aviso.style.color = "#c0264e";
-            aviso.textContent = "No se pudo publicar: " + ((data && data.error) || "probá de nuevo en un rato.");
-            $("btn-confirmar").disabled = false; $("btn-confirmar").style.opacity = "1";
+            let msg = "Uf, algo se me trabó de este lado. Probá de nuevo en un ratito.";
+            if (data && data.error){ msg += "\n\n(Detalle técnico: " + data.error + ")"; }
+            agregarBurbuja("asistente", msg);
         }
-    } catch (e2){
-        aviso.style.color = "#c0264e";
-        aviso.textContent = "No pude conectarme para publicar. Probá de nuevo en un rato.";
-        $("btn-confirmar").disabled = false; $("btn-confirmar").style.opacity = "1";
+    } catch (e){
+        sacarEscribiendo();
+        agregarBurbuja("asistente",
+            "No pude conectarme con el servidor. Fijate que tengas internet y probá de nuevo.");
     }
 }
 
-// --- Eventos ---
-$("form").addEventListener("submit", (e)=>{
+// La entrada crece con el texto (hasta un límite).
+function ajustarAlto(){
+    entrada.style.height = "auto";
+    entrada.style.height = Math.min(entrada.scrollHeight, 160) + "px";
+}
+entrada.addEventListener("input", ajustarAlto);
+
+// Enter envía; Shift+Enter hace salto de línea.
+entrada.addEventListener("keydown", (e)=>{
+    if (e.key === "Enter" && !e.shiftKey){
+        e.preventDefault();
+        form.requestSubmit();
+    }
+});
+
+form.addEventListener("submit", (e)=>{
     e.preventDefault();
-    if (!$("f-titulo").value.trim() || !$("f-descripcion").value.trim() || !$("f-barrio").value.trim()) return;
-    armarPropuesta();
+    const texto = entrada.value.trim();
+    if (!texto) return;
+    enviarMensaje(texto);
 });
-$("btn-publicar").addEventListener("click", ()=>{
-    $("form-publicar").hidden = false;
-    $("form-publicar").scrollIntoView({ behavior: "smooth" });
+
+// Saludo inicial del asistente.
+window.addEventListener("DOMContentLoaded", ()=>{
+    agregarBurbuja("asistente",
+        "¡Hola! Soy el copiloto de GenerarSí. Esto no es un buzón de quejas: te ayudo a convertir eso que te gustaría mejorar de tu barrio en una propuesta concreta y presentable. Contame: ¿qué te gustaría cambiar o mejorar?");
+    entrada.focus();
 });
-$("btn-otra").addEventListener("click", ()=>{
-    $("paso-resultado").hidden = true;
-    $("paso-form").hidden = false;
-    $("form").reset();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-});
-$("form-publicar").addEventListener("submit", publicar);
 </script>
 </body>
 </html>

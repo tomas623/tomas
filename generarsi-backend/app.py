@@ -70,6 +70,9 @@ ciudad; vos ponés el método. Lo acompañás a pasar de "esto no anda" a
 Cómo hablás:
 - Cercano, claro, de barrio. Tuteás. Nada de lenguaje técnico ni burocrático.
 - Frases cortas, cálidas y directas. Explicás lo difícil en simple.
+- MUY IMPORTANTE (rapidez): cada respuesta del chat es CORTA — 2 a 4 frases,
+  y como mucho una o dos preguntas. Vas de a poco, un paso por vez. La ÚNICA
+  respuesta larga es la PROPUESTA FINAL (paso 7), cuando ya juntaste todo.
 - Combativo con la barrera, generoso con la gente: el problema es el obstáculo
   (la traba, la exclusión, lo que no funciona), NUNCA una persona, un partido
   o una empresa con nombre. Esto no es partidario: no nombrás ni defendés
@@ -86,11 +89,15 @@ dispares todas las preguntas juntas. Los pasos son:
    realistas.
 5. PRESUPUESTO: ¿implica plata? Un orden de magnitud (poco / medio / mucho) y
    de dónde podría salir. NO inventes cifras exactas: si no se sabe, decilo.
-6. NORMATIVA: ¿alcanza con gestión, o hace falta una ordenanza nueva o cambiar
-   una existente? ¿A qué nivel (municipal, provincial, nacional)? Orientá el
-   razonamiento, pero NO inventes números de ordenanza ni leyes: si hay que
-   verificarlo, decí "a confirmar en la fuente oficial (Digesto/Boletín Oficial
-   del municipio o sanisidro.gob.ar)".
+6. NORMATIVA (importante): ¿alcanza con gestión, o hace falta una ordenanza
+   nueva o cambiar una existente? ¿A qué nivel (municipal, provincial,
+   nacional)? Cuando toques normativa, USÁ la búsqueda web para encontrar
+   ordenanzas o leyes REALES y vigentes, y CITÁ la fuente (nombre/número y de
+   dónde salió). NUNCA inventes números de ordenanza ni artículos: si la
+   búsqueda no te da algo confiable, decilo con honestidad y marcá "a confirmar
+   en la fuente oficial (Digesto/Boletín Oficial del municipio o
+   sanisidro.gob.ar)". Igual, no frenes la charla por esto: se puede seguir y
+   dejar la normativa "a revisar".
 7. PROPUESTA FINAL: cuando haya material suficiente, armá un texto ordenado y
    presentable, con estas secciones cortas: Título · El problema · A quién
    afecta · La propuesta · Cómo se haría · Presupuesto (estimado) · Normativa
@@ -107,6 +114,41 @@ Nunca prometas que el municipio va a resolver. Ayudás a que el vecino dé el
 primer paso bien dado y con una propuesta sólida. Cerrás siempre con aliento,
 sin exagerar.
 """
+
+
+# Búsqueda web (grounding con Google) para el cruce con legislación.
+# Si la SDK o el plan no la soportan, queda en None y el chat funciona igual.
+def _armar_busqueda():
+    if os.environ.get("GEMINI_SIN_BUSQUEDA"):  # permite apagarla por variable
+        return None
+    try:
+        return [types.Tool(google_search=types.GoogleSearch())]
+    except Exception as e:  # noqa: BLE001
+        log.warning("No pude preparar la búsqueda web: %s", e)
+        return None
+
+
+HERRAMIENTAS = _armar_busqueda()
+
+
+def _config(con_busqueda):
+    opciones = {"system_instruction": SISTEMA}
+    if con_busqueda and HERRAMIENTAS:
+        opciones["tools"] = HERRAMIENTAS
+    return types.GenerateContentConfig(**opciones)
+
+
+# La búsqueda web solo se activa cuando el mensaje roza la normativa/legislación.
+# Así los turnos comunes del chat quedan rápidos (una sola consulta, sin búsqueda).
+_CLAVES_NORMATIVA = ("norma", "ordenanza", " ley", "legisla", "reglament",
+                     "permiso", "habilita", "código", "decreto", "concejo",
+                     "propuesta final", "armá la propuesta", "arma la propuesta")
+
+
+def _intentos_busqueda(mensaje):
+    if HERRAMIENTAS and any(c in mensaje.lower() for c in _CLAVES_NORMATIVA):
+        return (True, False)   # primero con búsqueda; si falla, sin
+    return (False,)            # turno común: rápido, sin búsqueda
 
 
 @app.route("/")
@@ -293,25 +335,29 @@ def chat_stream():
 
     def generar():
         for modelo in MODELOS:
-            enviado = False
-            try:
-                flujo = cliente.models.generate_content_stream(
-                    model=modelo,
-                    contents=mensaje,
-                    config=types.GenerateContentConfig(system_instruction=SISTEMA),
-                )
-                for parte in flujo:
-                    texto = getattr(parte, "text", "") or ""
-                    if texto:
-                        enviado = True
-                        yield texto
-                return  # terminó bien
-            except Exception as e:  # noqa: BLE001
-                log.warning("Streaming falló con el modelo %s: %s", modelo, e)
-                if enviado:
-                    # Ya mandamos parte de la respuesta; no arrancamos otro modelo.
-                    return
-                continue
+            # Según el mensaje, decidimos si probar con búsqueda web (para citar
+            # legislación real) y, si falla, sin búsqueda (más robusto).
+            for con_busqueda in _intentos_busqueda(mensaje):
+                enviado = False
+                try:
+                    flujo = cliente.models.generate_content_stream(
+                        model=modelo,
+                        contents=mensaje,
+                        config=_config(con_busqueda),
+                    )
+                    for parte in flujo:
+                        texto = getattr(parte, "text", "") or ""
+                        if texto:
+                            enviado = True
+                            yield texto
+                    return  # terminó bien
+                except Exception as e:  # noqa: BLE001
+                    log.warning("Streaming falló (modelo=%s, busqueda=%s): %s",
+                                modelo, con_busqueda, e)
+                    if enviado:
+                        # Ya mandamos parte de la respuesta; no arrancamos de nuevo.
+                        return
+                    continue
         # Si ninguno funcionó no mandamos nada: la página reintenta por /chat.
 
     return Response(
@@ -344,20 +390,21 @@ def chat():
     # saturación (503), esperamos un toque y reintentamos; así aguantamos picos.
     for pasada in range(3):
         for modelo in MODELOS:
-            try:
-                respuesta = cliente.models.generate_content(
-                    model=modelo,
-                    contents=mensaje,
-                    config=types.GenerateContentConfig(system_instruction=SISTEMA),
-                )
-                texto = (respuesta.text or "").strip()
-                if texto:
-                    return jsonify({"ok": True, "respuesta": texto, "modelo": modelo})
-                ultimo_error = f"El modelo {modelo} devolvió una respuesta vacía."
-                log.warning(ultimo_error)
-            except Exception as e:  # noqa: BLE001 — capturamos cualquier error de la IA
-                ultimo_error = f"{modelo}: {e}"
-                log.warning("Fallo con el modelo %s: %s", modelo, e)
+            for con_busqueda in _intentos_busqueda(mensaje):
+                try:
+                    respuesta = cliente.models.generate_content(
+                        model=modelo,
+                        contents=mensaje,
+                        config=_config(con_busqueda),
+                    )
+                    texto = (respuesta.text or "").strip()
+                    if texto:
+                        return jsonify({"ok": True, "respuesta": texto, "modelo": modelo})
+                    ultimo_error = f"El modelo {modelo} devolvió una respuesta vacía."
+                    log.warning(ultimo_error)
+                except Exception as e:  # noqa: BLE001 — capturamos cualquier error de la IA
+                    ultimo_error = f"{modelo} (busqueda={con_busqueda}): {e}"
+                    log.warning("Fallo (modelo=%s, busqueda=%s): %s", modelo, con_busqueda, e)
 
         # Toda la pasada falló. Si fue por saturación, esperamos y reintentamos.
         if pasada < 2 and es_transitorio(ultimo_error):
