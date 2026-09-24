@@ -158,6 +158,52 @@ def home():
     return f"GenerarSí backend andando ✔ ({estado})"
 
 
+@app.route("/diag_busqueda")
+def diag_busqueda():
+    # Prueba si la búsqueda web (para legislación) funciona, modelo por modelo.
+    # Abrila en el navegador y pegá el resultado.
+    if not cliente:
+        return "SIN CLAVE (falta GEMINI_API_KEY)", 500, {"Content-Type": "text/plain; charset=utf-8"}
+    if not HERRAMIENTAS:
+        return ("La búsqueda web no está disponible en esta versión de la librería.",
+                200, {"Content-Type": "text/plain; charset=utf-8"})
+
+    consulta = ("¿Qué ordenanzas de San Isidro (provincia de Buenos Aires) regulan "
+                "las plazas y los espacios verdes? Citá la fuente.")
+    candidatos = ([os.environ.get("GEMINI_MODEL")] if os.environ.get("GEMINI_MODEL") else []) + [
+        "gemini-3.6-flash", "gemini-flash-latest", "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+    ]
+
+    lineas = []
+    for modelo in candidatos:
+        if not modelo:
+            continue
+        lineas.append(f"== {modelo} ==")
+        try:
+            r = cliente.models.generate_content(
+                model=modelo, contents=consulta, config=_config(True))
+            texto = (r.text or "").strip()
+            busquedas, fuentes = [], []
+            try:
+                gm = getattr(r.candidates[0], "grounding_metadata", None)
+                if gm:
+                    busquedas = list(getattr(gm, "web_search_queries", None) or [])
+                    for ch in (getattr(gm, "grounding_chunks", None) or []):
+                        web = getattr(ch, "web", None)
+                        if web:
+                            fuentes.append(getattr(web, "title", "") or getattr(web, "uri", ""))
+            except Exception as e:  # noqa: BLE001
+                lineas.append("  (no pude leer las fuentes: " + str(e) + ")")
+            lineas.append("  Búsquedas hechas: " + (", ".join(busquedas) if busquedas else "NINGUNA"))
+            lineas.append("  Fuentes citadas: " + (" | ".join(fuentes[:5]) if fuentes else "NINGUNA"))
+            lineas.append("  Respuesta (recorte): " + texto[:250].replace("\n", " "))
+        except Exception as e:  # noqa: BLE001
+            lineas.append("  FALLO: " + str(e))
+        lineas.append("")
+    return "\n".join(lineas), 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
 @app.route("/diag")
 def diag():
     # Página de diagnóstico: abrila en el navegador y pegale el texto a quien
