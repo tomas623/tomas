@@ -33,9 +33,10 @@ cliente = genai.Client(api_key=API_KEY) if API_KEY else None
 # Se puede forzar uno concreto con la variable de entorno GEMINI_MODEL.
 _modelo_fijo = os.environ.get("GEMINI_MODEL")
 MODELOS = ([_modelo_fijo] if _modelo_fijo else []) + [
-    "gemini-flash-latest",
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
+    "gemini-3.6-flash",       # recomendado por Google como reemplazo actual
+    "gemini-3.5-flash",
+    "gemini-3.8-flash",
+    "gemini-flash-latest",    # alias de respaldo (a veces se satura: 503)
 ]
 
 # Instrucciones del asistente: quién es y cómo se comporta.
