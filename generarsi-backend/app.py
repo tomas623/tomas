@@ -98,6 +98,39 @@ def home():
     return f"GenerarSí backend andando ✔ ({estado})"
 
 
+@app.route("/diag")
+def diag():
+    # Página de diagnóstico: abrila en el navegador y pegale el texto a quien
+    # arma la herramienta. Muestra qué modelos acepta la clave y el error real.
+    # NO muestra la clave.
+    if not cliente:
+        return "SIN CLAVE (falta configurar GEMINI_API_KEY)", 500
+
+    lineas = ["== MODELOS DISPONIBLES =="]
+    try:
+        encontrados = []
+        for m in cliente.models.list():
+            nombre = getattr(m, "name", None) or str(m)
+            encontrados.append(nombre)
+        lineas.extend(encontrados if encontrados else ["(la lista vino vacía)"])
+    except Exception as e:  # noqa: BLE001
+        lineas.append("No pude listar los modelos: " + str(e))
+
+    lineas.append("")
+    lineas.append("== PRUEBA DE RESPUESTA ==")
+    for modelo in MODELOS:
+        try:
+            r = cliente.models.generate_content(
+                model=modelo, contents="Respondé solo la palabra: hola"
+            )
+            lineas.append(f"OK  {modelo}: {(r.text or '').strip()[:80]}")
+            break
+        except Exception as e:  # noqa: BLE001
+            lineas.append(f"FALLO  {modelo}: {e}")
+
+    return "\n".join(lineas), 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
 @app.route("/chat", methods=["POST"])
 def chat():
     if not cliente:
