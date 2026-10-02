@@ -56,6 +56,8 @@ Agrupar en etapas que el founder reconozca:
 
 # MÓDULO 2 — Términos y condiciones
 
+> **Actualización (octubre 2026, decisión de Tomás):** no es un generador a partir de preguntas. Es un servicio online **a medida**: el usuario sube sus TyC y política de privacidad, una herramienta los revisa y corrige, y le devolvemos la versión buena. Precio $400.000. Página propia: legalpacers.com/tyc-startups, fuera del checklist. Donde lo que sigue contradiga esto, manda esta nota.
+
 ## Qué es
 Un generador que arma los **términos y condiciones** y la **política de privacidad** de una web o app, a partir de lo que el emprendimiento realmente hace. Estándar, repetible, autogestionable: entra de lleno en Legal Pacers.
 

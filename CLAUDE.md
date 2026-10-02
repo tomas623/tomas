@@ -20,7 +20,7 @@ Si falla en una, **no es Legal Pacers: es WTR** (el estudio). No lo construyas c
 ## Los tres productos (el alcance real)
 1. **Registro de marcas** *(existe)* — registro online + **vigilancia de marcas por suscripción** (ingreso recurrente, es el ancla del negocio).
 2. **Checklist legal para startups** *(en construcción)* — el usuario responde preguntas y recibe un mapa de qué tiene en orden y qué le falta. **Ordena y prioriza; no resuelve todo.** Cada ítem faltante deriva a otro módulo de LP o al estudio.
-3. **Términos y condiciones** *(en construcción)* — genera TyC + política de privacidad a partir de lo que el emprendimiento realmente hace.
+3. **Términos y condiciones** *(en construcción)* — servicio online de TyC + política de privacidad **a medida**: el usuario sube los suyos, una herramienta los revisa y corrige, y le devolvemos la versión buena. Precio: $400.000. Va en página propia (legalpacers.com/tyc-startups), fuera del checklist; el checklist solo deriva ahí.
 
 ## Fuera de alcance (no construir sin consultar)
 - E-commerce como vertical propio, "cualquier trámite legal", asesoramiento a medida, módulos genéricos que no pasen el filtro. Si surge algo bueno pero no pasa el filtro, se ofrece **desde el estudio**, no como feature de LP.
