@@ -35,6 +35,6 @@ Referencia interna, no es copy publicable. Fuente: resumen por país de blog.mea
 - Ganancias sociedades 25–35 %, dividendos 7 %, IVA 21 %, débitos y créditos 0,6 %, Ingresos Brutos ~4 %.
 - Régimen de Economía del Conocimiento: hasta 60 % menos de Ganancias y beneficios en contribuciones. También régimen PyME y RIGI.
 
-## Qué podría usar Legal Pacers (propuestas, pendientes de OK)
-- **Checklist:** D4 (NDA) se apoya en la Ley 24.766; D2 aclara que con empleados el software ya es de la empresa, el riesgo está en freelancers y fundadores; D3 baja de prioridad por la Ley 27.742; B3 explica que no hay registro internacional único.
-- **Herramienta de TyC:** criterios de revisión B2C (claros, completos, en español, autosuficientes) y transferencia internacional de datos (servidores fuera de Argentina).
+## Qué usa Legal Pacers
+- **Checklist (aplicado, octubre 2026):** D4 (NDA) se apoya en la Ley 24.766; D2 aclara que con empleados el software ya es de la empresa, el riesgo está en freelancers y fundadores; D3 baja de prioridad por la Ley 27.742; B3 explica que no hay registro internacional único. Nuevos: C5 (IA y decisiones automatizadas) y A8 (Régimen de Economía del Conocimiento), ambos derivan a WTR; A8 es tema de contador, pero WTR lo coordina.
+- **Herramienta de TyC (pendiente):** criterios de revisión B2C (claros, completos, en español, autosuficientes) y transferencia internacional de datos (servidores fuera de Argentina).
