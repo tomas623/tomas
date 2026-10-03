@@ -38,6 +38,38 @@ function normTitular(t) {
   return tokens.sort().join(' ');
 }
 
+// Solo se vigilan SOLICITUDES NUEVAS publicadas: son las únicas que todavía
+// admiten oposición. Una marca concedida, renovada, transferida o una oposición
+// ya presentada no es una amenaza nueva contra la que se pueda actuar, aunque
+// aparezca en un boletín. El catch-up baja dos series del INPI:
+//   - inpi_nuevas_N.pdf    → marcas nuevas en trámite (oponibles).
+//   - inpi_registros_N.xls → concedidas / oposiciones / limitaciones (no oponibles).
+// Para boletines de otra fuente (subida manual, puente Python) se decide por el
+// estado de cada acta; si el estado no viene, se coteja (mejor un aviso de más
+// que perder una solicitud real).
+const ESTADOS_NO_OPONIBLES = /registrad|concedid|renovad|oposicion|caducad|denegad|abandonad|renunciad|transferid|limitacion/;
+function esOponible(acta, bol) {
+  const archivo = String(bol.archivo || '');
+  if (archivo.startsWith('inpi_nuevas_')) return true;
+  if (archivo.startsWith('inpi_registros_')) return false;
+  const e = String(acta.estado || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return !e || !ESTADOS_NO_OPONIBLES.test(e);
+}
+
+// Limpieza de lo generado antes de este filtro: alertas todavía sin revisar que
+// salieron de un boletín de concedidas/oposiciones se descartan solas. Las ya
+// aprobadas o enviadas quedan como historial. Idempotente.
+function descartarAlertasNoOponibles() {
+  const r = db.prepare(`
+    UPDATE alertas
+       SET estado = 'descartada',
+           nota_admin = 'Descartada automáticamente: la marca salió de un boletín de concedidas/oposiciones, no de solicitudes nuevas.'
+     WHERE estado = 'pendiente_revision'
+       AND boletin_id IN (SELECT id FROM boletines WHERE archivo LIKE 'inpi\\_registros\\_%' ESCAPE '\\')
+  `).run();
+  return r.changes;
+}
+
 function nivelGte(a, b) {
   const orden = { bajo: 0, medio: 1, alto: 2 };
   return orden[a] >= orden[b];
@@ -67,7 +99,8 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
       SELECT * FROM boletines WHERE estado = 'procesado' ORDER BY id DESC LIMIT ?
     `).all(BOLETINES_RECIENTES);
   }
-  if (!boletines.length) return { ok: true, alertas: 0, mensaje: 'No hay boletines procesados.' };
+  const descartadas = descartarAlertasNoOponibles();
+  if (!boletines.length) return { ok: true, alertas: 0, descartadas, mensaje: 'No hay boletines procesados.' };
 
   const vigiladas = db.prepare(`
     SELECT mv.*, u.email AS u_email, u.telefono AS u_telefono, u.nombre AS u_nombre
@@ -80,10 +113,11 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
   for (const bol of boletines) {
     // Filtramos las actas placeholder (figurativas sin denominación) del universo
     // a cotejar: no aportan nada al matching por nombre y sólo generan ruido.
+    // Y las que no son solicitudes nuevas (concedidas, renovadas, etc.).
     const actas = db.prepare(`
       SELECT id, denominacion, denominacion_norm, clase, acta, titular, estado, tipo
       FROM marcas_boletin WHERE boletin_id = ?
-    `).all(bol.id).filter(a => !esPlaceholder(a.denominacion));
+    `).all(bol.id).filter(a => !esPlaceholder(a.denominacion) && esOponible(a, bol));
     if (!actas.length) continue;
 
     for (const mv of vigiladas) {
@@ -157,14 +191,14 @@ async function correr({ boletinId, actorId, desdeBoletinId } = {}) {
   }
 
   audit.log(actorId || null, 'monitoreo.run', {
-    detalle: { boletines: boletines.map(b => b.id), alertas_creadas: totalAlertas, candidatos: candidatosTotal },
+    detalle: { boletines: boletines.map(b => b.id), alertas_creadas: totalAlertas, candidatos: candidatosTotal, descartadas_no_oponibles: descartadas },
   });
 
   const lista = boletines.map(b => ({ id: b.id, numero: b.numero }));
   const mensaje = boletines.length === 1
     ? `Boletín #${boletines[0].numero || boletines[0].id} barrido.`
     : `${boletines.length} boletines barridos (del #${boletines[0].numero || boletines[0].id} al #${boletines[boletines.length-1].numero || boletines[boletines.length-1].id}).`;
-  return { ok: true, alertas: totalAlertas, candidatos: candidatosTotal,
+  return { ok: true, alertas: totalAlertas, candidatos: candidatosTotal, descartadas,
            boletines: lista, boletines_total: boletines.length, mensaje };
 }
 
@@ -221,4 +255,4 @@ async function avisarPendientes() {
   return { enviado: r.ok, total, porNivel, stub: !!r.stub };
 }
 
-module.exports = { correr, avisarPendientes };
+module.exports = { correr, avisarPendientes, esOponible };
