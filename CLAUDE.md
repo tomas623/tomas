@@ -41,6 +41,10 @@ El usuario **entra por Legal Pacers** (barato, self-service, necesidad puntual) 
 - **Sin tono "de IA".** Legal Pacers habla simple, como un producto: qué hacés, qué recibís, cuánto sale. Evitar frases en espejo o simétricas ("Lo simple, online. Lo complejo, con el estudio"), aforismos, enumeraciones de a tres por reflejo y abuso de dos puntos. Explicar en positivo lo que hace cada uno (Legal Pacers y WTR), nunca "esto no lo hacemos".
 - Si Tomás escribe un texto, se respeta su redacción: se corrige gramática, no se reescribe.
 
+## Marca e identidad visual
+- Resumen del brandbook en `docs/brand.md`: concepto del pacer, paleta (#001540, #006FFB, #E2E1DE, #1E1E1E, fondo crema), tipografía Mundial y uso del logo. Todo diseño nuevo lo sigue.
+- El brandbook dice "consultora legal": eso quedó viejo. Hoy Legal Pacers es un producto de WTR | abogados.
+
 ## Relación con WTR (cómo nombrarlo)
 - En Legal Pacers: mostrar que es **"un producto de WTR | abogados"**.
 - Legal Pacers no compite con el estudio: lo alimenta. El tono es el de una herramienta que te resuelve lo simple y te conecta con el estudio para lo complejo.
