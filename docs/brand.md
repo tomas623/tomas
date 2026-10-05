@@ -5,7 +5,7 @@ Fuente: Manual de marca de Bravvo Agencia (octubre 2025). Adaptado a hoy: Legal 
 ## Concepto
 - **El pacer:** en running, el pacer te acompaña en la previa y durante la carrera, y te ayuda a llegar a la meta. Legal Pacers acompaña el impulso del emprendedor, no lo frena.
 - Frases que ya son de la marca: "Escalá con nosotros.", "Hablamos tu idioma.", "business enablers".
-- Visión original: sumar servicios complementarios (RRHH, marketing, estrategia). Hoy eso es el lugar donde conviven proveedores y startups (nombre a definir).
+- Visión original: sumar servicios complementarios (RRHH, marketing, estrategia). Hoy eso es Club Pacers, el lugar donde conviven proveedores y startups (después del MVP).
 
 ## Público
 Joven-profesional y digital, de 25 a 50 años. Valora la claridad y el trato cercano, pero exige profesionalismo.
