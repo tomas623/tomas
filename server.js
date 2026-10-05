@@ -25,6 +25,18 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const ROOT_DIR = __dirname;
 
 app.use(securityHeaders);
+
+// La home vive en www.legalpacers.com: quien entra por legalpacers.com (sin
+// www) se redirige ahí, conservando la ruta.
+const HOME_HOST_CANONICO = (process.env.HOME_HOST_CANONICO || 'www.legalpacers.com').toLowerCase();
+const HOME_HOST_SIN_WWW = HOME_HOST_CANONICO.replace(/^www\./, '');
+app.use((req, res, next) => {
+  if (String(req.hostname || '').toLowerCase() === HOME_HOST_SIN_WWW && HOME_HOST_SIN_WWW !== HOME_HOST_CANONICO) {
+    return res.redirect(301, `https://${HOME_HOST_CANONICO}${req.originalUrl}`);
+  }
+  next();
+});
+
 app.use(express.json({ limit: '256kb' }));
 
 // Rate limiting en endpoints sensibles (antes de montar las rutas).
@@ -1159,7 +1171,7 @@ app.get('/pagos/pendiente', (req, res) =>
 const HOME_HOSTS = new Set((process.env.HOME_HOSTS || 'legalpacers.com,www.legalpacers.com')
   .split(',').map(h => h.trim().toLowerCase()).filter(Boolean));
 const MARCAS_URL = (process.env.MARCAS_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
-const HOME_URL = (process.env.HOME_URL || 'https://legalpacers.com').replace(/\/+$/, '');
+const HOME_URL = `https://${HOME_HOST_CANONICO}`;
 const HOME_HTML = path.join(ROOT_DIR, 'public', 'home', 'index.html');
 function esHome(req) { return HOME_HOSTS.has(String(req.hostname || '').toLowerCase()); }
 
@@ -1168,12 +1180,12 @@ app.get('/', (req, res) => {
   res.sendFile(esHome(req) ? HOME_HTML : path.join(ROOT_DIR, 'landing-legalpacers.html'));
 });
 
-// Vista previa de la home desde el dominio de marcas (antes de apuntar
-// legalpacers.com a este servicio). No se indexa.
+// /home también muestra la home (www.legalpacers.com/home). Desde el dominio de
+// marcas sirve como vista previa mientras legalpacers.com no apunte acá, y ahí
+// no se indexa.
 app.get('/home', (req, res) => {
-  if (esHome(req)) return res.redirect(301, '/');
   res.set('Cache-Control', 'no-cache');
-  res.set('X-Robots-Tag', 'noindex');
+  if (!esHome(req)) res.set('X-Robots-Tag', 'noindex');
   res.sendFile(HOME_HTML);
 });
 
