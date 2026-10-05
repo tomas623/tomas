@@ -36,6 +36,8 @@ El usuario **entra por Legal Pacers** (barato, self-service, necesidad puntual) 
 - El lenguaje real del ecosistema (marca, TyC, socios, ronda) sí va; la jerga vacía no.
 - **Afirmar, no compararse.** No compararse con estudios grandes ni "firmas serias".
 - No inventar datos, precios ni funcionalidades que no existan: si falta info real, dejar el dato pendiente visible, no inventarlo.
+- **Sin tono "de IA".** Legal Pacers habla simple, como un producto: qué hacés, qué recibís, cuánto sale. Evitar frases en espejo o simétricas ("Lo simple, online. Lo complejo, con el estudio"), aforismos, enumeraciones de a tres por reflejo y abuso de dos puntos. Explicar en positivo lo que hace cada uno (Legal Pacers y WTR), nunca "esto no lo hacemos".
+- Si Tomás escribe un texto, se respeta su redacción: se corrige gramática, no se reescribe.
 
 ## Relación con WTR (cómo nombrarlo)
 - En Legal Pacers: mostrar que es **"un producto de WTR | abogados"**.
