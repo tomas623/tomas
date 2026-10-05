@@ -982,6 +982,7 @@ async function loadLeads() {
         <option value="free" ${LEAD_FILTROS.tipo==='free'?'selected':''}>Free</option>
         <option value="informe" ${LEAD_FILTROS.tipo==='informe'?'selected':''}>Informe</option>
         <option value="registro" ${LEAD_FILTROS.tipo==='registro'?'selected':''}>Registro</option>
+        <option value="interes" ${LEAD_FILTROS.tipo==='interes'?'selected':''}>Aviso próximamente (home)</option>
         <option value="suscripcion" ${LEAD_FILTROS.tipo==='suscripcion'?'selected':''}>Suscripción</option>
       </select>
       <select id="fltPipe" onchange="LEAD_FILTROS.pipeline=this.value;loadLeads()" class="filter-sel">

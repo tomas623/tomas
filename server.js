@@ -36,6 +36,7 @@ app.use('/api/auth/forgot-password', limiters.lead);
 app.use('/api/marca/check', limiters.check);
 // Captura de leads: anti-spam.
 app.use('/api/marca/lead-free', limiters.lead);
+app.use('/api/lp/interes', limiters.lead);
 // Creación de pagos/suscripciones/registros: anti-abuso.
 app.use('/api/marca/consulta/iniciar', limiters.pago);
 app.use('/api/marca/registro/iniciar', limiters.pago);
@@ -1151,16 +1152,69 @@ app.get('/pagos/pendiente', (req, res) =>
 // no-cache: el navegador puede guardar la copia pero DEBE revalidar con el
 // server (via ETag) antes de usarla. Así, apenas redeployamos, los usuarios
 // toman el HTML/CSS nuevo sin quedarse con una versión vieja cacheada.
+//
+// El mismo servicio atiende marcas.legalpacers.com y legalpacers.com: según el
+// dominio, '/' muestra la landing de marcas o la home de Legal Pacers.
+// HOME_HOSTS permite sumar dominios (por ejemplo, uno de prueba).
+const HOME_HOSTS = new Set((process.env.HOME_HOSTS || 'legalpacers.com,www.legalpacers.com')
+  .split(',').map(h => h.trim().toLowerCase()).filter(Boolean));
+const MARCAS_URL = (process.env.MARCAS_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+const HOME_URL = (process.env.HOME_URL || 'https://legalpacers.com').replace(/\/+$/, '');
+const HOME_HTML = path.join(ROOT_DIR, 'public', 'home', 'index.html');
+function esHome(req) { return HOME_HOSTS.has(String(req.hostname || '').toLowerCase()); }
+
 app.get('/', (req, res) => {
   res.set('Cache-Control', 'no-cache');
-  res.sendFile(path.join(ROOT_DIR, 'landing-legalpacers.html'));
+  res.sendFile(esHome(req) ? HOME_HTML : path.join(ROOT_DIR, 'landing-legalpacers.html'));
+});
+
+// Vista previa de la home desde el dominio de marcas (antes de apuntar
+// legalpacers.com a este servicio). No se indexa.
+app.get('/home', (req, res) => {
+  if (esHome(req)) return res.redirect(301, '/');
+  res.set('Cache-Control', 'no-cache');
+  res.set('X-Robots-Tag', 'noindex');
+  res.sendFile(HOME_HTML);
+});
+
+// legalpacers.com/marcas → marcas.legalpacers.com, conservando la query
+// (?ir=informe, ?ir=chequeo, utm_*, etc.).
+app.get(['/marcas', '/marcas/'], (req, res) => {
+  const i = req.originalUrl.indexOf('?');
+  res.redirect(301, `${MARCAS_URL}/${i >= 0 ? req.originalUrl.slice(i) : ''}`);
+});
+
+// Avisos de "Próximamente" de la home (checklist y TyC). Quedan como leads
+// tipo 'interes' para avisarles cuando el producto salga. Idempotente por
+// email + producto.
+const PRODUCTOS_INTERES = { checklist: 'Checklist legal para startups', tyc: 'Términos y condiciones' };
+app.post('/api/lp/interes', (req, res) => {
+  const producto = PRODUCTOS_INTERES[String(req.body?.producto || '')];
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!producto) return res.status(400).json(fail('Producto inválido'));
+  if (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json(fail('Email inválido'));
+  try {
+    const ya = db.prepare(`SELECT id FROM leads WHERE tipo = 'interes' AND lower(email) = ? AND marca = ?`).get(email, producto);
+    if (ya) return res.json(ok({ id: ya.id, ya_registrado: true }));
+    const utm = extraerUtm(req.body);
+    const info = db.prepare(`
+      INSERT INTO leads (tipo, marca, email, estado, external_reference,
+                         utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+      VALUES ('interes', ?, ?, 'interes', ?, ?, ?, ?, ?, ?)
+    `).run(producto, email, `int-${crypto.randomBytes(8).toString('hex')}`,
+           utm.utm_source, utm.utm_medium, utm.utm_campaign, utm.utm_content, utm.utm_term);
+    res.json(ok({ id: info.lastInsertRowid }));
+  } catch (err) {
+    console.error('[lp/interes]', err.message);
+    res.status(500).json(fail('No pudimos guardar el mail', 500));
+  }
 });
 
 // ===== SEO: robots.txt + sitemap.xml =====
 // robots.txt: permite indexar el sitio público, bloquea el crawl del panel
 // admin, el portal cliente y la API, y apunta al sitemap.
 app.get('/robots.txt', (req, res) => {
-  const base = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+  const base = esHome(req) ? HOME_URL : (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
   res.type('text/plain').send(
     `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cliente\nDisallow: /api/\n\nSitemap: ${base}/sitemap.xml\n`
   );
@@ -1168,8 +1222,8 @@ app.get('/robots.txt', (req, res) => {
 
 // sitemap.xml: las URLs públicas indexables (landing + páginas legales).
 app.get('/sitemap.xml', (req, res) => {
-  const base = (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
-  const urls = [
+  const base = esHome(req) ? HOME_URL : (process.env.BASE_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+  const urls = esHome(req) ? [{ loc: '/', prio: '1.0', freq: 'weekly' }] : [
     { loc: '/',           prio: '1.0', freq: 'weekly' },
     { loc: '/terminos',   prio: '0.4', freq: 'yearly' },
     { loc: '/privacidad', prio: '0.4', freq: 'yearly' },

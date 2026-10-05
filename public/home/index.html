@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legal Pacers | Servicios legales online para startups</title>
+  <meta name="description" content="Registrá tu marca, poné en regla tus términos y condiciones y revisá qué te falta con nuestros checklists. Legal Pacers es un producto de WTR | abogados.">
+  <link rel="canonical" href="https://legalpacers.com/">
+  <link rel="icon" type="image/png" href="/static/brand/favicon-64.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Legal Pacers">
+  <meta property="og:locale" content="es_AR">
+  <meta property="og:url" content="https://legalpacers.com/">
+  <meta property="og:title" content="Legal Pacers | Servicios legales online para startups">
+  <meta property="og:description" content="Marcas, términos y condiciones y checklists legales, online. Un producto de WTR | abogados.">
+  <meta property="og:image" content="https://legalpacers.com/static/brand/logo.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Legal Pacers",
+    "url": "https://legalpacers.com/",
+    "logo": "https://legalpacers.com/static/brand/logo.png",
+    "email": "contacto@legalpacers.com",
+    "telephone": "+54 9 11 2877-4200",
+    "parentOrganization": { "@type": "LegalService", "name": "WTR | abogados", "address": { "@type": "PostalAddress", "addressLocality": "San Fernando", "addressRegion": "Buenos Aires", "addressCountry": "AR" } }
+  }
+  </script>
+  <style>
+    @font-face { font-family: "Mundial"; src: url("/static/fonts/MundialLight.otf") format("opentype"); font-weight: 300; font-display: swap; }
+    @font-face { font-family: "Mundial"; src: url("/static/fonts/MundialRegular.otf") format("opentype"); font-weight: 400; font-display: swap; }
+    @font-face { font-family: "Mundial"; src: url("/static/fonts/MundialDemibold.otf") format("opentype"); font-weight: 600; font-display: swap; }
+    @font-face { font-family: "Mundial"; src: url("/static/fonts/MundialBold.otf") format("opentype"); font-weight: 700; font-display: swap; }
+
+    :root {
+      --noche: #001540;
+      --azul: #006FFB;
+      --azul-hover: #005ad0;
+      --gris: #E2E1DE;
+      --negro: #1E1E1E;
+      --crema: #FDF8F3;
+      --blanco: #FFFFFF;
+      --texto-suave: #4a4f5c;
+      --radio: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Mundial", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-weight: 300; color: var(--negro); background: var(--crema);
+      line-height: 1.55; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    h1, h2, h3 { font-weight: 700; color: var(--noche); line-height: 1.1; letter-spacing: -0.01em; }
+    .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--azul); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      font-family: inherit; font-size: 16px; font-weight: 600; text-decoration: none;
+      padding: 14px 24px; border-radius: 999px; border: 2px solid transparent; cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .btn-azul { background: var(--azul); color: var(--blanco); }
+    .btn-azul:hover { background: var(--azul-hover); }
+    .btn-borde { background: transparent; color: var(--noche); border-color: var(--noche); }
+    .btn-borde:hover { background: var(--noche); color: var(--blanco); }
+    .btn-blanco { background: var(--blanco); color: var(--noche); }
+    .btn-blanco:hover { background: var(--gris); }
+
+    /* Encabezado */
+    header { position: sticky; top: 0; z-index: 20; background: rgba(253,248,243,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--gris); }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 72px; gap: 16px; }
+    .nav-logo img { height: 30px; width: auto; }
+    .nav-links { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-links a { text-decoration: none; font-weight: 400; font-size: 15px; }
+    .nav-links a:hover { color: var(--azul); }
+    .nav-cta { padding: 10px 18px; font-size: 14px; }
+    .nav-toggle { display: none; background: none; border: 0; cursor: pointer; padding: 8px; color: var(--noche); }
+    .nav-toggle svg { width: 26px; height: 26px; }
+
+    /* Hero */
+    .hero { position: relative; overflow: hidden; padding: 96px 0 104px; }
+    .hero-aro { position: absolute; right: -140px; top: 40px; width: 520px; height: 520px; opacity: .9; pointer-events: none; }
+    .hero-texto { position: relative; max-width: 700px; }
+    .hero h1 { font-size: clamp(38px, 6vw, 64px); margin: 18px 0 22px; }
+    .hero p.bajada { font-size: clamp(18px, 2.2vw, 21px); color: var(--texto-suave); max-width: 600px; }
+    .hero-botones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+    .hero-wtr { margin-top: 26px; font-size: 15px; color: var(--texto-suave); }
+    .hero-wtr strong { font-weight: 600; color: var(--noche); }
+
+    section { padding: 88px 0; }
+    .titulo-seccion { font-size: clamp(30px, 4vw, 42px); margin: 12px 0 14px; }
+    .sub-seccion { font-size: 18px; color: var(--texto-suave); max-width: 640px; }
+
+    /* Por dónde empezar */
+    .empezar { background: var(--blanco); }
+    .situaciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; }
+    .situacion {
+      display: flex; flex-direction: column; justify-content: space-between; gap: 22px;
+      padding: 28px; border-radius: var(--radio); background: var(--crema); border: 1px solid var(--gris);
+      text-decoration: none; transition: border-color .15s, transform .15s;
+    }
+    .situacion:hover { border-color: var(--azul); transform: translateY(-2px); }
+    .situacion p { font-size: 20px; font-weight: 400; color: var(--noche); line-height: 1.35; }
+    .situacion span { font-size: 15px; font-weight: 600; color: var(--azul); }
+
+    /* Productos */
+    .productos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 44px; }
+    .producto {
+      display: flex; flex-direction: column; padding: 32px 28px; border-radius: var(--radio);
+      background: var(--blanco); border: 1px solid var(--gris);
+    }
+    .producto.activo { background: var(--noche); border-color: var(--noche); color: var(--blanco); }
+    .producto.activo h3, .producto.activo .precio { color: var(--blanco); }
+    .producto-tag { align-self: flex-start; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; background: var(--gris); color: var(--noche); margin-bottom: 18px; }
+    .producto.activo .producto-tag { background: var(--azul); color: var(--blanco); }
+    .producto h3 { font-size: 26px; margin-bottom: 12px; }
+    .producto p.desc { font-size: 16px; flex: 0 0 auto; }
+    .producto:not(.activo) p.desc { color: var(--texto-suave); }
+    .precio { margin: 20px 0 26px; font-size: 15px; font-weight: 600; color: var(--noche); line-height: 1.6; }
+    .producto .acciones { margin-top: auto; }
+    .producto .btn { width: 100%; }
+    .aviso-form { display: flex; flex-direction: column; gap: 10px; }
+    .aviso-form label { font-size: 14px; font-weight: 400; color: var(--texto-suave); }
+    .aviso-form input {
+      font-family: inherit; font-size: 16px; font-weight: 300; padding: 13px 16px; border-radius: 12px;
+      border: 1px solid var(--gris); background: var(--crema); color: var(--negro);
+    }
+    .aviso-form input:focus { outline: 2px solid var(--azul); outline-offset: 1px; }
+    .aviso-ok { font-size: 15px; font-weight: 400; color: var(--noche); }
+    .aviso-error { font-size: 14px; color: #b42318; }
+
+    /* Quiénes somos */
+    .somos { background: var(--noche); color: var(--blanco); position: relative; overflow: hidden; }
+    .somos .eyebrow { color: #7fb2ff; }
+    .somos h2 { color: var(--blanco); }
+    .somos-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 56px; align-items: center; }
+    .somos p { font-size: 19px; line-height: 1.65; margin-top: 18px; color: #dfe6f3; }
+    .somos .btn { margin-top: 30px; }
+    .somos-logo { justify-self: center; width: 100%; max-width: 360px; }
+
+    /* Preguntas */
+    .faq-lista { margin-top: 36px; max-width: 820px; border-top: 1px solid var(--gris); }
+    .faq-lista details { border-bottom: 1px solid var(--gris); }
+    .faq-lista summary {
+      list-style: none; cursor: pointer; padding: 22px 40px 22px 0; position: relative;
+      font-size: 19px; font-weight: 600; color: var(--noche);
+    }
+    .faq-lista summary::-webkit-details-marker { display: none; }
+    .faq-lista summary::after { content: "+"; position: absolute; right: 4px; top: 18px; font-size: 26px; font-weight: 300; color: var(--azul); }
+    .faq-lista details[open] summary::after { content: "–"; }
+    .faq-lista details p { padding: 0 0 22px; font-size: 17px; color: var(--texto-suave); max-width: 720px; }
+
+    /* Cierre */
+    .cierre { padding: 72px 0 88px; }
+    .cierre-caja {
+      position: relative; overflow: hidden; border-radius: 28px; padding: 56px 48px;
+      background: linear-gradient(120deg, var(--azul) 0%, #0a3fb0 55%, var(--noche) 100%); color: var(--blanco);
+    }
+    .cierre-caja h2 { color: var(--blanco); font-size: clamp(28px, 3.6vw, 40px); max-width: 620px; }
+    .cierre-caja p { font-size: 18px; margin: 14px 0 28px; max-width: 560px; color: #e6edfb; }
+    .cierre-aro { position: absolute; right: -60px; bottom: -80px; width: 300px; height: 300px; opacity: .35; }
+
+    footer { background: var(--noche); color: #c9d3e6; padding: 48px 0 40px; font-size: 14px; }
+    .footer-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 24px; align-items: center; }
+    .footer-top img { height: 28px; width: auto; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 20px; }
+    .footer-links a { text-decoration: none; }
+    .footer-links a:hover { color: var(--blanco); }
+    .footer-legal { margin-top: 26px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.12); line-height: 1.7; }
+
+    @media (max-width: 900px) {
+      .situaciones, .productos-grid { grid-template-columns: 1fr; }
+      .somos-grid { grid-template-columns: 1fr; gap: 36px; }
+      .somos-logo { max-width: 260px; justify-self: start; }
+      .hero-aro { width: 340px; height: 340px; right: -170px; top: 20px; opacity: .35; }
+    }
+    @media (max-width: 760px) {
+      .nav-toggle { display: block; }
+      .nav-links {
+        display: none; position: absolute; top: 72px; left: 0; right: 0; flex-direction: column; align-items: stretch;
+        gap: 0; background: var(--crema); border-bottom: 1px solid var(--gris); padding: 8px 16px 16px;
+      }
+      .nav-links.abierto { display: flex; }
+      .nav-links li a { display: block; padding: 12px 8px; }
+      .nav-links .nav-cta { margin-top: 8px; width: 100%; }
+      .wrap { padding: 0 16px; }
+      .hero { padding: 64px 0 72px; }
+      section { padding: 64px 0; }
+      .cierre-caja { padding: 40px 24px; }
+      .hero-botones .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="nav-logo" href="/" aria-label="Legal Pacers, inicio"><img src="/static/brand/logo.png" alt="Legal Pacers" width="1200" height="260"></a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="https://marcas.legalpacers.com/">Marcas</a></li>
+      <li><a href="#productos">Checklist</a></li>
+      <li><a href="#productos">TyC</a></li>
+      <li><a href="#somos">Quiénes somos</a></li>
+      <li><a class="btn btn-azul nav-cta" href="https://marcas.legalpacers.com/?ir=chequeo&amp;utm_source=home">Chequear mi marca</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <svg class="hero-aro" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M 22.15 30.5 A 34 34 0 0 1 80 65.9" fill="none" stroke="#001540" stroke-width="11"/>
+      <path d="M 18.04 38.37 A 34 34 0 0 0 30.5 77.85" fill="none" stroke="#006FFB" stroke-width="11"/>
+      <path d="M 37.26 81.53 A 34 34 0 0 0 75.27 72.75" fill="none" stroke="#006FFB" stroke-width="11"/>
+    </svg>
+    <div class="wrap">
+      <div class="hero-texto">
+        <span class="eyebrow">Legal Pacers</span>
+        <h1>Servicios one-shot para startups y nuevos modelos de negocios.</h1>
+        <p class="bajada">Registrá tu marca, poné en regla tus términos y condiciones y revisá qué te falta con nuestros checklists.</p>
+        <div class="hero-botones">
+          <a class="btn btn-azul" href="https://marcas.legalpacers.com/?ir=chequeo&amp;utm_source=home">Chequear mi marca</a>
+          <a class="btn btn-borde" href="#productos">Hacer el checklist legal</a>
+        </div>
+        <p class="hero-wtr">Legal Pacers es un producto de <strong>WTR&nbsp;|&nbsp;abogados</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="empezar" id="empezar">
+    <div class="wrap">
+      <span class="eyebrow">Por dónde empezar</span>
+      <h2 class="titulo-seccion">¿En qué estás?</h2>
+      <div class="situaciones">
+        <a class="situacion" href="https://marcas.legalpacers.com/?ir=chequeo&amp;utm_source=home">
+          <p>Tenés un nombre y querés que sea tuyo.</p>
+          <span>Marcas →</span>
+        </a>
+        <a class="situacion" href="#checklist">
+          <p>Estás armando tu startup y no sabés si estás en compliance legal.</p>
+          <span>Checklist legal →</span>
+        </a>
+        <a class="situacion" href="#tyc">
+          <p>Tenés web o app y no sabés si tus términos sirven.</p>
+          <span>Términos y condiciones →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="productos">
+    <div class="wrap">
+      <span class="eyebrow">Productos</span>
+      <h2 class="titulo-seccion">Lo que resolvés con Legal Pacers</h2>
+      <div class="productos-grid">
+
+        <article class="producto activo" id="marcas">
+          <span class="producto-tag">Disponible</span>
+          <h3>Marcas</h3>
+          <p class="desc">Chequeo de disponibilidad, informe de viabilidad, registro ante el INPI y vigilancia de tu marca.</p>
+          <p class="precio">Chequeo gratis<br>Informe $19.900<br>Registro $120.000 + tasas<br>Vigilancia desde $7.900 por mes</p>
+          <div class="acciones">
+            <a class="btn btn-azul" href="https://marcas.legalpacers.com/?utm_source=home">Chequear mi marca</a>
+          </div>
+        </article>
+
+        <article class="producto" id="checklist">
+          <span class="producto-tag">Próximamente</span>
+          <h3>Checklist legal para startups</h3>
+          <p class="desc">Qué tenés en orden, qué te falta y qué conviene ver con un abogado, según la etapa de tu proyecto.</p>
+          <p class="precio">Gratis · unos 3 minutos</p>
+          <div class="acciones">
+            <form class="aviso-form" data-producto="checklist">
+              <label for="aviso-checklist">Dejanos tu mail y te avisamos cuando esté.</label>
+              <input id="aviso-checklist" type="email" name="email" placeholder="tu@email.com" required autocomplete="email">
+              <button class="btn btn-azul" type="submit">Avisame</button>
+              <p class="aviso-error" hidden></p>
+            </form>
+          </div>
+        </article>
+
+        <article class="producto" id="tyc">
+          <span class="producto-tag">Próximamente</span>
+          <h3>Términos y condiciones</h3>
+          <p class="desc">Subís tus términos y condiciones y tu política de privacidad, los corregimos a medida y te devolvemos la versión lista para publicar.</p>
+          <p class="precio">$400.000</p>
+          <div class="acciones">
+            <form class="aviso-form" data-producto="tyc">
+              <label for="aviso-tyc">Dejanos tu mail y te avisamos cuando esté.</label>
+              <input id="aviso-tyc" type="email" name="email" placeholder="tu@email.com" required autocomplete="email">
+              <button class="btn btn-azul" type="submit">Avisame</button>
+              <p class="aviso-error" hidden></p>
+            </form>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="somos" id="somos">
+    <div class="wrap somos-grid">
+      <div>
+        <span class="eyebrow">Quiénes somos</span>
+        <h2 class="titulo-seccion">Un producto de WTR&nbsp;|&nbsp;abogados</h2>
+        <p>Legal Pacers es un producto digital de WTR&nbsp;|&nbsp;abogados que nace de las necesidades de sus clientes. Muchos planteaban situaciones que se podían resolver online, sin necesidad de una consulta. Por eso temas puntuales y one-shot como marcas y términos y condiciones, y herramientas prácticas como los checklists, viven en Legal Pacers.</p>
+        <p>Si querés charlar sobre la estrategia de tu negocio y cómo protegerlo a él y a quienes lo integran, WTR es el lugar.</p>
+        <a class="btn btn-blanco" id="ctaWtr" href="#" target="_blank" rel="noopener">Agendar una reunión con WTR</a>
+      </div>
+      <img class="somos-logo" src="/static/brand/logo-blanco.png" alt="" width="1200" height="260">
+    </div>
+  </section>
+
+  <section id="preguntas">
+    <div class="wrap">
+      <span class="eyebrow">Preguntas frecuentes</span>
+      <h2 class="titulo-seccion">Lo que más nos preguntan</h2>
+      <div class="faq-lista">
+        <details>
+          <summary>¿Legal Pacers es un estudio jurídico?</summary>
+          <p>No. Es un producto de WTR&nbsp;|&nbsp;abogados: resuelve online los casos estándar. Lo particular lo ve el estudio.</p>
+        </details>
+        <details>
+          <summary>¿Quién firma los trámites?</summary>
+          <p>Los de marcas los presenta y firma un Agente de la Propiedad Industrial matriculado.</p>
+        </details>
+        <details>
+          <summary>¿El checklist reemplaza a un abogado?</summary>
+          <p>No. Te ordena las prioridades; cuando algo es específico, lo vemos en WTR.</p>
+        </details>
+        <details>
+          <summary>¿Cuánto cuesta?</summary>
+          <p>Cada producto tiene su precio a la vista. El checklist es gratis.</p>
+        </details>
+        <details>
+          <summary>¿Y si mi caso no es estándar?</summary>
+          <p>Te lo marcamos y podés agendar una reunión con WTR.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cierre">
+    <div class="wrap">
+      <div class="cierre-caja">
+        <svg class="cierre-aro" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M 22.15 30.5 A 34 34 0 0 1 80 65.9" fill="none" stroke="#ffffff" stroke-width="11"/>
+          <path d="M 18.04 38.37 A 34 34 0 0 0 30.5 77.85" fill="none" stroke="#ffffff" stroke-width="11"/>
+          <path d="M 37.26 81.53 A 34 34 0 0 0 75.27 72.75" fill="none" stroke="#ffffff" stroke-width="11"/>
+        </svg>
+        <h2>¿No sabés por dónde empezar?</h2>
+        <p>Empezá por tu marca: chequeá gratis si el nombre que elegiste ya está registrado.</p>
+        <a class="btn btn-blanco" href="https://marcas.legalpacers.com/?ir=chequeo&amp;utm_source=home">Chequear mi marca</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-top">
+      <img src="/static/brand/logo-blanco.png" alt="Legal Pacers" width="1200" height="260">
+      <div class="footer-links">
+        <a href="mailto:contacto@legalpacers.com">contacto@legalpacers.com</a>
+        <a id="footerWa" href="https://wa.me/5491128774200" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="/terminos">Términos</a>
+        <a href="/privacidad">Privacidad</a>
+      </div>
+    </div>
+    <div class="footer-legal">
+      © 2026 Legal Pacers, un producto de WTR&nbsp;|&nbsp;abogados · San Fernando, Buenos Aires.
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Link de agenda con WTR. Mientras no esté el Calendly, el botón abre WhatsApp
+  // con un mensaje para coordinar la reunión.
+  var CALENDLY_URL = '';
+  var WA = '5491128774200';
+  (function () {
+    var cta = document.getElementById('ctaWtr');
+    cta.href = CALENDLY_URL || ('https://wa.me/' + WA + '?text=' +
+      encodeURIComponent('Hola, quiero agendar una reunión con WTR | abogados.'));
+
+    var toggle = document.getElementById('navToggle');
+    var links = document.getElementById('navLinks');
+    toggle.addEventListener('click', function () {
+      var abierto = links.classList.toggle('abierto');
+      toggle.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+    });
+    links.addEventListener('click', function (e) {
+      if (e.target.tagName === 'A') { links.classList.remove('abierto'); toggle.setAttribute('aria-expanded', 'false'); }
+    });
+
+    // UTMs de la visita, para saber de dónde vienen los avisos.
+    var params = new URLSearchParams(location.search);
+    var utm = {};
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function (k) {
+      if (params.get(k)) utm[k] = params.get(k);
+    });
+
+    document.querySelectorAll('.aviso-form').forEach(function (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var email = form.email.value.trim();
+        var error = form.querySelector('.aviso-error');
+        var boton = form.querySelector('button');
+        error.hidden = true;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          error.textContent = 'Revisá el mail.'; error.hidden = false; return;
+        }
+        boton.disabled = true; boton.textContent = 'Enviando…';
+        fetch('/api/lp/interes', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ email: email, producto: form.dataset.producto }, utm))
+        }).then(function (r) { return r.json(); }).then(function (r) {
+          if (!r.ok) throw new Error(r.error || 'error');
+          form.innerHTML = '<p class="aviso-ok">Listo. Te avisamos a ' + email.replace(/</g, '&lt;') + ' cuando esté.</p>';
+        }).catch(function () {
+          boton.disabled = false; boton.textContent = 'Avisame';
+          error.textContent = 'No pudimos guardar tu mail. Probá de nuevo.'; error.hidden = false;
+        });
+      });
+    });
+  })();
+</script>
+</body>
+</html>
