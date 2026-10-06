@@ -225,9 +225,8 @@
       .nav-links a{padding:12px 14px;border-radius:8px}
       .nav-links a:hover{background:var(--bg-soft)}
       .nav-portal{border:1px solid var(--blue);color:var(--blue);text-align:center;margin-top:4px}
-      /* Secciones ocultas en mobile: banner de tasas, stats, quiénes somos
-         y comparativa. Toda la info está en el hero, los planes y el FAQ. */
-      .risk-banner, #stats, #somos, #comparativa{display:none !important}
+      /* En mobile se oculta el banner de tasas: la info ya está en el hero. */
+      .risk-banner{display:none !important}
       /* La nota de oposiciones de la card de registro tampoco aporta en mobile */
       .plan-note{display:none}
       section{padding:48px 0}
@@ -280,12 +279,6 @@
     /* En desktop los dots no se muestran nunca, aunque el JS los inyecte */
     .carousel-dots{display:none}
 
-    /* Modo lectura: cuando la URL trae ?seccion=X (pestaña nueva en mobile),
-       solo se muestra esa sección. Anulamos el display:none del @media
-       mobile para que se vea aunque sea Comparativa o Quiénes somos. */
-    html.modo-lectura #comparativa,
-    html.modo-lectura #somos{display:block !important}
-    html.modo-lectura header{position:static}
 
     .btn{padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600;
          display:inline-block;transition:all .15s;cursor:pointer;letter-spacing:.01em;text-align:center}
@@ -518,30 +511,17 @@
     .plan ul li::before{content:"✓";color:var(--green);font-weight:700;flex-shrink:0}
     .plan .btn{width:100%;margin-top:auto}
 
-    /* COMPARATIVA */
-    .compare-table{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;overflow:hidden}
-    .compare-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;border-bottom:1px solid var(--border-soft)}
-    .compare-row:last-child{border:none}
-    .compare-row > div{padding:18px 22px;display:flex;align-items:center;color:var(--text-soft);font-size:14.5px;line-height:1.55}
-    .compare-head{background:var(--bg-soft);font-weight:700;font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em}
-    .compare-row .col-bad{color:#B42318;background:rgba(239,68,68,.04)}
-    .compare-row .col-good{color:#047857;background:rgba(16,185,129,.05);font-weight:600}
-    @media(max-width:720px){
-      .compare-table{background:transparent;border:none;border-radius:0}
-      .compare-row{grid-template-columns:1fr;font-size:14px;border:1px solid var(--border-soft);border-radius:12px;margin-bottom:12px;overflow:hidden;background:var(--surface)}
-      .compare-row > div{padding:14px 18px}
-      .compare-row > div:first-child{background:var(--bg-soft);font-weight:700;color:var(--text)}
-      .compare-head{display:none}
-      .compare-row .col-bad::before{content:"Si lo hacés solo — ";font-weight:700}
-      .compare-row .col-good::before{content:"Con Legal Pacers — ";font-weight:700}
-    }
-
-    /* STATS */
-    #stats{background:var(--bg);border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);padding:56px 24px}
-    .stats-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
-    @media(max-width:680px){.stats-inner{grid-template-columns:1fr 1fr}}
-    .stat-num{font-size:46px;font-weight:700;color:var(--blue);line-height:1;letter-spacing:-.02em}
-    .stat-lbl{font-size:13.5px;color:var(--text-muted);margin-top:8px;font-weight:500;line-height:1.4}
+    /* CLIENTES (carrusel infinito de logos) */
+    #clientes{padding:48px 0 56px;border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft)}
+    .carrusel{overflow:hidden;margin-top:18px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+    .carrusel-pista{display:flex;width:max-content;animation:desliza 40s linear infinite}
+    .carrusel:hover .carrusel-pista{animation-play-state:paused}
+    @keyframes desliza{to{transform:translateX(-50%)}}
+    .cliente{flex:0 0 190px;margin-right:16px;display:flex;align-items:center;justify-content:center;height:120px;padding:16px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px}
+    .cliente img{max-height:88px;max-width:100%;width:auto;height:auto;object-fit:contain}
+    .cliente img.ancho{max-height:56px}
+    @media(max-width:760px){.cliente{flex-basis:150px;height:96px}.cliente img{max-height:66px}.cliente img.ancho{max-height:42px}}
+    @media(prefers-reduced-motion:reduce){.carrusel-pista{animation:none}.carrusel{overflow-x:auto}}
 
     /* TESTIMONIOS */
     #testimonios{background:var(--bg-soft)}
@@ -629,9 +609,8 @@
     </button>
     <nav class="nav-links" id="navLinks">
       <a href="#planes">Servicios</a>
-      <a href="#comparativa">Comparativa</a>
       <a href="#somos">Quiénes somos</a>
-      <a href="#faq">FAQ</a>
+      <a href="#faq">Preguntas</a>
       <a href="/cliente" class="nav-portal">Mi cuenta</a>
     </nav>
   </div>
@@ -837,7 +816,7 @@
   <div class="container">
     <div class="section-eyebrow">Etapa 1 · el paso previo al registro</div>
     <h2 class="section-title">Así se ve tu informe de viabilidad</h2>
-    <p class="section-sub">Es el filtro <em>antes</em> de registrar: un análisis profesional que te dice si tu marca es viable, para no gastar de más. Lo firma un Agente matriculado y lo tenés en 24 a 72 h hábiles. Y si avanzás, te acompañamos en todo el resto: registro, protección y renovación <span style="color:var(--text-dim)">(su valor se descuenta del registro)</span>.</p>
+    <p class="section-sub">Antes de registrar, el informe te dice si tu marca es viable, para que no gastes de más. Lo firma un Agente matriculado y lo tenés en 24 a 72 h hábiles. Si después registrás, su valor se descuenta del honorario.</p>
 
     <div class="informe-showcase">
       <div class="doc-mock" aria-hidden="true">
@@ -914,7 +893,7 @@
           <li>Contestación de vistas de forma incluidas</li>
           <li style="color:#047857">3 meses de vigilancia de la marca sin cargo</li>
         </ul>
-        <div class="plan-note"><strong>Sin oposiciones de terceros incluidas.</strong> Si alguien se opone a tu marca durante el trámite, se cotiza por separado.</div>
+        <div class="plan-note"><strong>Las oposiciones de terceros se cotizan aparte.</strong> Si alguien se opone a tu marca durante el trámite, te pasamos el presupuesto.</div>
         <button class="btn btn-primary" @click="iniciarRegistroDirecto()">Iniciar registro</button>
       </div>
 
@@ -952,43 +931,24 @@
   </div>
 </section>
 
-<section id="comparativa" style="background:var(--bg-soft)">
-  <div class="container">
-    <div class="section-eyebrow">Por qué no hacerlo solo</div>
-    <h2 class="section-title">Hacerlo solo o con Legal Pacers</h2>
-    
-    <div class="compare-table">
-      <div class="compare-row compare-head">
-        <div>Qué cambia</div>
-        <div class="col-bad">Si lo hacés solo</div>
-        <div class="col-good">Con Legal Pacers</div>
-      </div>
-      <div class="compare-row">
-        <div><strong>Análisis de similitud</strong></div>
-        <div class="col-bad">Buscás coincidencias exactas a mano y se te pueden escapar los parecidos de sonido.</div>
-        <div class="col-good">Buscamos parecidos de escritura, sonido y significado, y un Agente matriculado revisa el resultado.</div>
-      </div>
-      <div class="compare-row">
-        <div><strong>Riesgo de tasas</strong></div>
-        <div class="col-bad">Si el INPI rechaza tu marca, perdés las tasas.</div>
-        <div class="col-good">Antes de presentar verificamos que la marca sea viable. Si no lo es, elegís otro nombre o te devolvemos el honorario.</div>
-      </div>
-      <div class="compare-row">
-        <div><strong>Vigilancia</strong></div>
-        <div class="col-bad">Tenés que revisar vos cada boletín de marcas.</div>
-        <div class="col-good">Revisamos cada boletín y te avisamos por mail y en tu portal si aparece una marca parecida a la tuya.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="stats">
-  <div class="container">
-    <div class="stats-inner">
-      <div><div class="stat-num">+100</div><div class="stat-lbl">marcas comerciales<br>registradas este año</div></div>
-      <div><div class="stat-num">+200</div><div class="stat-lbl">activos corporativos<br>en vigilancia activa</div></div>
-      <div><div class="stat-num">+30</div><div class="stat-lbl">oposiciones legales<br>presentadas con éxito</div></div>
-      <div><div class="stat-num">+5</div><div class="stat-lbl">años protegiendo<br>empresas y startups</div></div>
+<section id="clientes" aria-label="Confiaron en Legal Pacers">
+  <div class="container"><div class="section-eyebrow">Confiaron en Legal Pacers</div></div>
+  <div class="carrusel">
+    <div class="carrusel-pista">
+        <div class="cliente"><img src="/static/clientes/baires-torneos.webp" alt="Baires Torneos" width="240" height="240"></div>
+        <div class="cliente"><img class="ancho" src="/static/clientes/fuka-sushi.webp" alt="Fuka Sushi" width="600" height="170"></div>
+        <div class="cliente"><img src="/static/clientes/novara-home.webp" alt="Novara Home" width="366" height="240"></div>
+        <div class="cliente"><img src="/static/clientes/inspectia.webp" alt="Inspectia" width="240" height="240"></div>
+        <div class="cliente"><img src="/static/clientes/prete-futbol-camp.webp" alt="Prete Futbol Camp" width="240" height="240"></div>
+        <div class="cliente"><img class="ancho" src="/static/clientes/tozzi.webp" alt="Tozzi by Gabriela Tozzi" width="508" height="240"></div>
+        <div class="cliente"><img class="ancho" src="/static/clientes/core.webp" alt="Core" width="557" height="240"></div>
+        <div class="cliente" aria-hidden="true"><img src="/static/clientes/baires-torneos.webp" alt="" width="240" height="240"></div>
+        <div class="cliente" aria-hidden="true"><img class="ancho" src="/static/clientes/fuka-sushi.webp" alt="" width="600" height="170"></div>
+        <div class="cliente" aria-hidden="true"><img src="/static/clientes/novara-home.webp" alt="" width="366" height="240"></div>
+        <div class="cliente" aria-hidden="true"><img src="/static/clientes/inspectia.webp" alt="" width="240" height="240"></div>
+        <div class="cliente" aria-hidden="true"><img src="/static/clientes/prete-futbol-camp.webp" alt="" width="240" height="240"></div>
+        <div class="cliente" aria-hidden="true"><img class="ancho" src="/static/clientes/tozzi.webp" alt="" width="508" height="240"></div>
+        <div class="cliente" aria-hidden="true"><img class="ancho" src="/static/clientes/core.webp" alt="" width="557" height="240"></div>
     </div>
   </div>
 </section>
@@ -997,33 +957,16 @@
   <div class="container">
     <div class="section-eyebrow">Quiénes somos</div>
     <h2 class="section-title">Un producto de WTR | abogados</h2>
-    <p class="section-sub">Legal Pacers es la legaltech de WTR | abogados, estudio jurídico de San Fernando, Buenos Aires. Resolvemos online lo que a casi todos los emprendimientos les pasa igual. Cuando tu caso necesita un abogado, lo ve el estudio.</p>
+    <p class="section-sub" style="margin-bottom:14px">Legal Pacers es un producto digital de <strong style="color:var(--noche)"><a href="https://wtrabogados.com.ar" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:3px">WTR | abogados</a></strong> que nace de las necesidades de sus clientes. Muchos nos planteaban situaciones que se podían resolver online, sin necesidad de una consulta. Por eso, para algunos temas puntuales y one-shot —como marcas y términos y condiciones estándar— y para aportar herramientas prácticas para startups, nació Legal Pacers.</p>
+    <p class="section-sub" style="margin-bottom:22px">Si querés charlar sobre la estrategia de compliance para tu startup y cómo protegerla a ella y a sus founders, el equipo de WTR te espera.</p>
+    <p style="text-align:center;margin-bottom:44px"><a class="btn btn-dark" href="https://wa.me/5491128774200?text=Hola%2C%20quiero%20agendar%20una%20reuni%C3%B3n%20con%20WTR%20%7C%20abogados." target="_blank" rel="noopener">Agendar una reunión con WTR</a></p>
     
     <div class="about-card">
       <div class="about-text">
         <h3>Cómo trabajamos</h3>
         <p>La búsqueda y el análisis los hace el sistema, en segundos. El informe, la solicitud y cada presentación ante el INPI los revisa y firma un Agente de la Propiedad Industrial matriculado.</p>
-        <p>Si tu marca recibe una oposición o el caso termina en juicio, no empezás de cero: lo puede tomar <strong>WTR | abogados</strong>, el estudio detrás de Legal Pacers.</p>
+        <p>Si tu marca recibe una oposición o el caso llega a juicio, lo puede tomar <strong>WTR | abogados</strong>, el estudio detrás de Legal Pacers, que ya conoce tu marca.</p>
 
-        <!-- ============================================================
-             QUIÉNES SOMOS — si querés, podés sumar tu foto y tu N° de
-             matrícula/agente reales dentro de esta tarjeta. No publiques
-             números inventados.
-        ============================================================ -->
-        <div style="display:flex; flex-direction:column; gap:16px; margin-top:24px; max-width:460px;">
-          <div style="background:var(--bg); padding:20px; border-radius:12px; border:1px solid var(--border-soft); box-shadow:0 10px 30px -15px var(--blue-glow)">
-            <div style="font-weight:700; color:var(--noche); font-size:16px; letter-spacing:0.02em;">Tomás Rodríguez</div>
-            <div style="font-size:12px; color:var(--blue); font-weight:700; margin-top:2px; text-transform:uppercase; letter-spacing:0.05em;">Socio de WTR | abogados · Legal Pacers</div>
-            <div style="font-size:13px; color:var(--text-muted); margin-top:8px; line-height:1.5">
-              • Abogado matriculado (CPACF | CASI Prov. de Buenos Aires)<br>
-              • Agente de la Propiedad Industrial habilitado ante el INPI · <strong>Matrícula Nº 3457</strong>
-            </div>
-
-            <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border-soft); font-size:12.5px; color:var(--text-soft)">
-              Legal Pacers es un producto de <strong style="color:var(--noche)">WTR | abogados</strong>
-            </div>
-          </div>
-        </div>
       </div>
       <div class="about-features">
         <div class="about-feat">
@@ -1035,7 +978,7 @@
         <div class="about-feat">
           <div class="body">
             <div class="t">Firma de un Agente matriculado</div>
-            <div class="d">Cada presentación ante el INPI la hace y la firma un Agente de la Propiedad Industrial. Si el caso llega a juicio, lo puede tomar WTR | abogados.</div>
+            <div class="d">Cada presentación ante el INPI la hace y la firma Tomás Rodríguez, Agente de la Propiedad Industrial (Mat. 3457).</div>
           </div>
         </div>
         <div class="about-feat">
@@ -1097,7 +1040,7 @@
 
     <details class="faq-item">
       <summary class="faq-q">¿Conviene registrar en una sola clase o en varias?</summary>
-      <div class="faq-a">La marca se protege <strong>por clase del nomenclador de Niza</strong>, y el INPI cobra su <strong>tasa oficial por cada clase, siempre</strong> (esa la pagás a precio de costo, en todos los casos). Registrar en una sola clase suele ser un buen comienzo, pero si producís y además comercializás puede convenir cubrir más de una. No te hacemos elegir a ciegas: apenas arrancás, definimos juntos por WhatsApp la <strong>estrategia de clases</strong> que mejor protege tu negocio, sin sumar protección que no vas a usar.</div>
+      <div class="faq-a">La marca se protege <strong>por clase del nomenclador de Niza</strong>, y el INPI cobra su <strong>tasa oficial por cada clase, siempre</strong> (esa la pagás a precio de costo, en todos los casos). Registrar en una sola clase suele ser un buen comienzo, pero si producís y además comercializás puede convenir cubrir más de una. Apenas arrancás, definimos juntos la <strong>estrategia de clases</strong> que mejor protege tu negocio, sin sumar protección que no vas a usar.</div>
     </details>
 
     <details class="faq-item">
@@ -1107,7 +1050,7 @@
 
     <details class="faq-item">
       <summary class="faq-q">¿Cuándo y cómo me avisan si alguien intenta copiar mi nombre?</summary>
-      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica de forma <strong>quincenal, los jueves</strong>. Por eso nuestro monitoreo es <strong>quincenal, no 24/7</strong>: cada jueves escaneamos la nueva edición buscando solicitudes similares o fonéticamente parecidas a las marcas de tu cartera. Si detectamos un riesgo, te avisamos por <strong>mail y en tu portal cliente</strong>, con el detalle de la coincidencia y el plazo legal para reaccionar. Desde el portal podés pasar el caso a WhatsApp para cotizar la oposición. Nadie puede avisarte al instante: el dato existe recién cuando el INPI lo publica.</div>
+      <div class="faq-a">El Boletín Oficial de marcas en Argentina se publica de forma <strong>quincenal, los jueves</strong>. Por eso la vigilancia es <strong>quincenal</strong>. Cada vez que sale una edición, la revisamos buscando solicitudes similares o fonéticamente parecidas a las marcas de tu cartera. Si detectamos un riesgo, te avisamos por <strong>mail y en tu portal cliente</strong>, con el detalle de la coincidencia y el plazo legal para reaccionar. Desde el portal podés pasar el caso a WhatsApp para cotizar la oposición. El dato existe recién cuando el INPI lo publica, y ahí te avisamos.</div>
     </details>
   </div>
 </section>
@@ -1116,7 +1059,7 @@
   <div class="footer-inner">
     <div>
       <div class="logo"><img src="/static/brand/logo-oscuro.webp" alt="Legal Pacers" width="1200" height="260"></div>
-      <p style="margin-top:8px">Registro y vigilancia de marcas online. Un producto de WTR | abogados.</p>
+      <p style="margin-top:8px">Registro y vigilancia de marcas online. Un producto de <a href="https://wtrabogados.com.ar" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;text-underline-offset:3px">WTR | abogados</a>.</p>
     </div>
   </div>
   <div class="footer-bottom" style="margin-top:20px; border-top:1px solid var(--border-soft); padding-top:20px; font-size:12px; color:var(--text-dim)">
@@ -1270,7 +1213,7 @@
         <li><strong>Alertas por mail y en tu portal</strong>, con el detalle para decidir si te conviene oponerte.</li>
         <li><strong>Reporte mensual</strong> de tu cartera: resumen del mes, alertas y próximos hitos legales.</li>
       </ul>
-      <p style="font-size:11.5px;color:var(--text-dim);margin-top:6px">No cubre la presentación de oposiciones: si hay que oponerse a un tercero, se cotiza aparte.</p>
+      <p style="font-size:11.5px;color:var(--text-dim);margin-top:6px">Si hay que oponerse a un tercero, la presentación de la oposición se cotiza aparte.</p>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
@@ -1906,52 +1849,6 @@ function landing() {
   else mq.addListener(aplicar);
 })();
 
-// En mobile, "Comparativa" y "Quiénes somos" no aparecen en la landing (las
-// ocultamos por scroll). Pero seguimos queriendo ofrecerlas: el menú las
-// abre en una pestaña nueva con la página filtrada (modo lectura) gracias a
-// ?seccion=X. En desktop los links del menú son anclas normales — la
-// experiencia que aprobaste no cambia.
-(function () {
-  const SECCIONES = { comparativa: '#comparativa', somos: '#somos' };
-  const mq = window.matchMedia('(max-width:900px)');
-
-  // 1) Modo lectura cuando la URL trae ?seccion=X. Ocultamos todas las
-  //    <section> excepto la indicada (el header y el footer quedan).
-  const params = new URLSearchParams(location.search);
-  const seccion = params.get('seccion');
-  if (seccion && SECCIONES[seccion]) {
-    const target = document.querySelector(SECCIONES[seccion]);
-    document.querySelectorAll('section').forEach(el => {
-      el.style.display = (el === target) ? '' : 'none';
-    });
-    // En modo lectura el target debe verse aunque sea mobile.
-    if (target) target.style.setProperty('display', 'block', 'important');
-    document.documentElement.classList.add('modo-lectura');
-  }
-
-  // 2) En mobile, reescribir los hrefs del menú para abrir esas dos
-  //    secciones en pestaña nueva apuntando a /?seccion=...
-  function aplicarMobile() {
-    document.querySelectorAll('#navLinks a').forEach(a => {
-      const orig = a.dataset.originalHref || a.getAttribute('href');
-      if (!a.dataset.originalHref) a.dataset.originalHref = orig;
-      const key = { '#comparativa': 'comparativa', '#somos': 'somos' }[orig];
-      if (!key) return; // los demás links quedan como están.
-      if (mq.matches) {
-        a.setAttribute('href', `/?seccion=${key}`);
-        a.setAttribute('target', '_blank');
-        a.setAttribute('rel', 'noopener');
-      } else {
-        a.setAttribute('href', orig);
-        a.removeAttribute('target');
-        a.removeAttribute('rel');
-      }
-    });
-  }
-  aplicarMobile();
-  if (mq.addEventListener) mq.addEventListener('change', aplicarMobile);
-  else mq.addListener(aplicarMobile);
-})();
 </script>
 </body>
 </html>

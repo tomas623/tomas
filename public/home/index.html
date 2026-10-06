@@ -59,11 +59,15 @@
     /* Marcas que acompañamos */
     .clientes { padding: 8px 0 64px; }
     .clientes-titulo { text-align: center; font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-suave); }
-    .clientes-logos { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin-top: 26px; }
-    .cliente { display: flex; align-items: center; justify-content: center; height: 120px; padding: 16px; background: var(--blanco); border: 1px solid var(--gris); border-radius: 14px; }
+    .carrusel { overflow: hidden; margin-top: 26px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+    .carrusel-pista { display: flex; width: max-content; animation: desliza 40s linear infinite; }
+    .carrusel:hover .carrusel-pista { animation-play-state: paused; }
+    @keyframes desliza { to { transform: translateX(-50%); } }
+    .cliente { flex: 0 0 190px; margin-right: 16px; display: flex; align-items: center; justify-content: center; height: 120px; padding: 16px; background: var(--blanco); border: 1px solid var(--gris); border-radius: 14px; }
     .cliente img { max-height: 88px; max-width: 100%; width: auto; height: auto; object-fit: contain; }
     .cliente img.ancho { max-height: 56px; }
-    @media (max-width: 760px) { .clientes-logos { grid-template-columns: repeat(2, 1fr); } .cliente { height: 100px; } .cliente img { max-height: 70px; } }
+    @media (max-width: 760px) { .cliente { flex-basis: 150px; height: 96px; } .cliente img { max-height: 66px; } .cliente img.ancho { max-height: 42px; } }
+    @media (prefers-reduced-motion: reduce) { .carrusel-pista { animation: none; } .carrusel { overflow-x: auto; } }
     .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
     h1, h2, h3 { font-weight: 700; color: var(--noche); line-height: 1.1; letter-spacing: -0.01em; }
     .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--azul); }
@@ -242,16 +246,23 @@
   </section>
 
   <section class="clientes" aria-label="Confiaron en Legal Pacers">
-    <div class="wrap">
-      <p class="clientes-titulo">Confiaron en Legal Pacers</p>
-      <div class="clientes-logos">
-        <div class="cliente"><img src="/static/clientes/baires-torneos.webp" alt="Baires Torneos" width="240" height="240"></div>
-        <div class="cliente"><img class="ancho" src="/static/clientes/fuka-sushi.webp" alt="Fuka Sushi" width="600" height="172"></div>
-        <div class="cliente"><img src="/static/clientes/novara-home.webp" alt="Novara Home" width="366" height="240"></div>
-        <div class="cliente"><img src="/static/clientes/inspectia.webp" alt="Inspectia" width="240" height="240"></div>
-        <div class="cliente"><img src="/static/clientes/prete-futbol-camp.webp" alt="Prete Futbol Camp" width="240" height="240"></div>
-        <div class="cliente"><img class="ancho" src="/static/clientes/tozzi.webp" alt="Tozzi by Gabriela Tozzi" width="508" height="240"></div>
-        <div class="cliente"><img class="ancho" src="/static/clientes/core.webp" alt="Core" width="557" height="240"></div>
+    <div class="wrap"><p class="clientes-titulo">Confiaron en Legal Pacers</p></div>
+    <div class="carrusel">
+      <div class="carrusel-pista">
+          <div class="cliente"><img src="/static/clientes/baires-torneos.webp" alt="Baires Torneos" width="240" height="240"></div>
+          <div class="cliente"><img class="ancho" src="/static/clientes/fuka-sushi.webp" alt="Fuka Sushi" width="600" height="172"></div>
+          <div class="cliente"><img src="/static/clientes/novara-home.webp" alt="Novara Home" width="366" height="240"></div>
+          <div class="cliente"><img src="/static/clientes/inspectia.webp" alt="Inspectia" width="240" height="240"></div>
+          <div class="cliente"><img src="/static/clientes/prete-futbol-camp.webp" alt="Prete Futbol Camp" width="240" height="240"></div>
+          <div class="cliente"><img class="ancho" src="/static/clientes/tozzi.webp" alt="Tozzi by Gabriela Tozzi" width="508" height="240"></div>
+          <div class="cliente"><img class="ancho" src="/static/clientes/core.webp" alt="Core" width="557" height="240"></div>
+          <div class="cliente" aria-hidden="true"><img src="/static/clientes/baires-torneos.webp" alt="" data-alt="Baires Torneos" width="240" height="240"></div>
+          <div class="cliente" aria-hidden="true"><img class="ancho" src="/static/clientes/fuka-sushi.webp" alt="" data-alt="Fuka Sushi" width="600" height="172"></div>
+          <div class="cliente" aria-hidden="true"><img src="/static/clientes/novara-home.webp" alt="" data-alt="Novara Home" width="366" height="240"></div>
+          <div class="cliente" aria-hidden="true"><img src="/static/clientes/inspectia.webp" alt="" data-alt="Inspectia" width="240" height="240"></div>
+          <div class="cliente" aria-hidden="true"><img src="/static/clientes/prete-futbol-camp.webp" alt="" data-alt="Prete Futbol Camp" width="240" height="240"></div>
+          <div class="cliente" aria-hidden="true"><img class="ancho" src="/static/clientes/tozzi.webp" alt="" data-alt="Tozzi by Gabriela Tozzi" width="508" height="240"></div>
+          <div class="cliente" aria-hidden="true"><img class="ancho" src="/static/clientes/core.webp" alt="" data-alt="Core" width="557" height="240"></div>
       </div>
     </div>
   </section>
