@@ -28,5 +28,6 @@ Amigable y cercano, profesional y confiable, claro y simple, motivador, ágil y 
 
 Usos incorrectos del logo: cambiar colores fuera de la paleta, deformarlo, alterar sus elementos, agregar sombras o efectos.
 
-## Pendiente
-La landing de marcas (marcas.legalpacers.com) todavía no sigue esta identidad: fondo oscuro, azul #1B6EF3 y logo en texto. Hay que alinearla.
+## Estado
+- Home (`public/home/index.html`) y landing de marcas (`landing-legalpacers.html`) siguen esta identidad.
+- Pendiente de alinear: formulario de datos del registro (`public/registro/datos.html`), portal cliente, panel admin y los mails.
