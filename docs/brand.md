@@ -22,8 +22,8 @@ Amigable y cercano, profesional y confiable, claro y simple, motivador, ágil y 
 | Negro | #1E1E1E |
 | Fondo | crema claro (aprox. #FDF8F3) |
 | Tipografía | Mundial: Bold para títulos, Light para texto. Archivos en `TIPOGRAFIA/` y `static/fonts/` |
-| Logo | Logotipo "Legal [aro] Pacers": `legalpacers-logos-0*.png`, `static/logo*.png`. Mínimo digital 25 px de alto |
-| Isotipo | El aro en dos azules: `static/isotipo.png`. Para favicon y tamaños chicos (mínimo 50 px) |
+| Logo | Fondo claro: `static/brand/logo.png` (azul noche + aro). Fondo oscuro: `static/brand/logo-oscuro.webp` (gris + aro azul). Sin isotipo: `logotipo.webp` y `logotipo-gris.webp`. Mínimo digital 25 px de alto |
+| Isotipo | El aro: `static/brand/isotipo.webp` (fondo claro) e `isotipo-oscuro.webp` (fondo oscuro). Favicon: `favicon-64.png`. Mínimo 50 px |
 | Fotos | Personas reales trabajando con laptop o celular, luz natural, ambientes de trabajo actuales |
 
 Usos incorrectos del logo: cambiar colores fuera de la paleta, deformarlo, alterar sus elementos, agregar sombras o efectos.

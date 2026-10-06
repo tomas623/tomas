@@ -51,7 +51,8 @@
       line-height: 1.55; -webkit-font-smoothing: antialiased;
     }
     a { color: inherit; }
-    img { display: block; max-width: 100%; }
+    img { display: block; max-width: 100%; height: auto; }
+    .nowrap { white-space: nowrap; }
     .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
     h1, h2, h3 { font-weight: 700; color: var(--noche); line-height: 1.1; letter-spacing: -0.01em; }
     .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--azul); }
@@ -82,7 +83,7 @@
 
     /* Hero */
     .hero { position: relative; overflow: hidden; padding: 96px 0 104px; }
-    .hero-aro { position: absolute; right: -140px; top: 40px; width: 520px; height: 520px; opacity: .9; pointer-events: none; }
+    .hero-aro { position: absolute; right: -140px; top: 40px; width: 520px; height: 520px; opacity: 1; pointer-events: none; }
     .hero-texto { position: relative; max-width: 700px; }
     .hero h1 { font-size: clamp(38px, 6vw, 64px); margin: 18px 0 22px; }
     .hero p.bajada { font-size: clamp(18px, 2.2vw, 21px); color: var(--texto-suave); max-width: 600px; }
@@ -214,11 +215,7 @@
 
 <main>
   <section class="hero">
-    <svg class="hero-aro" viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M 22.15 30.5 A 34 34 0 0 1 80 65.9" fill="none" stroke="#001540" stroke-width="11"/>
-      <path d="M 18.04 38.37 A 34 34 0 0 0 30.5 77.85" fill="none" stroke="#006FFB" stroke-width="11"/>
-      <path d="M 37.26 81.53 A 34 34 0 0 0 75.27 72.75" fill="none" stroke="#006FFB" stroke-width="11"/>
-    </svg>
+    <img class="hero-aro" src="/static/brand/isotipo.webp" alt="" aria-hidden="true" width="800" height="796">
     <div class="wrap">
       <div class="hero-texto">
         <span class="eyebrow">Legal Pacers</span>
@@ -228,7 +225,7 @@
           <a class="btn btn-azul" href="https://marcas.legalpacers.com/?ir=chequeo&amp;utm_source=home">Chequear mi marca</a>
           <a class="btn btn-borde" href="#productos">Hacer el checklist legal</a>
         </div>
-        <p class="hero-wtr">Legal Pacers es un producto de <strong>WTR&nbsp;|&nbsp;abogados</strong>.</p>
+        <p class="hero-wtr">Legal Pacers es un producto de <strong><span class="nowrap">WTR | abogados</span></strong>.</p>
       </div>
     </div>
   </section>
@@ -308,12 +305,12 @@
     <div class="wrap somos-grid">
       <div>
         <span class="eyebrow">Quiénes somos</span>
-        <h2 class="titulo-seccion">Un producto de WTR&nbsp;|&nbsp;abogados</h2>
-        <p>Legal Pacers es un producto digital de WTR&nbsp;|&nbsp;abogados que nace de las necesidades de sus clientes. Muchos planteaban situaciones que se podían resolver online, sin necesidad de una consulta. Por eso temas puntuales y one-shot como marcas y términos y condiciones, y herramientas prácticas como los checklists, viven en Legal Pacers.</p>
+        <h2 class="titulo-seccion">Un producto de <span class="nowrap">WTR | abogados</span></h2>
+        <p>Legal Pacers es un producto digital de <span class="nowrap">WTR | abogados</span> que nace de las necesidades de sus clientes. Muchos planteaban situaciones que se podían resolver online, sin necesidad de una consulta. Por eso temas puntuales y one-shot como marcas y términos y condiciones, y herramientas prácticas como los checklists, viven en Legal Pacers.</p>
         <p>Si querés charlar sobre la estrategia de tu negocio y cómo protegerlo a él y a quienes lo integran, WTR es el lugar.</p>
         <a class="btn btn-blanco" id="ctaWtr" href="#" target="_blank" rel="noopener">Agendar una reunión con WTR</a>
       </div>
-      <img class="somos-logo" src="/static/brand/logo-blanco.png" alt="" width="1200" height="260">
+      <img class="somos-logo" src="/static/brand/logo-oscuro.webp" alt="" width="1200" height="260">
     </div>
   </section>
 
@@ -324,7 +321,7 @@
       <div class="faq-lista">
         <details>
           <summary>¿Legal Pacers es un estudio jurídico?</summary>
-          <p>No. Es un producto de WTR&nbsp;|&nbsp;abogados: resuelve online los casos estándar. Lo particular lo ve el estudio.</p>
+          <p>No. Es un producto de <span class="nowrap">WTR | abogados</span>: resuelve online los casos estándar. Lo particular lo ve el estudio.</p>
         </details>
         <details>
           <summary>¿Quién firma los trámites?</summary>
@@ -349,11 +346,7 @@
   <section class="cierre">
     <div class="wrap">
       <div class="cierre-caja">
-        <svg class="cierre-aro" viewBox="0 0 100 100" aria-hidden="true">
-          <path d="M 22.15 30.5 A 34 34 0 0 1 80 65.9" fill="none" stroke="#ffffff" stroke-width="11"/>
-          <path d="M 18.04 38.37 A 34 34 0 0 0 30.5 77.85" fill="none" stroke="#ffffff" stroke-width="11"/>
-          <path d="M 37.26 81.53 A 34 34 0 0 0 75.27 72.75" fill="none" stroke="#ffffff" stroke-width="11"/>
-        </svg>
+        <img class="cierre-aro" src="/static/brand/isotipo-oscuro.webp" alt="" aria-hidden="true" width="800" height="796">
         <h2>¿No sabés por dónde empezar?</h2>
         <p>Empezá por tu marca: chequeá gratis si el nombre que elegiste ya está registrado.</p>
         <a class="btn btn-blanco" href="https://marcas.legalpacers.com/?ir=chequeo&amp;utm_source=home">Chequear mi marca</a>
@@ -365,7 +358,7 @@
 <footer>
   <div class="wrap">
     <div class="footer-top">
-      <img src="/static/brand/logo-blanco.png" alt="Legal Pacers" width="1200" height="260">
+      <img src="/static/brand/logo-oscuro.webp" alt="Legal Pacers" width="1200" height="260">
       <div class="footer-links">
         <a href="mailto:contacto@legalpacers.com">contacto@legalpacers.com</a>
         <a id="footerWa" href="https://wa.me/5491128774200" target="_blank" rel="noopener">WhatsApp</a>
@@ -374,7 +367,7 @@
       </div>
     </div>
     <div class="footer-legal">
-      © 2026 Legal Pacers, un producto de WTR&nbsp;|&nbsp;abogados · San Fernando, Buenos Aires.
+      © 2026 Legal Pacers, un producto de <span class="nowrap">WTR | abogados</span> · San Fernando, Buenos Aires.
     </div>
   </div>
 </footer>
