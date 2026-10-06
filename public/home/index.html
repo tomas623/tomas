@@ -53,6 +53,17 @@
     a { color: inherit; }
     img { display: block; max-width: 100%; height: auto; }
     .nowrap { white-space: nowrap; }
+    .wtr-link { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .wtr-link:hover { color: var(--azul); }
+
+    /* Marcas que acompañamos */
+    .clientes { padding: 8px 0 64px; }
+    .clientes-titulo { text-align: center; font-size: 13px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--texto-suave); }
+    .clientes-logos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-top: 26px; }
+    .cliente { display: flex; align-items: center; justify-content: center; height: 120px; padding: 16px; background: var(--blanco); border: 1px solid var(--gris); border-radius: 14px; }
+    .cliente img { max-height: 88px; max-width: 100%; width: auto; height: auto; object-fit: contain; }
+    .cliente img.ancho { max-height: 56px; }
+    @media (max-width: 760px) { .clientes-logos { grid-template-columns: repeat(2, 1fr); } .cliente { height: 100px; } .cliente img { max-height: 70px; } }
     .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
     h1, h2, h3 { font-weight: 700; color: var(--noche); line-height: 1.1; letter-spacing: -0.01em; }
     .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--azul); }
@@ -225,7 +236,20 @@
           <a class="btn btn-azul" href="https://marcas.legalpacers.com/?ir=chequeo&amp;utm_source=home">Chequear mi marca</a>
           <a class="btn btn-borde" href="#productos">Hacer el checklist legal</a>
         </div>
-        <p class="hero-wtr">Legal Pacers es un producto de <strong><span class="nowrap">WTR | abogados</span></strong>.</p>
+        <p class="hero-wtr">Legal Pacers es un producto de <strong><a class="nowrap wtr-link" href="#">WTR | abogados</a></strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="clientes" aria-label="Algunas marcas que acompañamos">
+    <div class="wrap">
+      <p class="clientes-titulo">Algunas marcas que acompañamos</p>
+      <div class="clientes-logos">
+        <div class="cliente"><img src="/static/clientes/baires-torneos.webp" alt="Baires Torneos" width="240" height="240"></div>
+        <div class="cliente"><img class="ancho" src="/static/clientes/fuka-sushi.webp" alt="Fuka Sushi" width="600" height="172"></div>
+        <div class="cliente"><img src="/static/clientes/novara-home.webp" alt="Novara Home" width="366" height="240"></div>
+        <div class="cliente"><img src="/static/clientes/cliente-isotipo.webp" alt="Cliente de Legal Pacers" width="240" height="240"></div>
+        <div class="cliente"><img src="/static/clientes/prete-futbol-camp.webp" alt="Prete Futbol Camp" width="240" height="240"></div>
       </div>
     </div>
   </section>
@@ -306,8 +330,8 @@
       <div>
         <span class="eyebrow">Quiénes somos</span>
         <h2 class="titulo-seccion">Un producto de <span class="nowrap">WTR | abogados</span></h2>
-        <p>Legal Pacers es un producto digital de <span class="nowrap">WTR | abogados</span> que nace de las necesidades de sus clientes. Muchos planteaban situaciones que se podían resolver online, sin necesidad de una consulta. Por eso temas puntuales y one-shot como marcas y términos y condiciones, y herramientas prácticas como los checklists, viven en Legal Pacers.</p>
-        <p>Si querés charlar sobre la estrategia de tu negocio y cómo protegerlo a él y a quienes lo integran, WTR es el lugar.</p>
+        <p>Legal Pacers es un producto digital de <strong><a class="nowrap wtr-link" href="#">WTR | abogados</a></strong> que nace de las necesidades de sus clientes. Muchos nos planteaban situaciones que se podían resolver online, sin necesidad de una consulta. Por eso, para algunos temas puntuales y one-shot —como marcas y términos y condiciones estándar— y para aportar herramientas prácticas para startups, nació Legal Pacers.</p>
+        <p>Si querés charlar sobre la estrategia de compliance para tu startup y cómo protegerla a ella y a sus founders, el equipo de WTR te espera.</p>
         <a class="btn btn-blanco" id="ctaWtr" href="#" target="_blank" rel="noopener">Agendar una reunión con WTR</a>
       </div>
       <img class="somos-logo" src="/static/brand/logo-oscuro.webp" alt="" width="1200" height="260">
@@ -367,7 +391,7 @@
       </div>
     </div>
     <div class="footer-legal">
-      © 2026 Legal Pacers, un producto de <span class="nowrap">WTR | abogados</span> · San Fernando, Buenos Aires.
+      © 2026 Legal Pacers, un producto de <a class="nowrap wtr-link" href="#">WTR | abogados</a> · San Fernando, Buenos Aires.
     </div>
   </div>
 </footer>
@@ -376,11 +400,18 @@
   // Link de agenda con WTR. Mientras no esté el Calendly, el botón abre WhatsApp
   // con un mensaje para coordinar la reunión.
   var CALENDLY_URL = '';
+  // Web de WTR | abogados. Mientras esté vacía, el nombre se muestra sin link.
+  var WTR_URL = '';
   var WA = '5491128774200';
   (function () {
     var cta = document.getElementById('ctaWtr');
     cta.href = CALENDLY_URL || ('https://wa.me/' + WA + '?text=' +
       encodeURIComponent('Hola, quiero agendar una reunión con WTR | abogados.'));
+
+    document.querySelectorAll('.wtr-link').forEach(function (a) {
+      if (WTR_URL) { a.href = WTR_URL; a.target = '_blank'; a.rel = 'noopener'; }
+      else { var s = document.createElement('span'); s.className = 'nowrap'; s.textContent = a.textContent; a.replaceWith(s); }
+    });
 
     var toggle = document.getElementById('navToggle');
     var links = document.getElementById('navLinks');
