@@ -434,7 +434,7 @@ app.post('/api/marca/lead-free', async (req, res) => {
          o respondé este mail.</p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        LegalPacers · Consultora de Propiedad Industrial<br>
+        Legal Pacer · un producto de WTR | abogados<br>
         contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
       </p>
     </div>`;
@@ -535,7 +535,7 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
         <h2 style="color:#1B6EF3">${initPoint ? '¡Estás a un paso!' : 'Recibimos tu solicitud'}</h2>
-        <p>Hola ${nombreLimpio}, gracias por confiar en LegalPacers.</p>
+        <p>Hola ${nombreLimpio}, gracias por confiar en Legal Pacer.</p>
         <p><strong>Pack:</strong> ${pack.nombre} — ${periodoTxt}.</p>
         ${ctaPago}
         ${marcasTxt ? `<p style="background:#f8fafc;border-left:3px solid #1B6EF3;padding:10px 14px;border-radius:6px;font-size:13px"><strong>Marcas que nos pasaste:</strong><br>${esc(marcasTxt).replace(/\n/g, '<br>')}</p>` : ''}
@@ -544,7 +544,7 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
            o respondé este mail.</p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
         <p style="font-size:12px;color:#64748b">
-          LegalPacers · Consultora de Propiedad Industrial<br>
+          Legal Pacer · un producto de WTR | abogados<br>
           contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
         </p>
       </div>`,
@@ -618,7 +618,7 @@ app.post('/api/marca/consulta/iniciar', async (req, res) => {
   try {
     const pref = await crearPreferencia({
       tipo: 'informe',
-      titulo: `LegalPacers · Informe de viabilidad de marca "${String(marca).slice(0, 60)}"`,
+      titulo: `Legal Pacer · Informe de viabilidad de marca "${String(marca).slice(0, 60)}"`,
       precio: PRECIO_INFORME,
       externalReference: lead.externalReference,
       email,
@@ -654,7 +654,7 @@ app.post('/api/marca/registro/iniciar', async (req, res) => {
   try {
     const pref = await crearPreferencia({
       tipo: 'registro',
-      titulo: `LegalPacers · Honorarios registro de marca "${String(marca).slice(0, 60)}"`,
+      titulo: `Legal Pacer · Honorarios registro de marca "${String(marca).slice(0, 60)}"`,
       precio: PRECIO_REGISTRO,
       externalReference: lead.externalReference,
       email,
@@ -891,8 +891,8 @@ async function procesarPago(paymentId) {
         let d = String(lead.telefono).replace(/\D/g, '');
         if (d && !d.startsWith('54')) { d = d.replace(/^0/, ''); if (!d.startsWith('9')) d = '9' + d; d = '54' + d; }
         const msg = lead.tipo === 'registro'
-          ? `Hola, te escribo de LegalPacers por el registro de tu marca "${lead.marca}". Recibimos tu pago. Para arrancar el trámite necesito confirmarte algunos datos.`
-          : `Hola, te escribo de LegalPacers por tu marca "${lead.marca}".`;
+          ? `Hola, te escribo de Legal Pacer por el registro de tu marca "${lead.marca}". Recibimos tu pago. Para arrancar el trámite necesito confirmarte algunos datos.`
+          : `Hola, te escribo de Legal Pacer por tu marca "${lead.marca}".`;
         if (d) waBtn = `<p style="margin-top:16px"><a href="https://wa.me/${d}?text=${encodeURIComponent(msg)}" style="background:#25D366;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block;font-weight:600">💬 Escribile por WhatsApp</a></p>`;
       }
       enviarMailGenerico({
@@ -1046,7 +1046,7 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
   const html = esNuevo ? `
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
       <h2 style="color:#1B6EF3">¡Listo! Tu suscripción está activa.</h2>
-      <p>${saludo} gracias por confiar en LegalPacers para el monitoreo de tus marcas.</p>
+      <p>${saludo} gracias por confiar en Legal Pacer para el monitoreo de tus marcas.</p>
       <p><strong>Pack activado:</strong> ${esc(pack.nombre)}.</p>
 
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin:18px 0">
@@ -1074,7 +1074,7 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
 
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        LegalPacers · Consultora de Propiedad Industrial<br>
+        Legal Pacer · un producto de WTR | abogados<br>
         contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
       </p>
     </div>` : `
@@ -1091,13 +1091,13 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        LegalPacers · Consultora de Propiedad Industrial
+        Legal Pacer · un producto de WTR | abogados
       </p>
     </div>`;
 
   await enviarMailGenerico({
     to: email,
-    subject: esNuevo ? '¡Bienvenido! Tu cuenta y tu suscripción están listas' : 'Suscripción reactivada — LegalPacers',
+    subject: esNuevo ? '¡Bienvenido! Tu cuenta y tu suscripción están listas' : 'Suscripción reactivada — Legal Pacer',
     html,
     tag: esNuevo ? 'suscripcion_bienvenida' : 'suscripcion_reactivacion',
   });
@@ -1166,7 +1166,7 @@ app.get('/pagos/pendiente', (req, res) =>
 // toman el HTML/CSS nuevo sin quedarse con una versión vieja cacheada.
 //
 // El mismo servicio atiende marcas.legalpacers.com y legalpacers.com: según el
-// dominio, '/' muestra la landing de marcas o la home de Legal Pacers.
+// dominio, '/' muestra la landing de marcas o la home de Legal Pacer.
 // HOME_HOSTS permite sumar dominios (por ejemplo, uno de prueba).
 const HOME_HOSTS = new Set((process.env.HOME_HOSTS || 'legalpacers.com,www.legalpacers.com')
   .split(',').map(h => h.trim().toLowerCase()).filter(Boolean));
@@ -1251,7 +1251,7 @@ app.get('/sitemap.xml', (req, res) => {
 // Algunos browsers piden /favicon.ico de forma incondicional (sin importar
 // el <link rel="icon"> del HTML). Lo aliaseamos al PNG del logo.
 app.get('/favicon.ico', (req, res) => {
-  res.sendFile(path.join(ROOT_DIR, 'static', 'logo-icon.png'));
+  res.sendFile(path.join(ROOT_DIR, 'static', 'brand', 'favicon-64.png'));
 });
 // Alpine.js self-hosteado (mismo dominio) para que Googlebot renderice la
 // landing igual que los usuarios y no dispare falsos flags de "encubrimiento".

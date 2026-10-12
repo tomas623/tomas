@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mi portal · LegalPacers</title>
+<title>Mi portal · Legal Pacer</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
 :root{
@@ -988,7 +988,7 @@ function linkOposicionWA(a) {
   const top = (a.candidatos || [])[0];
   const denom = top?.denominacion || '—';
   const clase = top?.clase || a.marca_clases || '—';
-  const msg = `Hola LegalPacers, me llegó una alerta de monitoreo. Mi marca es "${a.marca}" y detectaron una solicitud similar: "${denom}" (clase ${clase}). ¿Pueden ayudarme a evaluar si conviene oponerme?`;
+  const msg = `Hola Legal Pacer, me llegó una alerta de monitoreo. Mi marca es "${a.marca}" y detectaron una solicitud similar: "${denom}" (clase ${clase}). ¿Pueden ayudarme a evaluar si conviene oponerme?`;
   return `https://wa.me/5491128774200?text=${encodeURIComponent(msg)}`;
 }
 
@@ -1027,7 +1027,7 @@ async function loadPack() {
     }).join('');
 
     // Card para "+20 marcas" → derivar a WhatsApp para cotización custom.
-    const waMsg = encodeURIComponent('Hola LegalPacers, necesito vigilar más de 20 marcas. ¿Pueden cotizarme un plan corporativo?');
+    const waMsg = encodeURIComponent('Hola Legal Pacer, necesito vigilar más de 20 marcas. ¿Pueden cotizarme un plan corporativo?');
     const waCard = `
       <div class="pack-opt" style="background:linear-gradient(180deg,rgba(34,197,94,.06),var(--bg-soft));border-color:rgba(34,197,94,.3)">
         <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">Plan corporativo</div>

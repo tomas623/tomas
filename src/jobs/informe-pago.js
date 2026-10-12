@@ -121,14 +121,14 @@ function htmlMailCliente({ marca }) {
   return `
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
       <h2 style="color:#1B6EF3">Recibimos tu pago</h2>
-      <p>Gracias por confiar en LegalPacers para el análisis de viabilidad de tu marca <strong>${marca}</strong>.</p>
+      <p>Gracias por confiar en Legal Pacer para el análisis de viabilidad de tu marca <strong>${marca}</strong>.</p>
       <p>Tu informe ya está en proceso. Lo elabora un Agente de la Propiedad Industrial matriculado
          y te llega revisado a este mismo mail <strong>dentro de las próximas 24 a 72 horas hábiles</strong>.</p>
       <p>Cualquier consulta, podés escribirnos a
          <a href="mailto:contacto@legalpacers.com">contacto@legalpacers.com</a>
          o por WhatsApp al +54 9 11 2877-4200.</p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
-      <p style="font-size:12px;color:#64748b">LegalPacers · Consultora de Propiedad Industrial</p>
+      <p style="font-size:12px;color:#64748b">Legal Pacer · un producto de WTR | abogados</p>
     </div>`;
 }
 

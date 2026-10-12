@@ -33,7 +33,7 @@ function shell(inner) {
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        LegalPacers · Consultora de Propiedad Industrial<br>
+        Legal Pacer · un producto de WTR | abogados<br>
         WhatsApp +54 9 11 2877-4200
       </p>
     </div>`;

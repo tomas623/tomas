@@ -240,12 +240,12 @@ function mountAuthRoutes(app) {
     const { enviarMailGenerico } = require('./notificaciones');
     enviarMailGenerico({
       to: u.email,
-      subject: 'Recuperación de contraseña — LegalPacers',
+      subject: 'Recuperación de contraseña — Legal Pacer',
       html: `
         <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f1f3d">
           <h2 style="color:#1B6EF3">Recuperación de contraseña</h2>
           <p>Hola${u.nombre ? ' ' + u.nombre.replace(/[<>]/g, '') : ''},</p>
-          <p>Recibimos una solicitud para resetear la contraseña de tu cuenta en LegalPacers.
+          <p>Recibimos una solicitud para resetear la contraseña de tu cuenta en Legal Pacer.
              Si fuiste vos, hacé click en el botón de abajo. El link caduca en ${RESET_TTL_HORAS} horas.</p>
           <p style="margin-top:24px">
             <a href="${link}" style="background:#1B6EF3;color:#fff;padding:12px 22px;border-radius:8px;
@@ -263,7 +263,7 @@ function mountAuthRoutes(app) {
           </p>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
           <p style="font-size:12px;color:#64748b">
-            LegalPacers · Consultora de Propiedad Industrial<br>
+            Legal Pacer · un producto de WTR | abogados<br>
             contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
           </p>
         </div>`,

@@ -19,7 +19,7 @@ async function enviarMail({ alertaId, to, marca, nivel, fundamento, panel_url })
   const subject = `🚨 Posible coincidencia con tu marca "${marca}" (riesgo ${nivel})`;
   const html = `
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f172a">
-      <h2 style="color:#1b6ef3">LegalPacers · Alerta de marca</h2>
+      <h2 style="color:#1b6ef3">Legal Pacer · Alerta de marca</h2>
       <p>Detectamos una posible coincidencia con tu marca <strong>${marca}</strong>.</p>
       <p><strong>Nivel de riesgo:</strong> ${nivel}</p>
       <p>${fundamento}</p>
@@ -133,13 +133,13 @@ async function enviarConfirmacionRegistro({ email, marca, solicitante, ref }) {
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
       <h2 style="color:#1B6EF3">Recibimos tu pago</h2>
       <p>Hola${solicitante ? ' ' + solicitante : ''},</p>
-      <p>Confirmamos la acreditación del pago para el <strong>registro de tu marca "${marca}"</strong> ante el INPI. ¡Gracias por confiar en LegalPacers!</p>
+      <p>Confirmamos la acreditación del pago para el <strong>registro de tu marca "${marca}"</strong> ante el INPI. ¡Gracias por confiar en Legal Pacer!</p>
       ${botonDatos}
       <p>Un Agente de la Propiedad Industrial matriculado revisa tus datos y te acompaña en el resto del trámite.</p>
       <p>Cualquier consulta, podés responder este mail o escribirnos por WhatsApp al +54 9 11 2877-4200.</p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        LegalPacers · Consultora de Propiedad Industrial<br>
+        Legal Pacer · un producto de WTR | abogados<br>
         contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
       </p>
     </div>`;

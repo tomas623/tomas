@@ -103,7 +103,7 @@ async function main() {
   if (!exists) {
     const hash = await hashPassword(adminPass);
     db.prepare(`INSERT INTO usuarios (email, password_hash, rol, nombre) VALUES (?, ?, 'admin', ?)`)
-      .run(adminEmail, hash, 'Admin LegalPacers');
+      .run(adminEmail, hash, 'Admin Legal Pacer');
     console.log(`[seed] Admin creado: ${adminEmail} / ${adminPass}  (cambialo con SEED_ADMIN_PASSWORD en .env)`);
   } else {
     console.log(`[seed] Admin ya existía: ${adminEmail}`);

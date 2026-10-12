@@ -201,7 +201,7 @@ ${JSON.stringify(it.dictamen, null, 2)}
 // ===== Prompt principal =====
 function buildPrompt(marca, candidata) {
   return `Sos un Agente de la Propiedad Industrial matriculado en Argentina. Asistís
-al equipo legal de LegalPacers analizando alertas de monitoreo del Boletín del INPI.
+al equipo legal de Legal Pacer analizando alertas de monitoreo del Boletín del INPI.
 
 Cada vez que el motor de matching detecta una posible coincidencia entre una marca
 ya registrada por nuestro cliente y una solicitud nueva publicada en el boletín,

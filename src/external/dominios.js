@@ -9,7 +9,7 @@
 const dns = require('dns').promises;
 
 const TIMEOUT_MS = 5000;
-const USER_AGENT = 'LegalPacers/1.0 (+https://legalpacers.com)';
+const USER_AGENT = 'LegalPacer/1.0 (+https://legalpacers.com)';
 
 function slugDominio(marca) {
   return String(marca || '')

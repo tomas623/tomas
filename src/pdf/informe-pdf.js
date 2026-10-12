@@ -8,7 +8,8 @@ const path = require('path');
 const fs = require('fs');
 
 const FONT_DIR = path.join(__dirname, '..', '..', 'TIPOGRAFIA');
-const LOGO_PATH = path.join(__dirname, '..', '..', 'legalpacers-logos-01.png');
+// Logo de la marca (está dentro de static/, que sí se copia al contenedor).
+const LOGO_PATH = path.join(__dirname, '..', '..', 'static', 'brand', 'logo.png');
 const ISOTIPO_PATH = path.join(__dirname, '..', '..', 'static', 'isotipo.png');
 
 const COLORES = {
@@ -127,10 +128,10 @@ function dibujarHeader(doc, { cliente }) {
   if (fs.existsSync(LOGO_PATH)) {
     doc.image(LOGO_PATH, X_MARGEN, yInicio, { width: 150 });
   } else {
-    doc.font('titulo').fontSize(22).fillColor(COLORES.navy).text('LegalPacers', X_MARGEN, yInicio);
+    doc.font('titulo').fontSize(22).fillColor(COLORES.navy).text('Legal Pacer', X_MARGEN, yInicio);
   }
   doc.font('cuerpo').fontSize(9).fillColor(COLORES.textoSuave)
-    .text('CONSULTORA DE PROPIEDAD INDUSTRIAL', X_MARGEN, yInicio + 4, {
+    .text('UN PRODUCTO DE WTR | ABOGADOS', X_MARGEN, yInicio + 4, {
       lineBreak: false, width: ANCHO_CONTENIDO, align: 'right',
     });
   doc.font('cuerpo-bold').fontSize(10).fillColor(COLORES.navy)
@@ -444,7 +445,7 @@ function dibujarQueImplicaRegistro(doc) {
     { t: 'Derecho a oponerte',        d: 'Con tu marca registrada o en trámite podés oponerte a solicitudes posteriores confundibles (la presentación de la oposición se cotiza aparte).' },
     { t: 'Activo transferible',       d: 'La marca se vende, licencia o aporta como activo intangible.' },
     { t: 'Trámite ágil',              d: 'Con el examen simplificado del INPI y sin oposiciones, suele concederse en alrededor de 3 meses.' },
-    { t: 'Cobertura LegalPacers',     d: 'Análisis, presentación y contestación de vistas de forma. Las oposiciones de terceros se cotizan por separado.' },
+    { t: 'Cobertura Legal Pacer',     d: 'Análisis, presentación y contestación de vistas de forma. Las oposiciones de terceros se cotizan por separado.' },
   ];
 
   const colW = (ANCHO_CONTENIDO - 14) / 2;
@@ -493,7 +494,7 @@ function dibujarCTAs(doc, cliente) {
     link: 'https://calendar.app.google/rx6vHWyyjFoEr7Vx9',
   };
   const card2 = {
-    titulo: 'Registrá tu marca con LegalPacers',
+    titulo: 'Registrá tu marca con Legal Pacer',
     tituloColor: COLORES.azul,
     parrafos: [
       { txt: 'Nos encargamos del armado del expediente, la presentación y el seguimiento ante el INPI, incluida la contestación de vistas de forma.' },
@@ -501,7 +502,7 @@ function dibujarCTAs(doc, cliente) {
     ],
     etiquetaBoton: 'INICIAR EL REGISTRO',
     botonColor: COLORES.azul,
-    link: 'https://wa.me/5491128774200?text=' + encodeURIComponent('Hola LegalPacers, quiero avanzar con el registro de mi marca.'),
+    link: 'https://wa.me/5491128774200?text=' + encodeURIComponent('Hola Legal Pacer, quiero avanzar con el registro de mi marca.'),
     bg: { color: COLORES.azul, opacity: 0.08 },
     barra: COLORES.azul,
   };
@@ -518,7 +519,7 @@ function dibujarCTAs(doc, cliente) {
   asegurarEspacio(doc, altoBloque);
   if (doc.y === yAntes) doc.moveDown(0.6);
 
-  dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGALPACERS');
+  dibujarTituloSeccion(doc, 'PRÓXIMOS PASOS CON LEGAL PACER');
   doc.font('cuerpo-light').fontSize(9.5).fillColor(COLORES.textoSuave)
     .text('Te acompañamos en lo que sigue. Estas son las dos vías habituales a partir de este informe:',
       X_MARGEN + 12, doc.y + 4, { width: ANCHO_CONTENIDO - 12, lineGap: 2 });
@@ -802,7 +803,7 @@ function dibujarPie(doc) {
     doc.moveTo(X_MARGEN, yPie).lineTo(X_MARGEN + ANCHO_CONTENIDO, yPie)
       .lineWidth(0.5).strokeColor(COLORES.separador).stroke();
     doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
-      .text('Legal Pacers · Consultora de PI · legalpacers.com',
+      .text('Legal Pacer · WTR | abogados · legalpacers.com',
         X_MARGEN, yPie + 8, { lineBreak: false, width: ANCHO_CONTENIDO - 80, align: 'left' });
     doc.font('cuerpo-light').fontSize(8).fillColor(COLORES.textoSuave)
       .text(`Página ${i + 1} de ${pageCount}`,
@@ -829,7 +830,7 @@ function generarPDF(informe, cliente, contexto = {}) {
         bufferPages: true,
         info: {
           Title: `Informe de viabilidad de marca - ${cliente.marca}`,
-          Author: 'Legal Pacers · Consultora de PI',
+          Author: 'Legal Pacer · WTR | abogados',
           Subject: 'Análisis de registrabilidad ante INPI Argentina',
         },
       });

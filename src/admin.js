@@ -31,7 +31,7 @@ function htmlInformeListo(row) {
          <a href="https://calendar.app.google/rx6vHWyyjFoEr7Vx9">este link</a>.</p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        LegalPacers · Consultora de Propiedad Industrial<br>
+        Legal Pacer · un producto de WTR | abogados<br>
         contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
       </p>
     </div>`;
@@ -390,7 +390,7 @@ function mountAdminRoutes(app) {
           </p>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
           <p style="font-size:12px;color:#64748b">
-            LegalPacers · Consultora de Propiedad Industrial<br>
+            Legal Pacer · un producto de WTR | abogados<br>
             contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
           </p>
         </div>`;
@@ -747,7 +747,7 @@ function mountAdminRoutes(app) {
     // Link directo a WhatsApp con el caso en contexto, para que el cliente
     // consulte sin tener que entrar al portal.
     const topCand = cands[0];
-    const waMsg = `Hola LegalPacers, me llegó una alerta de monitoreo sobre mi marca "${row.marca}". `
+    const waMsg = `Hola Legal Pacer, me llegó una alerta de monitoreo sobre mi marca "${row.marca}". `
       + (topCand ? `Detectaron una solicitud similar: "${topCand.denominacion || '—'}" (clase ${topCand.clase || '?'}). ` : '')
       + `¿Pueden ayudarme a evaluar si conviene oponerme?`;
     const waLink = `https://wa.me/5491128774200?text=${encodeURIComponent(waMsg)}`;
@@ -779,7 +779,7 @@ function mountAdminRoutes(app) {
         </p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
         <p style="font-size:12px;color:#64748b">
-          LegalPacers · Consultora de Propiedad Industrial<br>
+          Legal Pacer · un producto de WTR | abogados<br>
           contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
         </p>
       </div>`;

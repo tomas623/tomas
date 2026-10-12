@@ -46,7 +46,7 @@ function construirHtml({ cliente, mesNombre, marcas, alertas, hitos, marcasEscan
   return `
     <div style="font-family:system-ui,sans-serif;max-width:600px;margin:0 auto;color:#0f1f3d">
       <h2 style="color:#1B6EF3;margin-bottom:2px">Tu reporte de ${mesNombre}</h2>
-      <p style="color:#64748b;margin-top:0;font-size:13px">Monitoreo de marcas · LegalPacers</p>
+      <p style="color:#64748b;margin-top:0;font-size:13px">Monitoreo de marcas · Legal Pacer</p>
 
       <p style="margin-top:16px">${saludo} este es el resumen mensual del monitoreo de tu cartera.</p>
 
@@ -88,7 +88,7 @@ function construirHtml({ cliente, mesNombre, marcas, alertas, hitos, marcasEscan
 
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        LegalPacers · Consultora de Propiedad Industrial<br>
+        Legal Pacer · un producto de WTR | abogados<br>
         contacto@legalpacers.com · WhatsApp +54 9 11 2877-4200
       </p>
     </div>`;
@@ -159,7 +159,7 @@ async function correr({ dryRun = false, ahora } = {}) {
     const html = construirHtml({ cliente: c, mesNombre, marcas, alertas, hitos, marcasEscaneadas, baseUrl });
     const r = await enviarMailGenerico({
       to: c.email,
-      subject: `Tu reporte de marcas de ${mesNombre} — LegalPacers`,
+      subject: `Tu reporte de marcas de ${mesNombre} — Legal Pacer`,
       html, tag: 'reporte_mensual',
     });
     if (r.ok) enviados++; else errores++;

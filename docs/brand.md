@@ -1,9 +1,11 @@
-# Marca Legal Pacers — resumen del brandbook
+# Marca Legal Pacer — resumen del brandbook
 
-Fuente: Manual de marca de Bravvo Agencia (octubre 2025). Adaptado a hoy: Legal Pacers nació como consultora y ahora es un producto de WTR | abogados. Todo lo que el brandbook dice de "consultora legal" quedó viejo.
+Fuente: Manual de marca de Bravvo Agencia (octubre 2025). Adaptado a hoy: Legal Pacer nació como consultora y ahora es un producto de WTR | abogados. Todo lo que el brandbook dice de "consultora legal" quedó viejo.
+
+Nombre: **Legal Pacer** (singular desde octubre 2026). Los logos de `static/brand/` ya están en singular; el brandbook original de Bravvo dice "Legal Pacers". Para la versión final conviene pedirle a Bravvo los vectores en singular.
 
 ## Concepto
-- **El pacer:** en running, el pacer te acompaña en la previa y durante la carrera, y te ayuda a llegar a la meta. Legal Pacers acompaña el impulso del emprendedor, no lo frena.
+- **El pacer:** en running, el pacer te acompaña en la previa y durante la carrera, y te ayuda a llegar a la meta. Legal Pacer acompaña el impulso del emprendedor, no lo frena.
 - Frases que ya son de la marca: "Escalá con nosotros.", "Hablamos tu idioma.", "business enablers".
 - Visión original: sumar servicios complementarios (RRHH, marketing, estrategia). Hoy eso es Club Pacers, el lugar donde conviven proveedores y startups (después del MVP).
 

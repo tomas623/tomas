@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel admin · LegalPacers</title>
+<title>Panel admin · Legal Pacer</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
 :root{
@@ -1056,14 +1056,14 @@ function waMensaje(l) {
   if (l.tipo === 'registro') {
     const link = `${location.origin}/registro/datos?ref=${encodeURIComponent(l.external_reference || '')}`;
     if (l.registro_datos) {
-      return `Hola, te escribo de LegalPacers por el registro de "${marca}". Te paso el poder para firmar. Cuando lo tengas firmado (a mano o digital), subilo en el mismo link que usaste antes — abajo del todo está el botón "Subir poder firmado": ${link} ¡Gracias!`;
+      return `Hola, te escribo de Legal Pacer por el registro de "${marca}". Te paso el poder para firmar. Cuando lo tengas firmado (a mano o digital), subilo en el mismo link que usaste antes — abajo del todo está el botón "Subir poder firmado": ${link} ¡Gracias!`;
     }
-    return `Hola, te escribo de LegalPacers por el registro de tu marca "${marca}". Recibimos tu pago 🙌 Para arrancar el trámite ante el INPI, completá tus datos en este formulario (5 min): ${link}`;
+    return `Hola, te escribo de Legal Pacer por el registro de tu marca "${marca}". Recibimos tu pago 🙌 Para arrancar el trámite ante el INPI, completá tus datos en este formulario (5 min): ${link}`;
   }
   if (l.tipo === 'informe') {
-    return `Hola, te escribo de LegalPacers por tu informe de viabilidad de la marca "${marca}". ¿Cómo estás? Cualquier duda del informe, quedo a disposición.`;
+    return `Hola, te escribo de Legal Pacer por tu informe de viabilidad de la marca "${marca}". ¿Cómo estás? Cualquier duda del informe, quedo a disposición.`;
   }
-  return `Hola, te escribo de LegalPacers por tu consulta sobre la marca "${marca}". ¿Cómo estás?`;
+  return `Hola, te escribo de Legal Pacer por tu consulta sobre la marca "${marca}". ¿Cómo estás?`;
 }
 
 // Caja del registro en el detalle del lead: datos cargados o estado de espera.

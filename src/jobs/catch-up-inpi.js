@@ -354,7 +354,7 @@ async function notificarResultadoCron(resumen, { umbralVacias = 3 } = {}) {
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
       <p style="font-size:12px;color:#64748b">
-        Aviso automático del cron <code>inpi-catch-up</code> · LegalPacers
+        Aviso automático del cron <code>inpi-catch-up</code> · Legal Pacer
       </p>
     </div>`;
 

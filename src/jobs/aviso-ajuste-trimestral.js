@@ -92,7 +92,7 @@ async function correr({ dryRun = false } = {}) {
 
   const r = await enviarMailGenerico({
     to: mailEquipo,
-    subject: '🔔 Es momento de revisar los precios mensuales — LegalPacers',
+    subject: '🔔 Es momento de revisar los precios mensuales — Legal Pacer',
     html,
     tag: 'aviso_ajuste_trimestral',
   });

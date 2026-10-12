@@ -242,13 +242,13 @@ async function avisarPendientes() {
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
       <p style="font-size:12px;color:#64748b">
-        Aviso automático del monitoreo semanal · LegalPacers
+        Aviso automático del monitoreo semanal · Legal Pacer
       </p>
     </div>`;
 
   const r = await enviarMailGenerico({
     to: mailEquipo,
-    subject: `🔔 ${total} alerta(s) del INPI para revisar — LegalPacers`,
+    subject: `🔔 ${total} alerta(s) del INPI para revisar — Legal Pacer`,
     html, tag: 'alertas_pendientes_aviso',
   });
   if (r.ok) audit.log(null, 'monitoreo.aviso_pendientes', { detalle: { total, porNivel, stub: !!r.stub } });

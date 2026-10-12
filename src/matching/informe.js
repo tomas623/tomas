@@ -569,7 +569,7 @@ TONO obligatorio:
   / una restricción". NO con "acá hay un tema" ni "tenemos un tema".
 
 NO HACER VALORACIÓN SUBJETIVA DEL NOMBRE:
-- LegalPacers analiza VIABILIDAD DE REGISTRO, no la estética ni la calidad
+- Legal Pacer analiza VIABILIDAD DE REGISTRO, no la estética ni la calidad
   comercial del nombre.
 - Prohibidas frases como "el nombre está bueno", "es un buen nombre",
   "el nombre es lindo", "tiene gancho", "buena elección".
