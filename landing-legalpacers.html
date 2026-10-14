@@ -596,6 +596,32 @@
     .wa-fab-mini:hover{transform:scale(1.08)}
     .wa-fab-mini svg{width:22px;height:22px;fill:currentColor}
 
+    /* ===== Versión "más tech": hero oscuro con la pista del pacer ===== */
+    .hero{background:
+        radial-gradient(ellipse 55% 60% at 88% 18%, rgba(0,111,251,.38), transparent 62%),
+        radial-gradient(ellipse 45% 45% at 6% 95%, rgba(0,111,251,.16), transparent 60%),
+        var(--noche);
+      overflow:hidden;padding:76px 24px 84px}
+    .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+      background-image:radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px);background-size:22px 22px;
+      -webkit-mask-image:linear-gradient(180deg,#000 30%,transparent 85%);mask-image:linear-gradient(180deg,#000 30%,transparent 85%)}
+    .hero .pista{position:absolute;right:-660px;top:60px;width:1100px;height:520px;pointer-events:none}
+    @media(min-width:1600px){.hero .pista{right:-420px}}
+    .hero-inner{position:relative}
+    .hero h1{color:#fff}
+    .hero h1 .hl{background:linear-gradient(90deg,#8DBBFF 0%,#3F92FF 45%,#006FFB 100%);
+      -webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero p.lead{color:#C9D3E6}
+    .hero p.lead strong{color:#fff}
+    .eyebrow{background:rgba(0,111,251,.16);color:#A9CBFF;border-color:rgba(127,178,255,.35)}
+    .risk-banner{background:rgba(239,68,68,.10);border-color:rgba(248,113,113,.35);color:#FECACA}
+    .risk-banner strong{color:#fff}
+    .search-card{box-shadow:0 34px 90px -24px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08)}
+    @media(max-width:900px){.hero .pista{right:-560px;opacity:.35}}
+    /* Resaltado tipo marcador en los títulos */
+    .marcador{background:linear-gradient(180deg,transparent 60%,rgba(0,111,251,.22) 60%);padding:0 2px;border-radius:2px}
+    /* Grilla de puntos sutil en la sección de servicios */
+    #planes{background-image:radial-gradient(rgba(0,21,64,.07) 1px,transparent 1px)!important;background-size:22px 22px}
     [x-cloak]{display:none!important}
   </style>
 </head>
@@ -617,6 +643,7 @@
 </header>
 
 <section class="hero">
+  <svg class="pista" viewBox="0 0 1400 660" aria-hidden="true" preserveAspectRatio="xMinYMid slice"><path d="M 1400 210 L 560 210 A 120 120 0 0 0 560 450 L 1400 450" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 170 L 560 170 A 160 160 0 0 0 560 490 L 1400 490" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 130 L 560 130 A 200 200 0 0 0 560 530 L 1400 530" fill="none" stroke="#006FFB" stroke-width="5"/><path d="M 1400 90 L 560 90 A 240 240 0 0 0 560 570 L 1400 570" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 50 L 560 50 A 280 280 0 0 0 560 610 L 1400 610" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 10 L 560 10 A 320 320 0 0 0 560 650 L 1400 650" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/></svg>
   <div class="hero-inner">
     <span class="eyebrow">Registro de marcas en Argentina</span>
 
@@ -815,13 +842,13 @@
 <section id="informe-preview" style="background:var(--bg-soft)">
   <div class="container">
     <div class="section-eyebrow">Etapa 1 · el paso previo al registro</div>
-    <h2 class="section-title">Así se ve tu informe de viabilidad</h2>
+    <h2 class="section-title">Así se ve tu <span class="marcador">informe de viabilidad</span></h2>
     <p class="section-sub">Antes de registrar, el informe te dice si tu marca es viable, para que no gastes de más. Lo firma un Agente matriculado y lo tenés en 24 a 72 h hábiles. Si después registrás, su valor se descuenta del honorario.</p>
 
     <div class="informe-showcase">
       <div class="doc-mock" aria-hidden="true">
         <div class="doc-head">
-          <div class="doc-brand">Legal<b>Pacers</b></div>
+          <div class="doc-brand">Legal<b>Pacer</b></div>
           <div class="doc-badge">RIESGO BAJO</div>
         </div>
         <div class="doc-title">Informe de viabilidad de marca</div>
@@ -861,7 +888,7 @@
 <section id="planes" style="background:var(--bg)">
   <div class="container">
     <div class="section-eyebrow">Te acompañamos en cada paso de tu marca</div>
-    <h2 class="section-title">Cuatro servicios, uno para cada etapa</h2>
+    <h2 class="section-title">Cuatro servicios, uno para <span class="marcador">cada etapa</span></h2>
     <p class="section-sub">Antes de registrar, durante el trámite, para protegerla en el tiempo y cuando hay que renovarla. Cada servicio es independiente: contratá solo el que te corresponde ahora.</p>
 
     <div class="plans-grid">
