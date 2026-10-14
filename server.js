@@ -30,9 +30,17 @@ app.use(securityHeaders);
 // www) se redirige ahí, conservando la ruta.
 const HOME_HOST_CANONICO = (process.env.HOME_HOST_CANONICO || 'www.legalpacers.com').toLowerCase();
 const HOME_HOST_SIN_WWW = HOME_HOST_CANONICO.replace(/^www\./, '');
+// Dominio en singular (legalpacer.com): por ahora redirige al de siempre,
+// conservando la ruta. marcas.legalpacer.com va a marcas; el resto, a la home.
+const DOMINIO_SINGULAR = (process.env.DOMINIO_SINGULAR || 'legalpacer.com').toLowerCase();
 app.use((req, res, next) => {
-  if (String(req.hostname || '').toLowerCase() === HOME_HOST_SIN_WWW && HOME_HOST_SIN_WWW !== HOME_HOST_CANONICO) {
+  const host = String(req.hostname || '').toLowerCase();
+  if (host === HOME_HOST_SIN_WWW && HOME_HOST_SIN_WWW !== HOME_HOST_CANONICO) {
     return res.redirect(301, `https://${HOME_HOST_CANONICO}${req.originalUrl}`);
+  }
+  if (host === DOMINIO_SINGULAR || host.endsWith('.' + DOMINIO_SINGULAR)) {
+    const destino = host.startsWith('marcas.') ? 'marcas.legalpacers.com' : HOME_HOST_CANONICO;
+    return res.redirect(301, `https://${destino}${req.originalUrl}`);
   }
   next();
 });
