@@ -5,6 +5,28 @@
 const db = require('./db');
 const audit = require('./audit');
 
+// Marco de marca para todos los mails: barra azul noche con el logo, colores
+// del brandbook y pie con "un producto de WTR | abogados". Se aplica al enviar,
+// así cada mail solo arma su contenido. Los colores viejos se reemplazan.
+const BASE_PUBLICA = (process.env.PUBLIC_URL || 'https://marcas.legalpacers.com').replace(/\/+$/, '');
+function aplicarMarca(html) {
+  if (!html || html.includes('data-lp-marca')) return html;
+  const cuerpo = String(html)
+    .replace(/#1b6ef3/gi, '#006FFB')
+    .replace(/#1656c4/gi, '#005AD0')
+    .replace(/#0f1f3d/gi, '#001540')
+    .replace(/font-family:\s*system-ui,\s*sans-serif/gi, "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif");
+  return `<div data-lp-marca style="background:#FDF8F3;padding:24px 12px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1E1E1E">
+  <div style="max-width:600px;margin:0 auto;background:#FFFFFF;border:1px solid #E6E2DB;border-radius:14px;overflow:hidden">
+    <div style="background:#001540;padding:18px 24px">
+      <img src="${BASE_PUBLICA}/static/brand/logo-oscuro-mail.png" alt="Legal Pacer" width="150" style="display:block;height:auto;border:0">
+    </div>
+    <div style="padding:8px 24px 20px">${cuerpo}</div>
+  </div>
+  ${cuerpo.includes('un producto de WTR') ? '' : '<p style="max-width:600px;margin:14px auto 0;font-size:11px;color:#6B7080;text-align:center">Legal Pacer es un producto de WTR | abogados</p>'}
+</div>`;
+}
+
 function registrar(alertaId, canal, estado, { proveedor_id, error } = {}) {
   db.prepare(`
     INSERT INTO notificaciones (alerta_id, canal, estado, proveedor_id, error)
@@ -36,7 +58,7 @@ async function enviarMail({ alertaId, to, marca, nivel, fundamento, panel_url })
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ from, to, subject, html }),
+      body: JSON.stringify({ from, to, subject, html: aplicarMarca(html) }),
     });
     if (!res.ok) {
       const txt = await res.text().catch(() => '');
@@ -60,7 +82,7 @@ async function enviarWhatsApp({ alertaId, to, marca, nivel, panel_url }) {
   return { ok: true, disabled: true };
 }
 
-module.exports = { enviarMail, enviarWhatsApp, enviarMailGenerico, enviarConfirmacionRegistro };
+module.exports = { enviarMail, enviarWhatsApp, enviarMailGenerico, enviarConfirmacionRegistro, aplicarMarca };
 
 /**
  * Envío de mail genérico (subject/HTML arbitrario + adjuntos opcionales).
@@ -86,7 +108,7 @@ async function enviarMailGenerico({ to, subject, html, attachments, from, replyT
   }
 
   try {
-    const body = { from: fromAddr, to, subject, html };
+    const body = { from: fromAddr, to, subject, html: aplicarMarca(html) };
     // Reply-to: explícito, o el default configurable. Así cuando un cliente
     // responde el mail, la respuesta cae en una casilla que sí se lee (no en
     // el 'from' de envío, que puede ser no-reply).
@@ -133,7 +155,7 @@ async function enviarConfirmacionRegistro({ email, marca, solicitante, ref }) {
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
       <h2 style="color:#1B6EF3">Recibimos tu pago</h2>
       <p>Hola${solicitante ? ' ' + solicitante : ''},</p>
-      <p>Confirmamos la acreditación del pago para el <strong>registro de tu marca "${marca}"</strong> ante el INPI. ¡Gracias por confiar en Legal Pacer!</p>
+      <p>Confirmamos la acreditación del pago para el <strong>registro de tu marca "${marca}"</strong> ante el INPI. Gracias por confiar en Legal Pacer.</p>
       ${botonDatos}
       <p>Un Agente de la Propiedad Industrial matriculado revisa tus datos y te acompaña en el resto del trámite.</p>
       <p>Cualquier consulta, podés responder este mail o escribirnos por WhatsApp al +54 9 11 2877-4200.</p>

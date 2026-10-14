@@ -13,7 +13,7 @@ const LOGO_PATH = path.join(__dirname, '..', '..', 'static', 'brand', 'logo.png'
 const ISOTIPO_PATH = path.join(__dirname, '..', '..', 'static', 'isotipo.png');
 
 const COLORES = {
-  azul: '#1B6EF3',
+  azul: '#006FFB',
   navy: '#0F1F3D',
   riesgoAlto: '#dc2626',
   riesgoMedio: '#d97706',

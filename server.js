@@ -542,7 +542,7 @@ app.post('/api/cliente/vigilancia/iniciar', async (req, res) => {
     subject: `Tu solicitud de monitoreo — ${pack.nombre} (${ciclo})`,
     html: `
       <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
-        <h2 style="color:#1B6EF3">${initPoint ? '¡Estás a un paso!' : 'Recibimos tu solicitud'}</h2>
+        <h2 style="color:#1B6EF3">${initPoint ? 'Estás a un paso' : 'Recibimos tu solicitud'}</h2>
         <p>Hola ${nombreLimpio}, gracias por confiar en Legal Pacer.</p>
         <p><strong>Pack:</strong> ${pack.nombre} — ${periodoTxt}.</p>
         ${ctaPago}
@@ -1053,7 +1053,7 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
 
   const html = esNuevo ? `
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#0f1f3d">
-      <h2 style="color:#1B6EF3">¡Listo! Tu suscripción está activa.</h2>
+      <h2 style="color:#1B6EF3">Listo: tu suscripción está activa.</h2>
       <p>${saludo} gracias por confiar en Legal Pacer para el monitoreo de tus marcas.</p>
       <p><strong>Pack activado:</strong> ${esc(pack.nombre)}.</p>
 
@@ -1105,7 +1105,7 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
 
   await enviarMailGenerico({
     to: email,
-    subject: esNuevo ? '¡Bienvenido! Tu cuenta y tu suscripción están listas' : 'Suscripción reactivada — Legal Pacer',
+    subject: esNuevo ? 'Te damos la bienvenida: tu cuenta y tu suscripción están listas' : 'Suscripción reactivada — Legal Pacer',
     html,
     tag: esNuevo ? 'suscripcion_bienvenida' : 'suscripcion_reactivacion',
   });
