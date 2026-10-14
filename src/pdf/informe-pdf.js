@@ -85,7 +85,8 @@ function registrarFuentes(doc) {
     ['cuerpo-bold', 'MundialBold.otf', 'Helvetica-Bold'],
     ['cuerpo-light', 'MundialLight.otf', 'Helvetica'],
     ['titulo', 'MundialBlack.otf', 'Helvetica-Bold'],
-    ['demi', 'MundialDemibold.otf', 'Helvetica-Bold'],
+    // Demibold trae roto el carácter "ú"; usamos Bold para ese peso.
+    ['demi', 'MundialBold.otf', 'Helvetica-Bold'],
     ['italic', 'MundialItalic.otf', 'Helvetica-Oblique'],
   ];
   let faltaron = 0;
