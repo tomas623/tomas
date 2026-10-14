@@ -99,14 +99,23 @@
     .nav-toggle svg { width: 26px; height: 26px; }
 
     /* Hero */
-    .hero { position: relative; overflow: hidden; padding: 96px 0 104px; }
-    .hero-aro { position: absolute; right: -140px; top: 40px; width: 520px; height: 520px; opacity: 1; pointer-events: none; }
+    .hero { position: relative; overflow: hidden; padding: 96px 0 104px; color: var(--blanco);
+      background: radial-gradient(ellipse 55% 60% at 88% 18%, rgba(0,111,251,.38), transparent 62%),
+                  radial-gradient(ellipse 45% 45% at 6% 95%, rgba(0,111,251,.16), transparent 60%), var(--noche); }
+    .hero::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+      background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px); background-size: 22px 22px;
+      -webkit-mask-image: linear-gradient(180deg, #000 30%, transparent 85%); mask-image: linear-gradient(180deg, #000 30%, transparent 85%); }
+    .hero-pista { position: absolute; right: -560px; top: 30px; width: 1100px; height: 520px; pointer-events: none; }
+    .hero .eyebrow { color: #A9CBFF; }
+    .hero h1 { color: var(--blanco); }
+    .hero .btn-borde { color: var(--blanco); border-color: rgba(255,255,255,.6); }
+    .hero .btn-borde:hover { background: var(--blanco); color: var(--noche); }
     .hero-texto { position: relative; max-width: 700px; }
     .hero h1 { font-size: clamp(38px, 6vw, 64px); margin: 18px 0 22px; }
-    .hero p.bajada { font-size: clamp(18px, 2.2vw, 21px); color: var(--texto-suave); max-width: 600px; }
+    .hero p.bajada { font-size: clamp(18px, 2.2vw, 21px); color: #C9D3E6; max-width: 600px; }
     .hero-botones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
-    .hero-wtr { margin-top: 26px; font-size: 15px; color: var(--texto-suave); }
-    .hero-wtr strong { font-weight: 600; color: var(--noche); }
+    .hero-wtr { margin-top: 26px; font-size: 15px; color: #C9D3E6; }
+    .hero-wtr strong { font-weight: 600; color: var(--blanco); }
 
     section { padding: 88px 0; }
     .titulo-seccion { font-size: clamp(30px, 4vw, 42px); margin: 12px 0 14px; }
@@ -193,7 +202,7 @@
       .situaciones, .productos-grid { grid-template-columns: 1fr; }
       .somos-grid { grid-template-columns: 1fr; gap: 36px; }
       .somos-logo { max-width: 260px; justify-self: start; }
-      .hero-aro { width: 340px; height: 340px; right: -170px; top: 20px; opacity: .35; }
+      .hero-pista { right: -720px; opacity: .45; }
     }
     @media (max-width: 760px) {
       .nav-toggle { display: block; }
@@ -232,7 +241,7 @@
 
 <main>
   <section class="hero">
-    <img class="hero-aro" src="/static/brand/isotipo.webp" alt="" aria-hidden="true" width="800" height="796">
+    <svg class="hero-pista" viewBox="0 0 1400 660" aria-hidden="true" preserveAspectRatio="xMinYMid slice"><path d="M 1400 210 L 560 210 A 120 120 0 0 0 560 450 L 1400 450" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 170 L 560 170 A 160 160 0 0 0 560 490 L 1400 490" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 130 L 560 130 A 200 200 0 0 0 560 530 L 1400 530" fill="none" stroke="#006FFB" stroke-width="5"/><path d="M 1400 90 L 560 90 A 240 240 0 0 0 560 570 L 1400 570" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 50 L 560 50 A 280 280 0 0 0 560 610 L 1400 610" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/><path d="M 1400 10 L 560 10 A 320 320 0 0 0 560 650 L 1400 650" fill="none" stroke="rgba(127,178,255,.22)" stroke-width="2"/></svg>
     <div class="wrap">
       <div class="hero-texto">
         <span class="eyebrow">Legal Pacer</span>

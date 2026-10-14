@@ -30,6 +30,9 @@ Amigable y cercano, profesional y confiable, claro y simple, motivador, ágil y 
 
 Usos incorrectos del logo: cambiar colores fuera de la paleta, deformarlo, alterar sus elementos, agregar sombras o efectos.
 
+## Recurso gráfico: la pista
+Los carriles de una pista de atletismo entrando por la derecha, con un carril resaltado en azul (#006FFB) y el resto en azul claro translúcido, sobre azul noche con brillo azul y una grilla de puntos sutil. Se usa en el inicio de la home y de marcas, y sirve para banners y miniaturas (por ejemplo, "KM 1 · ...").
+
 ## Estado
-- Home (`public/home/index.html`) y landing de marcas (`landing-legalpacers.html`) siguen esta identidad.
-- Pendiente de alinear: formulario de datos del registro (`public/registro/datos.html`), portal cliente, panel admin y los mails.
+- Con la marca nueva: home, landing de marcas, mails, informe PDF, formulario de datos del registro, crear contraseña, páginas legales, portal del cliente y panel admin.
+- Tipografía: el archivo Mundial Demibold trae roto el carácter "ú"; en la web esa letra se toma de Bold (unicode-range) y en el PDF el peso "demi" usa Bold.
