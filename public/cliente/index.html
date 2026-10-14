@@ -6,28 +6,35 @@
 <title>Mi portal · Legal Pacer</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
+/* Tipografía Mundial. El archivo Demibold trae roto el carácter "ú": esa letra se toma de Bold. */
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialLight.otf") format("opentype");font-weight:300;font-display:swap}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialRegular.otf") format("opentype");font-weight:400 500;font-display:swap}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialDemibold.otf") format("opentype");font-weight:600;font-display:swap;unicode-range:U+0000-00F9,U+00FB-FFFF}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialBold.otf") format("opentype");font-weight:600;font-display:swap;unicode-range:U+00FA}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialBold.otf") format("opentype");font-weight:700 900;font-display:swap}
 :root{
-  --bg:#030712; --bg-soft:#070d1c; --surface:#0f172a; --surface-2:#1e293b;
-  --border:#334155; --border-soft:#1f2a40;
-  --text:#f8fafc; --text-soft:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
-  --blue:#1b6ef3; --blue-dark:#1656c4; --blue-soft:rgba(27,110,243,.12);
+  --bg:#FDF8F3; --bg-soft:#F5EFE7; --surface:#FFFFFF; --surface-2:#F3F1EC;
+  --border:#D9D6D0; --border-soft:#E6E2DB;
+  --text:#1E1E1E; --text-soft:#2E3340; --text-muted:#4A4F5C; --text-dim:#6B7080;
+  --blue:#006FFB; --blue-dark:#005AD0; --blue-soft:rgba(0,111,251,.08);
+  --noche:#001540; --strong:#001540;
   --green:#10b981; --green-soft:rgba(16,185,129,.12);
   --red:#ef4444; --red-soft:rgba(239,68,68,.12);
   --yellow:#f59e0b; --yellow-soft:rgba(245,158,11,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+html,body{background:var(--bg);color:var(--text);font-family:'Mundial',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;border:none;color:inherit}
-a{color:#60a5fa;text-decoration:none}
+a{color:var(--blue);text-decoration:none}
 input,select{font-family:inherit}
 
-header.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border-soft);background:rgba(3,7,18,.85);backdrop-filter:blur(14px);position:sticky;top:0;z-index:10}
+header.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border-soft);background:rgba(253,248,243,.92);backdrop-filter:blur(14px);position:sticky;top:0;z-index:10}
 .brand{font-weight:800;letter-spacing:.5px;font-size:16px}
 .brand .accent{color:var(--blue)}
 .user-chip{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--text-muted)}
 .user-chip strong{color:var(--text-soft);font-weight:600}
 .btn{padding:10px 18px;border-radius:8px;font-weight:600;font-size:13.5px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);transition:all .15s}
-.btn:hover{background:var(--surface);border-color:#475569}
+.btn:hover{background:var(--surface);border-color:var(--border)}
 .btn.primary{background:var(--blue);border-color:transparent;color:#fff}
 .btn.primary:hover{background:var(--blue-dark)}
 .btn.tiny{padding:5px 10px;font-size:12px;border-radius:6px}
@@ -41,28 +48,28 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--border-soft);margin-bottom:24px;overflow-x:auto}
 .tab{padding:10px 16px;background:transparent;color:var(--text-muted);font-size:13.5px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
 .tab:hover{color:var(--text-soft)}
-.tab.active{color:#60a5fa;border-bottom-color:var(--blue)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 
 .card{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:24px;margin-bottom:18px}
-.card h3{font-size:16px;margin-bottom:12px;color:#fff}
+.card h3{font-size:16px;margin-bottom:12px;color:var(--strong)}
 
-.pack-card{background:linear-gradient(180deg,var(--blue-soft),transparent);border:1px solid rgba(27,110,243,.35);border-radius:16px;padding:22px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.pack-card{background:linear-gradient(180deg,var(--blue-soft),transparent);border:1px solid rgba(0,111,251,.35);border-radius:16px;padding:22px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
 .pack-left{flex:1;min-width:220px}
-.pack-name{font-size:13px;font-weight:700;text-transform:uppercase;color:#60a5fa;letter-spacing:.06em}
-.pack-cupo{font-size:28px;font-weight:800;color:#fff;margin-top:6px;letter-spacing:-.02em}
+.pack-name{font-size:13px;font-weight:700;text-transform:uppercase;color:var(--blue);letter-spacing:.06em}
+.pack-cupo{font-size:28px;font-weight:800;color:var(--strong);margin-top:6px;letter-spacing:-.02em}
 .pack-cupo .small{font-size:14px;color:var(--text-muted);font-weight:600}
 .pack-bar{width:100%;height:8px;background:var(--bg-soft);border-radius:99px;margin-top:12px;overflow:hidden}
-.pack-bar > div{height:100%;background:linear-gradient(90deg,var(--blue),#60a5fa);transition:width .3s}
-.pack-bar.full > div{background:linear-gradient(90deg,var(--red),#fca5a5)}
+.pack-bar > div{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue));transition:width .3s}
+.pack-bar.full > div{background:linear-gradient(90deg,var(--red),#B42318)}
 
 .alta-form{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end}
 @media(max-width:720px){.alta-form{grid-template-columns:1fr}}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
 .field input,.field select{width:100%;padding:10px 12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px}
-.field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,111,251,.18)}
 
 .marca-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:14px 18px;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;margin-bottom:8px}
-.marca-name{font-weight:700;font-size:15px;color:#fff;letter-spacing:.02em}
+.marca-name{font-weight:700;font-size:15px;color:var(--strong);letter-spacing:.02em}
 .marca-meta{font-size:12px;color:var(--text-muted);margin-top:2px}
 .marca-hitos{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}
 .marca-actions{display:flex;gap:6px}
@@ -71,17 +78,17 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 .alerta-row.alto{border-color:rgba(239,68,68,.35);background:linear-gradient(180deg,rgba(239,68,68,.06),var(--bg-soft))}
 .alerta-row.medio{border-color:rgba(245,158,11,.35)}
 .alerta-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
-.alerta-title{font-weight:700;color:#fff;font-size:14.5px}
+.alerta-title{font-weight:700;color:var(--strong);font-size:14.5px}
 .alerta-fund{font-size:13px;color:var(--text-soft);margin-top:8px;line-height:1.55}
 .alerta-cands{margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.65}
 .alerta-cta{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .alerta-cta .btn{padding:8px 14px;font-size:13px;text-decoration:none}
 
 .chip{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.chip.green{background:var(--green-soft);color:#6ee7b7}
-.chip.red{background:var(--red-soft);color:#fca5a5}
-.chip.yellow{background:var(--yellow-soft);color:#fcd34d}
-.chip.blue{background:var(--blue-soft);color:#7eb1ff}
+.chip.green{background:var(--green-soft);color:#047857}
+.chip.red{background:var(--red-soft);color:#B42318}
+.chip.yellow{background:var(--yellow-soft);color:#B45309}
+.chip.blue{background:var(--blue-soft);color:var(--blue)}
 .chip.muted{background:var(--surface-2);color:var(--text-muted)}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
 
@@ -90,20 +97,20 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 /* Login */
 .login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:36px;max-width:400px;width:100%}
-.login-card h2{font-size:22px;margin-bottom:24px;color:#fff}
+.login-card h2{font-size:22px;margin-bottom:24px;color:var(--strong)}
 .hint{font-size:12px;color:var(--text-dim);margin-top:14px;text-align:center;line-height:1.5}
 .hint code{background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px}
-.error-msg{color:#fca5a5;font-size:13px;margin-top:8px}
+.error-msg{color:#B42318;font-size:13px;margin-top:8px}
 .flash{padding:11px 16px;border-radius:8px;font-size:13.5px;margin-bottom:14px}
-.flash.ok{background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)}
-.flash.bad{background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35)}
+.flash.ok{background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35)}
+.flash.bad{background:var(--red-soft);color:#B42318;border:1px solid rgba(239,68,68,.35)}
 
 .packs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:14px}
 .pack-opt{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:12px;padding:18px}
-.pack-opt.current{border-color:rgba(27,110,243,.45);box-shadow:0 0 0 1px rgba(27,110,243,.25)}
-.pack-opt-cupo{font-size:24px;font-weight:800;color:#fff}
+.pack-opt.current{border-color:rgba(0,111,251,.45);box-shadow:0 0 0 1px rgba(0,111,251,.25)}
+.pack-opt-cupo{font-size:24px;font-weight:800;color:var(--strong)}
 .pack-opt-precio{color:var(--text-muted);font-size:13px;margin-top:4px}
-.pack-opt .badge-cur{font-size:10px;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:.06em;margin-top:6px;display:inline-block}
+.pack-opt .badge-cur{font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;margin-top:6px;display:inline-block}
 
 [hidden]{display:none!important}
 .muted{color:var(--text-muted)}
@@ -112,7 +119,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 <body>
 
 <header class="topbar" id="topbar" hidden>
-  <a href="/" class="brand" style="text-decoration:none;color:inherit" title="Volver al inicio">LEGAL<span class="accent">PACERS</span> · mi portal</a>
+  <a href="/" class="brand" style="text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:10px" title="Volver al inicio"><img src="/static/brand/logo.png" alt="Legal Pacer" width="1200" height="276" style="height:24px;width:auto;display:block"><span style="font-weight:400;color:var(--text-muted)">mi portal</span></a>
   <div class="user-chip">
     <span id="userInfo"></span>
     <button class="btn outline tiny" onclick="logout()">Salir</button>
@@ -125,6 +132,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 <section id="loginScreen" class="login-wrap">
   <div class="login-card">
     <a href="/" style="display:inline-block;color:var(--text-muted);font-size:12.5px;text-decoration:none;margin-bottom:14px">← Volver al inicio</a>
+    <img src="/static/brand/logo.png" alt="Legal Pacer" width="1200" height="276" style="height:30px;width:auto;display:block;margin:6px 0 18px">
     <h2>Mi portal · ingreso</h2>
     <form id="loginForm">
       <div class="field" style="margin-bottom:14px">
@@ -145,7 +153,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
       <div class="error-msg" id="loginError" hidden></div>
     </form>
     <p style="text-align:center;margin-top:14px;font-size:13px">
-      <a href="#" id="forgotLink" style="color:#60a5fa">Olvidé mi contraseña</a>
+      <a href="#" id="forgotLink" style="color:var(--blue)">Olvidé mi contraseña</a>
     </p>
 
     <!-- Form de recuperación, oculto por default. Aparece al tocar el link. -->
@@ -243,10 +251,10 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 
       <div style="margin-top:16px;padding:14px 16px;border:1px dashed rgba(96,165,250,.45);border-radius:10px;background:rgba(96,165,250,.06);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="font-size:13px;color:var(--text-soft);line-height:1.5">
-          <strong style="color:#fff">¿Tenés varias marcas?</strong><br>
+          <strong style="color:var(--strong)">¿Tenés varias marcas?</strong><br>
           <span class="muted" style="font-size:12px">Importá toda tu cartera de una vez — pegando la tabla del INPI o subiendo un CSV.</span>
         </div>
-        <button type="button" id="bulkToggle" class="btn primary" style="white-space:nowrap">📥 Importar varias marcas</button>
+        <button type="button" id="bulkToggle" class="btn primary" style="white-space:nowrap">Importar varias marcas</button>
       </div>
     </div>
 
@@ -256,19 +264,19 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 
       <!-- Paso 1: descargar plantilla -->
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">1. Descargá la plantilla</div>
+        <div style="font-size:13px;font-weight:700;color:var(--strong);margin-bottom:6px">1. Descargá la plantilla</div>
         <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
           Tiene las columnas listas con un ejemplo. Abrila en Excel o Google Sheets y completá una marca por fila.
           Las columnas <strong>Denominación</strong> y <strong>Clases</strong> son obligatorias.
         </p>
         <a class="btn primary" href="/api/cliente/marcas/plantilla.csv" download style="text-decoration:none;display:inline-block">
-          📥 Descargar plantilla
+          Descargar plantilla
         </a>
       </div>
 
       <!-- Paso 2: subir archivo -->
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">2. Subí el archivo completado</div>
+        <div style="font-size:13px;font-weight:700;color:var(--strong);margin-bottom:6px">2. Subí el archivo completado</div>
         <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
           Aceptamos <strong>.csv</strong> (recomendado) o pegar la tabla copiada de Excel.
           Si trabajaste en .xlsx, antes de subir usá <em>Archivo → Guardar como → CSV UTF-8</em>.
@@ -279,7 +287,7 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 
       <!-- Paso 3: o pegar tabla -->
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 18px;margin-bottom:14px">
-        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px">2-bis. O pegá la tabla directamente</div>
+        <div style="font-size:13px;font-weight:700;color:var(--strong);margin-bottom:6px">2-bis. O pegá la tabla directamente</div>
         <p class="muted" style="font-size:12.5px;line-height:1.55;margin-bottom:10px">
           Copiá las filas desde Excel/Sheets o <strong>directo del portal del INPI</strong> ("Mis marcas") y pegalas acá abajo —
           reconocemos las columnas por su encabezado, en cualquier orden. Cada acta entra como un registro propio
@@ -288,8 +296,8 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 
         <!-- Columnas reconocidas: visible siempre, no solo si bajan la plantilla. -->
         <div style="font-size:12px;color:var(--text-soft);background:var(--surface);border:1px solid var(--border-soft);border-radius:8px;padding:10px 12px;margin-bottom:10px;line-height:1.7">
-          <strong style="color:#fff">Columnas que leemos</strong> (incluí la fila de encabezado al pegar):<br>
-          <span style="color:#fca5a5">Denominación</span> y <span style="color:#fca5a5">Clase</span> son obligatorias ·
+          <strong style="color:var(--strong)">Columnas que leemos</strong> (incluí la fila de encabezado al pegar):<br>
+          <span style="color:#B42318">Denominación</span> y <span style="color:#B42318">Clase</span> son obligatorias ·
           <span class="muted">Titular, Tipo, Acta y Vencimiento son opcionales</span>.<br>
           <span class="muted" style="font-size:11.5px">Del <strong>Vencimiento</strong> calculamos solas las fechas de DJU (año 5) y renovación (año 10). Las marcas en trámite no necesitan fecha.</span>
         </div>
@@ -300,12 +308,12 @@ main{max-width:1100px;margin:0 auto;padding:24px}
 
       <!-- Flujo de 2 pasos, explícito: primero previsualizar, después confirmar. -->
       <div style="font-size:12.5px;color:var(--text-soft);margin-bottom:8px">
-        <strong style="color:#fff">Cómo se carga:</strong>
-        <span style="color:#60a5fa">1)</span> Tocá <strong>Previsualizar</strong> para revisar lo que detectamos ·
-        <span style="color:#60a5fa">2)</span> si está bien, tocá <strong>Confirmar carga</strong>. Nada se guarda hasta que confirmás.
+        <strong style="color:var(--strong)">Cómo se carga:</strong>
+        <span style="color:var(--blue)">1)</span> Tocá <strong>Previsualizar</strong> para revisar lo que detectamos ·
+        <span style="color:var(--blue)">2)</span> si está bien, tocá <strong>Confirmar carga</strong>. Nada se guarda hasta que confirmás.
       </div>
       <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
-        <button id="bulkPreviewBtn" type="button" class="btn primary">🔍 1 · Previsualizar</button>
+        <button id="bulkPreviewBtn" type="button" class="btn primary">1 · Previsualizar</button>
         <button id="bulkConfirmBtn" type="button" class="btn" disabled title="Primero previsualizá">✓ 2 · Confirmar carga</button>
         <button id="bulkCancelBtn" type="button" class="btn outline" style="margin-left:auto">Cerrar</button>
       </div>
@@ -431,9 +439,9 @@ $('#forgotForm').addEventListener('submit', async (e) => {
     body: JSON.stringify({ email }),
   });
   if (r.ok) {
-    msg.innerHTML = '<span style="color:#6ee7b7">✓ Si el email está registrado, te llega un mail con el link para crear una contraseña nueva. Revisá también la bandeja de spam.</span>';
+    msg.innerHTML = '<span style="color:#047857">✓ Si el email está registrado, te llega un mail con el link para crear una contraseña nueva. Revisá también la bandeja de spam.</span>';
   } else {
-    msg.innerHTML = `<span style="color:#fca5a5">${r.error || 'Error'}</span>`;
+    msg.innerHTML = `<span style="color:#B42318">${r.error || 'Error'}</span>`;
   }
 });
 
@@ -563,8 +571,8 @@ function marcaRow(m) {
   const sit = badgeSituacion(m.situacion_inpi) || '<span class="muted">—</span>';
   // PDF del título: link para ver si ya lo subió, o botón para subir.
   const titulo = m.titulo_pdf_path
-    ? `<a class="btn tiny outline" href="/api/cliente/marcas/${m.id}/titulo" target="_blank" rel="noopener">📄 Ver</a>`
-    : `<button class="btn tiny outline" onclick="subirTitulo(${m.id})">📎 Subir</button>`;
+    ? `<a class="btn tiny outline" href="/api/cliente/marcas/${m.id}/titulo" target="_blank" rel="noopener">Ver</a>`
+    : `<button class="btn tiny outline" onclick="subirTitulo(${m.id})">Subir</button>`;
   // Vigilancia activa/pausada con toggle.
   const vig = m.estado === 'activa'
     ? `<span class="chip green">activa</span> <button class="btn tiny outline" onclick="togglePausa(${m.id}, 'pausada')">Pausar</button>`
@@ -573,7 +581,7 @@ function marcaRow(m) {
     ? `<span style="color:var(--text-soft)">${esc(m.titular)}</span>`
     : '<span class="muted" style="font-style:italic">a tu nombre</span>';
   return `<tr>
-    ${td(`<strong style="color:#fff">${esc(m.denominacion)}</strong>`)}
+    ${td(`<strong style="color:var(--strong)">${esc(m.denominacion)}</strong>`)}
     ${td(sit, 'white-space:nowrap')}
     ${td(esc(m.clases), 'white-space:nowrap')}
     ${td(esc(m.tipo || 'denominativa'))}
@@ -582,7 +590,7 @@ function marcaRow(m) {
     ${td(titular)}
     ${td(titulo, 'white-space:nowrap')}
     ${td(vig, 'white-space:nowrap')}
-    ${td(`<button class="btn tiny outline" style="color:#fca5a5" onclick="bajaMarca(${m.id}, '${esc(m.denominacion)}')">Quitar</button>`, 'text-align:right;white-space:nowrap')}
+    ${td(`<button class="btn tiny outline" style="color:#B42318" onclick="bajaMarca(${m.id}, '${esc(m.denominacion)}')">Quitar</button>`, 'text-align:right;white-space:nowrap')}
   </tr>`;
 }
 
@@ -817,8 +825,8 @@ function renderBulkPreview(rows) {
           ${rows.map((r, i) => `
             <tr>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-dim);font-family:ui-monospace,monospace">${i+1}</td>
-              <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:#fff;font-weight:600">${esc(r.denominacion) || '<span style="color:#fca5a5">vacío</span>'}</td>
-              <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)">${esc(r.clases) || '<span style="color:#fca5a5">vacío</span>'}</td>
+              <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--strong);font-weight:600">${esc(r.denominacion) || '<span style="color:#B42318">vacío</span>'}</td>
+              <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)">${esc(r.clases) || '<span style="color:#B42318">vacío</span>'}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)">${esc(r.tipo)}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${sitTxt(r.situacion_inpi)}</td>
               <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${esc(r.numero_acta || '—')}</td>
@@ -903,7 +911,7 @@ $('#bulkConfirmBtn').addEventListener('click', async () => {
   });
   $('#bulkConfirmBtn').textContent = '✓ 2 · Confirmar carga';
   if (!r.ok) {
-    $('#bulkResult').innerHTML = `<div style="padding:14px;background:var(--red-soft);border-radius:8px;color:#fca5a5;font-size:14px">⚠ ${esc(r.error || 'Error')}</div>`;
+    $('#bulkResult').innerHTML = `<div style="padding:14px;background:var(--red-soft);border-radius:8px;color:#B42318;font-size:14px">⚠ ${esc(r.error || 'Error')}</div>`;
     return;
   }
   $('#bulkResult').innerHTML = renderBulkResultado(r.data);
@@ -937,7 +945,7 @@ async function loadAlertas() {
       <div class="empty" style="padding:18px 20px;text-align:left">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
           <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18)"></span>
-          <strong style="color:#fff">Vigilancia activa · sin coincidencias por ahora</strong>
+          <strong style="color:var(--strong)">Vigilancia activa · sin coincidencias por ahora</strong>
         </div>
         <div style="font-size:13px;line-height:1.65;color:var(--text-muted)">
           Escaneamos el Boletín del INPI todas las semanas. Si aparece una solicitud
@@ -970,7 +978,7 @@ function alertaRow(a) {
         </div>
       </div>
       ${a.fundamento ? `<div class="alerta-fund">${esc(a.fundamento)}</div>` : ''}
-      ${a.nota_admin ? `<div class="alerta-fund" style="border-left:3px solid #60a5fa;background:rgba(96,165,250,.08)"><strong style="color:#93c5fd">Nota de nuestro equipo:</strong><br>${esc(a.nota_admin)}</div>` : ''}
+      ${a.nota_admin ? `<div class="alerta-fund" style="border-left:3px solid var(--blue);background:rgba(96,165,250,.08)"><strong style="color:var(--noche)">Nota de nuestro equipo:</strong><br>${esc(a.nota_admin)}</div>` : ''}
       ${cands ? `<div class="alerta-cands"><div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Marcas detectadas en el boletín</div>${cands}</div>` : ''}
       <div class="alerta-cta">
         <a class="btn primary" target="_blank" rel="noopener" href="${linkOposicionWA(a)}">Consultar con un especialista</a>

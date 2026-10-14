@@ -6,28 +6,35 @@
 <title>Panel admin · Legal Pacer</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
+/* Tipografía Mundial. El archivo Demibold trae roto el carácter "ú": esa letra se toma de Bold. */
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialLight.otf") format("opentype");font-weight:300;font-display:swap}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialRegular.otf") format("opentype");font-weight:400 500;font-display:swap}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialDemibold.otf") format("opentype");font-weight:600;font-display:swap;unicode-range:U+0000-00F9,U+00FB-FFFF}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialBold.otf") format("opentype");font-weight:600;font-display:swap;unicode-range:U+00FA}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialBold.otf") format("opentype");font-weight:700 900;font-display:swap}
 :root{
-  --bg:#030712; --bg-soft:#070d1c; --surface:#0f172a; --surface-2:#1e293b;
-  --border:#334155; --border-soft:#1f2a40;
-  --text:#f8fafc; --text-soft:#e2e8f0; --text-muted:#94a3b8; --text-dim:#64748b;
-  --blue:#1b6ef3; --blue-dark:#1656c4; --blue-soft:rgba(27,110,243,.12);
+  --bg:#FDF8F3; --bg-soft:#F5EFE7; --surface:#FFFFFF; --surface-2:#F3F1EC;
+  --border:#D9D6D0; --border-soft:#E6E2DB;
+  --text:#1E1E1E; --text-soft:#2E3340; --text-muted:#4A4F5C; --text-dim:#6B7080;
+  --blue:#006FFB; --blue-dark:#005AD0; --blue-soft:rgba(0,111,251,.08);
+  --noche:#001540; --strong:#001540;
   --green:#10b981; --green-soft:rgba(16,185,129,.12);
   --red:#ef4444; --red-soft:rgba(239,68,68,.12);
   --yellow:#f59e0b; --yellow-soft:rgba(245,158,11,.12);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+html,body{background:var(--bg);color:var(--text);font-family:'Mundial',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;border:none;color:inherit}
-a{color:#60a5fa;text-decoration:none}
+a{color:var(--blue);text-decoration:none}
 input,select{font-family:inherit}
 
-header.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border-soft);background:rgba(3,7,18,.85);backdrop-filter:blur(14px);position:sticky;top:0;z-index:10}
+header.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border-soft);background:rgba(253,248,243,.92);backdrop-filter:blur(14px);position:sticky;top:0;z-index:10}
 .brand{font-weight:800;letter-spacing:.5px;font-size:16px}
 .brand .accent{color:var(--blue)}
 .user-chip{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--text-muted)}
 .user-chip strong{color:var(--text-soft);font-weight:600}
 .btn{padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);transition:all .15s}
-.btn:hover{background:var(--surface);border-color:#475569}
+.btn:hover{background:var(--surface);border-color:var(--border)}
 .btn.primary{background:var(--blue);border-color:transparent;color:#fff}
 .btn.primary:hover{background:var(--blue-dark)}
 .btn.tiny{padding:5px 10px;font-size:12px;border-radius:6px}
@@ -41,7 +48,7 @@ main{max-width:1240px;margin:0 auto;padding:24px}
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--border-soft);margin-bottom:24px;overflow-x:auto}
 .tab{padding:10px 16px;background:transparent;color:var(--text-muted);font-size:13.5px;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
 .tab:hover{color:var(--text-soft)}
-.tab.active{color:#60a5fa;border-bottom-color:var(--blue)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
 .tab .badge{background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:6px;font-weight:700}
 
 /* Dashboard */
@@ -49,9 +56,9 @@ main{max-width:1240px;margin:0 auto;padding:24px}
 .metric{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:18px}
 .metric .lbl{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
 .metric .num{font-size:30px;font-weight:800;margin-top:4px}
-.metric .num.alert{color:#fca5a5}
-.metric .num.ok{color:#6ee7b7}
-.metric .num.warn{color:#fcd34d}
+.metric .num.alert{color:#B42318}
+.metric .num.ok{color:#047857}
+.metric .num.warn{color:#B45309}
 
 /* Tablas */
 table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;overflow:hidden;font-size:13.5px}
@@ -61,23 +68,23 @@ tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(255,255,255,.015)}
 
 .chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
-.chip.green{background:var(--green-soft);color:#6ee7b7}
-.chip.red{background:var(--red-soft);color:#fca5a5}
-.chip.yellow{background:var(--yellow-soft);color:#fcd34d}
-.chip.blue{background:var(--blue-soft);color:#7eb1ff}
+.chip.green{background:var(--green-soft);color:#047857}
+.chip.red{background:var(--red-soft);color:#B42318}
+.chip.yellow{background:var(--yellow-soft);color:#B45309}
+.chip.blue{background:var(--blue-soft);color:var(--blue)}
 .chip.muted{background:var(--surface-2);color:var(--text-muted)}
 
 .empty{text-align:center;padding:60px 20px;color:var(--text-dim);font-size:14px;background:var(--surface);border:1px dashed var(--border-soft);border-radius:12px}
 
 /* Modal genérico para crear/editar usuarios */
-.modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(2,6,17,.85);backdrop-filter:blur(8px);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:24px;overflow-y:auto}
-.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:520px;width:100%;position:relative;box-shadow:0 25px 50px -12px rgba(0,0,0,.6)}
+.modal-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,21,64,.55);backdrop-filter:blur(8px);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:24px;overflow-y:auto}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;max-width:520px;width:100%;position:relative;box-shadow:0 25px 50px -12px rgba(0,21,64,.18)}
 .modal-close{position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;line-height:1;padding:4px 8px}
-.modal-close:hover{color:#fff}
+.modal-close:hover{color:var(--strong)}
 .modal-card .field{margin-bottom:12px}
 .modal-card .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
 .modal-card .field input,.modal-card .field select{width:100%;padding:10px 12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
-.modal-card .field input:focus,.modal-card .field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+.modal-card .field input:focus,.modal-card .field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,111,251,.18)}
 
 /* Alertas */
 .alerta-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:20px;margin-bottom:14px}
@@ -85,35 +92,35 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .alerta-card.medio{border-color:rgba(245,158,11,.4)}
 .alerta-card.bajo{border-color:rgba(16,185,129,.4)}
 .alerta-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:12px}
-.alerta-marca{font-size:18px;font-weight:800;color:#fff}
+.alerta-marca{font-size:18px;font-weight:800;color:var(--strong)}
 .alerta-meta{font-size:12px;color:var(--text-muted);margin-top:4px}
 .alerta-fund{font-size:13px;color:var(--text-soft);background:var(--bg-soft);border-radius:8px;padding:10px 12px;margin:12px 0;line-height:1.55}
-.alerta-aviso{font-size:13px;color:#fcd34d;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:10px 12px;margin:12px 0;line-height:1.55}
+.alerta-aviso{font-size:13px;color:#B45309;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:10px 12px;margin:12px 0;line-height:1.55}
 .alerta-card.pendiente{border-color:rgba(245,158,11,.55);background:linear-gradient(180deg,rgba(245,158,11,.04),var(--surface))}
 .candidato{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:12px;margin-top:8px;font-size:13px}
 .candidato-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.cand-name{font-weight:700;color:#fff;font-size:14px;letter-spacing:.02em}
+.cand-name{font-weight:700;color:var(--strong);font-size:14px;letter-spacing:.02em}
 .cand-meta{font-size:11.5px;color:var(--text-muted)}
-.cand-gemini{margin-top:10px;padding:10px;background:rgba(27,110,243,.05);border:1px dashed rgba(27,110,243,.3);border-radius:8px;font-size:12.5px;line-height:1.5;color:var(--text-soft)}
-.cand-gemini b{color:#7eb1ff}
+.cand-gemini{margin-top:10px;padding:10px;background:rgba(0,111,251,.05);border:1px dashed rgba(0,111,251,.3);border-radius:8px;font-size:12.5px;line-height:1.5;color:var(--text-soft)}
+.cand-gemini b{color:var(--blue)}
 .alerta-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .score-pill{background:var(--surface-2);border:1px solid var(--border);font-family:ui-monospace,monospace;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;color:var(--text-soft)}
 
 /* Login */
 .login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:36px;max-width:400px;width:100%;box-shadow:0 20px 60px -20px rgba(0,0,0,.6)}
-.login-card h2{font-size:22px;margin-bottom:24px;color:#fff}
+.login-card{background:var(--surface);border:1px solid var(--border-soft);border-radius:16px;padding:36px;max-width:400px;width:100%;box-shadow:0 20px 60px -20px rgba(0,21,64,.18)}
+.login-card h2{font-size:22px;margin-bottom:24px;color:var(--strong)}
 .field{margin-bottom:16px;display:block}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
 .field>span{display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px}
 .field input,.field textarea{width:100%;padding:11px 14px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
-.field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(27,110,243,.18)}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,111,251,.18)}
 .field textarea{resize:vertical;line-height:1.5}
 
 .filter-sel{padding:7px 12px;background:var(--bg-soft);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit}
 .filter-sel:focus{outline:none;border-color:var(--blue)}
-.pago-vencido{color:#fca5a5;font-weight:600}
-.error-msg{color:#fca5a5;font-size:13px;margin-top:8px}
+.pago-vencido{color:#B42318;font-weight:600}
+.error-msg{color:#B42318;font-size:13px;margin-top:8px}
 .hint{font-size:12px;color:var(--text-dim);margin-top:14px;text-align:center;line-height:1.5}
 .hint code{background:var(--bg-soft);padding:1px 6px;border-radius:4px;font-size:11px}
 
@@ -126,7 +133,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
 <body>
 
 <header class="topbar" id="topbar" hidden>
-  <a href="/" class="brand" style="text-decoration:none;color:inherit" title="Volver al inicio">LEGAL<span class="accent">PACERS</span> · panel admin</a>
+  <a href="/" class="brand" style="text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:10px" title="Volver al inicio"><img src="/static/brand/logo.png" alt="Legal Pacer" width="1200" height="276" style="height:24px;width:auto;display:block"><span style="font-weight:400;color:var(--text-muted)">panel admin</span></a>
   <div class="user-chip">
     <span id="userInfo"></span>
     <button class="btn outline tiny" onclick="logout()">Salir</button>
@@ -139,6 +146,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
 <section id="loginScreen" class="login-wrap">
   <div class="login-card">
     <a href="/" style="display:inline-block;color:var(--text-muted);font-size:12.5px;text-decoration:none;margin-bottom:14px">← Volver al inicio</a>
+    <img src="/static/brand/logo.png" alt="Legal Pacer" width="1200" height="276" style="height:30px;width:auto;display:block;margin:6px 0 18px">
     <h2>Panel · ingreso</h2>
     <form id="loginForm">
       <div class="field">
@@ -153,7 +161,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
       <div class="error-msg" id="loginError" hidden></div>
     </form>
     <p style="text-align:center;margin-top:14px;font-size:13px">
-      <a href="#" id="forgotLink" style="color:#60a5fa">Olvidé mi contraseña</a>
+      <a href="#" id="forgotLink" style="color:var(--blue)">Olvidé mi contraseña</a>
     </p>
 
     <form id="forgotForm" hidden style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border-soft)">
@@ -276,9 +284,9 @@ $('#forgotForm').addEventListener('submit', async (e) => {
     body: JSON.stringify({ email }),
   });
   if (r.ok) {
-    msg.innerHTML = '<span style="color:#6ee7b7">✓ Si el email está registrado, te llega un mail con el link para crear una contraseña nueva. Revisá también la bandeja de spam.</span>';
+    msg.innerHTML = '<span style="color:#047857">✓ Si el email está registrado, te llega un mail con el link para crear una contraseña nueva. Revisá también la bandeja de spam.</span>';
   } else {
-    msg.innerHTML = `<span style="color:#fca5a5">${r.error || 'Error'}</span>`;
+    msg.innerHTML = `<span style="color:#B42318">${r.error || 'Error'}</span>`;
   }
 });
 
@@ -400,7 +408,7 @@ function alertaCard(a) {
           <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:5px">Nota para el cliente (opcional) — se incluye en el mail y el portal:</label>
           <textarea id="nota-${a.id}" rows="2" style="width:100%;padding:9px 11px;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:vertical" placeholder="Ej: Coincidencia relevante. Conviene evaluar la oposición antes del vencimiento del plazo.">${esc(a.nota_admin || '')}</textarea>
         </div>`
-        : (a.nota_admin ? `<div class="alerta-fund" style="border-left-color:#1B6EF3"><b>Nota del equipo:</b> ${esc(a.nota_admin)}</div>` : '')}
+        : (a.nota_admin ? `<div class="alerta-fund" style="border-left-color:#006FFB"><b>Nota del equipo:</b> ${esc(a.nota_admin)}</div>` : '')}
       <div class="alerta-actions">
         ${pendiente
           ? `<button class="btn tiny green" onclick="aprobarAlerta(${a.id})">✓ Aprobar y enviar al cliente</button>
@@ -524,7 +532,7 @@ async function abrirInforme(id) {
 
   const errorBox = i.estado === 'error'
     ? `<div style="background:var(--red-soft);border:1px solid var(--red);border-radius:8px;padding:12px;margin-bottom:14px">
-         <strong style="color:#fca5a5">Falló la generación.</strong>
+         <strong style="color:#B42318">Falló la generación.</strong>
          <div class="muted" style="margin-top:4px">${esc(i.error_msg || 'sin detalle')}</div>
          <button class="btn tiny red" style="margin-top:10px" onclick="reintentarInforme(${i.id})">Reintentar</button>
        </div>`
@@ -574,7 +582,7 @@ async function abrirInforme(id) {
       ${i.pdf_path ? `
       <div style="margin:-2px 0 14px;font-size:12px;color:var(--text-muted)">
         ¿El email salió mal o el cliente no lo recibió? Corregí el <strong>Email del cliente</strong> arriba y
-        <a href="#" onclick="event.preventDefault();reenviarInforme(${i.id})" style="color:var(--accent,#1B6EF3);font-weight:600">reenviar el informe →</a>
+        <a href="#" onclick="event.preventDefault();reenviarInforme(${i.id})" style="color:var(--accent,#006FFB);font-weight:600">reenviar el informe →</a>
         ${i.estado === 'enviado' ? ' (funciona aunque ya esté enviado)' : ''}
       </div>` : ''}
 
@@ -842,7 +850,7 @@ async function loadChequeos() {
   const conv = s.chequeos_total ? Math.round((s.chequeos_con_email / s.chequeos_total) * 100) : 0;
 
   const stat = (label, val) => `<div style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:16px">
-    <div style="font-size:24px;font-weight:800;color:#fff">${val}</div>
+    <div style="font-size:24px;font-weight:800;color:var(--strong)">${val}</div>
     <div class="muted" style="font-size:12px;margin-top:2px">${label}</div></div>`;
 
   const clasesTxt = c => { try { const a = JSON.parse(c || '[]'); return a.length ? a.join(', ') : '—'; } catch { return '—'; } };
@@ -937,7 +945,7 @@ function botBurbuja(rol, texto) {
     const div = document.createElement('div');
     div.style.cssText = `max-width:80%;padding:9px 13px;border-radius:12px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;` +
       (esCliente
-        ? 'align-self:flex-end;background:var(--accent,#1B6EF3);color:#fff;border-bottom-right-radius:3px'
+        ? 'align-self:flex-end;background:var(--accent,#006FFB);color:var(--strong);border-bottom-right-radius:3px'
         : 'align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:3px');
     div.textContent = p.trim();
     chat.appendChild(div);
@@ -1075,13 +1083,13 @@ function renderRegistroBox(l) {
       const pct = (d.cantidad_titulares === 'varios' && t.porcentaje != null) ? ` · <strong>${esc(t.porcentaje)}%</strong>` : '';
       const dom = `${esc(t.domicilio?.calle)}, ${esc(t.domicilio?.ciudad)}, ${esc(t.domicilio?.provincia)} ${esc(t.domicilio?.cp)}`;
       if (t.tipo === 'juridica') {
-        const docs = `${t.doc_constitutiva ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=const" target="_blank" style="color:#93c5fd">📎 Estatuto</a>` : ' · <span style="color:#f87171">⚠ sin estatuto</span>'}${t.doc_representacion ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=rep" target="_blank" style="color:#93c5fd">📎 Representación</a>` : ' · <span style="color:#f87171">⚠ sin acta</span>'}`;
+        const docs = `${t.doc_constitutiva ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=const" target="_blank" style="color:var(--noche)">📎 Estatuto</a>` : ' · <span style="color:#B42318">⚠ sin estatuto</span>'}${t.doc_representacion ? ` · <a href="/api/admin/leads/${l.id}/registro-doc?tit=${i}&tipo=rep" target="_blank" style="color:var(--noche)">📎 Representación</a>` : ' · <span style="color:#B42318">⚠ sin acta</span>'}`;
         return `<li><strong>${esc(t.razon_social)}</strong> (empresa)${pct} · CUIT ${esc(t.cuit)} · Firma: ${esc(t.representante)}${t.representante_dni ? ` (DNI ${esc(t.representante_dni)})` : ''} — ${esc(t.cargo)} · ${dom}${docs}</li>`;
       }
       return `<li><strong>${esc(t.nombre)}</strong>${pct} · DNI ${esc(t.dni)} · CUIT ${esc(t.cuit)} · ${esc(t.estado_civil)}${t.conyuge ? ` · cónyuge: ${esc(t.conyuge)}` : ''} · ${dom} · ${esc(t.email)} · ${esc(t.telefono)}</li>`;
     }).join('');
     return `<div style="background:var(--bg-soft);border:1px solid var(--green);border-radius:10px;padding:16px;margin-bottom:14px">
-      <div style="font-weight:700;color:#6ee7b7;margin-bottom:8px">📋 Datos del registro cargados</div>
+      <div style="font-weight:700;color:#047857;margin-bottom:8px">📋 Datos del registro cargados</div>
       <div style="font-size:13px;line-height:1.7">
         <div><strong>Marca:</strong> ${esc(d.marca?.denominacion)} · ${esc(d.marca?.tipo)}</div>
         <div><strong>Titular(es)</strong> (${d.cantidad_titulares === 'varios' ? 'varios' : 'único'}):<ul style="margin:4px 0 4px 0;padding-left:18px">${tits}</ul></div>
@@ -1091,7 +1099,7 @@ function renderRegistroBox(l) {
       </div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-soft)">
         <strong>Poder firmado:</strong> ${l.registro_poder_path
-          ? `<span style="color:#34d399">✍️ recibido</span> · <a href="/api/admin/leads/${l.id}/poder-firmado" target="_blank" style="color:#93c5fd">Descargar</a>`
+          ? `<span style="color:#059669">✍️ recibido</span> · <a href="/api/admin/leads/${l.id}/poder-firmado" target="_blank" style="color:var(--noche)">Descargar</a>`
           : '<span class="muted">pendiente — el cliente lo sube por el mismo link</span>'}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
@@ -1199,7 +1207,7 @@ async function abrirLead(id) {
 
       ${(l.estado === 'pendiente' && (l.tipo === 'informe' || l.tipo === 'registro')) ? `
       <div style="background:var(--red-soft);border:1px solid var(--red);border-radius:10px;padding:14px;margin-bottom:14px">
-        <div style="font-weight:700;color:#fca5a5;margin-bottom:4px">⚠ Pago pendiente</div>
+        <div style="font-weight:700;color:#B42318;margin-bottom:4px">⚠ Pago pendiente</div>
         <div class="muted" style="font-size:12.5px;margin-bottom:10px">Si confirmaste en Mercado Pago que <strong>este</strong> pago se acreditó pero el sistema no lo registró, confirmalo a mano acá: se marca pagado${l.tipo === 'informe' ? ' y se genera el informe' : ''}.</div>
         <button class="btn tiny green" onclick="confirmarPagoManual(${l.id}, this)">✓ Confirmar pago${l.tipo === 'informe' ? ' y generar informe' : ''}</button>
       </div>` : ''}
@@ -1314,7 +1322,7 @@ function abrirCrearUsuario() {
     <div class="modal-bg" id="userModal" onclick="if(event.target.id==='userModal')cerrarUserModal()">
       <div class="modal-card">
         <button class="modal-close" onclick="cerrarUserModal()">&times;</button>
-        <h3 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:18px">Nuevo usuario</h3>
+        <h3 style="font-size:18px;font-weight:800;color:var(--strong);margin-bottom:18px">Nuevo usuario</h3>
         <div class="field"><label>Email</label><input type="email" id="um_email" required></div>
         <div class="field"><label>Contraseña (mín 8)</label><input type="text" id="um_password" minlength="8" required value="${randomPass()}"></div>
         <div class="field"><label>Nombre / razón social</label><input type="text" id="um_nombre"></div>
@@ -1337,7 +1345,7 @@ function abrirEditarUsuario(id) {
     <div class="modal-bg" id="userModal" onclick="if(event.target.id==='userModal')cerrarUserModal()">
       <div class="modal-card">
         <button class="modal-close" onclick="cerrarUserModal()">&times;</button>
-        <h3 style="font-size:18px;font-weight:800;color:#fff;margin-bottom:6px">Editar usuario</h3>
+        <h3 style="font-size:18px;font-weight:800;color:var(--strong);margin-bottom:6px">Editar usuario</h3>
         <div class="muted" style="font-size:12.5px;margin-bottom:18px">${esc(u.email)} · ID ${u.id}</div>
         <div class="field"><label>Nombre / razón social</label><input type="text" id="um_nombre" value="${esc(u.nombre || '')}"></div>
         <div class="field"><label>Teléfono</label><input type="tel" id="um_telefono" value="${esc(u.telefono || '')}"></div>
@@ -1459,7 +1467,7 @@ async function renderHitosBanner() {
     <div onclick="selectTab('hitos')" style="cursor:pointer;display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:16px;border:1px solid ${col};border-radius:12px;background:${bg}">
       <span style="font-size:22px;line-height:1">${grave ? '🚨' : '⏰'}</span>
       <div style="flex:1">
-        <div style="font-weight:700;color:#fff;font-size:14px">Hitos legales por vencer — DJU / renovación</div>
+        <div style="font-weight:700;color:var(--strong);font-size:14px">Hitos legales por vencer — DJU / renovación</div>
         <div style="font-size:13px;color:var(--text-soft);margin-top:2px">${partes.join(' · ')}. Tocá para ver el detalle y avisar a los clientes.</div>
       </div>
       <span class="btn primary tiny" style="white-space:nowrap">Ver hitos →</span>
@@ -1471,11 +1479,11 @@ async function probarAvisoHitos(btn) {
   const r = await api('/api/admin/hitos-legales/avisar', { method: 'POST', body: '{}' });
   const msg = $('#hitosAvisoMsg');
   if (r.ok && r.data.enviado) {
-    msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;font-size:13px">✓ Aviso enviado al equipo · ${r.data.total} hito(s)${r.data.vencidos ? ` (${r.data.vencidos} vencidos)` : ''}.</div>`;
+    msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#047857;font-size:13px">✓ Aviso enviado al equipo · ${r.data.total} hito(s)${r.data.vencidos ? ` (${r.data.vencidos} vencidos)` : ''}.</div>`;
   } else if (r.ok) {
     msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--bg-soft);color:var(--text-muted);font-size:13px">No hay hitos dentro de la ventana de 90 días — no se envió nada.</div>`;
   } else {
-    msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;font-size:13px">${esc(r.error || 'Error')}</div>`;
+    msg.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#B42318;font-size:13px">${esc(r.error || 'Error')}</div>`;
   }
   btn.disabled = false; btn.textContent = orig;
 }
@@ -1548,7 +1556,7 @@ async function loadPacks() {
       ])
     )}
     <div class="card" style="margin-top:24px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px">
-      <h3 style="font-size:15px;color:#fff;margin-bottom:6px">🔔 Comunicado de ajuste de precios</h3>
+      <h3 style="font-size:15px;color:var(--strong);margin-bottom:6px">🔔 Comunicado de ajuste de precios</h3>
       <p class="muted" style="font-size:13px;line-height:1.55;margin-bottom:16px">
         Manda un mail a todos los suscriptos activos con el nuevo precio y la fecha de vigencia.
         Hacelo después de editar los importes en Mercado Pago. Política: avisar con 30 días de antelación.
@@ -1578,7 +1586,7 @@ async function loadPacks() {
     </div>
 
     <div class="card" style="margin-top:24px;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px">
-      <h3 style="font-size:15px;color:#fff;margin-bottom:6px">🩺 Diagnóstico del sistema</h3>
+      <h3 style="font-size:15px;color:var(--strong);margin-bottom:6px">🩺 Diagnóstico del sistema</h3>
       <p class="muted" style="font-size:13px;line-height:1.55;margin-bottom:16px">
         Verifica que las integraciones críticas estén configuradas. El ping a Gemini confirma que la key
         funcione — si falla, los informes saldrían en modo borrador (sin análisis de IA).
@@ -1597,12 +1605,12 @@ async function correrDiagnostico(ping, informe) {
   box.innerHTML = informe ? 'Reproduciendo la llamada real del informe…' : (ping ? 'Probando Gemini (puede tardar unos segundos)…' : 'Revisando…');
   const qs = [ping ? 'ping=1' : '', informe ? 'informe=1' : ''].filter(Boolean).join('&');
   const r = await api(`/api/admin/diagnostico${qs ? '?' + qs : ''}`);
-  if (!r.ok) { box.innerHTML = `<span style="color:#f87171">Error: ${esc(r.error || 'falló')}</span>`; return; }
+  if (!r.ok) { box.innerHTML = `<span style="color:#B42318">Error: ${esc(r.error || 'falló')}</span>`; return; }
   const d = r.data;
   const fila = (label, val, okFlag) =>
     `<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--border-soft)">
        <span>${esc(label)}</span>
-       <span style="color:${okFlag ? '#34d399' : '#f87171'};font-weight:600">${esc(val)}</span>
+       <span style="color:${okFlag ? '#059669' : '#B42318'};font-weight:600">${esc(val)}</span>
      </div>`;
   let html = fila('Gemini · API key', d.gemini.api_key, d.gemini.listo);
   html += fila('Gemini · modelo informe', d.gemini.modelo_informe, true);
@@ -1664,13 +1672,13 @@ async function comunicadoAjuste(dryRun) {
     body: JSON.stringify({ porcentaje, fecha_vigencia, mensaje_extra, dry_run: dryRun }),
   });
   if (!r.ok) {
-    out.innerHTML = `<span style="color:#fca5a5">${esc(r.error || 'Error')}</span>`;
+    out.innerHTML = `<span style="color:#B42318">${esc(r.error || 'Error')}</span>`;
     return;
   }
   if (dryRun) {
     out.innerHTML = `Destinatarios: <strong>${r.data.destinatarios}</strong> · Días de anticipación: <strong>${r.data.dias_anticipacion}</strong>`;
   } else {
-    out.innerHTML = `<span style="color:#6ee7b7">✓ Enviados: ${r.data.enviados}/${r.data.total}${r.data.errores ? ` · ${r.data.errores} error(es)` : ''}</span>`;
+    out.innerHTML = `<span style="color:#047857">✓ Enviados: ${r.data.enviados}/${r.data.total}${r.data.errores ? ` · ${r.data.errores} error(es)` : ''}</span>`;
   }
 }
 
@@ -1679,9 +1687,9 @@ async function dispararAvisoInterno() {
   out.textContent = 'Disparando aviso interno…';
   const r = await api('/api/admin/aviso-ajuste/run', { method: 'POST', body: JSON.stringify({}) });
   if (r.ok) {
-    out.innerHTML = `<span style="color:#6ee7b7">✓ Aviso enviado al equipo (${r.data.suscriptos} suscripto/s)</span>`;
+    out.innerHTML = `<span style="color:#047857">✓ Aviso enviado al equipo (${r.data.suscriptos} suscripto/s)</span>`;
   } else {
-    out.innerHTML = `<span style="color:#fca5a5">${esc(r.error || 'Error')}</span>`;
+    out.innerHTML = `<span style="color:#B42318">${esc(r.error || 'Error')}</span>`;
   }
 }
 
@@ -1694,11 +1702,11 @@ async function loadBoletines() {
   // estados sin borrar lo existente.
   const universo = `
     <div class="card" style="background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:22px;margin-bottom:20px">
-      <h3 style="font-size:15px;color:#fff;margin-bottom:6px">🗂️ Actualizar universo de marcas (chequeo)</h3>
+      <h3 style="font-size:15px;color:var(--strong);margin-bottom:6px">🗂️ Actualizar universo de marcas (chequeo)</h3>
 
       <!-- Sync automático con el INPI -->
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-        <div style="font-weight:700;color:#fff;font-size:14px;margin-bottom:6px">🤖 Catch-up automático con el INPI</div>
+        <div style="font-weight:700;color:var(--strong);font-size:14px;margin-bottom:6px">🤖 Catch-up automático con el INPI</div>
         <p class="muted" style="font-size:12.5px;line-height:1.5;margin-bottom:10px">
           Descarga directo del INPI: concedidas (.xls, ~12 años hacia atrás) y marcas
           nuevas (.pdf, ~15 meses). Después, todos los jueves a las 7 AM se incorpora lo
@@ -1716,7 +1724,7 @@ async function loadBoletines() {
 
       <!-- Subida manual de archivo -->
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 16px">
-        <div style="font-weight:700;color:#fff;font-size:14px;margin-bottom:6px">📤 Subida manual de un boletín</div>
+        <div style="font-weight:700;color:var(--strong);font-size:14px;margin-bottom:6px">📤 Subida manual de un boletín</div>
         <p class="muted" style="font-size:12.5px;line-height:1.5;margin-bottom:10px">
           Si tenés un archivo del INPI en tu PC y querés subirlo directo. Acepta:
           <strong>.xls / .xlsx</strong>, <strong>.pdf</strong> y <strong>.csv</strong>.
@@ -1728,7 +1736,7 @@ async function loadBoletines() {
 
       <!-- Backups de la base -->
       <div style="background:var(--bg-soft);border-radius:10px;padding:14px 16px;margin-top:14px">
-        <div style="font-weight:700;color:#fff;font-size:14px;margin-bottom:6px">💾 Backups de la base</div>
+        <div style="font-weight:700;color:var(--strong);font-size:14px;margin-bottom:6px">💾 Backups de la base</div>
         <p class="muted" style="font-size:12.5px;line-height:1.5;margin-bottom:10px">
           Se genera uno automático cada día a las 3 AM (se conservan los últimos 7, comprimidos).
           Podés crear uno ahora o descargar cualquiera para guardarlo afuera.
@@ -1786,18 +1794,18 @@ async function importarDump() {
       body: buf,
     });
   } catch (e) {
-    out.innerHTML = `<div style="color:#fca5a5;font-size:13px">Error de red al subir. ${esc(e.message)}</div>`;
+    out.innerHTML = `<div style="color:#B42318;font-size:13px">Error de red al subir. ${esc(e.message)}</div>`;
     return;
   }
   const r = await res.json();
   if (!r.ok) {
-    out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35)">${esc(r.error)}</div>`;
+    out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#B42318;border:1px solid rgba(239,68,68,.35)">${esc(r.error)}</div>`;
     return;
   }
   const s = r.data.stats;
   const fmt = r.data.meta?.formato ? ` · formato ${r.data.meta.formato}` : '';
   const hojas = r.data.meta?.hojas?.length ? ` · hojas: ${r.data.meta.hojas.join(', ')}` : '';
-  let html = `<div style="padding:12px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)">
+  let html = `<div style="padding:12px 14px;border-radius:8px;background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35)">
     ✓ Importado${fmt}: <strong>${s.nuevas}</strong> nuevas · <strong>${s.actualizadas}</strong> actualizadas · ${s.ignoradas} ignoradas (de ${s.total})${hojas}.</div>`;
   if (r.data.errores_total > 0) {
     html += `<div class="muted" style="font-size:12px;margin-top:8px">${r.data.errores_total} fila(s) con error. Primeras: ${r.data.errores.map(e => esc(e.denominacion) + ' (' + esc(e.motivo) + ')').join('; ')}</div>`;
@@ -1813,7 +1821,7 @@ async function inpiCatchUpAuto() {
   out.innerHTML = '<div class="muted" style="font-size:13px">Disparando catch-up… (corre en background, podés cerrar esta pestaña)</div>';
   const r = await api('/api/admin/inpi/catch-up', { method: 'POST', body: JSON.stringify({}) });
   if (!r.ok) {
-    out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35)">${esc(r.error)}</div>`;
+    out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#B42318;border:1px solid rgba(239,68,68,.35)">${esc(r.error)}</div>`;
     return;
   }
   iniciarPollingInpi();
@@ -1833,8 +1841,8 @@ async function refrescarInpiStatus() {
   const badge = $('#inpiJobBadge');
 
   badge.innerHTML = job.activo
-    ? '<span style="color:#fcd34d">● corriendo…</span>'
-    : (job.resumen ? '<span style="color:#6ee7b7">● último: OK</span>' : '');
+    ? '<span style="color:#B45309">● corriendo…</span>'
+    : (job.resumen ? '<span style="color:#047857">● último: OK</span>' : '');
 
   // Estado de cada serie (último OK + total cargado)
   const seriesHtml = (r.data.log.series_log || []).map(s =>
@@ -1853,7 +1861,7 @@ async function refrescarInpiStatus() {
 
   let resumenHtml = '';
   if (job.resumen) {
-    resumenHtml = `<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);font-size:13px">
+    resumenHtml = `<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35);font-size:13px">
       ✓ Catch-up completo: <strong>${job.resumen.total_boletines_ok}</strong> boletines procesados ·
       <strong>${job.resumen.total_nuevas}</strong> marcas nuevas ·
       <strong>${job.resumen.total_actualizadas}</strong> actualizadas
@@ -1861,7 +1869,7 @@ async function refrescarInpiStatus() {
     </div>`;
   }
   if (job.error) {
-    resumenHtml = `<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">⚠ Error: ${esc(job.error)}</div>`;
+    resumenHtml = `<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#B42318">⚠ Error: ${esc(job.error)}</div>`;
   }
 
   out.innerHTML = seriesHtml + progHtml + resumenHtml;
@@ -1881,15 +1889,15 @@ async function crearBackup() {
   const out = $('#backupResult');
   out.innerHTML = '<div class="muted" style="font-size:13px">Generando backup… (puede tardar con bases grandes)</div>';
   const r = await api('/api/admin/backups/crear', { method: 'POST' });
-  if (!r.ok) { out.innerHTML = `<div style="color:#fca5a5;font-size:13px">${esc(r.error)}</div>`; return; }
-  out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);font-size:13px">✓ Backup creado: ${esc(r.data.archivo)} (${r.data.mb} MB)</div>`;
+  if (!r.ok) { out.innerHTML = `<div style="color:#B42318;font-size:13px">${esc(r.error)}</div>`; return; }
+  out.innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35);font-size:13px">✓ Backup creado: ${esc(r.data.archivo)} (${r.data.mb} MB)</div>`;
   cargarBackups();
 }
 
 async function cargarBackups() {
   const out = $('#backupResult');
   const r = await api('/api/admin/backups');
-  if (!r.ok) { out.innerHTML = `<div style="color:#fca5a5;font-size:13px">${esc(r.error)}</div>`; return; }
+  if (!r.ok) { out.innerHTML = `<div style="color:#B42318;font-size:13px">${esc(r.error)}</div>`; return; }
   const bks = r.data.backups || [];
   if (!bks.length) { out.innerHTML = '<div class="muted" style="font-size:13px">Sin backups todavía. Generá el primero.</div>'; return; }
   out.innerHTML = `
@@ -1903,7 +1911,7 @@ async function cargarBackups() {
           <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);font-family:ui-monospace,monospace">${esc(b.archivo)}</td>
           <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)">${(b.bytes/1024/1024).toFixed(1)} MB</td>
           <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-muted)">${fmtDate(b.fecha)}</td>
-          <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)"><a href="/api/admin/backups/${encodeURIComponent(b.archivo)}" style="color:#60a5fa">descargar</a></td>
+          <td style="padding:7px 10px;border-bottom:1px solid var(--border-soft)"><a href="/api/admin/backups/${encodeURIComponent(b.archivo)}" style="color:var(--blue)">descargar</a></td>
         </tr>`).join('')}</tbody>
     </table>`;
 }
@@ -1912,11 +1920,11 @@ async function syncInpiNow() {
   const out = $('#dumpResult');
   out.innerHTML = '<div class="muted" style="font-size:13px">Descargando desde INPI_DUMP_URL…</div>';
   const r = await api('/api/admin/marcas-inpi/sync-now', { method: 'POST' });
-  if (!r.ok) { out.innerHTML = `<div style="color:#fca5a5;font-size:13px">${esc(r.error)}</div>`; return; }
-  if (r.data.skipped) { out.innerHTML = `<div style="color:#fcd34d;font-size:13px">${esc(r.data.motivo)}. Configurá INPI_DUMP_URL en el server para habilitar el sync automático.</div>`; return; }
-  if (!r.data.ok) { out.innerHTML = `<div style="color:#fca5a5;font-size:13px">${esc(r.data.error || 'Error')}</div>`; return; }
+  if (!r.ok) { out.innerHTML = `<div style="color:#B42318;font-size:13px">${esc(r.error)}</div>`; return; }
+  if (r.data.skipped) { out.innerHTML = `<div style="color:#B45309;font-size:13px">${esc(r.data.motivo)}. Configurá INPI_DUMP_URL en el server para habilitar el sync automático.</div>`; return; }
+  if (!r.data.ok) { out.innerHTML = `<div style="color:#B42318;font-size:13px">${esc(r.data.error || 'Error')}</div>`; return; }
   const s = r.data.stats;
-  out.innerHTML = `<div style="padding:12px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)">✓ Sync OK: ${s.nuevas} nuevas · ${s.actualizadas} actualizadas.</div>`;
+  out.innerHTML = `<div style="padding:12px 14px;border-radius:8px;background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35)">✓ Sync OK: ${s.nuevas} nuevas · ${s.actualizadas} actualizadas.</div>`;
 }
 
 async function ingestar() {
@@ -1926,10 +1934,10 @@ async function ingestar() {
   const r = await api('/api/admin/boletines/ingestar', { method: 'POST', body: JSON.stringify({ archivo }) });
   if (r.ok) {
     const d = r.data;
-    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">${d.dedup ? `Boletín ya existía (#${d.boletin_id}), no se duplicó.` : `Boletín #${d.boletin_id} ingerido: ${d.total_actas} actas.`}${d.warning ? '  ⚠ ' + esc(d.warning) : ''}</div>`;
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">${d.dedup ? `Boletín ya existía (#${d.boletin_id}), no se duplicó.` : `Boletín #${d.boletin_id} ingerido: ${d.total_actas} actas.`}${d.warning ? '  ⚠ ' + esc(d.warning) : ''}</div>`;
     loadBoletines();
   } else {
-    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.35);margin-bottom:10px">${esc(r.error)}</div>`;
+    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#B42318;border:1px solid rgba(239,68,68,.35);margin-bottom:10px">${esc(r.error)}</div>`;
   }
 }
 
@@ -1937,10 +1945,10 @@ async function correrMonitoreo() {
   $('#ingResult').innerHTML = '<div class="muted" style="font-size:13px">Corriendo monitoreo (puede tardar unos segundos)…</div>';
   const r = await api('/api/admin/monitoreo/run', { method: 'POST', body: JSON.stringify({}) });
   if (r.ok) {
-    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">Monitoreo OK · <strong>${r.data.alertas}</strong> alerta(s) creada(s) · ${r.data.candidatos || 0} candidato(s) evaluado(s) sobre <strong>${r.data.boletines_total || (r.data.boletines && r.data.boletines.length) || 0}</strong> boletín(es). ${esc(r.data.mensaje || '')}</div>`;
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35);margin-bottom:10px">Monitoreo OK · <strong>${r.data.alertas}</strong> alerta(s) creada(s) · ${r.data.candidatos || 0} candidato(s) evaluado(s) sobre <strong>${r.data.boletines_total || (r.data.boletines && r.data.boletines.length) || 0}</strong> boletín(es). ${esc(r.data.mensaje || '')}</div>`;
     loadResumen();
   } else {
-    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">${esc(r.error)}</div>`;
+    $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#B42318">${esc(r.error)}</div>`;
   }
 }
 
@@ -1948,7 +1956,7 @@ async function reporteMensual(dryRun, btn) {
   const orig = btn.textContent; btn.disabled = true; btn.textContent = dryRun ? 'Calculando…' : 'Enviando…';
   const r = await api('/api/admin/reporte-mensual/run', { method: 'POST', body: JSON.stringify({ dry_run: dryRun }) });
   btn.disabled = false; btn.textContent = orig;
-  if (!r.ok) { $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#fca5a5">${esc(r.error)}</div>`; return; }
+  if (!r.ok) { $('#ingResult').innerHTML = `<div style="padding:10px 14px;border-radius:8px;background:var(--red-soft);color:#B42318">${esc(r.error)}</div>`; return; }
   const d = r.data;
   if (dryRun) {
     const filas = (d.detalle || []).map(x => `${esc(x.email)} — ${x.marcas} marcas · ${x.alertas} alerta(s) · ${x.hitos} hito(s)`).join('<br>');
@@ -1957,7 +1965,7 @@ async function reporteMensual(dryRun, btn) {
       <div style="margin-top:8px;font-size:12.5px;color:var(--text-muted);line-height:1.7">${filas || 'Ningún cliente con vigilancia activa.'}</div>
     </div>`;
   } else {
-    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#6ee7b7;border:1px solid rgba(16,185,129,.35)">✓ Reporte de ${esc(d.mes)} enviado a <strong>${d.enviados}</strong>/${d.clientes} cliente(s)${d.errores ? ` · ${d.errores} error(es)` : ''}.</div>`;
+    $('#ingResult').innerHTML = `<div class="flash ok" style="padding:10px 14px;border-radius:8px;background:var(--green-soft);color:#047857;border:1px solid rgba(16,185,129,.35)">✓ Reporte de ${esc(d.mes)} enviado a <strong>${d.enviados}</strong>/${d.clientes} cliente(s)${d.errores ? ` · ${d.errores} error(es)` : ''}.</div>`;
   }
 }
 
