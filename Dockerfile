@@ -20,6 +20,7 @@ COPY data ./data
 COPY static ./static
 COPY TIPOGRAFIA ./TIPOGRAFIA
 COPY landing-legalpacers.html ./
+COPY wtr ./wtr
 
 # El volumen persistente del PaaS se configura desde su UI (Railway: Volume con
 # mountPath /app/data). Railway rechaza la directiva VOLUME del Dockerfile —

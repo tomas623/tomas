@@ -26,7 +26,10 @@ function securityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://snap.licdn.com https://cdn.jsdelivr.net https://unpkg.com",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Tipografías de Google y mapa de Google Maps: los usa el sitio de WTR (wtr/).
+    "font-src 'self' https://fonts.gstatic.com",
+    "frame-src 'self' https://www.google.com https://maps.google.com",
     "img-src 'self' data: https:",
     "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://px.ads.linkedin.com",
     "frame-ancestors 'self'",

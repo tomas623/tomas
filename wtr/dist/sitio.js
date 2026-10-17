@@ -1,0 +1,59 @@
+// Interacciones del sitio de WTR: menú móvil, aparición al scrollear y formulario.
+(function () {
+  var btn = document.getElementById('menuBtn');
+  var nav = document.getElementById('nav');
+  if (btn && nav) {
+    btn.addEventListener('click', function () {
+      var abierto = nav.classList.toggle('abierto');
+      btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+    });
+    nav.addEventListener('click', function (e) {
+      if (e.target.closest('a')) { nav.classList.remove('abierto'); btn.setAttribute('aria-expanded', 'false'); }
+    });
+  }
+
+  var elementos = document.querySelectorAll('.revelar');
+  if ('IntersectionObserver' in window) {
+    var obs = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (en) {
+        if (en.isIntersecting) { en.target.classList.add('visible'); obs.unobserve(en.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    elementos.forEach(function (el) { obs.observe(el); });
+  } else {
+    elementos.forEach(function (el) { el.classList.add('visible'); });
+  }
+
+  var form = document.getElementById('formContacto');
+  if (!form) return;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var error = document.getElementById('formError');
+    var ok = document.getElementById('formOk');
+    var datos = {
+      nombre: form.nombre.value.trim(),
+      email: form.email.value.trim(),
+      empresa: form.empresa.value.trim(),
+      mensaje: form.mensaje.value.trim(),
+    };
+    var falta = datos.nombre.length < 2 ? 'Contanos tu nombre.'
+      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email) ? 'Revisá el email.'
+      : datos.mensaje.length < 10 ? 'Escribinos unas líneas sobre tu consulta.' : '';
+    error.hidden = !falta;
+    error.textContent = falta;
+    if (falta) return;
+    var boton = form.querySelector('button');
+    boton.disabled = true; boton.textContent = 'Enviando…';
+    fetch(window.WTR_API_CONTACTO, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos),
+    }).then(function (r) { return r.json(); }).then(function (r) {
+      if (!r.ok) throw new Error(r.error || 'error');
+      Array.prototype.forEach.call(form.querySelectorAll('.campo, .campo-fila, button'), function (el) { el.hidden = true; });
+      ok.hidden = false;
+    }).catch(function () {
+      boton.disabled = false; boton.textContent = 'Enviar consulta';
+      error.hidden = false;
+      error.textContent = 'No pudimos enviar la consulta. Probá de nuevo o escribinos por WhatsApp.';
+    });
+  });
+})();

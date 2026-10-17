@@ -45,6 +45,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Sitio de WTR | abogados (estático, en wtr/). Si wtrabogados.com.ar apunta a
+// este servidor, se sirve entero desde wtr/dist. Además hay una vista previa en
+// /wtr/ (sin indexar) para revisarlo antes de mover el dominio.
+const HOSTS_WTR = new Set((process.env.WTR_HOSTS || 'wtrabogados.com.ar,www.wtrabogados.com.ar')
+  .split(',').map(h => h.trim().toLowerCase()).filter(Boolean));
+const estaticoWtr = express.static(path.join(__dirname, 'wtr', 'dist'), { extensions: ['html'] });
+app.use((req, res, next) => {
+  if (!HOSTS_WTR.has(String(req.hostname || '').toLowerCase()) || req.path.startsWith('/api/')) return next();
+  estaticoWtr(req, res, () => res.status(404).sendFile(path.join(__dirname, 'wtr', 'dist', 'index.html')));
+});
+app.use('/wtr', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); },
+  express.static(path.join(__dirname, 'wtr', 'dist-preview'), { extensions: ['html'] }));
+
 app.use(express.json({ limit: '256kb' }));
 
 // Rate limiting en endpoints sensibles (antes de montar las rutas).
@@ -57,6 +70,7 @@ app.use('/api/marca/check', limiters.check);
 // Captura de leads: anti-spam.
 app.use('/api/marca/lead-free', limiters.lead);
 app.use('/api/lp/interes', limiters.lead);
+app.use('/api/wtr/contacto', limiters.lead);
 // Creación de pagos/suscripciones/registros: anti-abuso.
 app.use('/api/marca/consulta/iniciar', limiters.pago);
 app.use('/api/marca/registro/iniciar', limiters.pago);
@@ -1202,6 +1216,54 @@ app.get('/home', (req, res) => {
 app.get(['/marcas', '/marcas/'], (req, res) => {
   const i = req.originalUrl.indexOf('?');
   res.redirect(301, `${MARCAS_URL}/${i >= 0 ? req.originalUrl.slice(i) : ''}`);
+});
+
+// Formulario de contacto del sitio de WTR | abogados (wtrabogados.com.ar, sitio
+// estático en wtr/). La consulta queda como lead tipo 'wtr' en el panel y llega
+// por mail al estudio, con reply-to al remitente.
+const ORIGENES_WTR = new Set((process.env.WTR_ORIGENES || 'https://wtrabogados.com.ar,https://www.wtrabogados.com.ar')
+  .split(',').map(s => s.trim()).filter(Boolean));
+function corsWtr(req, res) {
+  const origen = req.get('origin');
+  if (origen && ORIGENES_WTR.has(origen)) {
+    res.set('Access-Control-Allow-Origin', origen);
+    res.set('Vary', 'Origin');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+  }
+}
+app.options('/api/wtr/contacto', (req, res) => { corsWtr(req, res); res.sendStatus(204); });
+app.post('/api/wtr/contacto', async (req, res) => {
+  corsWtr(req, res);
+  const limpio = (v, max) => String(v || '').trim().slice(0, max);
+  const nombre = limpio(req.body?.nombre, 120);
+  const email = limpio(req.body?.email, 200).toLowerCase();
+  const empresa = limpio(req.body?.empresa, 160);
+  const mensaje = limpio(req.body?.mensaje, 4000);
+  if (nombre.length < 2) return res.status(400).json(fail('Falta el nombre'));
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json(fail('Email inválido'));
+  if (mensaje.length < 10) return res.status(400).json(fail('El mensaje es muy corto'));
+  try {
+    db.prepare(`
+      INSERT INTO leads (tipo, marca, email, estado, external_reference, notas)
+      VALUES ('wtr', ?, ?, 'wtr', ?, ?)
+    `).run(empresa || nombre, email, `wtr-${crypto.randomBytes(8).toString('hex')}`, `${nombre}: ${mensaje}`);
+  } catch (err) {
+    console.error('[wtr/contacto] no se pudo guardar el lead:', err.message);
+  }
+  const { enviarMailGenerico } = require('./src/notificaciones');
+  const e = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // data-lp-marca: este mail es de WTR, no lleva el marco de Legal Pacer.
+  const html = `<div data-lp-marca style="font-family:Georgia,serif;max-width:600px;margin:0 auto;color:#0e1420">
+    <p style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#4E5836">Consulta desde wtrabogados.com.ar</p>
+    <h2 style="font-weight:400;margin:6px 0 16px">${e(nombre)}${empresa ? ' · ' + e(empresa) : ''}</h2>
+    <p style="font-family:Helvetica,Arial,sans-serif;font-size:14px"><a href="mailto:${e(email)}">${e(email)}</a></p>
+    <p style="font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;white-space:pre-wrap;border-left:2px solid #4E5836;padding-left:14px">${e(mensaje)}</p>
+  </div>`;
+  const destino = (process.env.MAIL_WTR || 'contacto@wtrabogados.com').trim();
+  const r = await enviarMailGenerico({ to: destino, subject: `Consulta web WTR — ${nombre}`, html, replyTo: email, tag: 'wtr_contacto' });
+  if (!r.ok) return res.status(502).json(fail('No pudimos enviar la consulta', 502));
+  res.json(ok({}));
 });
 
 // Avisos de "Próximamente" de la home (checklist y TyC). Quedan como leads
