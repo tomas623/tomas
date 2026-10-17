@@ -91,23 +91,33 @@ img { display: block; max-width: 100%; }
 .titulo-seccion { font-size: clamp(34px, 4.2vw, 56px); letter-spacing: -.04em; }
 .intro { color: var(--gris); margin-top: 20px; max-width: 500px; font-size: 17px; }
 
-/* Roadmap: un solo camino, línea con paradas (vertical en celular).
-   La línea se dibuja despacio y las paradas aparecen detrás, en orden. */
-.roadmap { list-style: none; display: grid; grid-template-columns: repeat(7, 1fr); gap: 20px; position: relative; margin-bottom: 26px; }
-.roadmap::before { content: ""; position: absolute; left: 6px; right: 0; top: 6px; height: 1px; background: linear-gradient(90deg, var(--oliva), rgba(78,88,54,.2)); transform-origin: left; transform: scaleX(0); transition: transform 1.8s var(--lento) .2s; }
-.roadmap.visible::before { transform: none; }
-.etapa { position: relative; padding-top: 34px; opacity: 0; transition: opacity .9s var(--lento); }
-.roadmap.visible .etapa { opacity: 1; }
-.etapa:nth-child(2) { transition-delay: .15s; } .etapa:nth-child(3) { transition-delay: .3s; } .etapa:nth-child(4) { transition-delay: .45s; }
-.etapa:nth-child(5) { transition-delay: .6s; } .etapa:nth-child(6) { transition-delay: .75s; } .etapa:nth-child(7) { transition-delay: .9s; }
-.etapa::before { content: ""; position: absolute; top: 0; left: 0; width: 13px; height: 13px; border-radius: 50%; background: var(--hueso); border: 1.5px solid var(--oliva); transition: background .4s var(--lento), transform .4s var(--lento); }
-.etapa:hover::before { background: var(--oliva); transform: scale(1.15); }
+/* Camino: las etapas en una línea con paradas (vertical en celular) y, debajo,
+   la franja de lo que acompaña siempre. La línea se dibuja despacio y las
+   paradas aparecen detrás, en orden. */
+.camino { background: var(--papel); border-radius: 14px; box-shadow: var(--sombra); padding: 44px 40px 32px; }
+.roadmap { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; position: relative; margin-bottom: 36px; }
+.roadmap::before, .roadmap::after { content: ""; position: absolute; left: 5px; right: 0; top: 5px; height: 2px; border-radius: 2px; }
+.roadmap::before { background: #ecece6; }
+.roadmap::after { background: linear-gradient(90deg, var(--oliva), var(--oliva-claro) 75%, rgba(154,163,127,0)); transform-origin: left; transform: scaleX(0); transition: transform 2s var(--lento) .2s; }
+.camino.visible .roadmap::after { transform: none; }
+.etapa { position: relative; padding-top: 34px; opacity: 0; transform: translateY(6px); transition: opacity .9s var(--lento), transform .9s var(--lento); }
+.camino.visible .etapa { opacity: 1; transform: none; }
+.etapa:nth-child(2) { transition-delay: .25s; } .etapa:nth-child(3) { transition-delay: .5s; }
+.etapa:nth-child(4) { transition-delay: .75s; } .etapa:nth-child(5) { transition-delay: 1s; }
+.etapa::before { content: ""; position: absolute; z-index: 1; top: 0; left: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--oliva); box-shadow: 0 0 0 5px rgba(78,88,54,.12); transition: box-shadow .5s var(--lento); }
+.etapa:hover::before { box-shadow: 0 0 0 9px rgba(78,88,54,.14); }
 .etapa-num { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--oliva); margin-bottom: 10px; }
-.etapa-titulo { font-size: clamp(16px, 1.45vw, 19px); letter-spacing: -.025em; margin-bottom: 6px; }
+.etapa-titulo { font-size: clamp(18px, 1.7vw, 22px); letter-spacing: -.025em; margin-bottom: 6px; }
 .etapa-areas, .roadmap-nota { font-size: 13.5px; color: var(--gris); line-height: 1.55; }
-.etapa-areas a { text-decoration: underline; text-decoration-color: rgba(78,88,54,.3); text-underline-offset: 3px; transition: color .3s var(--lento), text-decoration-color .3s var(--lento); }
+.etapa-areas a, .siempre-areas a { text-decoration: underline; text-decoration-color: rgba(78,88,54,.3); text-underline-offset: 3px; transition: color .3s var(--lento), text-decoration-color .3s var(--lento); }
 .etapa-areas a:hover { color: var(--oliva); text-decoration-color: var(--oliva); }
-.roadmap-nota { margin-bottom: 96px; }
+.siempre { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; background: radial-gradient(ellipse 50% 140% at 0% 0%, rgba(154,163,127,.16), transparent 70%), var(--tinta); color: #fff; border-radius: var(--radio); padding: 22px 26px; }
+.siempre-etiqueta { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--oliva-claro); }
+.siempre-titulo { font-size: 20px; letter-spacing: -.02em; }
+.siempre-areas { font-size: 14px; color: var(--gris-claro); }
+.siempre-areas a { text-decoration-color: rgba(255,255,255,.25); }
+.siempre-areas a:hover { color: #fff; text-decoration-color: #fff; }
+.roadmap-nota { margin: 18px 0 96px; }
 
 /* Grupos de áreas (desplegables) */
 .ejes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
@@ -228,10 +238,12 @@ img { display: block; max-width: 100%; }
   .ejes-grid, .contacto-grid { gap: 16px; }
   .contacto-grid > div + div { margin-top: 32px; }
   .area-cta { position: static; }
-  .roadmap { grid-template-columns: 1fr; gap: 0; padding-left: 34px; }
-  .roadmap::before { left: 6px; right: auto; top: 6px; bottom: 6px; width: 1px; height: auto; background: linear-gradient(180deg, var(--oliva), rgba(78,88,54,.2)); transform-origin: top; transform: scaleY(0); }
-  .etapa { padding: 0 0 28px; }
-  .etapa::before { left: -34px; top: 4px; }
+  .camino { padding: 30px 22px 22px; }
+  .roadmap { grid-template-columns: 1fr; gap: 0; padding-left: 34px; margin-bottom: 20px; }
+  .roadmap::before, .roadmap::after { right: auto; bottom: 5px; width: 2px; height: auto; }
+  .roadmap::after { background: linear-gradient(180deg, var(--oliva), var(--oliva-claro) 75%, rgba(154,163,127,0)); transform-origin: top; transform: scaleY(0); }
+  .etapa { padding: 0 0 26px; }
+  .etapa::before { left: -34px; top: 3px; }
   .etapa-titulo { font-size: 19px; }
 }
 @media (max-width: 640px) {
@@ -252,8 +264,8 @@ img { display: block; max-width: 100%; }
   html { scroll-behavior: auto; }
   .revelar { opacity: 1; transform: none; transition: none; }
   .carrusel .pista { animation: none; }
-  .roadmap::before { transform: none; transition: none; }
-  .etapa { opacity: 1; transition: none; }
+  .roadmap::after { transform: none; transition: none; }
+  .etapa { opacity: 1; transform: none; transition: none; }
   .etapa::before { transition: none; }
   .barra-agenda { transition: none; }
 }

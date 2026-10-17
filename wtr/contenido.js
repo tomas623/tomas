@@ -137,17 +137,17 @@ const areas = [
   },
 ];
 
-// Roadmap de la sección Áreas. En el texto, {palabra|slug} linkea a /areas/<slug>/
-// ({palabra|#ancla} linkea a esa sección de la home).
+// Camino de la sección Áreas: las etapas de la startup, en orden, y lo que la
+// acompaña siempre (en paralelo, no como una etapa más).
+// En el texto, {palabra|slug} linkea a /areas/<slug>/ ({palabra|#ancla}: a esa sección de la home).
 const etapas = [
-  { titulo: 'Diagnosticar', texto: '{primera charla|#contacto}' },
-  { titulo: 'Arrancar', texto: '{sociedad|derecho-societario}, {acuerdo de socios|derecho-societario}, {marca|propiedad-intelectual}' },
-  { titulo: 'Vender', texto: '{contratos|contratos}, {términos|tecnologia-e-inteligencia-artificial} y {datos|datos-y-privacidad}' },
-  { titulo: 'Sumar equipo', texto: '{laboral|derecho-laboral}' },
-  { titulo: 'Levantar inversión', texto: '{societario / rondas|derecho-societario}' },
-  { titulo: 'Salir al mundo', texto: '{internacionalización|internacionalizacion}' },
-  { titulo: 'Cuidar lo construido', texto: '{patrimonio|patrimonio-y-planificacion}, {familia|familia}, {sucesión|sucesion}' },
+  { titulo: 'Inicios', texto: '{sociedad|derecho-societario}, {acuerdo de socios|derecho-societario}, {marca|propiedad-intelectual}' },
+  { titulo: 'Tracción', texto: '{contratos|contratos}, {términos|tecnologia-e-inteligencia-artificial} y {datos|datos-y-privacidad}' },
+  { titulo: 'Crear equipo', texto: '{laboral|derecho-laboral}' },
+  { titulo: 'Levantar capital', texto: '{societario / rondas|derecho-societario}' },
+  { titulo: 'Ampliar mercados', texto: '{internacionalización|internacionalizacion}' },
 ];
+const siempre = { titulo: 'Cuidar lo que construiste', texto: '{patrimonio|patrimonio-y-planificacion} y {familia|familia}' };
 const etapasNota = 'En cualquier etapa, resolución de conflictos.';
 
 const socios = [
@@ -195,4 +195,4 @@ const privacidad = {
   ],
 };
 
-module.exports = { sitio, ejes, areas, etapas, etapasNota, socios, clientes, diferencial, privacidad };
+module.exports = { sitio, ejes, areas, etapas, siempre, etapasNota, socios, clientes, diferencial, privacidad };

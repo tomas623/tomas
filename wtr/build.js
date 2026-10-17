@@ -4,7 +4,7 @@
 // estilos: estilos-v2.css) en wtr/dist-v2/ o, con WTR_BASE, en wtr/dist-v2-preview/.
 const fs = require('fs');
 const path = require('path');
-const { sitio, ejes, areas, etapas, etapasNota, socios, clientes, diferencial, privacidad } = require('./contenido');
+const { sitio, ejes, areas, etapas, siempre, etapasNota, socios, clientes, diferencial, privacidad } = require('./contenido');
 
 // BASE: prefijo de rutas. Vacío para el sitio real; '/wtr' para la vista previa
 // que sirve el servidor de Legal Pacer en marcas.legalpacers.com/wtr/.
@@ -189,9 +189,12 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
     <p class="volanta">Áreas de práctica</p>
     <h2 class="titulo-seccion">Acompañamos a tu startup <span class="acento">y a vos</span> en cada etapa.</h2>
   </header>
-  <ol class="roadmap revelar">
-    ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${pad(i + 1)}</span><h3 class="etapa-titulo">${esc(e.titulo)}</h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n    ')}
-  </ol>
+  <div class="camino revelar">
+    <ol class="roadmap">
+      ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${pad(i + 1)}</span><h3 class="etapa-titulo">${esc(e.titulo)}</h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n      ')}
+    </ol>
+    <div class="siempre"><span class="siempre-etiqueta">Siempre</span><h3 class="siempre-titulo">${esc(siempre.titulo)}</h3><p class="siempre-areas">${linkear(siempre.texto)}</p></div>
+  </div>
   <p class="roadmap-nota revelar">${esc(etapasNota)}</p>
   <div class="ejes-grid">
     ${columnaEje('negocios')}
