@@ -354,9 +354,7 @@
       <div>
         <span class="eyebrow">Quiénes somos</span>
         <h2 class="titulo-seccion">Un producto de <span class="nowrap">WTR | abogados</span></h2>
-        <p>Legal Pacer es un producto digital de <strong><a class="nowrap wtr-link" href="#">WTR | abogados</a></strong> que nace de las necesidades de sus clientes. Muchos nos planteaban situaciones que se podían resolver online, sin necesidad de una consulta. Por eso, para algunos temas puntuales y one-shot —como marcas y términos y condiciones estándar— y para aportar herramientas prácticas para startups, nació Legal Pacer.</p>
-        <p>Si querés charlar sobre la estrategia de compliance para tu startup y cómo protegerla a ella y a sus founders, el equipo de WTR te espera.</p>
-        <a class="btn btn-blanco" id="ctaWtr" href="#" target="_blank" rel="noopener">Agendar una reunión con WTR</a>
+        <p>Legal Pacer es un producto digital de <strong><a class="nowrap wtr-link" href="#">WTR | abogados</a></strong> que nace de las necesidades de sus clientes. Muchos nos planteaban situaciones que se podían resolver online. Por eso, para algunos temas puntuales y one-shot —como marcas y términos y condiciones estándar— y para aportar herramientas prácticas y contenido útil para startups, nació Legal Pacer.</p>
       </div>
       <img class="somos-logo" src="/static/brand/logo-oscuro.webp" alt="" width="1200" height="276">
     </div>
@@ -429,7 +427,7 @@
   var WA = '5491128774200';
   (function () {
     var cta = document.getElementById('ctaWtr');
-    cta.href = CALENDLY_URL || ('https://wa.me/' + WA + '?text=' +
+    if (cta) cta.href = CALENDLY_URL || ('https://wa.me/' + WA + '?text=' +
       encodeURIComponent('Hola, quiero agendar una reunión con WTR | abogados.'));
 
     document.querySelectorAll('.wtr-link').forEach(function (a) {
