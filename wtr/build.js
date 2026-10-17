@@ -278,4 +278,20 @@ escribir('sitio-config.js', `window.WTR_API_CONTACTO = ${JSON.stringify(sitio.ap
 escribir('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${sitio.url}/sitemap.xml\n`);
 escribir('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${['/', ...areas.map(a => `/areas/${a.slug}/`)].map(r => `  <url><loc>${sitio.url}${r}</loc></url>`).join('\n')}\n</urlset>\n`);
 escribir('llms.txt', `# WTR | abogados\n\n> ${sitio.claim} Estudio jurídico de San Fernando, Buenos Aires, que acompaña a founders en su empresa y en su vida (patrimonio, familia, sucesión). Creó Legal Pacer, su legaltech, para resolver online los temas estándar.\n\n## Áreas de práctica\n${areas.map(a => `- [${a.titulo}](${sitio.url}/areas/${a.slug}/): ${a.frase}`).join('\n')}\n\n## Contacto\n- ${sitio.direccion}\n- ${sitio.email}\n- WhatsApp ${sitio.whatsappVisible}\n- Legal Pacer: ${sitio.legalPacer}\n`);
+// Para hostings con Apache (Hostinger): fuerza HTTPS, unifica www → sin www y
+// manda las rutas viejas del sitio anterior a la home. El servidor de Legal
+// Pacer lo ignora (express.static no sirve archivos ocultos).
+if (!BASE) escribir('.htaccess', `RewriteEngine On
+RewriteCond %{HTTPS} off [OR]
+RewriteCond %{HTTP_HOST} ^www\\. [NC]
+RewriteRule ^ https://wtrabogados.com.ar%{REQUEST_URI} [L,R=301]
+
+ErrorDocument 404 /index.html
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+`);
 console.log(`Sitio armado en ${DIST}: ${1 + areas.length} páginas.`);

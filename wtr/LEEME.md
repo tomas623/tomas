@@ -16,7 +16,7 @@ Después de cambiar el contenido, correr los dos y commitear las carpetas genera
 
 ## Dónde se publica
 - **Vista previa:** la sirve el servidor de Legal Pacer en `/wtr/`, sin indexar.
-- **Sitio real:** la carpeta `wtr/dist/` se puede subir tal cual a cualquier hosting (por ejemplo, el de Hostinger). Si en cambio `wtrabogados.com.ar` apunta a Railway, el servidor de Legal Pacer la sirve solo (ver `HOSTS_WTR` en `server.js`).
+- **Sitio real:** la carpeta `wtr/dist/` se puede subir tal cual a cualquier hosting. En Hostinger (plan Business): sitio vacío para wtrabogados.com.ar, SSL activado y el contenido de `wtr/dist/` (incluido el `.htaccess` oculto) en `public_html`. Si en cambio `wtrabogados.com.ar` apunta a Railway, el servidor de Legal Pacer la sirve solo (ver `HOSTS_WTR` en `server.js`).
 
 ## Formulario de contacto
 Envía a `POST /api/wtr/contacto` del servidor de Legal Pacer: guarda la consulta como lead tipo `wtr` (filtro "Consulta web WTR" en el panel) y la manda por mail a `MAIL_WTR` (por defecto contacto@wtrabogados.com) con reply-to al remitente. Los orígenes permitidos están en `WTR_ORIGENES`.
