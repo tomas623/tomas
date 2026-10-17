@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 // Sitio de WTR | abogados (estático, en wtr/). Si wtrabogados.com.ar apunta a
 // este servidor, se sirve entero desde wtr/dist. Además hay una vista previa en
 // /wtr/ (sin indexar) para revisarlo antes de mover el dominio.
-const HOSTS_WTR = new Set((process.env.WTR_HOSTS || 'wtrabogados.com.ar,www.wtrabogados.com.ar')
+const HOSTS_WTR = new Set((process.env.WTR_HOSTS || 'wtrabogados.com,www.wtrabogados.com')
   .split(',').map(h => h.trim().toLowerCase()).filter(Boolean));
 const estaticoWtr = express.static(path.join(__dirname, 'wtr', 'dist'), { extensions: ['html'] });
 app.use((req, res, next) => {
@@ -1221,7 +1221,7 @@ app.get(['/marcas', '/marcas/'], (req, res) => {
 // Formulario de contacto del sitio de WTR | abogados (wtrabogados.com.ar, sitio
 // estático en wtr/). La consulta queda como lead tipo 'wtr' en el panel y llega
 // por mail al estudio, con reply-to al remitente.
-const ORIGENES_WTR = new Set((process.env.WTR_ORIGENES || 'https://wtrabogados.com.ar,https://www.wtrabogados.com.ar')
+const ORIGENES_WTR = new Set((process.env.WTR_ORIGENES || 'https://wtrabogados.com,https://www.wtrabogados.com')
   .split(',').map(s => s.trim()).filter(Boolean));
 function corsWtr(req, res) {
   const origen = req.get('origin');

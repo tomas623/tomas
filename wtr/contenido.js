@@ -6,7 +6,7 @@
 const sitio = {
   nombre: 'WTR | abogados',
   claim: 'Derecho para decisiones que importan.',
-  url: 'https://wtrabogados.com.ar',
+  url: 'https://wtrabogados.com',
   email: 'contacto@wtrabogados.com',
   whatsapp: '5491134489128',
   whatsappVisible: '+54 11 3448 9128',
@@ -37,7 +37,7 @@ const areas = [
       'Elegir el tipo de sociedad y constituirla.',
       'Armar el acuerdo de socios: aportes, vesting, salida de un socio y toma de decisiones.',
       'Ordenar el cap table antes de una ronda.',
-      'Sumar socios o inversores, y armar la estructura en el exterior cuando un inversor la pide.',
+      'Sumar socios o inversores.',
     ],
     como: 'Arrancamos con una reunión para entender el proyecto y a los socios. Proponemos la estructura y los documentos, los revisamos con ustedes y los dejamos firmados e inscriptos. Cada ronda o cambio de socios lo sigue el mismo equipo.',
   },
@@ -60,8 +60,8 @@ const areas = [
       'Cesión a la sociedad del código y el diseño que crearon fundadores y freelancers.',
       'Protección de la información confidencial.',
     ],
-    como: 'El registro estándar de una marca lo resolvés online en Legal Pacer, nuestra legaltech. Las oposiciones, los conflictos y las estrategias en varios países los toma el estudio. Los trámites ante el INPI los firma Tomás Rodríguez, Agente de la Propiedad Industrial.',
-    legalPacer: { texto: 'Registrá tu marca online en Legal Pacer', url: 'https://marcas.legalpacers.com' },
+    como: 'El registro estándar de una marca lo podés empezar online en LegalPacer. Las oposiciones, los conflictos y las estrategias en varios países los toma el estudio. Los trámites ante el INPI los firma Tomás Rodríguez, Agente de la Propiedad Industrial.',
+    legalPacer: { texto: 'Registrá tu marca online en LegalPacer', url: 'https://marcas.legalpacers.com' },
   },
   {
     slug: 'tecnologia-e-inteligencia-artificial', eje: 'negocios', titulo: 'Tecnología e inteligencia artificial',
@@ -84,7 +84,7 @@ const areas = [
       'GDPR, si tenés usuarios en Europa.',
       'Qué hacer ante un incidente de seguridad.',
     ],
-    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas. Los términos y la política de privacidad estándar los resolvés online en Legal Pacer.',
+    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas. Los términos y la política de privacidad estándar los podés empezar online en LegalPacer.',
   },
   {
     slug: 'derecho-laboral', eje: 'negocios', titulo: 'Derecho laboral',
@@ -106,6 +106,14 @@ const areas = [
       'Disputas por marcas y propiedad intelectual.',
     ],
     como: 'Antes de litigar buscamos la mejor salida: negociación, mediación o un acuerdo. Cuando hay que litigar, lo hacemos con estrategia.',
+  },
+  {
+    slug: 'internacionalizacion', eje: 'negocios', titulo: 'Internacionalización',
+    frase: 'La estructura para operar, facturar y recibir inversión fuera del país.',
+    decisiones: [
+      'Armar la estructura en el exterior cuando un inversor la pide.',
+    ],
+    como: 'Cuando el negocio cruza la frontera —clientes afuera, una ronda con fondos internacionales, una sociedad en el exterior— la estructura importa tanto como la idea. Te ayudamos a diseñar el vehículo correcto, los contratos internacionales y el camino país por país, para crecer afuera sin desarmar lo de acá.',
   },
   {
     slug: 'patrimonio-y-planificacion', eje: 'vida', titulo: 'Patrimonio y planificación',
@@ -139,10 +147,23 @@ const areas = [
   },
 ];
 
-const pasos = [
-  { titulo: 'Entender el contexto', texto: 'Escuchamos el negocio y lo que está en juego antes de hablar de los pasos a seguir.' },
-  { titulo: 'Ordenar la decisión', texto: 'Traducimos riesgos y alternativas a un camino claro, con sus costos y consecuencias a la vista.' },
-  { titulo: 'Acompañar el largo plazo', texto: 'Seguimos cuando la decisión se ejecuta y cuando el escenario cambia.' },
+// Roadmap de la sección Áreas. En el texto, {palabra|slug} linkea a /areas/<slug>/.
+const etapas = [
+  { titulo: 'Arrancar', texto: '{sociedad|derecho-societario}, {acuerdo de socios|derecho-societario}, {marca|propiedad-intelectual}' },
+  { titulo: 'Vender', texto: '{contratos|contratos}, {términos|tecnologia-e-inteligencia-artificial} y {datos|datos-y-privacidad}' },
+  { titulo: 'Sumar equipo', texto: '{laboral|derecho-laboral}' },
+  { titulo: 'Levantar inversión', texto: '{societario / rondas|derecho-societario}' },
+  { titulo: 'Salir al mundo', texto: '{internacionalización|internacionalizacion}' },
+  { titulo: 'Cuidar lo construido', texto: '{patrimonio|patrimonio-y-planificacion}, {familia|familia}, {sucesión|sucesion}' },
+];
+const etapasNota = 'En cualquier etapa, {resolución de conflictos|resolucion-de-conflictos}.';
+
+// Preguntas que rotan en el hero, cada una con link a su área.
+const preguntas = [
+  { texto: '¿Cómo reparto el equity con mi socio?', area: 'derecho-societario' },
+  { texto: '¿Qué tengo que tener en orden antes de una ronda?', area: 'derecho-societario' },
+  { texto: '¿Cómo protejo la marca?', area: 'propiedad-intelectual' },
+  { texto: '¿Puedo facturarle a un cliente del exterior?', area: 'internacionalizacion' },
 ];
 
 const socios = [
@@ -166,14 +187,13 @@ const clientes = [];
 // Textos de Tomás: se respetan tal cual (solo se corrige gramática).
 const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios y resolución de conflictos. Entendemos cómo nacen esos negocios, se financian y crecen. Por eso acompañamos a sus fundadores en cada decisión que define su futuro: desde la creación hasta el salto a nuevos mercados.';
 
-const quienesSomos = 'Somos el estudio de los founders. Acompañamos a startups y nuevos modelos de negocio en las decisiones que definen su futuro y, cuando el negocio se vuelve patrimonio, también a las personas y la familia que están detrás. Trabajamos con cercanía, como un abogado in-house: entendemos cómo nace, se financia y crece una empresa, y estamos cuando hay que decidir, no solo cuando aparece un problema.';
-
 // Política de privacidad (texto de Tomás). Cada párrafo: título en negrita + texto.
+// El mail de contacto se muestra como link.
 const privacidad = {
   actualizada: '17/10/2026',
   parrafos: [
-    { texto: 'Esta política describe cómo WTR | abogados (“WTR”, “nosotros”) trata los datos personales que nos facilitás a través de este sitio (wtrabogados.com.ar). Responsable del tratamiento: WTR | abogados, Gral. Pinto 1228, San Fernando, Buenos Aires, Argentina. Contacto: contacto@wtrabogados.com.' },
-    { titulo: 'Qué datos recolectamos.', texto: 'Los que nos dejás voluntariamente en el formulario de contacto: nombre, correo electrónico y el contenido de tu consulta. Esos datos se guardan en nuestro sistema y se nos envían por correo, únicamente para responder tu consulta. No recolectamos datos sensibles.' },
+    { texto: 'Esta política describe cómo WTR | abogados ("WTR", "nosotros") trata los datos personales que nos facilitás a través de este sitio (wtrabogados.com). Responsable: WTR | abogados, San Fernando, Buenos Aires, Argentina. Contacto: contacto@wtrabogados.com.' },
+    { titulo: 'Qué datos recolectamos.', texto: 'Los que nos dejás en el formulario de contacto: nombre, correo electrónico y el contenido de tu consulta. Esos datos se guardan en nuestro sistema y se nos envían por correo, únicamente para responder tu consulta. No recolectamos datos sensibles.' },
     { titulo: 'Con qué finalidad.', texto: 'Solo para responder tu consulta y, si lo pedís, avanzar con una primera conversación. No los usamos para otros fines ni te enviamos comunicaciones no solicitadas.' },
     { titulo: 'Base del tratamiento.', texto: 'Tu consentimiento, que prestás al enviarnos el formulario, conforme a la Ley de Protección de Datos Personales N.º 25.326.' },
     { titulo: 'Con quién los compartimos.', texto: 'No compartimos tus datos con terceros, salvo que una obligación legal o una orden judicial lo requiera.' },
@@ -184,4 +204,4 @@ const privacidad = {
   ],
 };
 
-module.exports = { sitio, ejes, areas, pasos, socios, clientes, diferencial, quienesSomos, privacidad };
+module.exports = { sitio, ejes, areas, etapas, etapasNota, preguntas, socios, clientes, diferencial, privacidad };

@@ -1,5 +1,43 @@
-// Interacciones del sitio de WTR: menú móvil, aparición al scrollear y formulario.
+// Interacciones del sitio de WTR: menú móvil, aparición al scrollear, preguntas
+// del hero, barra de agenda en celular y formulario.
 (function () {
+  var sinMovimiento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Preguntas del hero: rotan cada 5 s; se frenan con el mouse o el foco encima.
+  // Con movimiento reducido no rotan: el CSS las muestra todas.
+  var caja = document.getElementById('preguntas');
+  if (caja && !sinMovimiento) {
+    var items = caja.querySelectorAll('li');
+    var num = document.getElementById('preguntaNum');
+    var actual = 0, pausa = false;
+    caja.addEventListener('mouseenter', function () { pausa = true; });
+    caja.addEventListener('mouseleave', function () { pausa = false; });
+    caja.addEventListener('focusin', function () { pausa = true; });
+    caja.addEventListener('focusout', function () { pausa = false; });
+    setInterval(function () {
+      if (pausa || document.hidden) return;
+      items[actual].classList.remove('activa');
+      actual = (actual + 1) % items.length;
+      items[actual].classList.add('activa');
+      num.textContent = (actual < 9 ? '0' : '') + (actual + 1);
+    }, 5000);
+  }
+
+  // Barra "Agendá una charla" (el CSS la muestra solo en celular): aparece al
+  // bajar y se esconde cuando la sección de contacto está a la vista.
+  var barra = document.getElementById('barraAgenda');
+  var contacto = document.getElementById('contacto');
+  var contactoVisible = false;
+  function actualizarBarra() {
+    if (barra) barra.classList.toggle('visible', window.scrollY > 480 && !contactoVisible);
+  }
+  if (barra) {
+    if (contacto && 'IntersectionObserver' in window) {
+      new IntersectionObserver(function (en) { contactoVisible = en[0].isIntersecting; actualizarBarra(); }).observe(contacto);
+    }
+    window.addEventListener('scroll', actualizarBarra, { passive: true });
+  }
+
   var btn = document.getElementById('menuBtn');
   var nav = document.getElementById('nav');
   if (btn && nav) {

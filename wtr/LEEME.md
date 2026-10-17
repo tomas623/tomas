@@ -16,15 +16,15 @@ Después de cambiar el contenido, correr los dos y commitear las carpetas genera
 
 ## Dónde se publica
 - **Vista previa:** la sirve el servidor de Legal Pacer en `/wtr/`, sin indexar.
-- **Sitio real:** la carpeta `wtr/dist/` se puede subir tal cual a cualquier hosting. En Hostinger (plan Business): sitio vacío para wtrabogados.com.ar, SSL activado y el contenido de `wtr/dist/` (incluido el `.htaccess` oculto) en `public_html`. Si en cambio `wtrabogados.com.ar` apunta a Railway, el servidor de Legal Pacer la sirve solo (ver `HOSTS_WTR` en `server.js`).
+- **Sitio real:** la carpeta `wtr/dist/` se puede subir tal cual a cualquier hosting. En Hostinger (plan Business): sitio vacío para wtrabogados.com, SSL activado y el contenido de `wtr/dist/` (incluido el `.htaccess` oculto) en `public_html`. Si en cambio `wtrabogados.com` apunta a Railway, el servidor de Legal Pacer la sirve solo (ver `HOSTS_WTR` en `server.js`).
 
 ## Formulario de contacto
 Envía a `POST /api/wtr/contacto` del servidor de Legal Pacer: guarda la consulta como lead tipo `wtr` (filtro "Consulta web WTR" en el panel) y la manda por mail a `MAIL_WTR` (por defecto contacto@wtrabogados.com) con reply-to al remitente. Los orígenes permitidos están en `WTR_ORIGENES`.
 
 ## Calendly
-Los botones "Agendá una charla" abren `sitio.calendly` en pestaña nueva. En la sección de contacto, además, va embebido como iframe arriba del formulario. En la vista previa (`/wtr/`) el embebido no carga porque el CSP del servidor de Legal Pacer no permite iframes de calendly.com, y no se toca a propósito: se verifica en Hostinger. Si el embebido diera problemas, se saca el bloque `.agenda` de `seccionContacto()` y quedan los botones.
+Los botones "Agendá una charla" abren `sitio.calendly` en pestaña nueva. En la sección de contacto, además, va embebido como iframe arriba del formulario. En la vista previa (`/wtr/`) el CSP del servidor de Legal Pacer no permite iframes de calendly.com (no se toca a propósito), así que ahí el build pone un recuadro con el botón "Abrir el calendario". El embebido se verifica en Hostinger. Si diera problemas, se saca el iframe de `seccionContacto()` y quedan los botones.
 
 ## Pendiente
 - Fotos de los socios (`socios[].foto` en `contenido.js`).
-- Logos de las startups (`clientes` en `contenido.js`).
+- Logos de las startups (`clientes` en `contenido.js`). Mientras no haya, el lugar se ve solo en la vista previa.
 - Revisión de Tomás de los textos de las áreas.
