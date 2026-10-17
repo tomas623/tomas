@@ -21,7 +21,7 @@ const sitio = {
 const ejes = {
   negocios: {
     titulo: 'Empresas y startups',
-    bajada: 'Estructura para crecer, sumar socios, recibir inversión y resolver conflictos.',
+    bajada: 'Estructura para crecer, sumar socios y recibir inversión.',
   },
   vida: {
     titulo: 'Family office',
@@ -98,16 +98,6 @@ const areas = [
     como: 'Ordenamos cómo se contrata desde la primera persona, para que el equipo crezca sin contingencias. Cuando hay un conflicto, buscamos cerrarlo antes de que llegue a juicio.',
   },
   {
-    slug: 'resolucion-de-conflictos', eje: 'negocios', titulo: 'Resolución de conflictos',
-    frase: 'Cuando algo se rompe —un socio, un cliente, un inversor— estrategia antes que ruido.',
-    decisiones: [
-      'Diferencias entre socios.',
-      'Incumplimientos de clientes, proveedores o inversores.',
-      'Disputas por marcas y propiedad intelectual.',
-    ],
-    como: 'Antes de litigar buscamos la mejor salida: negociación, mediación o un acuerdo. Cuando hay que litigar, lo hacemos con estrategia.',
-  },
-  {
     slug: 'internacionalizacion', eje: 'negocios', titulo: 'Internacionalización',
     frase: 'La estructura para operar, facturar y recibir inversión fuera del país.',
     decisiones: [
@@ -156,7 +146,6 @@ const etapas = [
   { titulo: 'Salir al mundo', texto: '{internacionalización|internacionalizacion}' },
   { titulo: 'Cuidar lo construido', texto: '{patrimonio|patrimonio-y-planificacion}, {familia|familia}, {sucesión|sucesion}' },
 ];
-const etapasNota = 'En cualquier etapa, {resolución de conflictos|resolucion-de-conflictos}.';
 
 // Preguntas que rotan en el hero, cada una con link a su área.
 const preguntas = [
@@ -181,8 +170,15 @@ const socios = [
   },
 ];
 
-// Logos de las startups con las que trabaja el estudio (los pasa Tomás).
-const clientes = [];
+// Logos con los que trabaja el estudio (los pasó Tomás; vienen en blanco, para fondo oscuro).
+// PENDIENTE: el nombre de los dos logos que son solo ícono (se usa como texto alternativo).
+const clientes = [
+  { nombre: 'SJ Tecno', logo: '/img/clientes/sj-tecno.webp' },
+  { nombre: 'CORE', logo: '/img/clientes/core.webp' },
+  { nombre: '', logo: '/img/clientes/cliente-hexagono.webp' },
+  { nombre: '', logo: '/img/clientes/cliente-circulo.webp' },
+  { nombre: 'Cámara Argentina de Empresas Emergentes', logo: '/img/clientes/camara-empresas-emergentes.webp' },
+];
 
 // Textos de Tomás: se respetan tal cual (solo se corrige gramática).
 const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios y resolución de conflictos. Entendemos cómo nacen esos negocios, se financian y crecen. Por eso acompañamos a sus fundadores en cada decisión que define su futuro: desde la creación hasta el salto a nuevos mercados.';
@@ -204,4 +200,4 @@ const privacidad = {
   ],
 };
 
-module.exports = { sitio, ejes, areas, etapas, etapasNota, preguntas, socios, clientes, diferencial, privacidad };
+module.exports = { sitio, ejes, areas, etapas, preguntas, socios, clientes, diferencial, privacidad };

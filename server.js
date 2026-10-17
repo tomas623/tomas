@@ -57,6 +57,9 @@ app.use((req, res, next) => {
 });
 app.use('/wtr', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); },
   express.static(path.join(__dirname, 'wtr', 'dist-preview'), { extensions: ['html'] }));
+// Vista previa de la versión 2 del sitio de WTR (wtr/estilos-v2.css), sin indexar.
+app.use('/wtr-v2', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); },
+  express.static(path.join(__dirname, 'wtr', 'dist-v2-preview'), { extensions: ['html'] }));
 
 app.use(express.json({ limit: '256kb' }));
 

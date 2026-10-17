@@ -1,13 +1,19 @@
 // Generador del sitio estático de WTR | abogados.
 // Uso: node wtr/build.js  →  arma wtr/dist/ (subible a cualquier hosting).
+// Con WTR_V2=1 arma la versión 2 (misma estructura y contenido, otra hoja de
+// estilos: estilos-v2.css) en wtr/dist-v2/ o, con WTR_BASE, en wtr/dist-v2-preview/.
 const fs = require('fs');
 const path = require('path');
-const { sitio, ejes, areas, etapas, etapasNota, preguntas, socios, clientes, diferencial, privacidad } = require('./contenido');
+const { sitio, ejes, areas, etapas, preguntas, socios, clientes, diferencial, privacidad } = require('./contenido');
 
 // BASE: prefijo de rutas. Vacío para el sitio real; '/wtr' para la vista previa
 // que sirve el servidor de Legal Pacer en marcas.legalpacers.com/wtr/.
 const BASE = process.env.WTR_BASE || '';
-const DIST = path.join(__dirname, BASE ? 'dist-preview' : 'dist');
+const V2 = process.env.WTR_V2 === '1';
+const DIST = path.join(__dirname, (V2 ? 'dist-v2' : 'dist') + (BASE ? '-preview' : ''));
+const FUENTES = V2
+  ? 'family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Inter+Tight:wght@500;600&family=Spectral:ital,wght@1,400'
+  : 'family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Spectral:ital,wght@0,300;0,400;0,500;1,300';
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const ICONOS = {
@@ -60,7 +66,7 @@ function layout({ titulo, descripcion, ruta, cuerpo, jsonld }) {
 <meta property="og:description" content="${esc(descripcion)}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Spectral:ital,wght@0,300;0,400;0,500;1,300&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${FUENTES}&display=swap">
 <link rel="stylesheet" href="/estilos.css">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>` : ''}
 </head>
@@ -183,18 +189,17 @@ function home() {
     </div>
   </div>
 </section>
-${clientes.length ? `<section class="clientes"><p class="volanta">Con quién trabajamos</p><div class="carrusel"><div class="pista">${[...clientes, ...clientes].map(c => `<img src="${c.logo}" alt="${esc(c.nombre)}">`).join('')}</div></div></section>`
+${clientes.length ? `<section class="clientes"><p class="volanta">Con quién trabajamos</p><div class="carrusel"><div class="pista">${[...clientes, ...clientes].map((c, i) => i < clientes.length ? `<img src="${c.logo}" alt="${esc(c.nombre)}">` : `<img src="${c.logo}" alt="" aria-hidden="true">`).join('')}</div></div></section>`
   // Sin logos todavía: el lugar se ve solo en la vista previa, no en el sitio real.
   : BASE ? `<section class="clientes"><p class="volanta">Con quién trabajamos</p><div class="logos-pendientes">${'<span>Logo</span>'.repeat(5)}</div></section>` : ''}
 <section id="areas" class="seccion">
   <header class="cabeza-seccion revelar">
     <p class="volanta">Áreas de práctica</p>
-    <h2 class="titulo-seccion">Acompañamos a tu startup y a vos en cada etapa.</h2>
+    <h2 class="titulo-seccion">Acompañamos a tu startup <span class="acento">y a vos</span> en cada etapa.</h2>
   </header>
   <ol class="roadmap revelar">
     ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${pad(i + 1)}</span><h3 class="etapa-titulo">${esc(e.titulo)}</h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n    ')}
   </ol>
-  <p class="roadmap-nota revelar">${linkear(etapasNota)}</p>
   <div class="ejes-grid">
     ${columnaEje('negocios')}
     ${columnaEje('vida')}
@@ -306,7 +311,8 @@ fs.rmSync(DIST, { recursive: true, force: true });
 escribir('index.html', home());
 for (const a of areas) escribir(`areas/${a.slug}/index.html`, paginaArea(a));
 escribir('privacidad/index.html', paginaPrivacidad());
-fs.copyFileSync(path.join(__dirname, 'estilos.css'), path.join(DIST, 'estilos.css'));
+fs.copyFileSync(path.join(__dirname, V2 ? 'estilos-v2.css' : 'estilos.css'), path.join(DIST, 'estilos.css'));
+fs.cpSync(path.join(__dirname, 'img'), path.join(DIST, 'img'), { recursive: true });
 fs.copyFileSync(path.join(__dirname, 'sitio.js'), path.join(DIST, 'sitio.js'));
 escribir('sitio-config.js', `window.WTR_API_CONTACTO = ${JSON.stringify(sitio.apiContacto)};`);
 escribir('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${sitio.url}/sitemap.xml\n`);

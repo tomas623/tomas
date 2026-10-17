@@ -14,6 +14,14 @@ WTR_BASE=/wtr node wtr/build.js    # vista previa → wtr/dist-preview/ (se ve e
 ```
 Después de cambiar el contenido, correr los dos y commitear las carpetas generadas.
 
+## Versión 2 (en revisión)
+Misma estructura y contenido, otra dirección visual (oscuro y sobrio, tipo Mercury): `estilos-v2.css`.
+```
+WTR_V2=1 WTR_BASE=/wtr-v2 node wtr/build.js   # vista previa → wtr/dist-v2-preview/ (marcas.legalpacers.com/wtr-v2/)
+WTR_V2=1 node wtr/build.js                    # sitio real v2 → wtr/dist-v2/ (cuando se apruebe)
+```
+Hasta que Tomás la apruebe, la versión publicada sigue siendo la 1 (`dist/`).
+
 ## Dónde se publica
 - **Vista previa:** la sirve el servidor de Legal Pacer en `/wtr/`, sin indexar.
 - **Sitio real:** la carpeta `wtr/dist/` se puede subir tal cual a cualquier hosting. En Hostinger (plan Business): sitio vacío para wtrabogados.com, SSL activado y el contenido de `wtr/dist/` (incluido el `.htaccess` oculto) en `public_html`. Si en cambio `wtrabogados.com` apunta a Railway, el servidor de Legal Pacer la sirve solo (ver `HOSTS_WTR` en `server.js`).
