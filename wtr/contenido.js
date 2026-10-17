@@ -13,6 +13,7 @@ const sitio = {
   linkedin: 'https://www.linkedin.com/company/wtr-abogados',
   direccion: 'Gral. Pinto 1228, San Fernando, Buenos Aires',
   legalPacer: 'https://marcas.legalpacers.com',
+  calendly: 'https://calendly.com/tomas-wtrabogados/30min',
   // Formulario de contacto: lo recibe el servidor de Legal Pacer y lo manda por mail.
   apiContacto: 'https://marcas.legalpacers.com/api/wtr/contacto',
 };
@@ -162,4 +163,25 @@ const socios = [
 // Logos de las startups con las que trabaja el estudio (los pasa Tomás).
 const clientes = [];
 
-module.exports = { sitio, ejes, areas, pasos, socios, clientes };
+// Textos de Tomás: se respetan tal cual (solo se corrige gramática).
+const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios y resolución de conflictos. Entendemos cómo nacen esos negocios, se financian y crecen. Por eso acompañamos a sus fundadores en cada decisión que define su futuro: desde la creación hasta el salto a nuevos mercados.';
+
+const quienesSomos = 'Somos el estudio de los founders. Acompañamos a startups y nuevos modelos de negocio en las decisiones que definen su futuro y, cuando el negocio se vuelve patrimonio, también a las personas y la familia que están detrás. Trabajamos con cercanía, como un abogado in-house: entendemos cómo nace, se financia y crece una empresa, y estamos cuando hay que decidir, no solo cuando aparece un problema.';
+
+// Política de privacidad (texto de Tomás). Cada párrafo: título en negrita + texto.
+const privacidad = {
+  actualizada: '17/10/2026',
+  parrafos: [
+    { texto: 'Esta política describe cómo WTR | abogados (“WTR”, “nosotros”) trata los datos personales que nos facilitás a través de este sitio (wtrabogados.com.ar). Responsable del tratamiento: WTR | abogados, Gral. Pinto 1228, San Fernando, Buenos Aires, Argentina. Contacto: contacto@wtrabogados.com.' },
+    { titulo: 'Qué datos recolectamos.', texto: 'Los que nos dejás voluntariamente en el formulario de contacto: nombre, correo electrónico y el contenido de tu consulta. Esos datos se guardan en nuestro sistema y se nos envían por correo, únicamente para responder tu consulta. No recolectamos datos sensibles.' },
+    { titulo: 'Con qué finalidad.', texto: 'Solo para responder tu consulta y, si lo pedís, avanzar con una primera conversación. No los usamos para otros fines ni te enviamos comunicaciones no solicitadas.' },
+    { titulo: 'Base del tratamiento.', texto: 'Tu consentimiento, que prestás al enviarnos el formulario, conforme a la Ley de Protección de Datos Personales N.º 25.326.' },
+    { titulo: 'Con quién los compartimos.', texto: 'No compartimos tus datos con terceros, salvo que una obligación legal o una orden judicial lo requiera.' },
+    { titulo: 'Cuánto los conservamos.', texto: 'El tiempo necesario para responder tu consulta y gestionar una eventual relación profesional; luego los eliminamos o anonimizamos, salvo obligación legal de conservarlos.' },
+    { titulo: 'Tus derechos.', texto: 'Podés acceder, rectificar, actualizar y solicitar la supresión de tus datos escribiéndonos a contacto@wtrabogados.com. La Agencia de Acceso a la Información Pública, órgano de control de la Ley N.º 25.326, atiende las denuncias y reclamos vinculados al incumplimiento de las normas sobre protección de datos personales.' },
+    { titulo: 'Aviso.', texto: 'El envío del formulario no inicia una relación profesional ni implica asesoramiento legal; esa relación se formaliza solo por acuerdo expreso entre las partes.' },
+    { titulo: 'Cambios.', texto: 'Podemos actualizar esta política; la versión vigente es la publicada en esta página, con su fecha de última actualización.' },
+  ],
+};
+
+module.exports = { sitio, ejes, areas, pasos, socios, clientes, diferencial, quienesSomos, privacidad };

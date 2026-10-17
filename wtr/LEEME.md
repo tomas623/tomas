@@ -21,6 +21,9 @@ Después de cambiar el contenido, correr los dos y commitear las carpetas genera
 ## Formulario de contacto
 Envía a `POST /api/wtr/contacto` del servidor de Legal Pacer: guarda la consulta como lead tipo `wtr` (filtro "Consulta web WTR" en el panel) y la manda por mail a `MAIL_WTR` (por defecto contacto@wtrabogados.com) con reply-to al remitente. Los orígenes permitidos están en `WTR_ORIGENES`.
 
+## Calendly
+Los botones "Agendá una charla" abren `sitio.calendly` en pestaña nueva. En la sección de contacto, además, va embebido como iframe arriba del formulario. En la vista previa (`/wtr/`) el embebido no carga porque el CSP del servidor de Legal Pacer no permite iframes de calendly.com, y no se toca a propósito: se verifica en Hostinger. Si el embebido diera problemas, se saca el bloque `.agenda` de `seccionContacto()` y quedan los botones.
+
 ## Pendiente
 - Fotos de los socios (`socios[].foto` en `contenido.js`).
 - Logos de las startups (`clientes` en `contenido.js`).

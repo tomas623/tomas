@@ -2,7 +2,7 @@
 // Uso: node wtr/build.js  →  arma wtr/dist/ (subible a cualquier hosting).
 const fs = require('fs');
 const path = require('path');
-const { sitio, ejes, areas, pasos, socios, clientes } = require('./contenido');
+const { sitio, ejes, areas, pasos, socios, clientes, diferencial, quienesSomos, privacidad } = require('./contenido');
 
 // BASE: prefijo de rutas. Vacío para el sitio real; '/wtr' para la vista previa
 // que sirve el servidor de Legal Pacer en marcas.legalpacers.com/wtr/.
@@ -12,14 +12,17 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 
 const ICONOS = {
   flecha: '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
-  whatsapp: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.6-.3Z"/></svg>',
-  mail: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M3 5h18v14H3z M3 6l9 7 9-7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
-  linkedin: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5A2.5 2.5 0 1 1 5 8.5a2.5 2.5 0 0 1 0-5ZM3 9.75h4V21H3V9.75Zm6.5 0h3.8v1.6h.06c.53-1 1.84-2.06 3.79-2.06 4.05 0 4.8 2.67 4.8 6.13V21h-4v-4.9c0-1.17-.02-2.68-1.63-2.68-1.64 0-1.89 1.28-1.89 2.6V21h-4V9.75Z"/></svg>',
+  // Íconos de contacto: de línea, del set Tabler Icons (licencia MIT).
+  whatsapp: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M3 7l9 6 9-6"/></svg>',
+  linkedin: '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11v5M8 8v.01M12 16v-5M16 16v-3a2 2 0 1 0-4 0"/><path d="M3 7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/></svg>',
   menu: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18" stroke="currentColor" stroke-width="1.5"/></svg>',
 };
 
 const wordmark = 'WTR <span class="wm-barra">|</span> <small>abogados</small>';
 const waLink = texto => `https://wa.me/${sitio.whatsapp}?text=${encodeURIComponent(texto)}`;
+// Botón de agenda: abre Calendly en pestaña nueva (funciona aunque el embebido no cargue).
+const btnAgenda = (clase = 'btn') => `<a class="${clase}" href="${sitio.calendly}" target="_blank" rel="noopener">Agendá una charla</a>`;
 
 function contactoIconos() {
   return `<div class="iconos">
@@ -58,10 +61,10 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
     <nav class="nav" id="nav" aria-label="Navegación principal">
       <a href="/#areas">Áreas de práctica</a>
       <a href="/#como-trabajamos">Cómo trabajamos</a>
-      <a href="/#equipo">Equipo</a>
+      <a href="/#quienes-somos">Quiénes somos</a>
       <a href="/#contacto">Contacto</a>
       <a href="${sitio.legalPacer}" target="_blank" rel="noopener" class="nav-externo">Legal Pacer ${ICONOS.flecha}</a>
-      <a href="/#contacto" class="btn btn-chico">Hablemos</a>
+      ${btnAgenda('btn btn-chico')}
     </nav>
     <button class="menu-btn" id="menuBtn" aria-label="Abrir menú" aria-expanded="false">${ICONOS.menu}</button>
   </div>
@@ -77,13 +80,12 @@ ${cuerpo}
     </div>
     <div class="pie-datos">
       <p>${esc(sitio.direccion)}</p>
-      <p><a href="mailto:${sitio.email}">${sitio.email}</a> · <a href="${waLink('Hola, quiero hacer una consulta.')}" target="_blank" rel="noopener">${sitio.whatsappVisible}</a></p>
       ${contactoIconos()}
     </div>
   </div>
   <div class="pie-legal">
     <div class="pie-legal-in">
-      <span>© 2026 WTR | abogados. Todos los derechos reservados.</span>
+      <span>© 2026 WTR | abogados. Todos los derechos reservados. · <a href="/privacidad/">Política de privacidad</a></span>
       <a href="${sitio.legalPacer}" target="_blank" rel="noopener">Legal Pacer, nuestra legaltech ${ICONOS.flecha}</a>
     </div>
   </div>
@@ -116,6 +118,8 @@ function columnaEje(clave) {
 
 function seccionContacto() {
   const mapa = 'https://maps.google.com/maps?q=' + encodeURIComponent(sitio.direccion) + '&output=embed';
+  // Calendly embebido como iframe simple (sin su script). Los colores toman la marca si el plan de Calendly lo permite.
+  const calendlyEmbed = `${sitio.calendly}?embed_type=Inline&embed_domain=wtrabogados.com.ar&primary_color=4e5836&text_color=0e1420`;
   return `<section id="contacto" class="seccion">
   <div class="contacto-grid">
     <div class="revelar">
@@ -130,7 +134,13 @@ function seccionContacto() {
       <iframe class="mapa" title="Mapa: ${esc(sitio.direccion)}" src="${mapa}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
       ${contactoIconos()}
     </div>
-    <form class="formulario revelar" id="formContacto" novalidate>
+    <div class="contacto-vias revelar">
+    <div class="agenda">
+      <iframe class="calendly" title="Agendá una charla con WTR | abogados" src="${calendlyEmbed}" loading="lazy"></iframe>
+      <a class="link" href="${sitio.calendly}" target="_blank" rel="noopener">Abrir el calendario en otra pestaña ${ICONOS.flecha}</a>
+    </div>
+    <p class="volanta">O escribinos</p>
+    <form class="formulario" id="formContacto" novalidate>
       <div class="campo-fila">
         <label class="campo">Nombre<input name="nombre" autocomplete="name" required></label>
         <label class="campo">Email<input name="email" type="email" autocomplete="email" required></label>
@@ -139,8 +149,10 @@ function seccionContacto() {
       <label class="campo">¿En qué te podemos ayudar?<textarea name="mensaje" rows="5" required></textarea></label>
       <p class="form-error" id="formError" hidden></p>
       <button class="btn" type="submit">Enviar consulta</button>
+      <p class="form-legal">Al enviar la consulta aceptás nuestra <a href="/privacidad/">política de privacidad</a>.</p>
       <p class="form-ok" id="formOk" hidden>Recibimos tu consulta. Te respondemos a la brevedad.</p>
     </form>
+    </div>
   </div>
 </section>`;
 }
@@ -154,7 +166,7 @@ function home() {
       <h1>Trabajamos junto a <span class="subrayado">startups</span>.</h1>
       <p class="bajada">Acompañamos a founders en cada etapa del negocio, y en la vida que ese negocio construye: patrimonio, familia, sucesión.</p>
       <div class="acciones">
-        <a class="btn" href="#contacto">Hablemos</a>
+        ${btnAgenda()}
         <a class="link" href="#areas">Ver áreas de práctica ${ICONOS.flecha}</a>
       </div>
     </div>
@@ -178,8 +190,7 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
 <section class="banda-oscura">
   <div class="diferencial revelar">
     <p class="volanta">Nuestro diferencial</p>
-    <p class="diferencial-texto">El mismo estudio que te arma la ronda te ordena el patrimonio que esa ronda genera. Y construyó su propia legaltech para resolver online lo que se puede resolver online.</p>
-    <a class="link link-claro" href="${sitio.legalPacer}" target="_blank" rel="noopener">Conocé Legal Pacer ${ICONOS.flecha}</a>
+    <p class="diferencial-texto">${esc(diferencial)}</p>
   </div>
 </section>
 <section id="como-trabajamos" class="banda-hueso"><div class="seccion">
@@ -191,10 +202,10 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
     ${pasos.map((p, i) => `<li class="revelar"><span class="paso-num">${String(i + 1).padStart(2, '0')}</span><h3>${esc(p.titulo)}</h3><p>${esc(p.texto)}</p></li>`).join('\n')}
   </ol>
 </div></section>
-<section id="equipo" class="seccion">
+<section id="quienes-somos" class="seccion">
   <header class="cabeza-seccion revelar">
-    <p class="volanta">Equipo</p>
-    <h2 class="titulo-seccion">Socios fundadores.</h2>
+    <h2 class="titulo-seccion">Quiénes somos</h2>
+    <p class="quienes-texto">${esc(quienesSomos)}</p>
   </header>
   <div class="equipo-grid">
     ${socios.map(s => `<article class="socio revelar">
@@ -249,7 +260,7 @@ function paginaArea(a) {
     <aside class="area-cta">
       <p class="volanta">Primera conversación</p>
       <p class="area-cta-texto">Contanos tu caso y vemos juntos por dónde empezar.</p>
-      <a class="btn" href="/#contacto">Hablemos</a>
+      ${btnAgenda()}
       <a class="link" href="${waLink('Hola, quiero consultar sobre ' + a.titulo.toLowerCase() + '.')}" target="_blank" rel="noopener">Escribinos por WhatsApp ${ICONOS.flecha}</a>
     </aside>
   </div>
@@ -257,6 +268,23 @@ function paginaArea(a) {
 </section>`;
   const jsonld = { '@context': 'https://schema.org', '@type': 'Service', name: a.titulo, description: a.frase, provider: { '@type': 'LegalService', name: sitio.nombre, url: sitio.url } };
   return layout({ titulo: `${a.titulo} | WTR abogados`, descripcion: `${a.frase} ${a.decisiones.join(' ')}`.slice(0, 300), ruta: `/areas/${a.slug}/`, cuerpo, jsonld });
+}
+
+function paginaPrivacidad() {
+  const cuerpo = `
+<section class="area-hero">
+  <div class="area-hero-in">
+    <a class="link volver" href="/">← Inicio</a>
+    <h1>Política de privacidad</h1>
+    <p class="volanta">Última actualización: ${esc(privacidad.actualizada)}</p>
+  </div>
+</section>
+<section class="seccion">
+  <div class="legal-texto">
+    ${privacidad.parrafos.map(p => `<p>${p.titulo ? `<strong>${esc(p.titulo)}</strong> ` : ''}${esc(p.texto)}</p>`).join('\n    ')}
+  </div>
+</section>`;
+  return layout({ titulo: 'Política de privacidad | WTR abogados', descripcion: 'Cómo WTR | abogados trata los datos personales que nos dejás en el formulario de contacto del sitio.', ruta: '/privacidad/', cuerpo });
 }
 
 function escribir(ruta, contenido) {
@@ -272,11 +300,12 @@ function escribir(ruta, contenido) {
 fs.rmSync(DIST, { recursive: true, force: true });
 escribir('index.html', home());
 for (const a of areas) escribir(`areas/${a.slug}/index.html`, paginaArea(a));
+escribir('privacidad/index.html', paginaPrivacidad());
 fs.copyFileSync(path.join(__dirname, 'estilos.css'), path.join(DIST, 'estilos.css'));
 fs.copyFileSync(path.join(__dirname, 'sitio.js'), path.join(DIST, 'sitio.js'));
 escribir('sitio-config.js', `window.WTR_API_CONTACTO = ${JSON.stringify(sitio.apiContacto)};`);
 escribir('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${sitio.url}/sitemap.xml\n`);
-escribir('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${['/', ...areas.map(a => `/areas/${a.slug}/`)].map(r => `  <url><loc>${sitio.url}${r}</loc></url>`).join('\n')}\n</urlset>\n`);
+escribir('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${['/', ...areas.map(a => `/areas/${a.slug}/`), '/privacidad/'].map(r => `  <url><loc>${sitio.url}${r}</loc></url>`).join('\n')}\n</urlset>\n`);
 escribir('llms.txt', `# WTR | abogados\n\n> ${sitio.claim} Estudio jurídico de San Fernando, Buenos Aires, que acompaña a founders en su empresa y en su vida (patrimonio, familia, sucesión). Creó Legal Pacer, su legaltech, para resolver online los temas estándar.\n\n## Áreas de práctica\n${areas.map(a => `- [${a.titulo}](${sitio.url}/areas/${a.slug}/): ${a.frase}`).join('\n')}\n\n## Contacto\n- ${sitio.direccion}\n- ${sitio.email}\n- WhatsApp ${sitio.whatsappVisible}\n- Legal Pacer: ${sitio.legalPacer}\n`);
 // Para hostings con Apache (Hostinger): fuerza HTTPS, unifica www → sin www y
 // manda las rutas viejas del sitio anterior a la home. El servidor de Legal
@@ -294,4 +323,4 @@ ErrorDocument 404 /index.html
   ExpiresByType application/javascript "access plus 1 week"
 </IfModule>
 `);
-console.log(`Sitio armado en ${DIST}: ${1 + areas.length} páginas.`);
+console.log(`Sitio armado en ${DIST}: ${2 + areas.length} páginas.`);
