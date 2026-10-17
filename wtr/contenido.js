@@ -137,8 +137,10 @@ const areas = [
   },
 ];
 
-// Roadmap de la sección Áreas. En el texto, {palabra|slug} linkea a /areas/<slug>/.
+// Roadmap de la sección Áreas. En el texto, {palabra|slug} linkea a /areas/<slug>/
+// ({palabra|#ancla} linkea a esa sección de la home).
 const etapas = [
+  { titulo: 'Diagnosticar', texto: '{primera charla|#contacto}' },
   { titulo: 'Arrancar', texto: '{sociedad|derecho-societario}, {acuerdo de socios|derecho-societario}, {marca|propiedad-intelectual}' },
   { titulo: 'Vender', texto: '{contratos|contratos}, {términos|tecnologia-e-inteligencia-artificial} y {datos|datos-y-privacidad}' },
   { titulo: 'Sumar equipo', texto: '{laboral|derecho-laboral}' },
@@ -146,14 +148,7 @@ const etapas = [
   { titulo: 'Salir al mundo', texto: '{internacionalización|internacionalizacion}' },
   { titulo: 'Cuidar lo construido', texto: '{patrimonio|patrimonio-y-planificacion}, {familia|familia}, {sucesión|sucesion}' },
 ];
-
-// Preguntas que rotan en el hero, cada una con link a su área.
-const preguntas = [
-  { texto: '¿Cómo reparto el equity con mi socio?', area: 'derecho-societario' },
-  { texto: '¿Qué tengo que tener en orden antes de una ronda?', area: 'derecho-societario' },
-  { texto: '¿Cómo protejo la marca?', area: 'propiedad-intelectual' },
-  { texto: '¿Puedo facturarle a un cliente del exterior?', area: 'internacionalizacion' },
-];
+const etapasNota = 'En cualquier etapa, resolución de conflictos.';
 
 const socios = [
   {
@@ -200,4 +195,4 @@ const privacidad = {
   ],
 };
 
-module.exports = { sitio, ejes, areas, etapas, preguntas, socios, clientes, diferencial, privacidad };
+module.exports = { sitio, ejes, areas, etapas, etapasNota, socios, clientes, diferencial, privacidad };

@@ -61,25 +61,17 @@ img { display: block; max-width: 100%; }
 
 /* Hero */
 .hero { background: radial-gradient(ellipse 60% 70% at 85% 0%, rgba(154,163,127,.10), transparent 70%), linear-gradient(180deg, var(--tinta) 0%, #0b1019 100%); color: #fff; }
-.hero-in { max-width: 1200px; margin: auto; padding: 200px 6% 96px; display: grid; grid-template-columns: 1.4fr .6fr; gap: 8%; align-items: end; }
+.hero-in { max-width: 1200px; margin: auto; padding: 200px 6% 96px; }
+.hero-texto { max-width: 860px; }
 .hero h1 { font-size: clamp(48px, 6.6vw, 92px); line-height: 1; letter-spacing: -.045em; margin-bottom: 30px; }
-.hero .subrayado { color: var(--oliva-claro); font-size: 1.06em; }
+/* "startups": itálica oliva con un subrayado fino, pegado a la palabra. */
+.hero .subrayado { color: var(--oliva-claro); font-size: 1.06em; text-decoration: underline; text-decoration-thickness: 1.5px; text-decoration-color: var(--oliva-claro); text-underline-offset: .12em; text-decoration-skip-ink: auto; }
 .bajada { max-width: 560px; font-size: 18.5px; line-height: 1.6; color: var(--gris-claro); margin-bottom: 40px; }
 .acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; }
 .hero .btn { background: var(--hueso); border-color: var(--hueso); color: var(--tinta); }
 .hero .btn:hover { background: #fff; border-color: #fff; }
 .hero .link { color: #fff; }
 .hero .link:hover { color: var(--oliva-claro); }
-/* Preguntas: texto plano que cambia suave, sin caja ni contador. */
-.preguntas-lista { list-style: none; display: grid; }
-.preguntas-lista li { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity 1.1s var(--lento), visibility 0s linear 1.1s; }
-.preguntas-lista li.activa { opacity: 1; visibility: visible; transition: opacity 1.1s var(--lento); }
-.preguntas-lista a { display: grid; gap: 12px; justify-items: start; }
-.pregunta { font-family: var(--display); font-weight: 500; font-size: clamp(20px, 1.8vw, 24px); line-height: 1.3; letter-spacing: -.02em; color: #d9dde4; }
-.pregunta-area { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--oliva-claro); transition: color .3s var(--lento); }
-.preguntas-lista a:hover .pregunta-area { color: #fff; }
-.preguntas-contador { display: none; }
-
 /* Logos (siguen el fondo del hero) */
 .clientes { background: #0b1019; padding: 8px 0 72px; text-align: center; }
 .clientes .volanta { color: #6c7484; }
@@ -99,15 +91,23 @@ img { display: block; max-width: 100%; }
 .titulo-seccion { font-size: clamp(34px, 4.2vw, 56px); letter-spacing: -.04em; }
 .intro { color: var(--gris); margin-top: 20px; max-width: 500px; font-size: 17px; }
 
-/* Roadmap: tarjetas parejas */
-.roadmap { list-style: none; display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 96px; }
-.etapa { background: var(--papel); border-radius: var(--radio); padding: 20px 18px 22px; min-height: 176px; box-shadow: var(--sombra); display: flex; flex-direction: column; transition: transform .5s var(--lento), box-shadow .5s var(--lento); }
-.etapa:hover { transform: translateY(-3px); box-shadow: var(--sombra-alta); }
-.etapa-num { font-family: var(--mono); font-size: 11.5px; color: var(--oliva); }
-.etapa-titulo { font-size: 19px; letter-spacing: -.025em; margin: 30px 0 8px; }
-.etapa-areas { font-size: 13.5px; color: var(--gris); line-height: 1.55; }
+/* Roadmap: un solo camino, línea con paradas (vertical en celular).
+   La línea se dibuja despacio y las paradas aparecen detrás, en orden. */
+.roadmap { list-style: none; display: grid; grid-template-columns: repeat(7, 1fr); gap: 20px; position: relative; margin-bottom: 26px; }
+.roadmap::before { content: ""; position: absolute; left: 6px; right: 0; top: 6px; height: 1px; background: linear-gradient(90deg, var(--oliva), rgba(78,88,54,.2)); transform-origin: left; transform: scaleX(0); transition: transform 1.8s var(--lento) .2s; }
+.roadmap.visible::before { transform: none; }
+.etapa { position: relative; padding-top: 34px; opacity: 0; transition: opacity .9s var(--lento); }
+.roadmap.visible .etapa { opacity: 1; }
+.etapa:nth-child(2) { transition-delay: .15s; } .etapa:nth-child(3) { transition-delay: .3s; } .etapa:nth-child(4) { transition-delay: .45s; }
+.etapa:nth-child(5) { transition-delay: .6s; } .etapa:nth-child(6) { transition-delay: .75s; } .etapa:nth-child(7) { transition-delay: .9s; }
+.etapa::before { content: ""; position: absolute; top: 0; left: 0; width: 13px; height: 13px; border-radius: 50%; background: var(--hueso); border: 1.5px solid var(--oliva); transition: background .4s var(--lento), transform .4s var(--lento); }
+.etapa:hover::before { background: var(--oliva); transform: scale(1.15); }
+.etapa-num { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--oliva); margin-bottom: 10px; }
+.etapa-titulo { font-size: clamp(16px, 1.45vw, 19px); letter-spacing: -.025em; margin-bottom: 6px; }
+.etapa-areas, .roadmap-nota { font-size: 13.5px; color: var(--gris); line-height: 1.55; }
 .etapa-areas a { text-decoration: underline; text-decoration-color: rgba(78,88,54,.3); text-underline-offset: 3px; transition: color .3s var(--lento), text-decoration-color .3s var(--lento); }
 .etapa-areas a:hover { color: var(--oliva); text-decoration-color: var(--oliva); }
+.roadmap-nota { margin-bottom: 96px; }
 
 /* Grupos de áreas (desplegables) */
 .ejes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
@@ -218,9 +218,6 @@ img { display: block; max-width: 100%; }
 .revelar { opacity: 0; transform: translateY(12px); transition: opacity 1s var(--lento), transform 1s var(--lento); }
 .revelar.visible { opacity: 1; transform: none; }
 
-@media (max-width: 1100px) {
-  .roadmap { grid-template-columns: repeat(3, 1fr); }
-}
 @media (max-width: 960px) {
   .nav { display: none; position: absolute; top: 72px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; background: var(--tinta); padding: 8px 6% 22px; }
   .nav.abierto { display: flex; }
@@ -231,13 +228,16 @@ img { display: block; max-width: 100%; }
   .ejes-grid, .contacto-grid { gap: 16px; }
   .contacto-grid > div + div { margin-top: 32px; }
   .area-cta { position: static; }
+  .roadmap { grid-template-columns: 1fr; gap: 0; padding-left: 34px; }
+  .roadmap::before { left: 6px; right: auto; top: 6px; bottom: 6px; width: 1px; height: auto; background: linear-gradient(180deg, var(--oliva), rgba(78,88,54,.2)); transform-origin: top; transform: scaleY(0); }
+  .etapa { padding: 0 0 28px; }
+  .etapa::before { left: -34px; top: 4px; }
+  .etapa-titulo { font-size: 19px; }
 }
 @media (max-width: 640px) {
   .hero-in { padding: 136px 6% 64px; }
   .area-hero-in { padding-top: 128px; }
   .seccion, .diferencial { padding: 88px 6%; }
-  .roadmap { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .etapa { min-height: 150px; padding: 18px 16px; }
   .campo-fila { grid-template-columns: 1fr; }
   .formulario { padding: 24px; }
   .eje-cabeza { padding: 24px 60px 22px 22px; }
@@ -252,8 +252,8 @@ img { display: block; max-width: 100%; }
   html { scroll-behavior: auto; }
   .revelar { opacity: 1; transform: none; transition: none; }
   .carrusel .pista { animation: none; }
-  .etapa, .etapa:hover { transition: none; transform: none; }
-  .preguntas-lista { gap: 22px; }
-  .preguntas-lista li { grid-area: auto; opacity: 1; visibility: visible; transition: none; }
+  .roadmap::before { transform: none; transition: none; }
+  .etapa { opacity: 1; transition: none; }
+  .etapa::before { transition: none; }
   .barra-agenda { transition: none; }
 }

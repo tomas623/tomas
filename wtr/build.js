@@ -4,7 +4,7 @@
 // estilos: estilos-v2.css) en wtr/dist-v2/ o, con WTR_BASE, en wtr/dist-v2-preview/.
 const fs = require('fs');
 const path = require('path');
-const { sitio, ejes, areas, etapas, preguntas, socios, clientes, diferencial, privacidad } = require('./contenido');
+const { sitio, ejes, areas, etapas, etapasNota, socios, clientes, diferencial, privacidad } = require('./contenido');
 
 // BASE: prefijo de rutas. Vacío para el sitio real; '/wtr' para la vista previa
 // que sirve el servidor de Legal Pacer en marcas.legalpacers.com/wtr/.
@@ -37,8 +37,8 @@ function area(slug) {
   if (!a) throw new Error(`No existe el área "${slug}" (revisá contenido.js).`);
   return a;
 }
-// Convierte {texto|slug} en un link al área.
-const linkear = t => esc(t).replace(/\{([^|}]+)\|([^}]+)\}/g, (_, texto, slug) => `<a href="/areas/${area(slug).slug}/">${texto}</a>`);
+// Convierte {texto|slug} en un link al área ({texto|#ancla}: a esa sección de la home).
+const linkear = t => esc(t).replace(/\{([^|}]+)\|([^}]+)\}/g, (_, texto, slug) => `<a href="${slug.startsWith('#') ? '/' + slug : `/areas/${area(slug).slug}/`}">${texto}</a>`);
 
 function contactoIconos() {
   return `<div class="iconos">
@@ -121,7 +121,6 @@ function columnaEje(clave) {
   // Desplegable nativo: el contenido queda en el HTML (lo lee Google) y en celular ordena.
   return `<details class="eje revelar">
     <summary class="eje-cabeza">
-      <span class="volanta">${lista.length} áreas</span>
       <h3>${esc(ejes[clave].titulo)}</h3>
       <p>${esc(ejes[clave].bajada)}</p>
       <span class="eje-mas" aria-hidden="true"></span>
@@ -142,8 +141,7 @@ function seccionContacto() {
   <header class="cabeza-seccion revelar">
     <p class="volanta">Contacto</p>
     <h2 class="titulo-seccion">Hablemos.</h2>
-    <p class="intro">Trabajamos por videollamada. Reservá un horario o dejanos tu consulta.</p>
-    ${contactoIconos()}
+    <p class="intro">Agendá directamente o dejanos tu consulta y te escribimos.</p>
   </header>
   <div class="contacto-grid">
     <div class="agenda revelar">
@@ -181,12 +179,6 @@ function home() {
         <a class="link" href="#areas">Ver áreas de práctica ${ICONOS.flecha}</a>
       </div>
     </div>
-    <div class="hero-preguntas" id="preguntas">
-      <ul class="preguntas-lista">
-        ${preguntas.map((p, i) => `<li${i ? '' : ' class="activa"'}><a href="/areas/${area(p.area).slug}/"><span class="pregunta">${esc(p.texto)}</span><span class="pregunta-area">${esc(area(p.area).titulo)} ${ICONOS.flecha}</span></a></li>`).join('\n        ')}
-      </ul>
-      <p class="preguntas-contador" aria-hidden="true"><span id="preguntaNum">01</span> / ${pad(preguntas.length)}</p>
-    </div>
   </div>
 </section>
 ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién trabajamos</p><div class="carrusel"><div class="pista">${[...clientes, ...clientes].map((c, i) => i < clientes.length ? `<img src="${c.logo}" alt="${esc(c.nombre)}">` : `<img src="${c.logo}" alt="" aria-hidden="true">`).join('')}</div></div></section>`
@@ -200,6 +192,7 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
   <ol class="roadmap revelar">
     ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${pad(i + 1)}</span><h3 class="etapa-titulo">${esc(e.titulo)}</h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n    ')}
   </ol>
+  <p class="roadmap-nota revelar">${esc(etapasNota)}</p>
   <div class="ejes-grid">
     ${columnaEje('negocios')}
     ${columnaEje('vida')}

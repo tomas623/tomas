@@ -1,0 +1,1 @@
+window.WTR_API_CONTACTO = "https://marcas.legalpacers.com/api/wtr/contacto";
