@@ -137,8 +137,8 @@ const areas = [
   },
 ];
 
-// Camino de la sección Áreas: las etapas de la startup, en orden, y lo que la
-// acompaña siempre (en paralelo, no como una etapa más).
+// Camino de la sección Áreas: las etapas de la startup, en orden. El family office
+// no va acá (es transversal y tiene su grupo en Áreas).
 // En el texto, {palabra|slug} linkea a /areas/<slug>/ ({palabra|#ancla}: a esa sección de la home).
 const etapas = [
   { titulo: 'Inicios', texto: '{sociedad|derecho-societario}, {acuerdo de socios|derecho-societario}, {marca|propiedad-intelectual}' },
@@ -147,8 +147,6 @@ const etapas = [
   { titulo: 'Levantar capital', texto: '{societario / rondas|derecho-societario}' },
   { titulo: 'Ampliar mercados', texto: '{internacionalización|internacionalizacion}' },
 ];
-const siempre = { titulo: 'Cuidar lo que construiste', texto: '{patrimonio|patrimonio-y-planificacion} y {familia|familia}' };
-const etapasNota = 'En cualquier etapa, resolución de conflictos.';
 
 const socios = [
   {
@@ -176,7 +174,8 @@ const clientes = [
 ];
 
 // Textos de Tomás: se respetan tal cual (solo se corrige gramática).
-const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios y resolución de conflictos. Entendemos cómo nacen esos negocios, se financian y crecen. Por eso acompañamos a sus fundadores en cada decisión que define su futuro: desde la creación hasta el salto a nuevos mercados.';
+// *frase*: va resaltada (Spectral itálica, oliva claro).
+const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios y resolución de conflictos. Entendemos cómo nacen esos negocios, se financian y crecen. Por eso *acompañamos a sus fundadores en cada decisión que define su futuro*: desde la creación hasta el salto a nuevos mercados.';
 
 // Política de privacidad (texto de Tomás). Cada párrafo: título en negrita + texto.
 // El mail de contacto se muestra como link.
@@ -195,4 +194,4 @@ const privacidad = {
   ],
 };
 
-module.exports = { sitio, ejes, areas, etapas, siempre, etapasNota, socios, clientes, diferencial, privacidad };
+module.exports = { sitio, ejes, areas, etapas, socios, clientes, diferencial, privacidad };

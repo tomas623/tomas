@@ -91,11 +91,10 @@ img { display: block; max-width: 100%; }
 .titulo-seccion { font-size: clamp(34px, 4.2vw, 56px); letter-spacing: -.04em; }
 .intro { color: var(--gris); margin-top: 20px; max-width: 500px; font-size: 17px; }
 
-/* Camino: las etapas en una línea con paradas (vertical en celular) y, debajo,
-   la franja de lo que acompaña siempre. La línea se dibuja despacio y las
-   paradas aparecen detrás, en orden. */
-.camino { background: var(--papel); border-radius: 14px; box-shadow: var(--sombra); padding: 44px 40px 32px; }
-.roadmap { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; position: relative; margin-bottom: 36px; }
+/* Camino: las etapas de la startup en una línea con paradas (vertical en
+   celular). La línea se dibuja despacio y las paradas aparecen detrás, en orden. */
+.camino { background: var(--papel); border-radius: 14px; box-shadow: var(--sombra); padding: 44px 40px 40px; margin-bottom: 96px; }
+.roadmap { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; position: relative; }
 .roadmap::before, .roadmap::after { content: ""; position: absolute; left: 5px; right: 0; top: 5px; height: 2px; border-radius: 2px; }
 .roadmap::before { background: #ecece6; }
 .roadmap::after { background: linear-gradient(90deg, var(--oliva), var(--oliva-claro) 75%, rgba(154,163,127,0)); transform-origin: left; transform: scaleX(0); transition: transform 2s var(--lento) .2s; }
@@ -108,21 +107,15 @@ img { display: block; max-width: 100%; }
 .etapa:hover::before { box-shadow: 0 0 0 9px rgba(78,88,54,.14); }
 .etapa-num { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--oliva); margin-bottom: 10px; }
 .etapa-titulo { font-size: clamp(18px, 1.7vw, 22px); letter-spacing: -.025em; margin-bottom: 6px; }
-.etapa-areas, .roadmap-nota { font-size: 13.5px; color: var(--gris); line-height: 1.55; }
-.etapa-areas a, .siempre-areas a { text-decoration: underline; text-decoration-color: rgba(78,88,54,.3); text-underline-offset: 3px; transition: color .3s var(--lento), text-decoration-color .3s var(--lento); }
+.etapa-areas { font-size: 13.5px; color: var(--gris); line-height: 1.55; }
+.etapa-areas a { text-decoration: underline; text-decoration-color: rgba(78,88,54,.3); text-underline-offset: 3px; transition: color .3s var(--lento), text-decoration-color .3s var(--lento); }
 .etapa-areas a:hover { color: var(--oliva); text-decoration-color: var(--oliva); }
-.siempre { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; background: radial-gradient(ellipse 50% 140% at 0% 0%, rgba(154,163,127,.16), transparent 70%), var(--tinta); color: #fff; border-radius: var(--radio); padding: 22px 26px; }
-.siempre-etiqueta { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--oliva-claro); }
-.siempre-titulo { font-size: 20px; letter-spacing: -.02em; }
-.siempre-areas { font-size: 14px; color: var(--gris-claro); }
-.siempre-areas a { text-decoration-color: rgba(255,255,255,.25); }
-.siempre-areas a:hover { color: #fff; text-decoration-color: #fff; }
-.roadmap-nota { margin: 18px 0 96px; }
 
 /* Grupos de áreas (desplegables) */
 .ejes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .eje { background: var(--papel); border-radius: var(--radio); box-shadow: var(--sombra); overflow: hidden; }
-.eje-cabeza { display: block; list-style: none; cursor: pointer; position: relative; padding: 28px 64px 26px 30px; }
+/* Las dos tarjetas miden lo mismo cerradas, aunque la bajada tenga uno, dos o tres renglones. */
+.eje-cabeza { display: block; list-style: none; cursor: pointer; position: relative; padding: 28px 64px 26px 30px; min-height: 166px; }
 .eje-cabeza::-webkit-details-marker { display: none; }
 .eje-cabeza .volanta { display: block; margin-bottom: 14px; }
 .eje-cabeza h3 { font-size: 28px; margin-bottom: 8px; transition: color .3s var(--lento); }
@@ -160,6 +153,7 @@ img { display: block; max-width: 100%; }
 .diferencial { max-width: 1000px; margin: auto; padding: 128px 6%; }
 .diferencial .volanta { color: var(--oliva-claro); display: block; margin-bottom: 28px; }
 .diferencial-texto { font-family: var(--display); font-weight: 500; font-size: clamp(24px, 2.7vw, 36px); line-height: 1.35; letter-spacing: -.025em; color: #e6e9ee; }
+.diferencial-texto .acento { white-space: normal; color: var(--oliva-claro); font-size: 1.06em; }
 
 /* Contacto */
 .cabeza-seccion .iconos { margin-top: 26px; }
@@ -238,8 +232,9 @@ img { display: block; max-width: 100%; }
   .ejes-grid, .contacto-grid { gap: 16px; }
   .contacto-grid > div + div { margin-top: 32px; }
   .area-cta { position: static; }
-  .camino { padding: 30px 22px 22px; }
-  .roadmap { grid-template-columns: 1fr; gap: 0; padding-left: 34px; margin-bottom: 20px; }
+  .camino { padding: 30px 22px 6px; margin-bottom: 72px; }
+  .eje-cabeza { min-height: 160px; }
+  .roadmap { grid-template-columns: 1fr; gap: 0; padding-left: 34px; }
   .roadmap::before, .roadmap::after { right: auto; bottom: 5px; width: 2px; height: auto; }
   .roadmap::after { background: linear-gradient(180deg, var(--oliva), var(--oliva-claro) 75%, rgba(154,163,127,0)); transform-origin: top; transform: scaleY(0); }
   .etapa { padding: 0 0 26px; }

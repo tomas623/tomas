@@ -4,7 +4,7 @@
 // estilos: estilos-v2.css) en wtr/dist-v2/ o, con WTR_BASE, en wtr/dist-v2-preview/.
 const fs = require('fs');
 const path = require('path');
-const { sitio, ejes, areas, etapas, siempre, etapasNota, socios, clientes, diferencial, privacidad } = require('./contenido');
+const { sitio, ejes, areas, etapas, socios, clientes, diferencial, privacidad } = require('./contenido');
 
 // BASE: prefijo de rutas. Vacío para el sitio real; '/wtr' para la vista previa
 // que sirve el servidor de Legal Pacer en marcas.legalpacers.com/wtr/.
@@ -141,7 +141,7 @@ function seccionContacto() {
   <header class="cabeza-seccion revelar">
     <p class="volanta">Contacto</p>
     <h2 class="titulo-seccion">Hablemos.</h2>
-    <p class="intro">Agendá directamente o dejanos tu consulta y te escribimos.</p>
+    <p class="intro">Agendá tu reunión de diagnóstico para conocer tu proyecto y necesidades. También podés dejar tu consulta y te respondemos por mail.</p>
   </header>
   <div class="contacto-grid">
     <div class="agenda revelar">
@@ -191,11 +191,9 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
   </header>
   <div class="camino revelar">
     <ol class="roadmap">
-      ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${pad(i + 1)}</span><h3 class="etapa-titulo">${esc(e.titulo)}</h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n      ')}
+      ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${i + 1}</span><h3 class="etapa-titulo">${esc(e.titulo)}</h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n      ')}
     </ol>
-    <div class="siempre"><span class="siempre-etiqueta">Siempre</span><h3 class="siempre-titulo">${esc(siempre.titulo)}</h3><p class="siempre-areas">${linkear(siempre.texto)}</p></div>
   </div>
-  <p class="roadmap-nota revelar">${esc(etapasNota)}</p>
   <div class="ejes-grid">
     ${columnaEje('negocios')}
     ${columnaEje('vida')}
@@ -219,7 +217,7 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
   <div class="banda-oscura">
     <div class="diferencial revelar">
       <p class="volanta">Nuestro diferencial</p>
-      <p class="diferencial-texto">${esc(diferencial)}</p>
+      <p class="diferencial-texto">${esc(diferencial).replace(/\*([^*]+)\*/, '<span class="acento">$1</span>')}</p>
     </div>
   </div>
 </section>
