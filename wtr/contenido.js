@@ -36,10 +36,12 @@ const areas = [
     decisiones: [
       'Elegir el tipo de sociedad y constituirla.',
       'Armar el acuerdo de socios: aportes, vesting, salida de un socio y toma de decisiones.',
+      'SAFEs y notas convertibles.',
       'Ordenar el cap table antes de una ronda.',
+      'Armar el data room legal para una ronda.',
       'Sumar socios o inversores.',
     ],
-    como: 'Arrancamos con una reunión para entender el proyecto y a los socios. Proponemos la estructura y los documentos, los revisamos con ustedes y los dejamos firmados e inscriptos. Cada ronda o cambio de socios lo sigue el mismo equipo.',
+    como: 'Arrancamos con la reunión de diagnóstico para entender el proyecto y a los socios. Proponemos la estructura y los documentos, los revisamos con ustedes y los dejamos firmados e inscriptos. Cada ronda o cambio de socios lo sigue el mismo equipo.',
   },
   {
     slug: 'contratos', eje: 'negocios', titulo: 'Contratos',
