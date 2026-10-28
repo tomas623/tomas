@@ -28,7 +28,7 @@ const ICONOS = {
 const wordmark = 'WTR <span class="wm-barra">|</span> <small>abogados</small>';
 const waLink = texto => `https://wa.me/${sitio.whatsapp}?text=${encodeURIComponent(texto)}`;
 // Botón de agenda: abre Calendly en pestaña nueva (funciona aunque el embebido no cargue).
-const btnAgenda = (clase = 'btn', texto = 'Agendá una charla') => `<a class="${clase}" href="${sitio.calendly}" target="_blank" rel="noopener">${texto}</a>`;
+const btnAgenda = (clase = 'btn', texto = 'Agendá tu reunión de diagnóstico') => `<a class="${clase}" href="${sitio.calendly}" target="_blank" rel="noopener">${texto}</a>`;
 const pad = n => String(n).padStart(2, '0');
 const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(sitio.direccion)}`;
 
@@ -78,7 +78,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
       <a href="/#areas">Áreas de práctica</a>
       <a href="/#quienes-somos">Quiénes somos</a>
       <a href="/#contacto">Contacto</a>
-      ${btnAgenda('btn btn-chico')}
+      ${btnAgenda('btn btn-chico', 'Reunión de diagnóstico')}
     </nav>
     <button class="menu-btn" id="menuBtn" aria-label="Abrir menú" aria-expanded="false">${ICONOS.menu}</button>
   </div>
@@ -97,7 +97,7 @@ ${cuerpo}
   <div class="pie-legal">
     <div class="pie-legal-in">
       <span>© 2026 WTR | abogados. Todos los derechos reservados. · <a href="/privacidad/">Política de privacidad</a></span>
-      <a href="${sitio.legalPacer}" target="_blank" rel="noopener">LegalPacer ${ICONOS.flecha}</a>
+      <a href="${sitio.legalPacer}" target="_blank" rel="noopener">Legal Pacer ${ICONOS.flecha}</a>
     </div>
   </div>
 </footer>
@@ -301,7 +301,7 @@ fs.copyFileSync(path.join(__dirname, 'sitio.js'), path.join(DIST, 'sitio.js'));
 escribir('sitio-config.js', `window.WTR_API_CONTACTO = ${JSON.stringify(sitio.apiContacto)};`);
 escribir('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${sitio.url}/sitemap.xml\n`);
 escribir('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${['/', ...areas.map(a => `/areas/${a.slug}/`), '/privacidad/'].map(r => `  <url><loc>${sitio.url}${r}</loc></url>`).join('\n')}\n</urlset>\n`);
-escribir('llms.txt', `# WTR | abogados\n\n> ${sitio.claim} Estudio jurídico de San Fernando, Buenos Aires, que acompaña a founders en su empresa y en su vida (patrimonio, familia, sucesión). Creó LegalPacer, un espacio online para emprendedores.\n\n## Áreas de práctica\n${areas.map(a => `- [${a.titulo}](${sitio.url}/areas/${a.slug}/): ${a.frase}`).join('\n')}\n\n## Contacto\n- ${sitio.direccion}\n- ${sitio.email}\n- WhatsApp ${sitio.whatsappVisible}\n- LegalPacer: ${sitio.legalPacer}\n`);
+escribir('llms.txt', `# WTR | abogados\n\n> ${sitio.claim} Estudio jurídico de San Fernando, Buenos Aires, que acompaña a founders en su empresa y en su vida (patrimonio, familia, sucesión). Creó Legal Pacer, un espacio online para emprendedores.\n\n## Áreas de práctica\n${areas.map(a => `- [${a.titulo}](${sitio.url}/areas/${a.slug}/): ${a.frase}`).join('\n')}\n\n## Contacto\n- ${sitio.direccion}\n- ${sitio.email}\n- WhatsApp ${sitio.whatsappVisible}\n- Legal Pacer: ${sitio.legalPacer}\n`);
 // Para hostings con Apache (Hostinger): fuerza HTTPS, unifica www → sin www y
 // manda las rutas viejas del sitio anterior a la home. El servidor de Legal
 // Pacer lo ignora (express.static no sirve archivos ocultos).

@@ -1,6 +1,6 @@
 # WTR | abogados
 
-> Derecho para decisiones que importan. Estudio jurídico de San Fernando, Buenos Aires, que acompaña a founders en su empresa y en su vida (patrimonio, familia, sucesión). Creó LegalPacer, un espacio online para emprendedores.
+> Derecho para decisiones que importan. Estudio jurídico de San Fernando, Buenos Aires, que acompaña a founders en su empresa y en su vida (patrimonio, familia, sucesión). Creó Legal Pacer, un espacio online para emprendedores.
 
 ## Áreas de práctica
 - [Derecho societario](https://wtrabogados.com/areas/derecho-societario/): El acuerdo de socios y la estructura que un inversor mira antes de invertir.
@@ -18,4 +18,4 @@
 - Gral. Pinto 1228, San Fernando, Buenos Aires
 - contacto@wtrabogados.com
 - WhatsApp +54 11 2839 2937
-- LegalPacer: https://marcas.legalpacers.com
+- Legal Pacer: https://marcas.legalpacers.com

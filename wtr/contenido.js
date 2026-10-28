@@ -60,8 +60,8 @@ const areas = [
       'Cesión a la sociedad del código y el diseño que crearon fundadores y freelancers.',
       'Protección de la información confidencial.',
     ],
-    como: 'El registro estándar de una marca lo podés empezar online en LegalPacer. Las oposiciones, los conflictos y las estrategias en varios países los toma el estudio. Los trámites ante el INPI los firma Tomás Rodríguez, Agente de la Propiedad Industrial.',
-    legalPacer: { texto: 'Registrá tu marca online en LegalPacer', url: 'https://marcas.legalpacers.com' },
+    como: 'El registro estándar de una marca lo podés empezar online en Legal Pacer. Las oposiciones, los conflictos y las estrategias en varios países los toma el estudio. Los trámites ante el INPI los firma Tomás Rodríguez, Agente de la Propiedad Industrial.',
+    legalPacer: { texto: 'Registrá tu marca online en Legal Pacer', url: 'https://marcas.legalpacers.com' },
   },
   {
     slug: 'tecnologia-e-inteligencia-artificial', eje: 'negocios', titulo: 'Tecnología e inteligencia artificial',
@@ -84,7 +84,7 @@ const areas = [
       'GDPR, si tenés usuarios en Europa.',
       'Qué hacer ante un incidente de seguridad.',
     ],
-    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas. Los términos y la política de privacidad estándar los podés empezar online en LegalPacer.',
+    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas. Los términos y la política de privacidad estándar los podés empezar online en Legal Pacer.',
   },
   {
     slug: 'derecho-laboral', eje: 'negocios', titulo: 'Derecho laboral',
@@ -152,7 +152,7 @@ const socios = [
   {
     nombre: 'Tomás Rodríguez', rol: 'Socio fundador', iniciales: 'TR',
     foto: null, // Tomás sube la foto el lunes.
-    bio: 'Abogado y Mg. en Propiedad Intelectual y Nuevas Tecnologías. Trabajó en el ámbito público y privado. Miembro de la Cámara Argentina de Comercio Electrónico y de la Cámara Argentina de Startups. Speaker habitual en eventos del ecosistema emprendedor.',
+    bio: 'Abogado matriculado en San Isidro y en el CPACF. Hizo la Maestría en Propiedad Intelectual y Nuevas Tecnologías (Universidad Austral) y es Agente de la Propiedad Industrial (Mat. 3457). Lideró equipos en el sector público durante 8 años y hace 5 que trabaja como legal counsel de startups. Fundó Legal Pacer. Es miembro de la Cámara Argentina de Comercio Electrónico y de la Cámara Argentina de Startups y speaker en eventos del ecosistema emprendedor.',
     links: [{ texto: 'LinkedIn', url: 'https://ar.linkedin.com/in/trodriguezsi' }],
   },
   {

@@ -164,7 +164,8 @@ img { display: block; max-width: 100%; }
 .calendly { width: 100%; height: 700px; border: 0; border-radius: var(--radio); background: var(--papel); box-shadow: var(--sombra); }
 .calendly-recuadro { height: 340px; display: grid; place-items: center; }
 .dudas-botones { display: grid; gap: 12px; }
-.btn-dudas { width: 100%; height: 56px; justify-content: center; font-size: 16px; }
+.btn-dudas { width: 100%; height: 56px; justify-content: center; font-size: 16px; background: transparent; color: var(--tinta); }
+.btn-dudas:hover { background: rgba(14,20,32,.06); border-color: var(--tinta); }
 .iconos { display: flex; gap: 8px; }
 .iconos a { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 8px; background: var(--papel); box-shadow: var(--sombra); color: var(--oliva); transition: color .3s var(--lento), background .3s var(--lento), transform .3s var(--lento); }
 .iconos a:hover { color: #fff; background: var(--oliva); transform: translateY(-2px); }
@@ -244,6 +245,7 @@ img { display: block; max-width: 100%; }
   .etapa-titulo { font-size: 19px; }
 }
 @media (max-width: 640px) {
+  .calendly { height: 600px; }
   .hero-in { padding: 136px 6% 64px; }
   .area-hero-in { padding-top: 128px; }
   .seccion, .diferencial { padding: 88px 6%; }
