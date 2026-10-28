@@ -25,6 +25,8 @@ const ICONOS = {
   menu: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18" stroke="currentColor" stroke-width="1.5"/></svg>',
 };
 
+// Gráfico del inicio (v2): la carpeta "Data room legal", decorativo. Diseño de produccion, elegido por Tomás el 28/10/2026.
+const HERO_GRAFICO = V2 ? fs.readFileSync(path.join(__dirname, 'hero-grafico.html'), 'utf8') : '';
 const wordmark = 'WTR <span class="wm-barra">|</span> <small>abogados</small>';
 const waLink = texto => `https://wa.me/${sitio.whatsapp}?text=${encodeURIComponent(texto)}`;
 // Botón de agenda: abre Calendly en pestaña nueva (funciona aunque el embebido no cargue).
@@ -169,6 +171,7 @@ function home() {
         <a class="link" href="#areas">Ver áreas de práctica ${ICONOS.flecha}</a>
       </div>
     </div>
+    ${V2 ? HERO_GRAFICO : ''}
   </div>
 </section>
 ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién trabajamos</p><div class="carrusel"><div class="pista">${[...clientes, ...clientes].map((c, i) => i < clientes.length ? `<img src="${c.logo}" alt="${esc(c.nombre)}">` : `<img src="${c.logo}" alt="" aria-hidden="true">`).join('')}</div></div></section>`

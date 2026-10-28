@@ -268,3 +268,28 @@ img { display: block; max-width: 100%; }
   .etapa::before { transition: none; }
   .barra-agenda { transition: none; }
 }
+/* Hero, opción B: la carpeta de due diligence en líneas finas. Solo en computadora (>960px). */
+.hero-grafico { display: none; }
+@media (min-width: 961px) {
+  .hero-in { display: grid; grid-template-columns: minmax(min(52vw, 720px), 1fr) minmax(0, 280px); gap: 28px; align-items: center; }
+  .hero-grafico { display: block; }
+  .hero-grafico svg { display: block; width: 100%; height: auto; overflow: visible; }
+}
+.hgB-dorso { fill: #111826; stroke: #fff; stroke-opacity: .09; stroke-width: 1; }
+.hgB-hoja rect { fill: #172033; stroke: #fff; stroke-opacity: .10; stroke-width: 1; }
+.hgB-hoja line { stroke: #fff; stroke-opacity: .14; stroke-width: 1.5; stroke-linecap: round; }
+.hgB-hoja { animation: hgB-respira 8s ease-in-out infinite; animation-delay: calc(var(--i) * -2.4s); }
+.hgB-frente { fill: #141b2b; stroke: #fff; stroke-opacity: .12; stroke-width: 1; }
+.hgB-borde { stroke: #fff; stroke-opacity: .08; }
+.hgB-rotulo { font-family: var(--mono, 'DM Mono', monospace); font-size: 10.5px; letter-spacing: .12em; fill: #6c7484; }
+.hgB-acento { stroke: #9aa37f; stroke-width: 1.5; }
+.hgB-filas g { opacity: 0; animation: hgB-aparece .6s ease forwards; animation-delay: calc(.2s + var(--i) * .16s); }
+.hgB-filas text { font-family: var(--sans, 'DM Sans', sans-serif); font-size: 14px; fill: #a3abb8; }
+.hgB-filas .n { font-family: var(--mono, 'DM Mono', monospace); font-size: 11px; letter-spacing: .06em; fill: #6c7484; }
+.hgB-filas line { stroke: #fff; stroke-opacity: .06; }
+@keyframes hgB-aparece { to { opacity: 1; } }
+@keyframes hgB-respira { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) {
+  .hgB-hoja { animation: none; }
+  .hgB-filas g { animation: none; opacity: 1; }
+}
