@@ -140,28 +140,18 @@ function seccionContacto() {
   return `<section id="contacto" class="seccion">
   <header class="cabeza-seccion revelar">
     <p class="volanta">Contacto</p>
-    <h2 class="titulo-seccion">Hablemos.</h2>
-    <p class="intro">Agendá tu reunión de diagnóstico para conocer tu proyecto y necesidades. También podés dejar tu consulta y te respondemos por mail.</p>
+    <h2 class="titulo-seccion">Agendá tu reunión de diagnóstico.</h2>
   </header>
   <div class="contacto-grid">
     <div class="agenda revelar">
-      <h3 class="contacto-titulo">Agendá una reunión</h3>
       ${agenda}
     </div>
-    <div class="revelar">
-    <h3 class="contacto-titulo">Escribinos</h3>
-    <form class="formulario" id="formContacto" novalidate>
-      <div class="campo-fila">
-        <label class="campo">Nombre<input name="nombre" autocomplete="name" required></label>
-        <label class="campo">Email<input name="email" type="email" autocomplete="email" required></label>
+    <div class="dudas revelar">
+      <h3 class="contacto-titulo">¿Tenés dudas?</h3>
+      <div class="dudas-botones">
+        <a class="btn btn-dudas" href="${waLink('Hola, quiero hacer una consulta.')}" target="_blank" rel="noopener">${ICONOS.whatsapp} WhatsApp</a>
+        <a class="btn btn-dudas" href="mailto:${sitio.email}?subject=${encodeURIComponent('Consulta desde la web')}">${ICONOS.mail} Mail</a>
       </div>
-      <label class="campo">Empresa o proyecto <span class="opcional">(opcional)</span><input name="empresa" autocomplete="organization"></label>
-      <label class="campo">¿En qué te podemos ayudar?<textarea name="mensaje" rows="5" required></textarea></label>
-      <p class="form-error" id="formError" hidden></p>
-      <button class="btn" type="submit">Enviar consulta</button>
-      <p class="form-legal">Al enviar la consulta aceptás nuestra <a href="/privacidad/">política de privacidad</a>.</p>
-      <p class="form-ok" id="formOk" hidden>Recibimos tu consulta. Te respondemos a la brevedad.</p>
-    </form>
     </div>
   </div>
 </section>`;
