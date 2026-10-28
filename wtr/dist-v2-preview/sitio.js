@@ -16,6 +16,22 @@
     window.addEventListener('scroll', actualizarBarra, { passive: true });
   }
 
+  // Celular: el camino de etapas y las bios de los socios se despliegan al tocar.
+  document.querySelectorAll('.etapa-toggle').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (window.innerWidth > 640) return;
+      var abierta = b.closest('.etapa').classList.toggle('abierta');
+      b.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+    });
+  });
+  document.querySelectorAll('.socio-mas').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var abierto = b.closest('.socio').classList.toggle('abierto');
+      b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+      b.textContent = abierto ? 'Ver menos' : 'Ver más';
+    });
+  });
+
   var btn = document.getElementById('menuBtn');
   var nav = document.getElementById('nav');
   if (btn && nav) {

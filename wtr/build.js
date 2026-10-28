@@ -138,7 +138,8 @@ function seccionContacto() {
   const agenda = BASE
     ? `<div class="calendly calendly-recuadro">${btnAgenda('btn', 'Abrir el calendario')}</div>`
     : `<iframe class="calendly" title="Agendá una reunión con WTR | abogados" src="${calendlyEmbed}" loading="lazy"></iframe>
-      <a class="link" href="${sitio.calendly}" target="_blank" rel="noopener">Abrir el calendario en otra pestaña ${ICONOS.flecha}</a>`;
+      <a class="link calendly-link" href="${sitio.calendly}" target="_blank" rel="noopener">Abrir el calendario en otra pestaña ${ICONOS.flecha}</a>`;
+  const agendaMovil = `<a class="btn calendly-movil" href="${sitio.calendly}" target="_blank" rel="noopener">Elegí día y horario</a>`;
   return `<section id="contacto" class="seccion">
   <header class="cabeza-seccion revelar">
     <p class="volanta">Contacto</p>
@@ -147,6 +148,7 @@ function seccionContacto() {
   <div class="contacto-grid">
     <div class="agenda revelar">
       ${agenda}
+      ${agendaMovil}
     </div>
     <div class="dudas revelar">
       <h3 class="contacto-titulo">¿Tenés dudas?</h3>
@@ -184,7 +186,7 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
   </header>
   <div class="camino revelar">
     <ol class="roadmap">
-      ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${i + 1}</span><h3 class="etapa-titulo">${esc(e.titulo)}</h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n      ')}
+      ${etapas.map((e, i) => `<li class="etapa"><span class="etapa-num">${i + 1}</span><h3 class="etapa-titulo"><button class="etapa-toggle" type="button" aria-expanded="false">${esc(e.titulo)}</button></h3><p class="etapa-areas">${linkear(e.texto)}</p></li>`).join('\n      ')}
     </ol>
   </div>
   <div class="ejes-grid">
@@ -203,6 +205,7 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
       <p class="volanta">${esc(s.rol)}</p>
       <h3>${esc(s.nombre)}</h3>
       <p class="socio-bio">${esc(s.bio)}</p>
+      <button class="socio-mas" type="button" aria-expanded="false">Ver más</button>
       <p class="socio-links">${s.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener">${esc(l.texto)} ${ICONOS.flecha}</a>`).join('')}</p>
     </article>`).join('\n')}
   </div>
