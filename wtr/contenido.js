@@ -45,7 +45,7 @@ const areas = [
   },
   {
     slug: 'contratos', eje: 'negocios', titulo: 'Contratos',
-    frase: 'Los acuerdos que sostienen tu operación cuando el negocio escala.',
+    frase: 'Los acuerdos que sostienen tu operación, desde el primer cliente.',
     decisiones: [
       'Contratos con clientes y proveedores.',
       'Acuerdos con el equipo y con freelancers, con cesión de propiedad intelectual y confidencialidad.',
