@@ -99,11 +99,17 @@ const areas = [
   },
   {
     slug: 'internacionalizacion', eje: 'negocios', titulo: 'Internacionalización',
-    frase: 'La estructura para operar, facturar y recibir inversión fuera del país.',
+    frase: 'Los contratos y la estructura que necesitás cuando el negocio empieza a operar en otros países.',
     decisiones: [
       'Armar la estructura en el exterior cuando un inversor la pide.',
+      'Contratos con clientes y proveedores del exterior.',
+      'Adaptar los términos y condiciones y la política de privacidad a cada mercado, por ejemplo al GDPR si vendés en Europa.',
+      'Registrar la marca en otros países.',
+      'Contratar personas o contractors en otro país.',
+      'Abrir una sociedad o una sucursal en otro país.',
+      'Planificar la estructura fiscal internacional.',
     ],
-    como: 'Cuando el negocio cruza la frontera —clientes afuera, una ronda con fondos internacionales, una sociedad en el exterior— la estructura importa tanto como la idea. Te ayudamos a diseñar el vehículo correcto, los contratos internacionales y el camino país por país, para crecer afuera sin desarmar lo de acá.',
+    como: 'Arrancamos por lo que el negocio ya hace afuera: dónde vende, a quién contrata y qué le pide el inversor. Con eso proponemos dónde y cómo instalarse, y adaptamos los contratos y los documentos a cada mercado.',
   },
   {
     slug: 'patrimonio-y-planificacion', eje: 'vida', titulo: 'Patrimonio y planificación',
