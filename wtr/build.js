@@ -257,7 +257,7 @@ function paginaArea(a) {
     <aside class="area-cta">
       <p class="volanta">Primera conversación</p>
       <p class="area-cta-texto">Contanos tu caso y vemos juntos por dónde empezar.</p>
-      ${btnAgenda()}
+      ${btnAgenda('btn', 'Reunión de diagnóstico')}
       <a class="link" href="${waLink('Hola, quiero consultar sobre ' + a.titulo.toLowerCase() + '.')}" target="_blank" rel="noopener">Escribinos por WhatsApp ${ICONOS.flecha}</a>
     </aside>
   </div>
