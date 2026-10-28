@@ -78,8 +78,8 @@ img { display: block; max-width: 100%; }
 .carrusel { overflow: hidden; margin-top: 26px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
 .carrusel .pista { display: flex; gap: 80px; width: max-content; animation: desliza 70s linear infinite; align-items: center; }
 .carrusel:hover .pista { animation-play-state: paused; }
-.carrusel img { height: 36px; width: auto; opacity: .5; transition: opacity .4s var(--lento); }
-.carrusel img:hover { opacity: .85; }
+.carrusel img { height: 40px; width: auto; opacity: .8; transition: opacity .4s var(--lento); }
+.carrusel img:hover { opacity: 1; }
 @keyframes desliza { to { transform: translateX(-50%); } }
 .logos-pendientes { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-top: 22px; padding: 0 6%; }
 .logos-pendientes span { width: 120px; height: 44px; display: grid; place-items: center; border-radius: 8px; background: rgba(255,255,255,.04); font-family: var(--mono); font-size: 11px; color: #6c7484; }
@@ -157,13 +157,13 @@ img { display: block; max-width: 100%; }
 
 /* Contacto */
 .cabeza-seccion .iconos { margin-top: 26px; }
-.contacto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.contacto-grid { display: grid; grid-template-columns: 1fr; gap: 40px; max-width: 760px; }
 .contacto-titulo { font-size: 22px; letter-spacing: -.025em; margin-bottom: 16px; }
 .agenda { display: grid; gap: 14px; justify-items: start; }
 .agenda .contacto-titulo { margin-bottom: 2px; }
 .calendly { width: 100%; height: 700px; border: 0; border-radius: var(--radio); background: var(--papel); box-shadow: var(--sombra); }
 .calendly-recuadro { height: 340px; display: grid; place-items: center; }
-.dudas-botones { display: grid; gap: 12px; }
+.dudas-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .btn-dudas { width: 100%; height: 56px; justify-content: center; font-size: 16px; background: transparent; color: var(--tinta); }
 .btn-dudas:hover { background: rgba(14,20,32,.06); border-color: var(--tinta); }
 .iconos { display: flex; gap: 8px; }

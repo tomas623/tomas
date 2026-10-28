@@ -170,6 +170,9 @@ const clientes = [
   { nombre: 'CORE', logo: '/img/clientes/core.webp' },
   { nombre: '', logo: '/img/clientes/cliente-hexagono.webp' },
   { nombre: '', logo: '/img/clientes/cliente-circulo.webp' },
+  { nombre: 'Extractito', logo: '/img/clientes/extractito.webp' },
+  { nombre: 'Malón', logo: '/img/clientes/malon.webp' },
+  { nombre: 'The Ridge Project', logo: '/img/clientes/the-ridge-project.webp' },
   { nombre: 'Cámara Argentina de Empresas Emergentes', logo: '/img/clientes/camara-empresas-emergentes.webp' },
 ];
 
