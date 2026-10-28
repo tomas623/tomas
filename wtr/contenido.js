@@ -155,7 +155,7 @@ const etapas = [
   { titulo: 'Tracción', texto: 'Los {contratos|contratos}, {términos y condiciones|tecnologia-e-inteligencia-artificial} y {datos|datos-y-privacidad} con los que vendés.' },
   { titulo: 'Crecimiento', texto: 'Sumar {equipo|derecho-laboral} y {freelancers|contratos} con reglas claras.' },
   { titulo: 'Inversión', texto: 'Ordenar {el cap table y la carpeta para una ronda|derecho-societario}.' },
-  { titulo: 'Internacionalización', texto: 'Vender, contratar o abrir una sociedad en {otro país|internacionalizacion}.' },
+  { titulo: 'Internacionalización', texto: 'Qué tener en cuenta para {salir a operar globalmente|internacionalizacion}.' },
 ];
 
 const socios = [
