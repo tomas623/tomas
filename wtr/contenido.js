@@ -65,12 +65,13 @@ const areas = [
   },
   {
     slug: 'tecnologia-e-inteligencia-artificial', eje: 'negocios', titulo: 'Tecnología e inteligencia artificial',
-    frase: 'Términos y condiciones, datos e IA: lanzar rápido sin dejar riesgos abiertos.',
+    frase: 'Términos y condiciones, IA y contratos de tecnología para el producto que estás construyendo.',
     decisiones: [
       'Términos y condiciones de productos digitales.',
       'Uso de IA en el producto: decisiones automatizadas y responsabilidad.',
       'Contratos con proveedores de tecnología y servicios en la nube.',
-      'Actividades reguladas, como pagos o salud.',
+      'Cláusulas de IA en contratos con clientes y proveedores.',
+      'Propiedad intelectual de lo que se genera con IA.',
     ],
     como: 'Revisamos el producto con el equipo que lo construye, para que lo legal acompañe el roadmap. Te dejamos documentos que se actualizan cuando el producto cambia.',
   },
