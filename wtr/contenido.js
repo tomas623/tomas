@@ -65,7 +65,7 @@ const areas = [
   },
   {
     slug: 'tecnologia-e-inteligencia-artificial', eje: 'negocios', titulo: 'Tecnología e inteligencia artificial',
-    frase: 'Términos, datos e IA: lanzar rápido sin dejar riesgos abiertos.',
+    frase: 'Términos y condiciones, datos e IA: lanzar rápido sin dejar riesgos abiertos.',
     decisiones: [
       'Términos y condiciones de productos digitales.',
       'Uso de IA en el producto: decisiones automatizadas y responsabilidad.',
@@ -84,7 +84,7 @@ const areas = [
       'GDPR, si tenés usuarios en Europa.',
       'Qué hacer ante un incidente de seguridad.',
     ],
-    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas. Los términos y la política de privacidad estándar los podés empezar online en Legal Pacer.',
+    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas. Los términos y condiciones y la política de privacidad estándar los podés empezar online en Legal Pacer.',
   },
   {
     slug: 'derecho-laboral', eje: 'negocios', titulo: 'Derecho laboral',
@@ -141,11 +141,11 @@ const areas = [
 // no va acá (es transversal y tiene su grupo en Áreas).
 // En el texto, {palabra|slug} linkea a /areas/<slug>/ ({palabra|#ancla}: a esa sección de la home).
 const etapas = [
-  { titulo: 'Inicios', texto: '{sociedad|derecho-societario}, {acuerdo de socios|derecho-societario}, {marca|propiedad-intelectual}' },
-  { titulo: 'Tracción', texto: '{contratos|contratos}, {términos|tecnologia-e-inteligencia-artificial} y {datos|datos-y-privacidad}' },
-  { titulo: 'Crear equipo', texto: '{laboral|derecho-laboral}' },
-  { titulo: 'Levantar capital', texto: '{societario / rondas|derecho-societario}' },
-  { titulo: 'Ampliar mercados', texto: '{internacionalización|internacionalizacion}' },
+  { titulo: 'Cimientos', texto: 'Armar {la sociedad entre socios|derecho-societario} y {registrar la marca|propiedad-intelectual}.' },
+  { titulo: 'Tracción', texto: 'Los {contratos|contratos}, {términos y condiciones|tecnologia-e-inteligencia-artificial} y {datos|datos-y-privacidad} con los que vendés.' },
+  { titulo: 'Crecimiento', texto: 'Sumar {equipo|derecho-laboral} y {freelancers|contratos} con reglas claras.' },
+  { titulo: 'Inversión', texto: 'Ordenar {el cap table y la carpeta para una ronda|derecho-societario}.' },
+  { titulo: 'Internacionalización', texto: 'Vender, contratar o abrir una sociedad en {otro país|internacionalizacion}.' },
 ];
 
 const socios = [
