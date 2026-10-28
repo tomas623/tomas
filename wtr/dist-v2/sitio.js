@@ -16,7 +16,7 @@
     window.addEventListener('scroll', actualizarBarra, { passive: true });
   }
 
-  // Celular: el camino de etapas y las bios de los socios se despliegan al tocar.
+  // Celular: el camino de etapas y las bios de los socios se abren en un pop-up.
   document.querySelectorAll('.etapa-toggle').forEach(function (b) {
     b.addEventListener('click', function () {
       if (window.innerWidth > 640) return;
@@ -24,12 +24,12 @@
       b.setAttribute('aria-expanded', abierta ? 'true' : 'false');
     });
   });
-  document.querySelectorAll('.socio-mas').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var abierto = b.closest('.socio').classList.toggle('abierto');
-      b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
-      b.textContent = abierto ? 'Ver menos' : 'Ver más';
-    });
+  document.querySelectorAll('.socio-abrir').forEach(function (b) {
+    var d = document.getElementById(b.getAttribute('data-dialogo'));
+    if (!d || !d.showModal) return;
+    b.addEventListener('click', function () { d.showModal(); });
+    d.querySelector('.socio-cerrar').addEventListener('click', function () { d.close(); });
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
   });
 
   var btn = document.getElementById('menuBtn');

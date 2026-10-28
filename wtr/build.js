@@ -200,13 +200,22 @@ ${clientes.length ? `<section class="clientes"><p class="volanta">Con quién tra
     <h2 class="titulo-seccion">Quiénes somos</h2>
   </header>
   <div class="equipo-grid">
-    ${socios.map(s => `<article class="socio revelar">
+    ${socios.map((s, i) => `<article class="socio revelar">
       ${s.foto ? `<img class="socio-foto" src="${s.foto}" alt="Retrato de ${esc(s.nombre)}" loading="lazy">` : `<div class="socio-foto socio-sin-foto" aria-hidden="true">${s.iniciales}</div>`}
       <p class="volanta">${esc(s.rol)}</p>
       <h3>${esc(s.nombre)}</h3>
-      <p class="socio-bio">${esc(s.bio)}</p>
-      <button class="socio-mas" type="button" aria-expanded="false">Ver más</button>
-      <p class="socio-links">${s.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener">${esc(l.texto)} ${ICONOS.flecha}</a>`).join('')}</p>
+      <div class="socio-detalle">
+        <p class="socio-bio">${esc(s.bio)}</p>
+        <p class="socio-links">${s.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener">${esc(l.texto)} ${ICONOS.flecha}</a>`).join('')}</p>
+      </div>
+      <button class="socio-abrir link" type="button" data-dialogo="socio-${i}">Ver perfil ${ICONOS.flecha}</button>
+      <dialog class="socio-dialogo" id="socio-${i}" aria-label="${esc(s.nombre)}">
+        <button class="socio-cerrar" type="button" aria-label="Cerrar">×</button>
+        <p class="volanta">${esc(s.rol)}</p>
+        <h3>${esc(s.nombre)}</h3>
+        <p class="socio-bio">${esc(s.bio)}</p>
+        <p class="socio-links">${s.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener">${esc(l.texto)} ${ICONOS.flecha}</a>`).join('')}</p>
+      </dialog>
     </article>`).join('\n')}
   </div>
   </div>

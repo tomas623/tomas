@@ -163,7 +163,11 @@ img { display: block; max-width: 100%; }
 .agenda .contacto-titulo { margin-bottom: 2px; }
 .calendly { width: 100%; height: 700px; border: 0; border-radius: var(--radio); background: var(--papel); box-shadow: var(--sombra); }
 .calendly-recuadro { height: 340px; display: grid; place-items: center; }
-.calendly-movil, .socio-mas { display: none; }
+.calendly-movil, .socio-abrir { display: none; }
+.socio-dialogo { margin: auto; max-height: 85vh; overflow-y: auto; border: 0; border-radius: 14px; padding: 32px 24px 28px; width: min(92vw, 520px); background: var(--papel); color: var(--tinta); box-shadow: var(--sombra); }
+.socio-dialogo::backdrop { background: rgba(14,20,32,.6); }
+.socio-dialogo h3 { font-size: 28px; margin-bottom: 14px; }
+.socio-cerrar { position: absolute; top: 10px; right: 14px; background: none; border: 0; font-size: 28px; line-height: 1; color: var(--gris); cursor: pointer; }
 .etapa-toggle { all: unset; font: inherit; color: inherit; letter-spacing: inherit; }
 .dudas-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .btn-dudas { width: 100%; height: 56px; justify-content: center; font-size: 16px; background: transparent; color: var(--tinta); }
@@ -251,9 +255,8 @@ img { display: block; max-width: 100%; }
   .calendly-movil { display: flex; width: 100%; justify-content: center; height: 56px; font-size: 16px; }
   .socio-foto { width: 132px; aspect-ratio: 1; margin-bottom: 20px; }
   .socio-sin-foto { font-size: 40px; }
-  .socio-bio { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .socio.abierto .socio-bio { display: block; -webkit-line-clamp: unset; overflow: visible; }
-  .socio-mas { display: inline-block; margin-top: 8px; background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--oliva); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .socio-detalle { display: none; }
+  .socio-abrir { display: inline-flex; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
   .equipo-grid { gap: 40px; }
   .diferencial-texto { font-size: 21px; }
   .etapa-toggle { cursor: pointer; display: flex; align-items: center; justify-content: space-between; width: 100%; }
