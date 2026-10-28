@@ -5,7 +5,7 @@
 ## Áreas de práctica
 - [Derecho societario](https://wtrabogados.com/areas/derecho-societario/): El acuerdo de socios y la estructura que un inversor mira antes de invertir.
 - [Contratos](https://wtrabogados.com/areas/contratos/): Los acuerdos que sostienen tu operación cuando el negocio escala.
-- [Propiedad intelectual](https://wtrabogados.com/areas/propiedad-intelectual/): Tu marca, tu código y tus datos: que sean de la empresa, y no de quien los hizo.
+- [Propiedad intelectual](https://wtrabogados.com/areas/propiedad-intelectual/): Que la marca, el código y el diseño sean de la empresa.
 - [Tecnología e inteligencia artificial](https://wtrabogados.com/areas/tecnologia-e-inteligencia-artificial/): Términos y condiciones, IA y contratos de tecnología para el producto que estás construyendo.
 - [Datos y privacidad](https://wtrabogados.com/areas/datos-y-privacidad/): Cómo se recolectan, se usan y se protegen los datos personales de usuarios y clientes.
 - [Derecho laboral](https://wtrabogados.com/areas/derecho-laboral/): Las relaciones con el equipo: desde la contratación hasta la salida, con reglas claras.

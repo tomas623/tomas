@@ -53,15 +53,15 @@ const areas = [
   },
   {
     slug: 'propiedad-intelectual', eje: 'negocios', titulo: 'Propiedad intelectual',
-    frase: 'Tu marca, tu código y tus datos: que sean de la empresa, y no de quien los hizo.',
+    frase: 'Que la marca, el código y el diseño sean de la empresa.',
     decisiones: [
       'Registro de marcas en Argentina y en otros países.',
       'Oposiciones y defensa de la marca.',
       'Cesión a la sociedad del código y el diseño que crearon fundadores y freelancers.',
+      'Logos y branding: cesión de derechos, originalidad de la obra y uso de IA.',
       'Protección de la información confidencial.',
     ],
-    como: 'El registro estándar de una marca lo podés empezar online en Legal Pacer. Las oposiciones, los conflictos y las estrategias en varios países los toma el estudio. Los trámites ante el INPI los firma Tomás Rodríguez, Agente de la Propiedad Industrial.',
-    legalPacer: { texto: 'Registrá tu marca online en Legal Pacer', url: 'https://marcas.legalpacers.com' },
+    como: 'Partimos del diagnóstico: qué tenés, a nombre de quién está y qué conviene proteger primero. Los trámites ante el INPI los firma Tomás Rodríguez, Agente de la Propiedad Industrial.',
   },
   {
     slug: 'tecnologia-e-inteligencia-artificial', eje: 'negocios', titulo: 'Tecnología e inteligencia artificial',
