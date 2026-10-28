@@ -49,7 +49,7 @@ img { display: block; max-width: 100%; }
 /* Cabecera (oscura en todo el sitio) */
 .cabecera { position: fixed; inset: 0 0 auto 0; z-index: 40; background: rgba(14,20,32,.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .cabecera-in { max-width: 1200px; margin: auto; height: 72px; padding: 0 6%; display: flex; align-items: center; gap: 28px; }
-.wordmark, .pie-wordmark { font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: -.02em; color: #fff; white-space: nowrap; display: inline-flex; align-items: baseline; }
+.wordmark, .pie-wordmark { font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: -.02em; color: #fff; white-space: nowrap; display: inline-flex; align-items: center; }
 .wm-barra { color: var(--oliva-claro); margin: 0 7px; font-weight: 400; }
 .wordmark small, .pie-wordmark small { font-family: var(--sans); font-weight: 400; font-size: 14px; letter-spacing: 0; color: var(--gris-claro); }
 .nav { margin-left: auto; display: flex; align-items: center; gap: 28px; font-size: 14px; }
