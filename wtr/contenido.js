@@ -178,7 +178,7 @@ const clientes = [
 
 // Textos de Tomás: se respetan tal cual (solo se corrige gramática).
 // *frase*: va resaltada (Spectral itálica, oliva claro).
-const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios y resolución de conflictos. Entendemos cómo nacen esos negocios, se financian y crecen. Por eso *acompañamos a sus fundadores en cada decisión que define su futuro*: desde la creación hasta el salto a nuevos mercados.';
+const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios y derecho de familia. Entendemos cómo nacen esos negocios, se financian y crecen, y la vida que construyen alrededor. Por eso *acompañamos a sus fundadores en cada decisión que define su futuro*: desde la creación hasta el salto a nuevos mercados.';
 
 // Política de privacidad (texto de Tomás). Cada párrafo: título en negrita + texto.
 // El mail de contacto se muestra como link.
