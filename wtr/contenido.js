@@ -83,8 +83,9 @@ const areas = [
       'Datos alojados fuera de Argentina y proveedores en la nube.',
       'GDPR, si tenés usuarios en Europa.',
       'Qué hacer ante un incidente de seguridad.',
+      'Datos para entrenar o probar modelos de IA, sesgos y datos de clientes cargados en herramientas de IA.',
     ],
-    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas. Los términos y condiciones y la política de privacidad estándar los podés empezar online en Legal Pacer.',
+    como: 'Revisamos qué datos recolecta tu producto y para qué, y dejamos documentados los permisos y las políticas.',
   },
   {
     slug: 'derecho-laboral', eje: 'negocios', titulo: 'Derecho laboral',
