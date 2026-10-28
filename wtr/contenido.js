@@ -162,7 +162,7 @@ const socios = [
   {
     nombre: 'Tomás Rodríguez', rol: 'Socio fundador', iniciales: 'TR',
     foto: null, // Tomás sube la foto el lunes.
-    bio: 'Abogado matriculado en San Isidro y en el CPACF. Hizo la Maestría en Propiedad Intelectual y Nuevas Tecnologías (Universidad Austral) y es Agente de la Propiedad Industrial (Mat. 3457). Lideró equipos en el sector público durante 8 años y hace 5 que trabaja como legal counsel de startups. Fundó Legal Pacer. Es miembro de la Cámara Argentina de Comercio Electrónico y de la Cámara Argentina de Startups y speaker en eventos del ecosistema emprendedor.',
+    bio: 'Abogado. Hizo la Maestría en Propiedad Intelectual y Nuevas Tecnologías (Universidad Austral) y es Agente de la Propiedad Industrial (Mat. 3457). Lideró equipos en el sector público durante 8 años y hace 5 que trabaja como legal counsel de startups. Fundó Legal Pacer. Es miembro de la Cámara Argentina de Comercio Electrónico y de la Cámara Argentina de Startups y speaker en eventos del ecosistema emprendedor.',
     links: [{ texto: 'LinkedIn', url: 'https://ar.linkedin.com/in/trodriguezsi' }],
   },
   {
