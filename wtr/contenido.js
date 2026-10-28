@@ -94,10 +94,10 @@ const areas = [
     decisiones: [
       'Cómo contratar a cada persona: relación de dependencia o servicios.',
       'Contratos de trabajo y políticas internas.',
-      'Planes de incentivos para el equipo.',
+      'Planes de incentivos para el equipo, como el plan de opciones (ESOP).',
       'Desvinculaciones y reclamos.',
     ],
-    como: 'Ordenamos cómo se contrata desde la primera persona, para que el equipo crezca sin contingencias. Cuando hay un conflicto, buscamos cerrarlo antes de que llegue a juicio.',
+    como: 'Ordenamos cómo se contrata desde la primera persona.',
   },
   {
     slug: 'internacionalizacion', eje: 'negocios', titulo: 'Internacionalización',
