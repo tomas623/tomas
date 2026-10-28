@@ -183,16 +183,16 @@ const diferencial = 'Somos especialistas en startups, nuevos modelos de negocios
 // Política de privacidad (texto de Tomás). Cada párrafo: título en negrita + texto.
 // El mail de contacto se muestra como link.
 const privacidad = {
-  actualizada: '17/10/2026',
+  actualizada: '28/10/2026', // Se actualiza a la fecha en que se publique.
   parrafos: [
-    { texto: 'Esta política describe cómo WTR | abogados ("WTR", "nosotros") trata los datos personales que nos facilitás a través de este sitio (wtrabogados.com). Responsable: WTR | abogados, San Fernando, Buenos Aires, Argentina. Contacto: contacto@wtrabogados.com.' },
-    { titulo: 'Qué datos recolectamos.', texto: 'Los que nos dejás en el formulario de contacto: nombre, correo electrónico y el contenido de tu consulta. Esos datos se guardan en nuestro sistema y se nos envían por correo, únicamente para responder tu consulta. No recolectamos datos sensibles.' },
+    { texto: 'Esta política describe cómo WTR | abogados ("WTR", "nosotros") trata los datos personales que nos facilitás a través de este sitio (wtrabogados.com) y de los canales de contacto que figuran en él. Responsable: WTR | abogados, San Fernando, Buenos Aires, Argentina. Contacto: contacto@wtrabogados.com.' },
+    { titulo: 'Qué datos recolectamos.', texto: 'Los que nos dejás al agendar una reunión o al escribirnos. Si agendás por Calendly: nombre, correo electrónico y el contexto que nos cuentes sobre tu consulta. Si nos escribís por WhatsApp o por correo: tu número o tu dirección de correo y el contenido de tus mensajes. Los usamos únicamente para responder tu consulta. No te pedimos datos sensibles.' },
     { titulo: 'Con qué finalidad.', texto: 'Solo para responder tu consulta y, si lo pedís, avanzar con una primera conversación. No los usamos para otros fines ni te enviamos comunicaciones no solicitadas.' },
-    { titulo: 'Base del tratamiento.', texto: 'Tu consentimiento, que prestás al enviarnos el formulario, conforme a la Ley de Protección de Datos Personales N.º 25.326.' },
-    { titulo: 'Con quién los compartimos.', texto: 'No compartimos tus datos con terceros, salvo que una obligación legal o una orden judicial lo requiera.' },
+    { titulo: 'Base del tratamiento.', texto: 'Tu consentimiento, que prestás al agendar una reunión o al escribirnos, conforme a la Ley de Protección de Datos Personales N.º 25.326.' },
+    { titulo: 'Con quién los compartimos.', texto: 'Para agendar las reuniones usamos Calendly, un servicio de terceros que procesa los datos que cargás al reservar. Los mensajes que nos mandás por WhatsApp o por correo pasan por esos servicios. Fuera de eso, no compartimos tus datos con terceros, salvo que una obligación legal o una orden judicial lo requiera.' },
     { titulo: 'Cuánto los conservamos.', texto: 'El tiempo necesario para responder tu consulta y gestionar una eventual relación profesional; luego los eliminamos o anonimizamos, salvo obligación legal de conservarlos.' },
     { titulo: 'Tus derechos.', texto: 'Podés acceder, rectificar, actualizar y solicitar la supresión de tus datos escribiéndonos a contacto@wtrabogados.com. La Agencia de Acceso a la Información Pública, órgano de control de la Ley N.º 25.326, atiende las denuncias y reclamos vinculados al incumplimiento de las normas sobre protección de datos personales.' },
-    { titulo: 'Aviso.', texto: 'El envío del formulario no inicia una relación profesional ni implica asesoramiento legal; esa relación se formaliza solo por acuerdo expreso entre las partes.' },
+    { titulo: 'Aviso.', texto: 'Agendar una reunión o escribirnos no inicia por sí solo una relación profesional; esa relación se formaliza solo por acuerdo expreso entre las partes.' },
     { titulo: 'Cambios.', texto: 'Podemos actualizar esta política; la versión vigente es la publicada en esta página, con su fecha de última actualización.' },
   ],
 };
