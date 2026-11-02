@@ -133,7 +133,7 @@ const areas = [
       'Divorcio y división de bienes.',
       'Cuidado de los hijos y alimentos.',
     ],
-    como: 'Trabajamos con un abordaje interdisciplinario y priorizamos los acuerdos que cuidan a las personas. Cuando no hay acuerdo posible, llevamos el caso con estrategia.',
+    como: 'Planificamos con tiempo los acuerdos de la familia y definimos una estrategia para cada caso, con un abordaje interdisciplinario. Priorizamos los acuerdos que cuidan a las personas. Cuando no hay acuerdo posible, llevamos el caso adelante con esa estrategia.',
   },
   {
     slug: 'sucesion', eje: 'vida', titulo: 'Sucesión',
