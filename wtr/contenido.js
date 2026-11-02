@@ -143,7 +143,7 @@ const areas = [
       'Continuidad de la empresa familiar.',
       'Trámite sucesorio.',
     ],
-    como: 'Anticipamos la transmisión para que cada decisión quede tomada a tiempo. Cuando llega el momento, llevamos la sucesión con cuidado y con plazos claros.',
+    como: 'Una sucesión define quién decide, cómo se gobierna la empresa familiar y con qué visión sigue cuando cambia la generación, además de cómo se reparte lo construido. Por eso la planificamos antes: acordamos reglas de gobierno, integramos a la siguiente generación y dejamos todo por escrito para reducir el riesgo de conflictos entre herederos y de ventas apuradas. Cuando llega el momento, ejecutamos lo planificado.',
   },
 ];
 
