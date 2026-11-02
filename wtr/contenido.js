@@ -117,7 +117,7 @@ const areas = [
   },
   {
     slug: 'patrimonio-y-planificacion', eje: 'vida', titulo: 'Patrimonio y planificación',
-    frase: 'Ordenar lo que tenés para decidir con tranquilidad lo que viene.',
+    frase: 'Ordenar lo que es tuyo para tomar decisiones con tranquilidad.',
     decisiones: [
       'Ordenar el patrimonio personal y separarlo del de la empresa.',
       'Estructuras para inversiones e inmuebles.',
