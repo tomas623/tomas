@@ -127,7 +127,7 @@ const areas = [
   },
   {
     slug: 'familia', eje: 'vida', titulo: 'Familia',
-    frase: 'Acuerdos y decisiones que ocurren entre personas que se importan.',
+    frase: 'Acuerdos y decisiones entre personas que se quieren.',
     decisiones: [
       'Convenciones matrimoniales y pactos de convivencia.',
       'Divorcio y división de bienes.',
