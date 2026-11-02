@@ -12,7 +12,7 @@ const { mountAuthRoutes } = require('./src/auth');
 const { mountAdminRoutes } = require('./src/admin');
 const { mountClienteRoutes } = require('./src/cliente');
 const scheduler = require('./src/jobs/scheduler');
-const { securityHeaders, limiters } = require('./src/middleware/seguridad');
+const { securityHeaders, limiters, rateLimit } = require('./src/middleware/seguridad');
 
 const app = express();
 // Confiar en el proxy de Railway para leer la IP real (x-forwarded-for) y
@@ -61,7 +61,13 @@ app.use('/wtr', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next()
 app.use('/wtr-v2', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); },
   express.static(path.join(__dirname, 'wtr', 'dist-v2-preview'), { extensions: ['html'] }));
 
-app.use(express.json({ limit: '256kb' }));
+// Parser JSON global con tope de 256 KB. Las dos rutas de subida del registro
+// (datos y poder firmado) mandan archivos en base64 y usan su propio parser con
+// 20/30 MB; si el global las procesara primero, cortaría con 413 antes de llegar.
+const jsonGlobal = express.json({ limit: '256kb' });
+const RUTA_SUBIDA_REGISTRO = /^\/api\/registro\/(datos|poder-firmado)\/[^/]+\/?$/i;
+app.use((req, res, next) =>
+  (req.method === 'POST' && RUTA_SUBIDA_REGISTRO.test(req.path) ? next() : jsonGlobal(req, res, next)));
 
 // Rate limiting en endpoints sensibles (antes de montar las rutas).
 // Login: anti brute force.
@@ -78,6 +84,28 @@ app.use('/api/wtr/contacto', limiters.lead);
 app.use('/api/marca/consulta/iniciar', limiters.pago);
 app.use('/api/marca/registro/iniciar', limiters.pago);
 app.use('/api/cliente/vigilancia/iniciar', limiters.pago);
+// Subidas del registro: hasta 30 MB por request. Se limita la cantidad por IP
+// y se verifica que la referencia exista antes de leer el cuerpo, para que no
+// se pueda forzar al servidor a parsear 30 MB contra una referencia inventada.
+// Si se agrega o renombra una ruta de subida, actualizar RUTA_SUBIDA_REGISTRO.
+const limiteSubidaRegistro = rateLimit({ nombre: 'subida_registro', max: 30, ventanaMs: 60 * 60_000 });
+function refRegistroExiste(req, res, next) {
+  const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
+  if (!lead) return res.status(404).json(fail('No encontramos tu registro.'));
+  req.leadRegistro = lead;
+  next();
+}
+// Parser JSON de las subidas: si el cuerpo supera el límite, responde JSON
+// (el formulario muestra r.error) en vez de la página HTML de error de Express.
+function jsonSubida(limit) {
+  const parser = express.json({ limit });
+  return (req, res, next) => parser(req, res, (err) => {
+    if (err && err.type === 'entity.too.large') {
+      return res.status(413).json(fail('Los archivos pesan demasiado en total. Probá con versiones más livianas (PDF comprimido o imagen más chica).', 413));
+    }
+    next(err);
+  });
+}
 
 mountAuthRoutes(app);
 mountAdminRoutes(app);
@@ -710,9 +738,8 @@ app.get('/api/registro/datos/:ref', (req, res) => {
 });
 
 // Subida del poder firmado por el cliente.
-app.post('/api/registro/poder-firmado/:ref', express.json({ limit: '20mb' }), (req, res) => {
-  const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
-  if (!lead) return res.status(404).json(fail('No encontramos tu registro.'));
+app.post('/api/registro/poder-firmado/:ref', limiteSubidaRegistro, refRegistroExiste, jsonSubida('20mb'), (req, res) => {
+  const lead = req.leadRegistro;
   const archivo = req.body && req.body.archivo;
   if (typeof archivo !== 'string' || !archivo.startsWith('data:')) return res.status(400).json(fail('Falta el archivo.'));
   const m = archivo.match(/^data:([a-z0-9.+/-]+);base64,(.+)$/i);
@@ -744,9 +771,8 @@ app.post('/api/registro/poder-firmado/:ref', express.json({ limit: '20mb' }), (r
   }
 });
 
-app.post('/api/registro/datos/:ref', express.json({ limit: '30mb' }), (req, res) => {
-  const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
-  if (!lead) return res.status(404).json(fail('No encontramos tu registro.'));
+app.post('/api/registro/datos/:ref', limiteSubidaRegistro, refRegistroExiste, jsonSubida('30mb'), (req, res) => {
+  const lead = req.leadRegistro;
   const body = req.body || {};
   if (!Array.isArray(body.titulares) || !body.titulares.length) {
     return res.status(400).json(fail('Faltan los datos del titular.'));
