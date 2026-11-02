@@ -6,6 +6,16 @@ const path = require('path');
 const db = require('./db');
 const { requireAuth } = require('./auth');
 const audit = require('./audit');
+const { enviarAdjunto, DIR_REGISTROS } = require('./subidas');
+
+// Solo se sirven archivos de la carpeta de registros, aunque la ruta guardada
+// en la base diga otra cosa.
+function archivoDeRegistro(p) {
+  if (typeof p !== 'string' || !p) return null;
+  const abs = path.resolve(p);
+  if (!abs.startsWith(DIR_REGISTROS + path.sep) || !fs.existsSync(abs)) return null;
+  return abs;
+}
 
 function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400) { return { ok: false, error: msg, code }; }
@@ -204,10 +214,9 @@ function mountAdminRoutes(app) {
   app.get('/api/admin/leads/:id/registro-logo', guard, (req, res) => {
     const id = parseInt(req.params.id, 10);
     const lead = db.prepare('SELECT registro_logo_path FROM leads WHERE id = ?').get(id);
-    if (!lead || !lead.registro_logo_path || !fs.existsSync(lead.registro_logo_path)) {
-      return res.status(404).send('Sin logo');
-    }
-    res.sendFile(path.resolve(lead.registro_logo_path));
+    const p = lead && archivoDeRegistro(lead.registro_logo_path);
+    if (!p) return res.status(404).send('Sin logo');
+    enviarAdjunto(res, p);
   });
 
   // Prompt para cargar la marca en el INPI con la extensión de Claude.
@@ -226,10 +235,9 @@ function mountAdminRoutes(app) {
   app.get('/api/admin/leads/:id/poder-firmado', guard, (req, res) => {
     const id = parseInt(req.params.id, 10);
     const lead = db.prepare('SELECT registro_poder_path FROM leads WHERE id = ?').get(id);
-    if (!lead || !lead.registro_poder_path || !fs.existsSync(lead.registro_poder_path)) {
-      return res.status(404).send('Sin poder firmado');
-    }
-    res.sendFile(path.resolve(lead.registro_poder_path));
+    const p = lead && archivoDeRegistro(lead.registro_poder_path);
+    if (!p) return res.status(404).send('Sin poder firmado');
+    enviarAdjunto(res, p);
   });
 
   // Sirve la documentación societaria (constitutiva / representación) de un titular.
@@ -240,9 +248,9 @@ function mountAdminRoutes(app) {
     const lead = db.prepare('SELECT registro_datos FROM leads WHERE id = ?').get(id);
     if (!lead || !lead.registro_datos) return res.status(404).send('Sin datos');
     let d; try { d = JSON.parse(lead.registro_datos); } catch { return res.status(400).send('Datos inválidos'); }
-    const p = d.titulares && d.titulares[tit] && d.titulares[tit][key];
-    if (!p || !fs.existsSync(p)) return res.status(404).send('Sin documento');
-    res.sendFile(path.resolve(p));
+    const p = archivoDeRegistro(d.titulares && d.titulares[tit] && d.titulares[tit][key]);
+    if (!p) return res.status(404).send('Sin documento');
+    enviarAdjunto(res, p);
   });
 
   // CRM: editar campos manuales (pipeline, notas, próximo contacto, asignación).

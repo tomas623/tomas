@@ -67,8 +67,8 @@
       <h2>📄 Poder firmado</h2>
       <div id="poderYa" class="hide" style="color:#065F46;font-size:14px">✓ Ya recibimos tu poder firmado. Gracias.</div>
       <div id="poderUpload">
-        <div class="hint">Cuando tengas el <strong>poder firmado</strong> (te lo enviamos por mail/WhatsApp), subilo acá — foto o PDF.</div>
-        <input id="poderFile" type="file" accept=".pdf,image/*" onchange="el('poderName').textContent=this.files[0]?this.files[0].name:''">
+        <div class="hint">Cuando tengas el <strong>poder firmado</strong> (te lo enviamos por mail/WhatsApp), subilo acá en PDF o como foto (JPG, PNG o WEBP), de hasta 14 MB.</div>
+        <input id="poderFile" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onchange="el('poderName').textContent=this.files[0]?this.files[0].name:''">
         <div id="poderName" class="file-name"></div>
         <div id="poderErr" class="err hide"></div>
         <button type="button" class="btn btn-primary" id="poderBtn" style="margin-top:12px" onclick="subirPoder()">Subir poder firmado</button>
@@ -103,8 +103,8 @@
         <label><input type="radio" name="tipoMarca" value="figurativa" onchange="setTipoMarca()"> Figurativa (solo logo)</label>
       </div>
       <div id="logoWrap" class="hide">
-        <label>Logo en alta resolución (PNG, JPG o SVG)</label>
-        <input id="logo" type="file" accept="image/png,image/jpeg,image/svg+xml" onchange="onLogo()">
+        <label>Logo en alta resolución (PNG, JPG, WEBP o SVG)</label>
+        <input id="logo" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="onLogo()">
         <div id="logoName" class="file-name"></div>
       </div>
       <label style="margin-top:14px">Clases y productos/servicios que querés proteger</label>
@@ -142,6 +142,15 @@ let lead = null;
 let logoDataUrl = null;
 let cantidad = 'unico';
 const docFiles = {}; // { "0-const": dataUrl, "0-rep": dataUrl, ... }
+// Tipos que acepta el servidor (src/subidas.js). Los archivos viajan en base64,
+// que pesa un tercio más: el poder va solo (tope del servidor 20 MB, acá 14 MB)
+// y el formulario lleva todo junto (tope 30 MB, acá 28 MB en base64, unos 21 MB
+// de archivos, para dejar lugar al resto de los datos).
+const TIPOS_DOC = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+const TIPOS_LOGO = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+const MB = 1024 * 1024;
+const MAX_PODER = 14 * MB;
+const MAX_FORM_BASE64 = 28 * MB;
 
 function el(id){return document.getElementById(id)}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
@@ -192,10 +201,10 @@ function titularHTML(uid){
         Necesitamos la documentación de la empresa para acreditar su existencia y quién la representa (PDF o foto legible).
       </div>
       <label>Contrato social / estatuto constitutivo</label>
-      <input class="j-const" type="file" accept=".pdf,image/*" onchange="onDoc('const',this)">
+      <input class="j-const" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onchange="onDoc('const',this)">
       <div class="j-const-name file-name"></div>
       <label>Acta de designación de autoridades / poder del firmante</label>
-      <input class="j-repdoc" type="file" accept=".pdf,image/*" onchange="onDoc('rep',this)">
+      <input class="j-repdoc" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onchange="onDoc('rep',this)">
       <div class="j-repdoc-name file-name"></div>
     </div>
 
@@ -260,8 +269,10 @@ function onDoc(tipo, input){
   const uid = node.dataset.uid;
   const f = input.files[0];
   const nameEl = node.querySelector(tipo === 'const' ? '.j-const-name' : '.j-repdoc-name');
-  if (!f) { delete docFiles[`${uid}-${tipo}`]; if (nameEl) nameEl.textContent = ''; return; }
-  if (f.size > 8 * 1024 * 1024) { if (nameEl) nameEl.textContent = 'El archivo supera 8 MB.'; return; }
+  delete docFiles[`${uid}-${tipo}`];
+  if (!f) { if (nameEl) nameEl.textContent = ''; return; }
+  if (!TIPOS_DOC.includes(f.type)) { if (nameEl) nameEl.textContent = 'Subilo en PDF, JPG, PNG o WEBP.'; return; }
+  if (f.size > 8 * MB) { if (nameEl) nameEl.textContent = 'El archivo supera 8 MB.'; return; }
   const r = new FileReader();
   r.onload = () => { docFiles[`${uid}-${tipo}`] = r.result; if (nameEl) nameEl.textContent = f.name; };
   r.readAsDataURL(f);
@@ -282,8 +293,10 @@ function setTipoMarca(){
 }
 function onLogo(){
   const f = el('logo').files[0];
-  if (!f) { logoDataUrl = null; el('logoName').textContent = ''; return; }
-  if (f.size > 5 * 1024 * 1024) { el('logoName').textContent = 'El archivo supera 5 MB.'; return; }
+  logoDataUrl = null;
+  if (!f) { el('logoName').textContent = ''; return; }
+  if (!TIPOS_LOGO.includes(f.type)) { el('logoName').textContent = 'Subilo en PNG, JPG, WEBP o SVG.'; return; }
+  if (f.size > 5 * MB) { el('logoName').textContent = 'El archivo supera 5 MB.'; return; }
   const r = new FileReader();
   r.onload = () => { logoDataUrl = r.result; el('logoName').textContent = f.name; };
   r.readAsDataURL(f);
@@ -346,7 +359,15 @@ function validar(d){
   }
   if (!d.marca.denominacion) return 'Ingresá la denominación de la marca.';
   if (d.marca.tipo !== 'denominativa' && !logoDataUrl) return 'Subí el logo (la marca es mixta o figurativa).';
+  const pesoBase64 = d.titulares.reduce((a, t) => a + (t.doc_constitutiva || '').length + (t.doc_representacion || '').length,
+    (logoParaEnviar(d) || '').length);
+  if (pesoBase64 > MAX_FORM_BASE64) {
+    return 'Entre todos, los archivos pesan más de 21 MB. Probá con versiones más livianas (PDF comprimido o imagen más chica).';
+  }
   return null;
+}
+function logoParaEnviar(d){
+  return d.marca.tipo !== 'denominativa' ? logoDataUrl : null;
 }
 
 async function enviar(){
@@ -358,7 +379,7 @@ async function enviar(){
   try {
     const r = await fetch(`/api/registro/datos/${encodeURIComponent(REF)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...d, logo: logoDataUrl }),
+      body: JSON.stringify({ ...d, logo: logoParaEnviar(d) }),
     }).then(x => x.json());
     if (r.ok) { mostrarOk(); window.scrollTo(0,0); }
     else { el('formErr').textContent = r.error || 'No se pudo enviar.'; el('formErr').classList.remove('hide'); btn.disabled = false; btn.textContent = 'Enviar mis datos'; }
@@ -372,7 +393,8 @@ async function subirPoder(){
   el('poderErr').classList.add('hide');
   const f = el('poderFile').files[0];
   if (!f) { el('poderErr').textContent = 'Elegí el archivo del poder firmado.'; el('poderErr').classList.remove('hide'); return; }
-  if (f.size > 15 * 1024 * 1024) { el('poderErr').textContent = 'El archivo supera 15 MB.'; el('poderErr').classList.remove('hide'); return; }
+  if (!TIPOS_DOC.includes(f.type)) { el('poderErr').textContent = 'Subilo en PDF, JPG, PNG o WEBP.'; el('poderErr').classList.remove('hide'); return; }
+  if (f.size > MAX_PODER) { el('poderErr').textContent = 'El archivo supera 14 MB. Probá con un PDF comprimido o una foto más chica.'; el('poderErr').classList.remove('hide'); return; }
   const btn = el('poderBtn'); btn.disabled = true; btn.textContent = 'Subiendo…';
   const dataUrl = await new Promise(res => { const rd = new FileReader(); rd.onload = () => res(rd.result); rd.readAsDataURL(f); });
   try {

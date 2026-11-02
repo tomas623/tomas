@@ -52,10 +52,10 @@ setInterval(() => {
 }, 60_000).unref?.();
 
 function clienteIP(req) {
-  // Railway/proxies ponen la IP real en x-forwarded-for.
-  const xff = req.headers['x-forwarded-for'];
-  if (xff) return String(xff).split(',')[0].trim();
-  return req.socket?.remoteAddress || 'desconocida';
+  // req.ip respeta 'trust proxy' (server.js): toma la IP que agregó el proxy de
+  // Railway en x-forwarded-for, no el primer valor, que lo escribe el cliente y
+  // permitiría esquivar el límite mandando uno distinto en cada pedido.
+  return req.ip || req.socket?.remoteAddress || 'desconocida';
 }
 
 // Factory: crea un middleware que limita a `max` requests por `ventanaMs` por

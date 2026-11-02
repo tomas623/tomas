@@ -1106,7 +1106,7 @@ function renderRegistroBox(l) {
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         <a class="btn tiny green" href="/api/admin/leads/${l.id}/poder" target="_blank">📄 Generar poder (PDF)</a>
         <button class="btn tiny" onclick="copiarPromptINPI(${l.id}, this)">🤖 Copiar prompt para el INPI</button>
-        ${l.registro_logo_path ? `<a class="btn tiny" href="/api/admin/leads/${l.id}/registro-logo" target="_blank">🖼️ Ver logo</a>` : ''}
+        ${l.registro_logo_path ? `<a class="btn tiny" href="/api/admin/leads/${l.id}/registro-logo" target="_blank">Descargar logo</a>` : ''}
         <button class="btn tiny" onclick="enviarAcuseRegistro(${l.id}, this)">📧 Reenviar acuse/link</button>
       </div>
       <div class="muted" style="font-size:11.5px;margin-top:10px">Generá el poder pre-llenado, mandáselo a firmar, y el cliente lo sube por el mismo link (aparece acá).</div>

@@ -13,11 +13,16 @@ const { mountAdminRoutes } = require('./src/admin');
 const { mountClienteRoutes } = require('./src/cliente');
 const scheduler = require('./src/jobs/scheduler');
 const { securityHeaders, limiters, rateLimit } = require('./src/middleware/seguridad');
+const subidas = require('./src/subidas');
 
 const app = express();
 // Confiar en el proxy de Railway para leer la IP real (x-forwarded-for) y
 // el protocolo (x-forwarded-proto) — necesario para rate limiting y HSTS.
-app.set('trust proxy', 1);
+// El número es la cantidad de proxies delante de la app: req.ip toma la IP que
+// agregó el último de ellos, no la que manda el cliente. TRUST_PROXY permite
+// ajustarlo sin tocar el código si Railway tiene más de un salto.
+const TRUST_PROXY = parseInt(process.env.TRUST_PROXY || '1', 10);
+app.set('trust proxy', Number.isInteger(TRUST_PROXY) && TRUST_PROXY >= 0 ? TRUST_PROXY : 1);
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const PRECIO_INFORME = parseInt(process.env.PRECIO_INFORME || '19900', 10);
 const PRECIO_REGISTRO = parseInt(process.env.PRECIO_REGISTRO || '120000', 10);
@@ -61,13 +66,22 @@ app.use('/wtr', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next()
 app.use('/wtr-v2', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); next(); },
   express.static(path.join(__dirname, 'wtr', 'dist-v2-preview'), { extensions: ['html'] }));
 
-// Parser JSON global con tope de 256 KB. Las dos rutas de subida del registro
-// (datos y poder firmado) mandan archivos en base64 y usan su propio parser con
-// 20/30 MB; si el global las procesara primero, cortaría con 413 antes de llegar.
+// Parser JSON global con tope de 256 KB. Las rutas de abajo registran su propio
+// parser y el global las saltea: si las procesara primero, consumiría el cuerpo
+// y el parser de la ruta no correría (no habría límite propio ni req.rawBody).
+//   - subidas del registro (datos y poder firmado): base64 de hasta 20/30 MB;
+//   - webhook de WhatsApp: necesita el cuerpo crudo para validar la firma;
+//   - edición de informes en el admin: hasta 2 MB.
+// Si se agrega o renombra una de estas rutas, actualizar esta lista.
 const jsonGlobal = express.json({ limit: '256kb' });
-const RUTA_SUBIDA_REGISTRO = /^\/api\/registro\/(datos|poder-firmado)\/[^/]+\/?$/i;
+const RUTAS_CON_PARSER_PROPIO = [
+  ['POST', /^\/api\/registro\/(datos|poder-firmado)\/[^/]+\/?$/i],
+  ['POST', /^\/api\/whatsapp\/webhook\/?$/i],
+  ['PATCH', /^\/api\/admin\/informes\/[^/]+\/?$/i],
+];
 app.use((req, res, next) =>
-  (req.method === 'POST' && RUTA_SUBIDA_REGISTRO.test(req.path) ? next() : jsonGlobal(req, res, next)));
+  (RUTAS_CON_PARSER_PROPIO.some(([metodo, re]) => req.method === metodo && re.test(req.path))
+    ? next() : jsonGlobal(req, res, next)));
 
 // Rate limiting en endpoints sensibles (antes de montar las rutas).
 // Login: anti brute force.
@@ -87,7 +101,7 @@ app.use('/api/cliente/vigilancia/iniciar', limiters.pago);
 // Subidas del registro: hasta 30 MB por request. Se limita la cantidad por IP
 // y se verifica que la referencia exista antes de leer el cuerpo, para que no
 // se pueda forzar al servidor a parsear 30 MB contra una referencia inventada.
-// Si se agrega o renombra una ruta de subida, actualizar RUTA_SUBIDA_REGISTRO.
+// Si se agrega o renombra una ruta de subida, actualizar RUTAS_CON_PARSER_PROPIO.
 const limiteSubidaRegistro = rateLimit({ nombre: 'subida_registro', max: 30, ventanaMs: 60 * 60_000 });
 function refRegistroExiste(req, res, next) {
   const lead = db.prepare("SELECT * FROM leads WHERE external_reference = ? AND tipo = 'registro'").get(req.params.ref);
@@ -328,8 +342,7 @@ app.post('/api/marca/check', async (req, res) => {
   // Registramos el chequeo (incluye los anónimos) para medir demanda. No debe
   // romper la respuesta si algo falla.
   try {
-    const xff = req.headers['x-forwarded-for'];
-    const ip = xff ? String(xff).split(',')[0].trim() : (req.socket?.remoteAddress || null);
+    const ip = req.ip || req.socket?.remoteAddress || null;
     const utm = extraerUtm(req.body);
     db.prepare(`
       INSERT INTO chequeos (marca, clases, rubro, veredicto, riesgo, utm_source, utm_medium, utm_campaign, ip)
@@ -740,18 +753,19 @@ app.get('/api/registro/datos/:ref', (req, res) => {
 // Subida del poder firmado por el cliente.
 app.post('/api/registro/poder-firmado/:ref', limiteSubidaRegistro, refRegistroExiste, jsonSubida('20mb'), (req, res) => {
   const lead = req.leadRegistro;
-  const archivo = req.body && req.body.archivo;
-  if (typeof archivo !== 'string' || !archivo.startsWith('data:')) return res.status(400).json(fail('Falta el archivo.'));
-  const m = archivo.match(/^data:([a-z0-9.+/-]+);base64,(.+)$/i);
-  if (!m) return res.status(400).json(fail('Archivo inválido.'));
+  const archivo = subidas.leerDataUrl(req.body && req.body.archivo, subidas.DOCUMENTOS);
+  if (archivo.error) return res.status(400).json(fail(archivo.error));
   try {
     const fs = require('fs');
-    const base = path.dirname(db.name || (process.env.SQLITE_PATH || './data/legalpacers.db'));
-    const dir = path.join(base, 'registros');
+    const dir = subidas.DIR_REGISTROS;
     fs.mkdirSync(dir, { recursive: true });
-    let ext = (m[1].split('/')[1] || 'pdf').replace('+xml', '').replace('jpeg', 'jpg');
-    const p = path.join(dir, `poder-firmado-${lead.id}.${ext}`);
-    fs.writeFileSync(p, Buffer.from(m[2], 'base64'));
+    const p = path.join(dir, `poder-firmado-${lead.id}.${archivo.ext}`);
+    fs.writeFileSync(p, archivo.buf);
+    // Si antes subió el poder con otra extensión, no dejar la copia vieja.
+    const anterior = lead.registro_poder_path ? path.resolve(lead.registro_poder_path) : null;
+    if (anterior && anterior !== path.resolve(p) && anterior.startsWith(dir + path.sep)) {
+      try { fs.unlinkSync(anterior); } catch {}
+    }
     db.prepare("UPDATE leads SET registro_poder_path = ?, registro_poder_at = datetime('now') WHERE id = ?").run(p, lead.id);
     audit.log(null, 'registro.poder_firmado', { entidad: 'leads', entidad_id: lead.id });
     // Avisar al admin.
@@ -778,31 +792,48 @@ app.post('/api/registro/datos/:ref', limiteSubidaRegistro, refRegistroExiste, js
     return res.status(400).json(fail('Faltan los datos del titular.'));
   }
 
+  // Validar todos los archivos antes de escribir nada: si uno no es de un tipo
+  // permitido, se rechaza el envío entero con un mensaje para el cliente.
+  if (body.titulares.some(t => !t || typeof t !== 'object')) {
+    return res.status(400).json(fail('Faltan los datos del titular.'));
+  }
+  let errorArchivo = null;
+  const validar = (dataUrl, permitidos, que) => {
+    if (errorArchivo || dataUrl === undefined || dataUrl === null || dataUrl === '') return null;
+    const a = subidas.leerDataUrl(dataUrl, permitidos);
+    if (a.error) { errorArchivo = `${que}: ${a.error}`; return null; }
+    return a;
+  };
+  const logo = validar(body.logo, subidas.LOGO, 'Logo');
+  const docs = body.titulares.map((t, i) => (t.tipo !== 'juridica' ? {} : {
+    constitutiva: validar(t.doc_constitutiva, subidas.DOCUMENTOS, `Contrato social del titular ${i + 1}`),
+    representacion: validar(t.doc_representacion, subidas.DOCUMENTOS, `Acta o poder del titular ${i + 1}`),
+  }));
+  if (errorArchivo) return res.status(400).json(fail(errorArchivo));
+
   const fs = require('fs');
-  const base = path.dirname(db.name || (process.env.SQLITE_PATH || './data/legalpacers.db'));
-  const dir = path.join(base, 'registros');
+  const dir = subidas.DIR_REGISTROS;
   try { fs.mkdirSync(dir, { recursive: true }); } catch {}
-  // Guarda un data URL (imagen o pdf) a disco y devuelve la ruta, o null.
-  const guardar = (dataUrl, nombre) => {
-    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
-    const m = dataUrl.match(/^data:([a-z0-9.+/-]+);base64,(.+)$/i);
-    if (!m) return null;
-    let ext = m[1].split('/')[1] || 'bin';
-    ext = ext.replace('+xml', '').replace('jpeg', 'jpg').replace('svg.xml', 'svg').replace('vnd.', '');
-    const p = path.join(dir, `${nombre}.${ext}`);
-    try { fs.writeFileSync(p, Buffer.from(m[2], 'base64')); return p; } catch (e) { console.error('[registro/datos] file:', e.message); return null; }
+  // Guarda un archivo ya validado a disco y devuelve la ruta, o null.
+  const guardar = (a, nombre) => {
+    if (!a) return null;
+    const p = path.join(dir, `${nombre}.${a.ext}`);
+    try { fs.writeFileSync(p, a.buf); return p; } catch (e) { console.error('[registro/datos] file:', e.message); return null; }
   };
 
-  const logoPath = guardar(body.logo, `logo-${lead.id}`) || lead.registro_logo_path || null;
+  const logoPath = guardar(logo, `logo-${lead.id}`) || lead.registro_logo_path || null;
 
   // Datos a persistir: reemplazamos el base64 de los docs por su ruta en disco.
   const datos = { ...body };
   delete datos.logo;
   datos.titulares = (body.titulares || []).map((t, i) => {
     const out = { ...t };
+    // Las rutas en disco las pone solo el servidor: nunca las del cliente.
+    delete out._doc_constitutiva_path;
+    delete out._doc_representacion_path;
     if (t.tipo === 'juridica') {
-      const c = guardar(t.doc_constitutiva, `tit${i}-constitutiva-${lead.id}`);
-      const r = guardar(t.doc_representacion, `tit${i}-representacion-${lead.id}`);
+      const c = guardar(docs[i].constitutiva, `tit${i}-constitutiva-${lead.id}`);
+      const r = guardar(docs[i].representacion, `tit${i}-representacion-${lead.id}`);
       out.doc_constitutiva = c ? path.basename(c) : null;
       out.doc_representacion = r ? path.basename(r) : null;
       out._doc_constitutiva_path = c;
@@ -857,7 +888,7 @@ app.get('/api/whatsapp/webhook', (req, res) => {
 
 // Recepción de mensajes. ACK inmediato + procesamiento en background.
 app.post('/api/whatsapp/webhook',
-  express.json({ verify: (req, _res, buf) => { req.rawBody = buf; } }),
+  express.json({ limit: '256kb', verify: (req, _res, buf) => { req.rawBody = buf; } }),
   (req, res) => {
     const wa = require('./src/bot/whatsapp');
     if (!wa.firmaValida(req.rawBody, req.headers['x-hub-signature-256'])) {
