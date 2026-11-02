@@ -14,7 +14,8 @@
     "monitoreo": "node src/run-monitoreo.js",
     "import-python": "node src/import-python-db.js",
     "backfill": "node src/run-backfill.js",
-    "prep-prod": "node src/run-prep-prod.js"
+    "prep-prod": "node src/run-prep-prod.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "alpinejs": "3.13.0",

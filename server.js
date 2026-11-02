@@ -78,6 +78,7 @@ app.use('/api/wtr/contacto', limiters.lead);
 app.use('/api/marca/consulta/iniciar', limiters.pago);
 app.use('/api/marca/registro/iniciar', limiters.pago);
 app.use('/api/cliente/vigilancia/iniciar', limiters.pago);
+app.use('/api/lp/docs/iniciar', limiters.pago);
 
 mountAuthRoutes(app);
 mountAdminRoutes(app);
@@ -693,6 +694,45 @@ app.post('/api/marca/registro/iniciar', async (req, res) => {
   }
 });
 
+// ===== Términos y condiciones / política de privacidad / combo =====
+// Solo cobra (el servicio se hace "a mano" hasta enero de 2027). Apagado por
+// defecto: responde 404 hasta que SERVICIOS_DOCS_ACTIVOS=true y el precio del
+// servicio esté cargado en su variable (ver src/servicios-docs.js).
+app.post('/api/lp/docs/iniciar', async (req, res) => {
+  const { obtenerServicio, tituloPago } = require('./src/servicios-docs');
+  const body = req.body || {};
+  const servicio = obtenerServicio(body.servicio);
+  if (!servicio) return res.status(404).json(fail('Servicio no disponible.', 404));
+  const email = String(body.email || '').trim().toLowerCase();
+  if (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json(fail('Email inválido'));
+  const proyecto = String(body.proyecto || '').trim().slice(0, 120);
+  if (!proyecto) return res.status(400).json(fail('Falta el nombre del proyecto'));
+  if (body.consentimiento !== true) return res.status(400).json(fail('Falta aceptar la casilla de consentimiento.'));
+
+  const lead = crearLead({
+    tipo: servicio.tipo, marca: proyecto, email,
+    telefono: null, clases: [], rubro: null, monto: servicio.precio,
+    utm: extraerUtm(body),
+  });
+  db.prepare("UPDATE leads SET consentimiento_at = datetime('now') WHERE id = ?").run(lead.id);
+
+  try {
+    const pref = await crearPreferencia({
+      tipo: servicio.tipo,
+      titulo: tituloPago(servicio),
+      precio: servicio.precio,
+      externalReference: lead.externalReference,
+      email,
+      baseUrl: BASE_URL,
+    });
+    actualizarInitPoint(lead.id, pref.init_point, pref.preference_id);
+    return res.json(ok({ init_point: pref.init_point, lead_id: lead.id, stub: !!pref.stub }));
+  } catch (err) {
+    console.error('[lp/docs/iniciar] error MP:', err.message);
+    return res.status(502).json(fail('No pudimos crear la preferencia de pago.'));
+  }
+});
+
 // ===== Onboarding del registro: formulario de datos post-pago =====
 // El cliente entra con el link ?ref=<external_reference> del lead de registro.
 app.get('/registro/datos', (req, res) =>
@@ -907,8 +947,10 @@ async function procesarPago(paymentId) {
     try {
       const MAIL_ADMIN = (process.env.MAIL_ADMIN || 'tomas@legalpacers.com').trim();
       const { enviarMailGenerico } = require('./src/notificaciones');
+      const servicioDocs = require('./src/servicios-docs').servicioPorTipo(lead.tipo);
       const tipoTxt = lead.tipo === 'informe' ? 'Informe de viabilidad'
-        : lead.tipo === 'registro' ? 'Registro de marca' : (lead.tipo || 'Pago');
+        : lead.tipo === 'registro' ? 'Registro de marca'
+        : servicioDocs ? servicioDocs.nombre : (lead.tipo || 'Pago');
       const montoTxt = lead.monto ? ` · $${Number(lead.monto).toLocaleString('es-AR')}` : '';
       // Botón "Escribile por WhatsApp" con el teléfono del cliente + mensaje.
       let waBtn = '';
@@ -926,11 +968,12 @@ async function procesarPago(paymentId) {
         html: `<div style="font-family:system-ui,sans-serif;max-width:520px;color:#0f1f3d">
           <h2 style="color:#1B6EF3">Se acreditó un pago</h2>
           <p><strong>Tipo:</strong> ${tipoTxt}${montoTxt}</p>
-          <p><strong>Marca:</strong> ${lead.marca}</p>
-          <p><strong>Cliente:</strong> ${lead.email || '—'}${lead.telefono ? ' · ' + lead.telefono : ''}</p>
+          <p><strong>${servicioDocs ? 'Proyecto' : 'Marca'}:</strong> ${esc(lead.marca)}</p>
+          <p><strong>Cliente:</strong> ${esc(lead.email || '—')}${lead.telefono ? ' · ' + esc(lead.telefono) : ''}</p>
           <p><strong>Pago MP:</strong> ${paymentId}</p>
           <p style="margin-top:14px">${lead.tipo === 'informe'
             ? 'El informe se está generando — revisalo y aprobalo en el panel.'
+            : servicioDocs ? 'Pedido nuevo de documentos: anotalo en el registro de pedidos. El formulario post-pago todavía no está en el sistema.'
             : 'Contactá al cliente para arrancar el trámite.'}</p>
           ${waBtn}
         </div>`,

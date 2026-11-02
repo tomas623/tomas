@@ -404,6 +404,9 @@ for (const [col, ddl] of [
   ['registro_logo_path',  `ALTER TABLE leads ADD COLUMN registro_logo_path TEXT`],
   ['registro_poder_path', `ALTER TABLE leads ADD COLUMN registro_poder_path TEXT`],
   ['registro_poder_at',   `ALTER TABLE leads ADD COLUMN registro_poder_at TEXT`],
+  // Servicios de términos y condiciones / política de privacidad: fecha en que
+  // el cliente marcó la casilla de consentimiento antes de pagar (prueba).
+  ['consentimiento_at',   `ALTER TABLE leads ADD COLUMN consentimiento_at TEXT`],
 ]) {
   if (!columnExists('leads', col)) db.exec(ddl);
 }
