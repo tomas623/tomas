@@ -6,6 +6,7 @@ const path = require('path');
 const db = require('./db');
 const { requireAuth } = require('./auth');
 const audit = require('./audit');
+const { enviarArchivoSubido } = require('./subidas');
 
 function ok(data) { return { ok: true, data }; }
 function fail(msg, code = 400) { return { ok: false, error: msg, code }; }
@@ -39,6 +40,19 @@ function htmlInformeListo(row) {
 
 function mountAdminRoutes(app) {
   const guard = requireAuth('admin', 'operador');
+
+  // Diagnóstico de la IP que ve el servidor (rate limiting). Muestra solo datos
+  // de la propia request. Si "ip" no coincide con tu IP pública, revisar
+  // TRUST_PROXY_HOPS (ver confiarEnProxy en middleware/seguridad.js).
+  app.get('/api/admin/diagnostico/ip', guard, (req, res) => {
+    res.json(ok({
+      ip: req.ip,
+      ips: req.ips,
+      socket: req.socket?.remoteAddress || null,
+      x_forwarded_for: req.headers['x-forwarded-for'] || null,
+      x_real_ip: req.headers['x-real-ip'] || null,
+    }));
+  });
 
   // ===== Resumen del dashboard =====
   app.get('/api/admin/resumen', guard, (req, res) => {
@@ -207,7 +221,7 @@ function mountAdminRoutes(app) {
     if (!lead || !lead.registro_logo_path || !fs.existsSync(lead.registro_logo_path)) {
       return res.status(404).send('Sin logo');
     }
-    res.sendFile(path.resolve(lead.registro_logo_path));
+    enviarArchivoSubido(res, path.resolve(lead.registro_logo_path), `logo-${id}`);
   });
 
   // Prompt para cargar la marca en el INPI con la extensión de Claude.
@@ -229,7 +243,7 @@ function mountAdminRoutes(app) {
     if (!lead || !lead.registro_poder_path || !fs.existsSync(lead.registro_poder_path)) {
       return res.status(404).send('Sin poder firmado');
     }
-    res.sendFile(path.resolve(lead.registro_poder_path));
+    enviarArchivoSubido(res, path.resolve(lead.registro_poder_path), `poder-firmado-${id}`);
   });
 
   // Sirve la documentación societaria (constitutiva / representación) de un titular.
@@ -242,7 +256,11 @@ function mountAdminRoutes(app) {
     let d; try { d = JSON.parse(lead.registro_datos); } catch { return res.status(400).send('Datos inválidos'); }
     const p = d.titulares && d.titulares[tit] && d.titulares[tit][key];
     if (!p || !fs.existsSync(p)) return res.status(404).send('Sin documento');
-    res.sendFile(path.resolve(p));
+    // Solo se sirven archivos de la carpeta de subidas del registro (datos
+    // viejos podían traer una ruta escrita por el cliente).
+    const dirRegistros = path.resolve(path.dirname(db.name), 'registros');
+    if (path.dirname(path.resolve(String(p))) !== dirRegistros) return res.status(404).send('Sin documento');
+    enviarArchivoSubido(res, path.resolve(p), `doc-${id}-tit${tit}-${req.query.tipo === 'rep' ? 'representacion' : 'constitutiva'}`);
   });
 
   // CRM: editar campos manuales (pipeline, notas, próximo contacto, asignación).

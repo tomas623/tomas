@@ -51,11 +51,47 @@ setInterval(() => {
   }
 }, 60_000).unref?.();
 
+// ===== IP del cliente detrás del proxy de Railway =====
+// Supuesto: entre internet y este proceso está el edge de Railway (y quizás
+// saltos internos con IP privada). El edge agrega (o reescribe) X-Forwarded-For
+// con la IP que se le conectó, así que el valor confiable es el de más a la
+// DERECHA que no sea de un proxy propio. El de más a la izquierda lo puede
+// escribir el cliente y no sirve: con él cualquiera esquivaba el rate limit
+// del login mandando un X-Forwarded-For distinto en cada intento.
+//
+// Express recorre X-Forwarded-For de derecha a izquierda y se queda con la
+// primera dirección en la que NO confía. Confiamos en:
+//   - los primeros TRUST_PROXY_HOPS saltos (por defecto 1: el que se conecta
+//     al socket, que es el edge de Railway), y
+//   - cualquier salto con IP privada, de loopback, link-local o CGNAT (red
+//     interna de Railway), porque un cliente desde internet no llega con una
+//     de esas y el edge pone la suya a la derecha de lo que mande el cliente.
+// Si alguna vez se pone un CDN delante (Cloudflare con proxy, por ejemplo),
+// hay que subir TRUST_PROXY_HOPS a 2 o todos compartirían la IP del CDN.
+// Para revisar qué ve el servidor: GET /api/admin/diagnostico/ip (admin).
+const net = require('net');
+const REDES_INTERNAS = new net.BlockList();
+[['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16], ['127.0.0.0', 8],
+ ['169.254.0.0', 16], ['100.64.0.0', 10]].forEach(([a, p]) => REDES_INTERNAS.addSubnet(a, p, 'ipv4'));
+[['::1', 128], ['fc00::', 7], ['fe80::', 10]].forEach(([a, p]) => REDES_INTERNAS.addSubnet(a, p, 'ipv6'));
+
+function esIpInterna(addr) {
+  let a = String(addr || '').trim();
+  if (a.toLowerCase().startsWith('::ffff:') && net.isIPv4(a.slice(7))) a = a.slice(7);
+  const tipo = net.isIP(a);
+  if (!tipo) return false;
+  return REDES_INTERNAS.check(a, tipo === 4 ? 'ipv4' : 'ipv6');
+}
+
+const SALTOS_PROXY = Math.max(0, parseInt(process.env.TRUST_PROXY_HOPS || '1', 10) || 0);
+// Función para app.set('trust proxy', ...). i = 0 es quien se conecta al socket.
+function confiarEnProxy(addr, i) {
+  return i < SALTOS_PROXY || esIpInterna(addr);
+}
+
 function clienteIP(req) {
-  // Railway/proxies ponen la IP real en x-forwarded-for.
-  const xff = req.headers['x-forwarded-for'];
-  if (xff) return String(xff).split(',')[0].trim();
-  return req.socket?.remoteAddress || 'desconocida';
+  // req.ip ya aplica confiarEnProxy (configurado en server.js).
+  return req.ip || req.socket?.remoteAddress || 'desconocida';
 }
 
 // Factory: crea un middleware que limita a `max` requests por `ventanaMs` por
@@ -101,4 +137,4 @@ const limiters = {
   pago: rateLimit({ nombre: 'pago', max: 15, ventanaMs: 60 * 60_000 }),
 };
 
-module.exports = { securityHeaders, rateLimit, limiters };
+module.exports = { securityHeaders, rateLimit, limiters, confiarEnProxy, clienteIP, esIpInterna };
