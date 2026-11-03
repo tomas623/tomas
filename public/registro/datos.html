@@ -67,8 +67,8 @@
       <h2>📄 Poder firmado</h2>
       <div id="poderYa" class="hide" style="color:#065F46;font-size:14px">✓ Ya recibimos tu poder firmado. Gracias.</div>
       <div id="poderUpload">
-        <div class="hint">Cuando tengas el <strong>poder firmado</strong> (te lo enviamos por mail/WhatsApp), subilo acá — foto o PDF.</div>
-        <input id="poderFile" type="file" accept=".pdf,image/*" onchange="el('poderName').textContent=this.files[0]?this.files[0].name:''">
+        <div class="hint">Cuando tengas el <strong>poder firmado</strong> (te lo enviamos por mail/WhatsApp), subilo acá: PDF o foto (JPG, PNG o WEBP).</div>
+        <input id="poderFile" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onchange="el('poderName').textContent=this.files[0]?this.files[0].name:''">
         <div id="poderName" class="file-name"></div>
         <div id="poderErr" class="err hide"></div>
         <button type="button" class="btn btn-primary" id="poderBtn" style="margin-top:12px" onclick="subirPoder()">Subir poder firmado</button>
@@ -103,8 +103,8 @@
         <label><input type="radio" name="tipoMarca" value="figurativa" onchange="setTipoMarca()"> Figurativa (solo logo)</label>
       </div>
       <div id="logoWrap" class="hide">
-        <label>Logo en alta resolución (PNG, JPG o SVG)</label>
-        <input id="logo" type="file" accept="image/png,image/jpeg,image/svg+xml" onchange="onLogo()">
+        <label>Logo en alta resolución (PNG, JPG o WEBP)</label>
+        <input id="logo" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" onchange="onLogo()">
         <div id="logoName" class="file-name"></div>
       </div>
       <label style="margin-top:14px">Clases y productos/servicios que querés proteger</label>
@@ -189,13 +189,13 @@ function titularHTML(uid){
         <div><label>CUIT/CUIL del firmante</label><input class="j-rep-cuit" type="text" inputmode="numeric"></div>
       </div>
       <div class="note" style="background:rgba(0,111,251,.06);border-color:rgba(0,111,251,.25);color:#001540">
-        Necesitamos la documentación de la empresa para acreditar su existencia y quién la representa (PDF o foto legible).
+        Necesitamos la documentación de la empresa para acreditar su existencia y quién la representa (PDF o foto legible en JPG, PNG o WEBP).
       </div>
       <label>Contrato social / estatuto constitutivo</label>
-      <input class="j-const" type="file" accept=".pdf,image/*" onchange="onDoc('const',this)">
+      <input class="j-const" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onchange="onDoc('const',this)">
       <div class="j-const-name file-name"></div>
       <label>Acta de designación de autoridades / poder del firmante</label>
-      <input class="j-repdoc" type="file" accept=".pdf,image/*" onchange="onDoc('rep',this)">
+      <input class="j-repdoc" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onchange="onDoc('rep',this)">
       <div class="j-repdoc-name file-name"></div>
     </div>
 
