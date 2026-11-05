@@ -145,7 +145,7 @@ textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba
   let timer = null;
   let cambios = false;
 
-  const mb = (b) => (b / 1048576).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' MB';
+  const mb = (b) => b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' KB' : (b / 1048576).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + ' MB';
 
   function mostrarFin() {
     $('#form').classList.add('hide'); $('#barra').classList.add('hide');
