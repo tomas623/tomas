@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Términos y condiciones y política de privacidad · Legal Pacer</title>
+<meta name="description" content="Términos y condiciones y política de privacidad para startups y emprendedores con web o app. Un producto de WTR | abogados.">
+<link rel="icon" href="/static/brand/favicon-64.png">
+<style>
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialLight.otf") format("opentype");font-weight:300;font-display:swap}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialRegular.otf") format("opentype");font-weight:400 500;font-display:swap}
+/* El archivo Demibold trae roto el carácter "ú": esa letra se toma de Bold. */
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialDemibold.otf") format("opentype");font-weight:600;font-display:swap;unicode-range:U+0000-00F9,U+00FB-FFFF}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialBold.otf") format("opentype");font-weight:600;font-display:swap;unicode-range:U+00FA}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialBold.otf") format("opentype");font-weight:700 900;font-display:swap}
+:root{--bg:#FDF8F3;--surface:#FFFFFF;--border:#D9D6D0;--border-soft:#E6E2DB;--text:#1E1E1E;--muted:#4A4F5C;
+      --dim:#6B7080;--accent:#006FFB;--accent-dark:#005AD0;--noche:#001540;--gris:#E2E1DE;--red:#B42318}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Mundial',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-weight:300;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{border-bottom:1px solid var(--border-soft)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:16px;padding-bottom:16px}
+header img{height:28px;width:auto;display:block}
+header .de{font-size:13px;color:var(--muted)}
+.hero{background:var(--noche);color:#fff}
+.hero .wrap{padding-top:56px;padding-bottom:56px}
+.rotulo{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#8FB8FF;font-weight:600}
+h1{font-size:clamp(28px,4.4vw,44px);line-height:1.12;margin:12px 0 14px;font-weight:700;max-width:760px}
+.hero p{font-size:17px;color:var(--gris);margin:0;max-width:640px}
+section{padding:44px 0}
+h2{color:var(--noche);font-size:24px;margin:0 0 18px;font-weight:700}
+.opciones{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:860px){.opciones{grid-template-columns:1fr}}
+.opcion{position:relative;background:var(--surface);border:1.5px solid var(--border-soft);border-radius:14px;padding:22px;cursor:pointer;display:flex;flex-direction:column;gap:10px;transition:border-color .15s}
+.opcion:hover{border-color:var(--border)}
+.opcion input{position:absolute;opacity:0;pointer-events:none}
+.opcion.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,111,251,.12)}
+.opcion:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.opcion h3{margin:0;font-size:18px;color:var(--noche);font-weight:700;line-height:1.3}
+.precio{font-size:26px;font-weight:700;color:var(--noche)}
+.opcion .qr{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600;margin-top:4px}
+.opcion p{margin:0;font-size:14.5px;color:var(--muted)}
+.marca-sel{font-size:13px;color:var(--accent);font-weight:600;min-height:20px}
+.como{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:24px;max-width:760px}
+.como p{margin:0 0 12px;font-size:16px}
+.como p:last-child{margin:0}
+.pago{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:start}
+@media(max-width:860px){.pago{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:24px}
+label.campo{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:600}
+label.campo:first-child{margin-top:0}
+input[type=text],input[type=email]{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font:inherit;font-size:15px;color:var(--text)}
+input[type=text]:focus,input[type=email]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,111,251,.15)}
+.casilla{display:flex;gap:12px;align-items:flex-start;margin-top:18px;font-size:14.5px;cursor:pointer}
+.casilla input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
+.casilla strong{font-weight:600;color:var(--noche)}
+.aparte{margin:8px 0 0 32px;font-size:14px;color:var(--muted)}
+.btn{display:inline-block;border:none;border-radius:999px;padding:15px 22px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;width:100%;margin-top:22px;background:var(--accent);color:#fff}
+.btn:hover{background:var(--accent-dark)}
+.btn:disabled{background:#AFC9F0;cursor:not-allowed}
+.nota{font-size:14px;color:var(--muted);margin:12px 0 0;text-align:center}
+.err{color:var(--red);font-size:14px;margin-top:12px}
+.resumen h3{margin:0 0 6px;color:var(--noche);font-size:16px}
+.resumen .total{font-size:30px;font-weight:700;color:var(--noche);margin:4px 0 10px}
+.resumen p{margin:0;font-size:14px;color:var(--muted)}
+.faq details{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:16px 18px;margin-bottom:10px;max-width:760px}
+.faq summary{cursor:pointer;font-weight:600;color:var(--noche);font-size:15.5px}
+.faq details p{margin:10px 0 0;font-size:15px;color:var(--muted)}
+footer{border-top:1px solid var(--border-soft);padding:24px 0 40px;font-size:13px;color:var(--dim)}
+footer a{color:var(--dim)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <a href="/"><img src="/static/brand/logo.png" alt="Legal Pacer" width="1200" height="276"></a>
+  <span class="de">Un producto de WTR | abogados</span>
+</div></header>
+
+<div class="hero"><div class="wrap">
+  <div class="rotulo">Legal Pacer</div>
+  <h1>Términos y condiciones y política de privacidad</h1>
+  <p>Para startups y emprendedores con web o app.</p>
+</div></div>
+
+<main>
+<section><div class="wrap">
+  <h2>Elegí qué necesitás</h2>
+  <div class="opciones" id="opciones" role="radiogroup" aria-label="Servicio">
+    <label class="opcion" data-codigo="tyc">
+      <input type="radio" name="servicio" value="tyc">
+      <h3>Términos y condiciones</h3>
+      <div class="precio" data-precio="tyc">—</div>
+      <div class="qr">Qué recibís</div>
+      <p>El borrador de tus términos y condiciones en Google Drive, con permiso para comentar, solo para tu mail. Una ronda de comentarios: si comentás, lo ajustamos a lo que contaste en el formulario. La versión final en Word y PDF, con la guía de buenas prácticas. Con la versión final, el link para agendar una reunión de diagnóstico de media hora con WTR sobre tu negocio.</p>
+      <div class="marca-sel"></div>
+    </label>
+    <label class="opcion" data-codigo="privacidad">
+      <input type="radio" name="servicio" value="privacidad">
+      <h3>Política de privacidad</h3>
+      <div class="precio" data-precio="privacidad">—</div>
+      <div class="qr">Qué recibís</div>
+      <p>El borrador en Google Drive con una ronda de comentarios, la versión final de tu política de privacidad en Word y PDF, con la guía de buenas prácticas y la guía de GDPR, y al final la reunión de diagnóstico de media hora con WTR.</p>
+      <div class="marca-sel"></div>
+    </label>
+    <label class="opcion" data-codigo="combo">
+      <input type="radio" name="servicio" value="combo">
+      <h3>Términos y condiciones y política de privacidad</h3>
+      <div class="precio" data-precio="combo">—</div>
+      <div class="qr">Qué recibís</div>
+      <p>Los dos borradores en Google Drive con una ronda de comentarios, la versión final de los dos en Word y PDF, con las guías de los dos (buenas prácticas de cada uno y GDPR), y al final una sola reunión de diagnóstico gratuita con WTR.</p>
+      <div class="marca-sel"></div>
+    </label>
+  </div>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap">
+  <h2>Cómo funciona</h2>
+  <div class="como">
+    <p>Todo el servicio es online. Pagás, completás el formulario sobre tu negocio y subís lo que tengas. El borrador te llega en un documento de Google Drive 7 días corridos después de que completes el formulario. Tenés 10 días corridos para dejar tus comentarios por escrito y con eso armamos la versión final, en Word y PDF, con sus guías. Si te surge una duda en el camino, nos escribís por <a href="https://wa.me/5491128774200" target="_blank" rel="noopener">WhatsApp</a>.</p>
+    <p>Si querés saber dónde estás parado con tu negocio, podés <a href="https://calendly.com/tomas-wtrabogados/30min" target="_blank" rel="noopener">agendar una reunión de diagnóstico gratuita</a> con WTR | abogados.</p>
+  </div>
+</div></section>
+
+<section style="padding-top:0" id="pagar"><div class="wrap">
+  <h2>Tus datos</h2>
+  <div class="pago">
+    <form class="card" id="form" novalidate>
+      <label class="campo" for="nombre">Tu nombre</label>
+      <input id="nombre" type="text" autocomplete="given-name" maxlength="80" required>
+      <label class="campo" for="email">Tu mail</label>
+      <input id="email" type="email" autocomplete="email" maxlength="200" required>
+      <label class="campo" for="proyecto">Nombre de tu proyecto o negocio</label>
+      <input id="proyecto" type="text" autocomplete="organization" maxlength="120" required>
+
+      <label class="casilla"><input type="checkbox" id="ley"><span><strong>Mi negocio opera en Argentina y uso ley argentina</strong></span></label>
+      <p class="aparte">Si tu negocio opera en el exterior, <a href="https://calendly.com/tomas-wtrabogados/30min" target="_blank" rel="noopener">agendá una reunión de diagnóstico con WTR | abogados</a>.</p>
+
+      <label class="casilla"><input type="checkbox" id="consentimiento"><span id="textoConsentimiento"></span></label>
+      <p class="aparte"><a href="/privacidad" target="_blank" rel="noopener">Política de privacidad de Legal Pacer</a></p>
+
+      <button type="submit" class="btn" id="pagarBtn" disabled>Pagar con Mercado Pago</button>
+      <p class="nota">Después de pagar te llega por mail el link al formulario.</p>
+      <div id="err" class="err hide" role="alert"></div>
+    </form>
+    <aside class="card resumen" aria-live="polite">
+      <h3 id="resNombre">Elegí una opción</h3>
+      <div class="total" id="resPrecio"></div>
+    </aside>
+  </div>
+</div></section>
+
+<section class="faq" style="padding-top:0"><div class="wrap">
+  <h2>Preguntas frecuentes</h2>
+  <details><summary>¿Qué subo para los términos y condiciones o la política de privacidad?</summary>
+    <p>Lo que tengas: tus términos y condiciones actuales, tu web, tus redes o un dossier. Nos sirve para conocer cómo funciona tu negocio y que el documento lo refleje. Si no tenés nada, completás solo el formulario.</p></details>
+  <details><summary>¿Cuánto tarda la entrega?</summary>
+    <p>El borrador te llega 7 días corridos después de que completes el formulario, en un documento de Google Drive. Tenés 10 días corridos para dejar tus comentarios. Con eso armamos la versión final y te la mandamos en Word y PDF, con las guías.</p></details>
+  <details><summary>¿Puedo pedir cambios?</summary>
+    <p>Sí, una vez: comentás el borrador y lo ajustamos a lo que contaste en el formulario. Si tu negocio cambia o necesitás cubrir algo que el formulario no decía, lo ve WTR | abogados con un presupuesto aparte.</p></details>
+  <details><summary>¿Qué es la reunión de diagnóstico?</summary>
+    <p>Media hora gratuita con un abogado de WTR | abogados, el estudio que creó Legal Pacer, para hablar de tu negocio: los socios, una ronda, tu marca u otros contratos. El link para agendarla te llega con la versión final. Los cambios al documento los pedís en la ronda de comentarios. Va con los términos y condiciones, con la política de privacidad o con las dos juntas (en ese caso, una sola reunión).</p></details>
+  <details><summary>¿Y si mi negocio opera fuera de Argentina?</summary>
+    <p>Los términos y condiciones y la política de privacidad de Legal Pacer se hacen con ley argentina. Si tu negocio opera en el exterior, agendá una reunión de diagnóstico con WTR | abogados antes de pagar. Si lo vemos después del pago, te devolvemos el total.</p></details>
+  <details><summary>¿Y si tengo una duda durante el servicio?</summary>
+    <p>Nos escribís por <a href="https://wa.me/5491128774200" target="_blank" rel="noopener">WhatsApp</a>.</p></details>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  Legal Pacer es un producto de WTR | abogados · <a href="/terminos">Términos</a> · <a href="/privacidad">Privacidad</a>
+</div></footer>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const fmt = (n) => '$' + Number(n).toLocaleString('es-AR');
+  let catalogo = {};
+  let elegido = null;
+
+  function elegir(codigo) {
+    if (!catalogo[codigo]) return;
+    elegido = codigo;
+    document.querySelectorAll('.opcion').forEach((o) => {
+      const on = o.dataset.codigo === codigo;
+      o.classList.toggle('on', on);
+      o.querySelector('input').checked = on;
+      o.querySelector('.marca-sel').textContent = on ? 'Elegido' : '';
+    });
+    $('#resNombre').textContent = catalogo[codigo].nombre;
+    $('#resPrecio').textContent = fmt(catalogo[codigo].precio);
+    habilitar();
+  }
+
+  function habilitar() {
+    const listo = elegido && $('#nombre').value.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#email').value.trim())
+      && $('#proyecto').value.trim() && $('#ley').checked && $('#consentimiento').checked;
+    $('#pagarBtn').disabled = !listo;
+  }
+
+  document.querySelectorAll('.opcion input').forEach((i) => i.addEventListener('change', () => elegir(i.value)));
+  ['#nombre', '#email', '#proyecto'].forEach((s) => $(s).addEventListener('input', habilitar));
+  ['#ley', '#consentimiento'].forEach((s) => $(s).addEventListener('change', habilitar));
+
+  fetch('/api/lp/docs/catalogo').then((r) => r.json()).then((r) => {
+    if (!r.ok) throw new Error();
+    $('#textoConsentimiento').textContent = r.data.consentimiento;
+    r.data.servicios.forEach((s) => { catalogo[s.codigo] = s; });
+    document.querySelectorAll('.opcion').forEach((o) => {
+      const s = catalogo[o.dataset.codigo];
+      if (s) o.querySelector('[data-precio]').textContent = fmt(s.precio);
+      else o.classList.add('hide');
+    });
+    const q = new URLSearchParams(location.search).get('opcion');
+    const pre = { terminos: 'tyc', privacidad: 'privacidad', 'las-dos': 'combo' }[q];
+    if (pre) elegir(pre);
+  }).catch(() => {
+    $('#err').textContent = 'No pudimos cargar los precios. Probá de nuevo en unos minutos.';
+    $('#err').classList.remove('hide');
+  });
+
+  $('#form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = $('#pagarBtn');
+    btn.disabled = true;
+    $('#err').classList.add('hide');
+    const utm = {};
+    new URLSearchParams(location.search).forEach((v, k) => { if (/^utm_/.test(k)) utm[k] = v; });
+    try {
+      const r = await fetch('/api/lp/docs/iniciar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servicio: elegido, nombre: $('#nombre').value.trim(), email: $('#email').value.trim(),
+          proyecto: $('#proyecto').value.trim(), ley_argentina: $('#ley').checked, consentimiento: $('#consentimiento').checked, ...utm }),
+      }).then((x) => x.json());
+      if (!r.ok) throw new Error(r.error || 'No pudimos iniciar el pago.');
+      location.href = r.data.init_point;
+    } catch (err) {
+      $('#err').textContent = err.message;
+      $('#err').classList.remove('hide');
+      btn.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

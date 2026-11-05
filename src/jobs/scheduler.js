@@ -211,6 +211,19 @@ function iniciar() {
     });
   }
 
+  // 9) Borrado de los archivos que subieron los clientes de términos y
+  // condiciones / privacidad, a los 90 días de la versión final
+  // (DOCS_ARCHIVOS_DIAS). Diario a las 3:30. Ver docs/datos-personales-tyc-pp.md.
+  programar('docs-borrar-archivos', (process.env.CRON_DOCS_ARCHIVOS || '30 3 * * *').trim(), async () => {
+    try {
+      const r = require('../docs-pedidos').limpiarArchivosVencidos();
+      if (r.pedidos) console.log(`[cron] docs-borrar-archivos: ${r.archivos} archivo(s) de ${r.pedidos} pedido(s)`);
+    } catch (err) {
+      console.error('[cron] docs-borrar-archivos ERROR:', err.message);
+      audit.log(null, 'cron.docs_archivos.error', { detalle: { error: err.message } });
+    }
+  });
+
   return state;
 }
 

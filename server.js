@@ -72,14 +72,19 @@ app.use('/wtr-v2', (req, res, next) => { res.set('X-Robots-Tag', 'noindex'); nex
 //   - Webhook de WhatsApp: su parser guarda req.rawBody para validar la firma
 //     X-Hub-Signature-256 de Meta; sin él la firma siempre da inválida.
 //   - PATCH de informes en el admin: parser propio de 2 MB.
+//   - Subida de archivos del formulario de términos y condiciones / política
+//     de privacidad y envío de la versión final desde el panel (ver
+//     usaParserPropioDocs en src/docs-rutas.js).
 // Si se agrega o renombra una de estas rutas, actualizar esta lista.
 const jsonGlobal = express.json({ limit: '256kb' });
 const RUTA_SUBIDA_REGISTRO = /^\/api\/registro\/(datos|poder-firmado)\/[^/]+\/?$/i;
 const RUTA_WEBHOOK_WA = /^\/api\/whatsapp\/webhook\/?$/i;
 const RUTA_INFORME_ADMIN = /^\/api\/admin\/informes\/[^/]+\/?$/i;
+const { mountDocsRoutes, usaParserPropioDocs } = require('./src/docs-rutas');
 function usaParserPropio(req) {
   return (req.method === 'POST' && (RUTA_SUBIDA_REGISTRO.test(req.path) || RUTA_WEBHOOK_WA.test(req.path)))
-    || (req.method === 'PATCH' && RUTA_INFORME_ADMIN.test(req.path));
+    || (req.method === 'PATCH' && RUTA_INFORME_ADMIN.test(req.path))
+    || usaParserPropioDocs(req);
 }
 app.use((req, res, next) => (usaParserPropio(req) ? next() : jsonGlobal(req, res, next)));
 
@@ -134,6 +139,7 @@ function borrarReemplazado(anterior, nuevo, dir) {
 mountAuthRoutes(app);
 mountAdminRoutes(app);
 mountClienteRoutes(app);
+mountDocsRoutes(app);
 
 // Detectar clases Niza por rubro — espejo de la lógica del front (detectarClases).
 // Mapeo declarativo rubro → clases del nomenclador de Niza. Cada entrada lista
@@ -755,8 +761,13 @@ app.post('/api/lp/docs/iniciar', async (req, res) => {
   if (!servicio) return res.status(404).json(fail('Servicio no disponible.', 404));
   const email = String(body.email || '').trim().toLowerCase();
   if (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json(fail('Email inválido'));
-  const proyecto = String(body.proyecto || '').trim().slice(0, 120);
+  const nombre = String(body.nombre || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 80);
+  if (!nombre) return res.status(400).json(fail('Falta tu nombre'));
+  const proyecto = String(body.proyecto || '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 120);
   if (!proyecto) return res.status(400).json(fail('Falta el nombre del proyecto'));
+  // Las dos casillas son obligatorias y van desmarcadas (textos-cliente.md, b;
+  // procedimiento.md, "Consentimiento del cliente sobre IA").
+  if (body.ley_argentina !== true) return res.status(400).json(fail('Para pagar, confirmá que tu negocio opera en Argentina y usa ley argentina.'));
   if (body.consentimiento !== true) return res.status(400).json(fail('Falta aceptar la casilla de consentimiento.'));
 
   const lead = crearLead({
@@ -765,6 +776,7 @@ app.post('/api/lp/docs/iniciar', async (req, res) => {
     utm: extraerUtm(body),
   });
   db.prepare("UPDATE leads SET consentimiento_at = datetime('now') WHERE id = ?").run(lead.id);
+  require('./src/docs-pedidos').crearPedidoPendiente({ leadId: lead.id, servicio: servicio.codigo, nombre });
 
   try {
     const pref = await crearPreferencia({
@@ -1010,6 +1022,30 @@ async function procesarPago(paymentId) {
 
   const lead = db.prepare('SELECT * FROM leads WHERE external_reference = ?').get(ref);
   if (!lead) return;
+  const docsServicio = require('./src/servicios-docs').servicioPorTipo(lead.tipo);
+
+  // Aviso repetido de un pago ya acreditado (MP manda el webhook y el IPN, y
+  // reintenta): no se toca nada. Antes el estado pasaba de 'pagado' a
+  // 'approved' y el aviso siguiente volvía a disparar los mails.
+  if (estado === 'approved' && lead.estado === 'pagado') return;
+
+  // Términos y condiciones / privacidad: el monto y la moneda del pago tienen
+  // que coincidir con el pedido antes de habilitar el formulario.
+  if (estado === 'approved' && docsServicio
+      && (pago.currency_id !== 'ARS' || !(Number(pago.transaction_amount) >= Number(lead.monto)))) {
+    console.error(`[webhook] pago ${paymentId} del lead ${lead.id}: monto o moneda no coinciden (${pago.transaction_amount} ${pago.currency_id}, esperado ${lead.monto} ARS).`);
+    try { audit.log(null, 'webhook.monto_no_coincide', { entidad: 'leads', entidad_id: lead.id, detalle: { payment_ref: String(paymentId), monto: pago.transaction_amount, moneda: pago.currency_id, esperado: lead.monto } }); } catch {}
+    try {
+      const { enviarMailGenerico } = require('./src/notificaciones');
+      enviarMailGenerico({
+        to: (process.env.MAIL_ADMIN || 'tomas@legalpacers.com').trim(),
+        subject: `Revisar pago ${paymentId}: el monto no coincide`,
+        html: `<p>El pago ${esc(String(paymentId))} de "${esc(lead.marca)}" (${esc(docsServicio.nombre)}) llegó aprobado por ${esc(String(pago.transaction_amount))} ${esc(String(pago.currency_id))} y el pedido es de ${esc(String(lead.monto))} ARS. No se habilitó el formulario.</p>`,
+        tag: 'admin_pago_monto',
+      }).catch(() => {});
+    } catch {}
+    return;
+  }
 
   if (estado === 'approved' && lead.estado !== 'pagado') {
     db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
@@ -1021,6 +1057,14 @@ async function procesarPago(paymentId) {
         detalle: { marca: lead.marca, tipo: lead.tipo, payment_ref: String(paymentId), dispara_informe: lead.tipo === 'informe' },
       });
     } catch {}
+
+    // Términos y condiciones / privacidad: número de pedido, link único al
+    // formulario, mail al cliente y aviso a Tomás (src/docs-pedidos.js).
+    if (docsServicio) {
+      await require('./src/docs-pedidos').activarPorPago(lead.id)
+        .catch(err => console.error(`[webhook] pedido de documentos lead ${lead.id}:`, err.message));
+      return;
+    }
 
     // Aviso al ADMIN (a vos) por CUALQUIER pago — informe, registro o lo que sea.
     // Va aparte del mail de equipo (contacto@) para que no dependa de que revises
@@ -1054,7 +1098,6 @@ async function procesarPago(paymentId) {
           <p><strong>Pago MP:</strong> ${paymentId}</p>
           <p style="margin-top:14px">${lead.tipo === 'informe'
             ? 'El informe se está generando — revisalo y aprobalo en el panel.'
-            : servicioDocs ? 'Pedido nuevo de documentos: anotalo en el registro de pedidos. El formulario post-pago todavía no está en el sistema.'
             : 'Contactá al cliente para arrancar el trámite.'}</p>
           ${waBtn}
         </div>`,
@@ -1254,6 +1297,7 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
 
 // ===== Endpoints stub para Mercado Pago en modo sin credenciales =====
 app.get('/pagos/stub', (req, res) => {
+  if ((process.env.MP_ACCESS_TOKEN || '').trim()) return res.status(404).json(fail('Not found', 404));
   const { ref, monto, titulo } = req.query;
   res.type('html').send(`<!doctype html><meta charset="utf-8"><title>Stub MP</title>
 <style>body{font-family:system-ui;background:#030712;color:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -1279,7 +1323,12 @@ button.bad{background:#334155}</style>
 </div>`);
 });
 
-app.post('/pagos/stub/confirmar', express.urlencoded({ extended: false }), (req, res) => {
+// El simulador solo existe sin MP_ACCESS_TOKEN (desarrollo). Con credenciales
+// reales respondía igual: cualquiera con la referencia de un lead lo podía
+// marcar como pagado sin pagar.
+const stubPagosActivo = () => !(process.env.MP_ACCESS_TOKEN || '').trim();
+app.post('/pagos/stub/confirmar', express.urlencoded({ extended: false }), async (req, res) => {
+  if (!stubPagosActivo()) return res.status(404).json(fail('Not found', 404));
   const { ref, estado } = req.body || {};
   if (!ref) return res.status(400).send('ref requerido');
   const lead = db.prepare('SELECT * FROM leads WHERE external_reference = ?').get(ref);
@@ -1288,6 +1337,9 @@ app.post('/pagos/stub/confirmar', express.urlencoded({ extended: false }), (req,
     db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
       .run(`STUB-PAY-${Date.now()}`, lead.id);
     console.log(`[stub-pago] lead ${lead.id} (${lead.tipo}, ${lead.marca}) marcado pagado vía stub.`);
+    if (require('./src/servicios-docs').servicioPorTipo(lead.tipo)) {
+      await require('./src/docs-pedidos').activarPorPago(lead.id).catch(err => console.error('[stub-pago] docs:', err.message));
+    }
     return res.redirect(`/pagos/exito?ref=${encodeURIComponent(ref)}`);
   }
   db.prepare(`UPDATE leads SET estado = 'rechazado' WHERE id = ?`).run(lead.id);
@@ -1302,12 +1354,37 @@ a{color:#60a5fa}</style>
 <div class="box"><h2>${titulo}</h2><p>${mensaje}</p><p><a href="/">Volver al inicio</a></p></div>`;
 }
 
-app.get('/pagos/exito', (req, res) =>
-  res.type('html').send(paginaResultado('Pago aprobado', 'En breve nos contactamos por WhatsApp / email.', '#10b981')));
-app.get('/pagos/error', (req, res) =>
-  res.type('html').send(paginaResultado('Pago rechazado', 'No se pudo procesar el pago.', '#ef4444')));
-app.get('/pagos/pendiente', (req, res) =>
-  res.type('html').send(paginaResultado('Pago pendiente', 'Te avisamos cuando se acredite.', '#f59e0b')));
+// Resultado del pago de términos y condiciones / privacidad: página con la
+// marca de Legal Pacer. El link al formulario NO se muestra acá (la referencia
+// viaja en la URL de vuelta de MP y no es un secreto): llega solo por mail.
+// [REVISAR · contenido] textos de estas tres pantallas.
+function esPagoDocs(ref) {
+  if (typeof ref !== 'string' || !/^(tyc|privacidad|tyc_privacidad)-[0-9a-f]{16}$/.test(ref)) return false;
+  return !!db.prepare('SELECT 1 FROM leads WHERE external_reference = ?').get(ref);
+}
+function paginaResultadoDocs(titulo, mensaje) {
+  return `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>${titulo} · Legal Pacer</title>
+<style>@font-face{font-family:"Mundial";src:url("/static/fonts/MundialLight.otf") format("opentype");font-weight:300}
+@font-face{font-family:"Mundial";src:url("/static/fonts/MundialBold.otf") format("opentype");font-weight:700}
+body{margin:0;background:#FDF8F3;color:#1E1E1E;font-family:'Mundial',system-ui,sans-serif;font-weight:300;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.box{background:#fff;border:1px solid #E6E2DB;border-radius:14px;padding:32px;max-width:480px}h1{color:#001540;font-size:24px;margin:20px 0 10px}
+p{line-height:1.6}a{color:#006FFB}</style>
+<div class="box"><img src="/static/brand/logo.png" alt="Legal Pacer" style="height:28px;width:auto"><h1>${titulo}</h1><p>${mensaje}</p></div></html>`;
+}
+const WA_LINK = '<a href="https://wa.me/5491128774200">WhatsApp</a>';
+app.get('/pagos/exito', (req, res) => {
+  if (esPagoDocs(req.query.ref)) return res.type('html').send(paginaResultadoDocs('Recibimos tu pago', `Te llega por mail el link al formulario sobre tu negocio. Si no lo ves en unos minutos, revisá el correo no deseado o escribinos por ${WA_LINK}.`));
+  res.type('html').send(paginaResultado('Pago aprobado', 'En breve nos contactamos por WhatsApp / email.', '#10b981'));
+});
+app.get('/pagos/error', (req, res) => {
+  if (esPagoDocs(req.query.ref)) return res.type('html').send(paginaResultadoDocs('No se pudo hacer el pago', `No se cobró nada. Podés <a href="/tyc-startups">volver a intentarlo</a> o escribirnos por ${WA_LINK}.`));
+  res.type('html').send(paginaResultado('Pago rechazado', 'No se pudo procesar el pago.', '#ef4444'));
+});
+app.get('/pagos/pendiente', (req, res) => {
+  if (esPagoDocs(req.query.ref)) return res.type('html').send(paginaResultadoDocs('Tu pago está pendiente', 'Cuando Mercado Pago lo acredite, te llega por mail el link al formulario.'));
+  res.type('html').send(paginaResultado('Pago pendiente', 'Te avisamos cuando se acredite.', '#f59e0b'));
+});
 
 // ===== Landing estática =====
 // no-cache: el navegador puede guardar la copia pero DEBE revalidar con el

@@ -44,7 +44,7 @@ const post = (url, body, headers = {}) => fetch(BASE + url, {
 test.before(async () => {
   srv = spawn(process.execPath, ['server.js'], {
     cwd: SERVER_DIR,
-    env: { ...process.env, PORT: String(PORT), SQLITE_PATH: DB, CRON_ENABLED: 'false',
+    env: { ...process.env, PORT: String(PORT), SQLITE_PATH: DB, CRON_ENABLED: 'false', SERVICIOS_DOCS_ACTIVOS: '',
       RESEND_API_KEY: '', MP_ACCESS_TOKEN: '', WHATSAPP_APP_SECRET: APP_SECRET,
       WHATSAPP_TOKEN: '', WHATSAPP_PHONE_NUMBER_ID: '', BASE_URL: BASE },
     stdio: ['ignore', 'ignore', 'inherit'],
@@ -180,4 +180,13 @@ test('PATCH de informe admin: acepta un cuerpo de más de 256 KB (límite propio
     body: JSON.stringify({ notas_revision: 'x'.repeat(400 * 1024) }),
   });
   assert.strictEqual(r.status, 404, `esperaba 404 (informe inexistente), no ${r.status}`);
+});
+
+test('términos y condiciones / privacidad: apagado por defecto, nada se vende', async () => {
+  assert.strictEqual((await fetch(`${BASE}/tyc-startups`)).status, 404);
+  assert.strictEqual((await fetch(`${BASE}/api/lp/docs/catalogo`)).status, 404);
+  const r = await post('/api/lp/docs/iniciar', { servicio: 'tyc', nombre: 'A', email: 'a@b.co', proyecto: 'P', ley_argentina: true, consentimiento: true });
+  assert.strictEqual(r.status, 404);
+  // El formulario sin un link válido no muestra nada.
+  assert.strictEqual((await fetch(`${BASE}/api/lp/docs/formulario`, { headers: { 'X-Pedido-Token': 'a'.repeat(43) } })).status, 404);
 });

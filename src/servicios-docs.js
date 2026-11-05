@@ -6,7 +6,7 @@
 // módulo define el catálogo para cobrar con Mercado Pago (crearPreferencia).
 //
 // Nada se activa por defecto. Un servicio está disponible solo si:
-//   1. SERVICIOS_DOCS_ACTIVOS=true, y
+//   1. SERVICIOS_DOCS_ACTIVOS=true (o 1), y
 //   2. su precio está cargado en la variable de entorno que le corresponde.
 // Así el código puede llegar a producción sin que nadie pueda comprar antes
 // del relanzamiento, y los precios no quedan escritos en el código.
@@ -42,7 +42,7 @@ const CATALOGO = Object.freeze({
 const TIPOS_LEAD = Object.freeze(Object.values(CATALOGO).map(s => s.tipo));
 
 function serviciosActivos(env = process.env) {
-  return String(env.SERVICIOS_DOCS_ACTIVOS || '').trim().toLowerCase() === 'true';
+  return ['true', '1'].includes(String(env.SERVICIOS_DOCS_ACTIVOS || '').trim().toLowerCase());
 }
 
 // Precio en pesos, entero y positivo; null si falta o es inválido.

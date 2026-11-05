@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 
-const MP_API = 'https://api.mercadopago.com';
+// MP_API_URL solo existe para las pruebas (un Mercado Pago falso local) y solo
+// se lee con NODE_ENV=test: así el token de MP nunca viaja a otro lado.
+const MP_API = (process.env.NODE_ENV === 'test' && process.env.MP_API_URL ? process.env.MP_API_URL : 'https://api.mercadopago.com').replace(/\/+$/, '');
 
 // Si está seteado, el endpoint correspondiente devuelve este link fijo (Link de pago
 // hosted por MP) en vez de generar una preferencia con Checkout Pro. Más simple:

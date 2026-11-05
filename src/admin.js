@@ -172,6 +172,11 @@ function mountAdminRoutes(app) {
       const { enviarConfirmacionRegistro } = require('./notificaciones');
       await enviarConfirmacionRegistro({ email: lead.email, marca: lead.marca, solicitante: lead.solicitante, ref: lead.external_reference })
         .catch(err => console.error(`[admin] acuse registro lead ${id}:`, err.message));
+    } else if (require('./servicios-docs').servicioPorTipo(lead.tipo)) {
+      // Términos y condiciones / privacidad: número de pedido, link al
+      // formulario y mail al cliente (idempotente, como el webhook).
+      await require('./docs-pedidos').activarPorPago(id)
+        .catch(err => console.error(`[admin] confirmar-pago docs lead ${id}:`, err.message));
     }
     res.json(ok({ id, tipo: lead.tipo, informe }));
   });
