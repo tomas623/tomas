@@ -54,3 +54,34 @@ test('rechaza data URL mal formado', () => {
   assert.strictEqual(decodificarDataUrl('hola', PERMITIDOS_DOC).ok, false);
   assert.strictEqual(decodificarDataUrl(undefined, PERMITIDOS_DOC).ok, false);
 });
+
+// ===== Word (.docx), para el formulario de términos y condiciones / privacidad =====
+const { PERMITIDOS_DOCS_SERVICIO, PERMITIDOS_ENTREGA, detectarTipoArchivo } = require('../src/subidas');
+const fixtures = require('./helpers/zip');
+
+test('docx: acepta un Word real y rechaza un .docm con macros, un Excel y un ZIP cualquiera', () => {
+  assert.strictEqual(detectarTipo(fixtures.docx()), 'docx');
+  assert.strictEqual(detectarTipo(fixtures.docm()), null);
+  assert.strictEqual(detectarTipo(fixtures.xlsx()), null);
+  assert.strictEqual(detectarTipo(fixtures.zip({ 'a.txt': 'hola' })), null);
+  const r = decodificarDataUrl(dataUrl('application/msword', fixtures.docx()), PERMITIDOS_DOCS_SERVICIO);
+  assert.ok(r.ok);
+  assert.strictEqual(r.ext, 'docx');
+  assert.strictEqual(decodificarDataUrl(dataUrl('application/zip', fixtures.docm()), PERMITIDOS_DOCS_SERVICIO).ok, false);
+});
+
+test('docx: no se acepta donde no corresponde (registro de marca) y la entrega solo lleva Word y PDF', () => {
+  assert.strictEqual(decodificarDataUrl(dataUrl('application/pdf', fixtures.docx()), PERMITIDOS_DOC).ok, false);
+  assert.strictEqual(decodificarDataUrl(dataUrl('image/png', PNG), PERMITIDOS_ENTREGA).ok, false);
+  assert.ok(decodificarDataUrl(dataUrl('application/pdf', PDF), PERMITIDOS_ENTREGA).ok);
+});
+
+test('docx: el tipo de un archivo en disco se lee entero si es ZIP', () => {
+  const fs = require('node:fs'); const os = require('node:os'); const path = require('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lp-zip-'));
+  const p1 = path.join(dir, 'a.bin'); fs.writeFileSync(p1, fixtures.docx());
+  const p2 = path.join(dir, 'b.bin'); fs.writeFileSync(p2, fixtures.docm());
+  assert.strictEqual(detectarTipoArchivo(p1), 'docx');
+  assert.strictEqual(detectarTipoArchivo(p2), null);
+  fs.rmSync(dir, { recursive: true, force: true });
+});

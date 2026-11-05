@@ -1,5 +1,6 @@
-// Archivos que suben los clientes (formulario de datos del registro y poder
-// firmado). Se aceptan solo PDF, PNG, JPG y WEBP, y el tipo se decide por los
+// Archivos que suben los clientes (formulario de datos del registro, poder
+// firmado y formulario de términos y condiciones / política de privacidad).
+// Se aceptan solo PDF, PNG, JPG, WEBP y Word (.docx), y el tipo se decide por los
 // primeros bytes del archivo (magic bytes), nunca por el mime que declara el
 // navegador o el data URL: un HTML o un SVG renombrado como .png no pasa.
 //
@@ -14,20 +15,40 @@ const TIPOS = {
   png:  { mime: 'image/png',       ext: 'png' },
   jpg:  { mime: 'image/jpeg',      ext: 'jpg' },
   webp: { mime: 'image/webp',      ext: 'webp' },
+  docx: { mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', ext: 'docx' },
 };
 
 // Lo que acepta cada campo del formulario.
 const PERMITIDOS_DOC = ['pdf', 'png', 'jpg', 'webp'];  // poder firmado, estatuto, acta
 const PERMITIDOS_LOGO = ['png', 'jpg', 'webp'];        // logo de la marca
+// Formulario de términos y condiciones / política de privacidad: PDF, Word e
+// imágenes. Solo .docx: el .doc viejo (OLE) no se distingue de un Excel o un
+// instalador por los primeros bytes y puede traer macros.
+const PERMITIDOS_DOCS_SERVICIO = ['pdf', 'docx', 'png', 'jpg', 'webp'];
+// Entrega de la versión final desde el panel: Word y PDF.
+const PERMITIDOS_ENTREGA = ['pdf', 'docx'];
 
-const NOMBRES = { pdf: 'PDF', png: 'PNG', jpg: 'JPG', webp: 'WEBP' };
+const NOMBRES = { pdf: 'PDF', png: 'PNG', jpg: 'JPG', webp: 'WEBP', docx: 'Word (.docx)' };
 function describirPermitidos(lista) {
   const n = lista.map(t => NOMBRES[t]);
   return n.length > 1 ? `${n.slice(0, -1).join(', ')} o ${n[n.length - 1]}` : n[0];
 }
 
-// Devuelve la clave del tipo ('pdf' | 'png' | 'jpg' | 'webp') o null.
-function detectarTipo(buf) {
+// Un .docx es un ZIP con [Content_Types].xml y word/document.xml. Los nombres
+// de las entradas van sin comprimir en el directorio central (al final del
+// archivo) y en cada cabecera local, así que alcanza con buscarlos. Si trae
+// macros (word/vbaProject.bin, es decir, un .docm renombrado) no pasa.
+function esDocx(buf) {
+  if (buf.length < 30 || buf.readUInt32LE(0) !== 0x04034b50) return false;
+  return buf.indexOf('word/document.xml', 0, 'latin1') !== -1
+    && buf.indexOf('[Content_Types].xml', 0, 'latin1') !== -1
+    && buf.indexOf('vbaProject.bin', 0, 'latin1') === -1;
+}
+
+// Devuelve la clave del tipo ('pdf' | 'png' | 'jpg' | 'webp' | 'docx') o null.
+// `completo` = el buffer es el archivo entero (hace falta para reconocer un
+// .docx, cuyo contenido se ve en todo el ZIP y no en los primeros bytes).
+function detectarTipo(buf, completo = true) {
   if (!Buffer.isBuffer(buf) || buf.length < 4) return null;
   // La norma de PDF admite bytes antes de la cabecera (algunos escáneres los
   // agregan): se busca %PDF- en los primeros 1024. Igual se sirve siempre como
@@ -37,6 +58,7 @@ function detectarTipo(buf) {
   if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'jpg';
   if (buf.length >= 12 && buf.subarray(0, 4).toString('latin1') === 'RIFF'
       && buf.subarray(8, 12).toString('latin1') === 'WEBP') return 'webp';
+  if (completo && esDocx(buf)) return 'docx';
   return null;
 }
 
@@ -67,7 +89,14 @@ function detectarTipoArchivo(ruta) {
     fd = fs.openSync(ruta, 'r');
     const buf = Buffer.alloc(1024);
     const n = fs.readSync(fd, buf, 0, 1024, 0);
-    return detectarTipo(buf.subarray(0, n));
+    const cabecera = buf.subarray(0, n);
+    // Un ZIP solo se reconoce como .docx leyéndolo entero (hasta 30 MB).
+    if (n >= 4 && cabecera.readUInt32LE(0) === 0x04034b50) {
+      const st = fs.fstatSync(fd);
+      if (st.size > 30 * 1024 * 1024) return null;
+      return detectarTipo(fs.readFileSync(ruta), true);
+    }
+    return detectarTipo(cabecera, false);
   } catch {
     return null;
   } finally {
@@ -88,7 +117,9 @@ function enviarArchivoSubido(res, ruta, nombreBase) {
   res.setHeader('Cache-Control', 'private, no-store');
   if (tipo) {
     res.setHeader('Content-Type', TIPOS[tipo].mime);
-    res.setHeader('Content-Disposition', `inline; filename="${seguro}.${TIPOS[tipo].ext}"`);
+    // Word nunca se abre en el navegador: se descarga.
+    const disp = tipo === 'docx' ? 'attachment' : 'inline';
+    res.setHeader('Content-Disposition', `${disp}; filename="${seguro}.${TIPOS[tipo].ext}"`);
     // Las imágenes además van con sandbox (no aplica a PDF: Chrome no abre
     // su visor de PDF dentro de un documento con sandbox).
     if (tipo !== 'pdf') res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox");
@@ -103,6 +134,6 @@ function enviarArchivoSubido(res, ruta, nombreBase) {
 }
 
 module.exports = {
-  TIPOS, PERMITIDOS_DOC, PERMITIDOS_LOGO,
+  TIPOS, PERMITIDOS_DOC, PERMITIDOS_LOGO, PERMITIDOS_DOCS_SERVICIO, PERMITIDOS_ENTREGA,
   detectarTipo, decodificarDataUrl, detectarTipoArchivo, enviarArchivoSubido, describirPermitidos,
 };
