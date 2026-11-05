@@ -1296,8 +1296,13 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
 }
 
 // ===== Endpoints stub para Mercado Pago en modo sin credenciales =====
+// El simulador solo existe sin MP_ACCESS_TOKEN (desarrollo). Con credenciales
+// reales respondía igual: cualquiera con la referencia de un lead lo podía
+// marcar como pagado sin pagar. Para un pago por transferencia está "Confirmar
+// pago" en el panel (POST /api/admin/leads/:id/confirmar-pago, con sesión).
+const stubPagosActivo = () => !(process.env.MP_ACCESS_TOKEN || '').trim();
 app.get('/pagos/stub', (req, res) => {
-  if ((process.env.MP_ACCESS_TOKEN || '').trim()) return res.status(404).json(fail('Not found', 404));
+  if (!stubPagosActivo()) return res.status(404).json(fail('Not found', 404));
   const { ref, monto, titulo } = req.query;
   res.type('html').send(`<!doctype html><meta charset="utf-8"><title>Stub MP</title>
 <style>body{font-family:system-ui;background:#030712;color:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -1323,10 +1328,6 @@ button.bad{background:#334155}</style>
 </div>`);
 });
 
-// El simulador solo existe sin MP_ACCESS_TOKEN (desarrollo). Con credenciales
-// reales respondía igual: cualquiera con la referencia de un lead lo podía
-// marcar como pagado sin pagar.
-const stubPagosActivo = () => !(process.env.MP_ACCESS_TOKEN || '').trim();
 app.post('/pagos/stub/confirmar', express.urlencoded({ extended: false }), async (req, res) => {
   if (!stubPagosActivo()) return res.status(404).json(fail('Not found', 404));
   const { ref, estado } = req.body || {};
