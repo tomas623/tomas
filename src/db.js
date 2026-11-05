@@ -464,4 +464,58 @@ db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS idx_wa_msg_waid ON wa_mensajes(wa_msg_id) WHERE wa_msg_id IS NOT NULL;
 `);
 
+// ===== Pedidos de términos y condiciones / política de privacidad =====
+// Un pedido por lead pagado (leads.tipo tyc | privacidad | tyc_privacidad).
+// Qué se guarda, dónde y por cuánto tiempo: docs/datos-personales-tyc-pp.md.
+// token_hash = sha256 del link único al formulario (el token en claro solo
+// viaja en el mail al cliente). Estados: ver src/docs-pedidos.js.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS pedidos_docs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id INTEGER NOT NULL UNIQUE REFERENCES leads(id),
+    servicio TEXT NOT NULL,
+    nombre TEXT,
+    numero TEXT UNIQUE,
+    token_hash TEXT UNIQUE,
+    estado TEXT NOT NULL DEFAULT 'pendiente_pago',
+    reunion_estado TEXT,
+    ley_argentina_at TEXT,
+    consentimiento_ia_at TEXT,
+    respuestas TEXT,
+    respuestas_at TEXT,
+    pagado_at TEXT,
+    formulario_completo_at TEXT,
+    borrador_enviado_at TEXT,
+    ronda_vence TEXT,
+    version_final_at TEXT,
+    cerrado_at TEXT,
+    archivos_borrados_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_pedidos_docs_estado ON pedidos_docs(estado, created_at);
+  CREATE TABLE IF NOT EXISTS pedidos_docs_archivos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pedido_id INTEGER NOT NULL REFERENCES pedidos_docs(id),
+    nombre TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    bytes INTEGER NOT NULL,
+    ruta TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_pedidos_docs_archivos ON pedidos_docs_archivos(pedido_id);
+  -- Registro de mails del pedido (qué se mandó y cuándo; sin el cuerpo).
+  CREATE TABLE IF NOT EXISTS pedidos_docs_mails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pedido_id INTEGER NOT NULL REFERENCES pedidos_docs(id),
+    tipo TEXT NOT NULL,
+    destinatario TEXT,
+    asunto TEXT,
+    ok INTEGER NOT NULL DEFAULT 0,
+    detalle TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_pedidos_docs_mails ON pedidos_docs_mails(pedido_id);
+`);
+
 module.exports = db;
