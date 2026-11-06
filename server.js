@@ -971,6 +971,11 @@ async function procesarPago(paymentId) {
   const lead = db.prepare('SELECT * FROM leads WHERE external_reference = ?').get(ref);
   if (!lead) return;
 
+  // Aviso repetido de un pago ya acreditado (MP manda el webhook y el IPN, y
+  // reintenta): no se toca nada. Antes el estado pasaba de 'pagado' a
+  // 'approved' y el aviso siguiente volvía a disparar los mails y el informe.
+  if (estado === 'approved' && lead.estado === 'pagado') return;
+
   if (estado === 'approved' && lead.estado !== 'pagado') {
     db.prepare(`UPDATE leads SET estado = 'pagado', payment_ref = ?, pagado_at = datetime('now') WHERE id = ?`)
       .run(String(paymentId), lead.id);
@@ -1210,7 +1215,13 @@ async function avisarSuscripcionActiva({ email, leadId, pack, esNuevo, tempPass,
 }
 
 // ===== Endpoints stub para Mercado Pago en modo sin credenciales =====
+// El simulador solo existe sin MP_ACCESS_TOKEN (desarrollo). Con credenciales
+// reales respondía igual: cualquiera con la referencia de un lead lo podía
+// marcar como pagado sin pagar. Para un pago por transferencia está "Confirmar
+// pago" en el panel (POST /api/admin/leads/:id/confirmar-pago, con sesión).
+const stubPagosActivo = () => !(process.env.MP_ACCESS_TOKEN || '').trim();
 app.get('/pagos/stub', (req, res) => {
+  if (!stubPagosActivo()) return res.status(404).json(fail('Not found', 404));
   const { ref, monto, titulo } = req.query;
   res.type('html').send(`<!doctype html><meta charset="utf-8"><title>Stub MP</title>
 <style>body{font-family:system-ui;background:#030712;color:#f8fafc;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
@@ -1237,6 +1248,7 @@ button.bad{background:#334155}</style>
 });
 
 app.post('/pagos/stub/confirmar', express.urlencoded({ extended: false }), (req, res) => {
+  if (!stubPagosActivo()) return res.status(404).json(fail('Not found', 404));
   const { ref, estado } = req.body || {};
   if (!ref) return res.status(400).send('ref requerido');
   const lead = db.prepare('SELECT * FROM leads WHERE external_reference = ?').get(ref);
