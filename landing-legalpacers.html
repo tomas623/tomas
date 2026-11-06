@@ -368,6 +368,8 @@
     @media(min-width:721px){.sticky-cta{display:none!important}}
     /* En mobile, cuando aparece el bar, ocultamos el FAB de WhatsApp para no duplicar. */
     @media(max-width:720px){body.cta-fija .wa-fab-mini{display:none}}
+    /* Espacio para la barra fija (69px + zona segura), así el pie no queda tapado al llegar al fondo */
+    @media(max-width:720px){body.cta-fija{padding-bottom:calc(69px + env(safe-area-inset-bottom,0px))}}
     /* Skeleton de carga del chequeo (shimmer) */
     .check-skeleton{margin-top:22px;padding:20px;border-radius:14px;background:var(--surface);border:1px solid var(--border-soft)}
     .check-skeleton .sk-line,.check-skeleton .sk-row{border-radius:8px;
